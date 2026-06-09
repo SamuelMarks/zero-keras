@@ -1,7 +1,5 @@
 """Keras layers."""
 
-from __future__ import annotations
-
 from typing import Any, Optional
 from zero_keras import Layer
 
@@ -19,7 +17,6 @@ class Activation(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -37,7 +34,6 @@ class ActivityRegularization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -45,7 +41,6 @@ class Add(Layer):
     """Performs elementwise addition operation."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -65,7 +60,6 @@ class AdditiveAttention(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -84,7 +78,6 @@ class AlphaDropout(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -104,7 +97,6 @@ class Attention(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -132,7 +124,6 @@ class AugMix(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -154,7 +145,6 @@ class AutoContrast(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -162,7 +152,6 @@ class Average(Layer):
     """Averages a list of inputs element-wise.."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -184,7 +173,6 @@ class AveragePooling1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -206,7 +194,6 @@ class AveragePooling2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -228,7 +215,6 @@ class AveragePooling3D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -250,7 +236,6 @@ class AvgPool1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -272,7 +257,6 @@ class AvgPool2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -294,7 +278,6 @@ class AvgPool3D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -324,7 +307,6 @@ class BatchNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -344,7 +326,6 @@ class Bidirectional(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -363,7 +344,6 @@ class CategoryEncoding(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -385,7 +365,6 @@ class CenterCrop(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -402,7 +381,6 @@ class Concatenate(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -436,7 +414,6 @@ class Conv1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -468,7 +445,6 @@ class Conv1DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -502,7 +478,6 @@ class Conv2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -534,7 +509,6 @@ class Conv2DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -568,7 +542,6 @@ class Conv3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -600,7 +573,6 @@ class Conv3DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -646,7 +618,6 @@ class ConvLSTM1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -692,7 +663,6 @@ class ConvLSTM2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -738,7 +708,6 @@ class ConvLSTM3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -772,7 +741,6 @@ class Convolution1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -804,7 +772,6 @@ class Convolution1DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -838,7 +805,6 @@ class Convolution2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -870,7 +836,6 @@ class Convolution2DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -904,7 +869,6 @@ class Convolution3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -936,7 +900,6 @@ class Convolution3DTranspose(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -953,7 +916,6 @@ class Cropping1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -971,7 +933,6 @@ class Cropping2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -989,7 +950,6 @@ class Cropping3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1011,7 +971,6 @@ class CutMix(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1038,7 +997,6 @@ class Dense(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1069,7 +1027,6 @@ class DepthwiseConv1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1100,7 +1057,6 @@ class DepthwiseConv2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1118,7 +1074,6 @@ class Discretization(Layer):
         name="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1136,7 +1091,6 @@ class Dot(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1155,7 +1109,6 @@ class Dropout(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1172,7 +1125,6 @@ class ELU(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1200,7 +1152,6 @@ class EinsumDense(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1225,7 +1176,6 @@ class Embedding(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1246,7 +1196,6 @@ class Equalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1263,7 +1212,6 @@ class Flatten(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1287,7 +1235,6 @@ class FlaxLayer(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1328,7 +1275,6 @@ class GRU(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1361,7 +1307,6 @@ class GRUCell(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1379,7 +1324,6 @@ class GaussianDropout(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1397,7 +1341,6 @@ class GaussianNoise(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1416,7 +1359,6 @@ class GlobalAveragePooling1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1435,7 +1377,6 @@ class GlobalAveragePooling2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1454,7 +1395,6 @@ class GlobalAveragePooling3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1473,7 +1413,6 @@ class GlobalAvgPool1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1492,7 +1431,6 @@ class GlobalAvgPool2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1511,7 +1449,6 @@ class GlobalAvgPool3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1530,7 +1467,6 @@ class GlobalMaxPool1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1549,7 +1485,6 @@ class GlobalMaxPool2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1568,7 +1503,6 @@ class GlobalMaxPool3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1587,7 +1521,6 @@ class GlobalMaxPooling1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1606,7 +1539,6 @@ class GlobalMaxPooling2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1625,7 +1557,6 @@ class GlobalMaxPooling3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1652,7 +1583,6 @@ class GroupNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1681,7 +1611,6 @@ class GroupQueryAttention(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1697,7 +1626,6 @@ class HashedCrossing(Layer):
         name="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1718,7 +1646,6 @@ class Hashing(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1734,7 +1661,6 @@ class Identity(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1754,7 +1680,6 @@ class InputLayer(Layer):
         name="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1774,7 +1699,6 @@ class InputSpec(Layer):
         optional: bool = False,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1801,7 +1725,6 @@ class IntegerLookup(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1822,7 +1745,6 @@ class JaxLayer(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1863,7 +1785,6 @@ class LSTM(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1896,7 +1817,6 @@ class LSTMCell(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1916,7 +1836,6 @@ class Lambda(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1943,7 +1862,6 @@ class LayerNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1960,7 +1878,6 @@ class LeakyReLU(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1977,7 +1894,6 @@ class Masking(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -1999,7 +1915,6 @@ class MaxNumBoundingBoxes(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2021,7 +1936,6 @@ class MaxPool1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2043,7 +1957,6 @@ class MaxPool2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2065,7 +1978,6 @@ class MaxPool3D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2087,7 +1999,6 @@ class MaxPooling1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2109,7 +2020,6 @@ class MaxPooling2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2131,7 +2041,6 @@ class MaxPooling3D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2139,7 +2048,6 @@ class Maximum(Layer):
     """Computes element-wise maximum on a list of inputs."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2168,7 +2076,6 @@ class MelSpectrogram(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2176,7 +2083,6 @@ class Minimum(Layer):
     """Computes elementwise minimum on a list of inputs."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2197,7 +2103,6 @@ class MixUp(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2228,7 +2133,6 @@ class MultiHeadAttention(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2236,7 +2140,6 @@ class Multiply(Layer):
     """Performs elementwise multiplication."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2256,7 +2159,6 @@ class Normalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2276,7 +2178,6 @@ class PReLU(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2293,7 +2194,6 @@ class Permute(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2301,7 +2201,6 @@ class Pipeline(Layer):
     """Applies a series of layers to an input."""
 
     def __init__(self, layers, name="None", **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2319,7 +2218,6 @@ class RMSNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2342,7 +2240,6 @@ class RNN(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2380,7 +2277,6 @@ class RandAugment(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2402,7 +2298,6 @@ class RandomBrightness(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2424,7 +2319,6 @@ class RandomColorDegeneration(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2449,7 +2343,6 @@ class RandomColorJitter(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2471,7 +2364,6 @@ class RandomContrast(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2493,7 +2385,6 @@ class RandomCrop(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2528,7 +2419,6 @@ class RandomElasticTransform(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2553,7 +2443,6 @@ class RandomErasing(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2575,7 +2464,6 @@ class RandomFlip(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2600,7 +2488,6 @@ class RandomGaussianBlur(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2620,7 +2507,6 @@ class RandomGrayscale(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2643,7 +2529,6 @@ class RandomHue(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2666,7 +2551,6 @@ class RandomInvert(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2692,7 +2576,6 @@ class RandomPerspective(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2717,7 +2600,6 @@ class RandomPosterization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2742,7 +2624,6 @@ class RandomRotation(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2764,7 +2645,6 @@ class RandomSaturation(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2788,7 +2668,6 @@ class RandomSharpness(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2818,7 +2697,6 @@ class RandomShear(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2847,7 +2725,6 @@ class RandomTranslation(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2876,7 +2753,6 @@ class RandomZoom(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2895,7 +2771,6 @@ class ReLU(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2912,7 +2787,6 @@ class RepeatVector(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2930,7 +2804,6 @@ class Rescaling(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2947,7 +2820,6 @@ class Reshape(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -2975,7 +2847,6 @@ class Resizing(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3001,7 +2872,6 @@ class STFTSpectrogram(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3036,7 +2906,6 @@ class SeparableConv1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3071,7 +2940,6 @@ class SeparableConv2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3106,7 +2974,6 @@ class SeparableConvolution1D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3141,7 +3008,6 @@ class SeparableConvolution2D(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3179,7 +3045,6 @@ class SimpleRNN(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3210,7 +3075,6 @@ class SimpleRNNCell(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3227,7 +3091,6 @@ class Softmax(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3253,7 +3116,6 @@ class Solarization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3261,7 +3123,6 @@ class SpatialDropout1D(Layer):
     """Spatial 1D version of Dropout."""
 
     def __init__(self, rate, seed="None", name="None", dtype="None", **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3277,7 +3138,6 @@ class SpatialDropout2D(Layer):
         name="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3293,7 +3153,6 @@ class SpatialDropout3D(Layer):
         name="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3311,7 +3170,6 @@ class SpectralNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3328,7 +3186,6 @@ class StackedRNNCells(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3356,7 +3213,6 @@ class StringLookup(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3364,7 +3220,6 @@ class Subtract(Layer):
     """Performs elementwise subtraction."""
 
     def __init__(self, **kwargs: Any):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3381,7 +3236,6 @@ class TFSMLayer(Layer):
         dtype="None",
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3409,7 +3263,6 @@ class TextVectorization(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3426,7 +3279,6 @@ class TimeDistributed(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3444,7 +3296,6 @@ class TorchModuleWrapper(Layer):
         autocast=True,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3461,7 +3312,6 @@ class UnitNormalization(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3478,7 +3328,6 @@ class UpSampling1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3497,7 +3346,6 @@ class UpSampling2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3515,7 +3363,6 @@ class UpSampling3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3532,7 +3379,6 @@ class Wrapper(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3550,7 +3396,6 @@ class ZeroPadding1D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3568,7 +3413,6 @@ class ZeroPadding2D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
 
 
@@ -3586,5 +3430,4 @@ class ZeroPadding3D(Layer):
         name=None,
         **kwargs: Any,
     ):
-        """docstring."""
         super().__init__(**kwargs)
