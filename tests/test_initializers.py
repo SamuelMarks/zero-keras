@@ -111,3 +111,21 @@ def test_initializers():
     assert issubclass(initializers.truncated_normal, initializers.TruncatedNormal)
     assert issubclass(initializers.variance_scaling, initializers.VarianceScaling)
     assert issubclass(initializers.zeros, initializers.Zeros)
+
+
+def test_initializers_exceptions_and_branches():
+    import pytest
+    from zero_keras import initializers
+
+    # Coverage for Identity exception
+    with pytest.raises(ValueError):
+        initializers.Identity()(shape=(2, 2, 2))
+
+    # Coverage for Orthogonal exception
+    with pytest.raises(ValueError):
+        initializers.Orthogonal()(shape=(2,))
+
+    # Coverage for _compute_fans branches
+    assert initializers.VarianceScaling()(shape=()).shape == ()
+    assert initializers.VarianceScaling()(shape=(3,)).shape == (3,)
+    assert initializers.VarianceScaling()(shape=(2, 3, 4)).shape == (2, 3, 4)

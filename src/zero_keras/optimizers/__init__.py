@@ -8,6 +8,7 @@ class Optimizer:
     """Base optimizer class."""
 
     def __init__(self, name: str = "Optimizer", **kwargs: Any):
+        """docstring."""
         self.name = name
 
 
@@ -31,6 +32,7 @@ class Adadelta(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -57,6 +59,7 @@ class Adafactor(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -80,6 +83,7 @@ class Adagrad(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -105,6 +109,7 @@ class Adam(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -130,6 +135,7 @@ class AdamW(Optimizer):
         weight_decay: float = 0.004,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -154,6 +160,7 @@ class Adamax(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -181,6 +188,7 @@ class Ftrl(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -205,6 +213,7 @@ class Lamb(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -228,6 +237,7 @@ class Lion(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -252,6 +262,7 @@ class LossScaleOptimizer(Optimizer):
         name: Optional[str] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name or "LossScaleOptimizer", **kwargs)
         self.inner_optimizer = inner_optimizer
 
@@ -286,6 +297,7 @@ class Muon(Optimizer):
         clipvalue: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -310,6 +322,7 @@ class Nadam(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -335,6 +348,7 @@ class RMSprop(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 
@@ -358,6 +372,7 @@ class SGD(Optimizer):
         weight_decay: Optional[float] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, **kwargs)
 
 

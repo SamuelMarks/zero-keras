@@ -69,7 +69,7 @@ class Initializer:
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
-        return (np.zeros(shape))
+        return np.zeros(shape)
 
 
 class Constant(Initializer):
@@ -81,7 +81,7 @@ class Constant(Initializer):
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
-        return (np.full(shape, self.value))
+        return np.full(shape, self.value)
 
 
 class Zeros(Initializer):
@@ -93,7 +93,7 @@ class Zeros(Initializer):
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
-        return (np.zeros(shape))
+        return np.zeros(shape)
 
 
 class Ones(Initializer):
@@ -105,7 +105,7 @@ class Ones(Initializer):
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
-        return (np.ones(shape))
+        return np.ones(shape)
 
 
 class Identity(Initializer):
@@ -121,7 +121,7 @@ class Identity(Initializer):
             raise ValueError(
                 "Identity matrix initializer can only be used for 2D matrices."
             )
-        return (np.eye(*shape) * self.gain)
+        return np.eye(*shape) * self.gain
 
 
 class Orthogonal(Initializer):
@@ -149,7 +149,7 @@ class Orthogonal(Initializer):
         u, _, v = np.linalg.svd(a, full_matrices=False)
         q = u if u.shape == flat_shape else v
         q = q.reshape(shape)
-        return (self.gain * q)
+        return self.gain * q
 
 
 class RandomNormal(Initializer):
@@ -166,7 +166,7 @@ class RandomNormal(Initializer):
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
         rng = np.random.default_rng(self.seed)
-        return (rng.normal(self.mean, self.stddev, shape))
+        return rng.normal(self.mean, self.stddev, shape)
 
 
 class RandomUniform(Initializer):
@@ -183,7 +183,7 @@ class RandomUniform(Initializer):
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """__call__ docstring."""
         rng = np.random.default_rng(self.seed)
-        return (rng.uniform(self.minval, self.maxval, shape))
+        return rng.uniform(self.minval, self.maxval, shape)
 
 
 class TruncatedNormal(Initializer):
@@ -209,7 +209,7 @@ class TruncatedNormal(Initializer):
                 (s >= self.mean - 2 * self.stddev) & (s <= self.mean + 2 * self.stddev)
             ]
             samples.extend(s)
-        return (np.array(samples[:num_samples]).reshape(shape))
+        return np.array(samples[:num_samples]).reshape(shape)
 
 
 class VarianceScaling(Initializer):
@@ -247,17 +247,15 @@ class VarianceScaling(Initializer):
                 s = rng.normal(0.0, stddev, num_samples)
                 s = s[(s >= -2 * stddev) & (s <= 2 * stddev)]
                 samples.extend(s)
-            return (
-                np.array(samples[:num_samples]).reshape(shape)
-            )
+            return np.array(samples[:num_samples]).reshape(shape)
         elif self.distribution == "untruncated_normal":
             stddev = np.sqrt(scale)
             rng = np.random.default_rng(self.seed)
-            return (rng.normal(0.0, stddev, shape))
+            return rng.normal(0.0, stddev, shape)
         else:  # uniform
             limit = np.sqrt(3.0 * scale)
             rng = np.random.default_rng(self.seed)
-            return (rng.uniform(-limit, limit, shape))
+            return rng.uniform(-limit, limit, shape)
 
 
 class GlorotNormal(VarianceScaling):

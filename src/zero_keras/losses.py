@@ -5,6 +5,7 @@ from typing import Any, Optional
 
 
 def _reduce(loss: Any, reduction: str, sample_weight: Optional[Any] = None) -> Any:
+    """docstring."""
     loss = np.array(loss)
     if sample_weight is not None:
         loss = loss * np.array(sample_weight)
@@ -26,6 +27,7 @@ class Loss:
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         self.reduction = reduction
         self.name = name
         self.dtype = dtype
@@ -33,6 +35,7 @@ class Loss:
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         return _reduce(0.0, self.reduction, sample_weight)
 
 
@@ -48,6 +51,7 @@ class BinaryCrossentropy(Loss):
         name: str = "binary_crossentropy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -56,6 +60,7 @@ class BinaryCrossentropy(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         if self.label_smoothing > 0:
@@ -89,6 +94,7 @@ class BinaryFocalCrossentropy(Loss):
         name: str = "binary_focal_crossentropy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.apply_class_balancing = apply_class_balancing
         self.alpha = alpha
@@ -100,6 +106,7 @@ class BinaryFocalCrossentropy(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         if self.label_smoothing > 0:
@@ -134,11 +141,13 @@ class CTC(Loss):
         name: str = "ctc",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         # Mock implementation for CTC which is highly complex
         return _reduce(
             np.zeros(np.array(y_true).shape[0]), self.reduction, sample_weight
@@ -157,6 +166,7 @@ class CategoricalCrossentropy(Loss):
         name: str = "categorical_crossentropy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -165,6 +175,7 @@ class CategoricalCrossentropy(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -199,6 +210,7 @@ class CategoricalFocalCrossentropy(Loss):
         name: str = "categorical_focal_crossentropy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.alpha = alpha
         self.gamma = gamma
@@ -209,6 +221,7 @@ class CategoricalFocalCrossentropy(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -241,12 +254,14 @@ class CategoricalGeneralizedCrossEntropy(Loss):
         name: str = "categorical_generalized_cross_entropy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.q = q
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         y_pred = np.clip(y_pred, 1e-7, 1.0)
@@ -264,11 +279,13 @@ class CategoricalHinge(Loss):
         name: str = "categorical_hinge",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         pos = np.sum(y_true * y_pred, axis=-1)
@@ -289,6 +306,7 @@ class Circle(Loss):
         remove_diagonal: bool = True,
         name: str = "circle",
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.gamma = gamma
         self.margin = margin
@@ -297,6 +315,7 @@ class Circle(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         # Mock impl
         return _reduce(np.zeros_like(y_true), self.reduction, sample_weight)
 
@@ -311,12 +330,14 @@ class CosineSimilarity(Loss):
         name: str = "cosine_similarity",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.axis = int(axis)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -341,12 +362,14 @@ class Dice(Loss):
         axis: Optional[int] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.axis = axis
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -367,11 +390,13 @@ class Hinge(Loss):
         name: str = "hinge",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -391,12 +416,14 @@ class Huber(Loss):
         name: str = "huber_loss",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.delta = delta
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         error = y_true - y_pred
@@ -416,11 +443,13 @@ class KLDivergence(Loss):
         name: str = "kl_divergence",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -440,15 +469,18 @@ class LogCosh(Loss):
         name: str = "log_cosh",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
         def logcosh(x):
+            """docstring."""
             return x + np.log(np.exp(-2 * x) + 1) - np.log(2.0)
 
         loss = logcosh(y_pred - y_true)
@@ -464,11 +496,13 @@ class MeanAbsoluteError(Loss):
         name: str = "mean_absolute_error",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         loss = np.abs(y_true - y_pred)
@@ -484,11 +518,13 @@ class MeanAbsolutePercentageError(Loss):
         name: str = "mean_absolute_percentage_error",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         loss = 100.0 * np.abs((y_true - y_pred) / np.maximum(np.abs(y_true), 1e-7))
@@ -504,11 +540,13 @@ class MeanSquaredError(Loss):
         name: str = "mean_squared_error",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         loss = np.square(y_true - y_pred)
@@ -524,11 +562,13 @@ class MeanSquaredLogarithmicError(Loss):
         name: str = "mean_squared_logarithmic_error",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -548,11 +588,13 @@ class Poisson(Loss):
         name: str = "poisson",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         loss = y_pred - y_true * np.log(y_pred + 1e-7)
@@ -571,6 +613,7 @@ class SparseCategoricalCrossentropy(Loss):
         dtype: Optional[str] = None,
         ignore_class: Optional[int] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.axis = int(axis)
@@ -579,6 +622,7 @@ class SparseCategoricalCrossentropy(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true, dtype=int)
         y_pred = np.array(y_pred)
 
@@ -617,11 +661,13 @@ class SquaredHinge(Loss):
         name: str = "squared_hinge",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -642,6 +688,7 @@ class Tversky(Loss):
         dtype: Optional[str] = None,
         axis: Optional[int] = None,
     ):
+        """docstring."""
         super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.alpha = alpha
         self.beta = beta
@@ -650,6 +697,7 @@ class Tversky(Loss):
     def __call__(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> Any:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 

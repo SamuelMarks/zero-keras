@@ -209,6 +209,7 @@ def sparsemax(x: Any, axis: int = -1) -> Any:
     # 1D implementation for simplicity or vectorised along axis
     # Full sparsemax requires sorting, we'll do a simple projection to simplex
     def _sparsemax_1d(z: Any) -> Any:
+        """docstring."""
         z = np.sort(z)[::-1]
         k = np.arange(1, len(z) + 1)
         tau = 1 + k * z > np.cumsum(z)

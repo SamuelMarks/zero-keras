@@ -10,6 +10,7 @@ class Metric:
     def __init__(
         self, name: Optional[str] = None, dtype: Optional[str] = None, **kwargs: Any
     ):
+        """docstring."""
         self.name = name
         self.dtype = dtype
         self._val = 0.0
@@ -17,9 +18,11 @@ class Metric:
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         self._val = float(np.mean(y_pred))  # Mock state update
 
     def result(self) -> float:
+        """docstring."""
         return self._val
 
 
@@ -39,6 +42,7 @@ class AUC(Metric):
         label_weights: Optional[Any] = None,
         from_logits: bool = False,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.num_thresholds = num_thresholds
         self.curve = curve
@@ -54,6 +58,7 @@ class Accuracy(Metric):
     """Calculates how often predictions equal labels."""
 
     def __init__(self, name: str = "accuracy", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.correct = 0.0
         self.total = 0.0
@@ -61,6 +66,7 @@ class Accuracy(Metric):
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
         matches = y_true == y_pred
@@ -72,6 +78,7 @@ class Accuracy(Metric):
         self.correct += np.sum(matches)
 
     def result(self) -> float:
+        """docstring."""
         return float(self.correct / max(self.total, 1e-7))
 
 
@@ -84,12 +91,14 @@ class BinaryAccuracy(Accuracy):
         dtype: Optional[str] = None,
         threshold: float = 0.5,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.threshold = threshold
 
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         y_pred = (np.array(y_pred) > self.threshold).astype(int)
         super().update_state(y_true, y_pred, sample_weight)
 
@@ -104,6 +113,7 @@ class BinaryCrossentropy(Metric):
         from_logits: bool = False,
         label_smoothing: float = 0.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -119,6 +129,7 @@ class BinaryIoU(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.target_class_ids = target_class_ids
         self.threshold = threshold
@@ -128,11 +139,13 @@ class CategoricalAccuracy(Accuracy):
     """Calculates how often predictions match one-hot labels."""
 
     def __init__(self, name: str = "categorical_accuracy", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         y_true = np.argmax(np.array(y_true), axis=-1)
         y_pred = np.argmax(np.array(y_pred), axis=-1)
         super().update_state(y_true, y_pred, sample_weight)
@@ -149,6 +162,7 @@ class CategoricalCrossentropy(Metric):
         label_smoothing: float = 0.0,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -159,6 +173,7 @@ class CategoricalHinge(Metric):
     """Computes the categorical hinge metric between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "categorical_hinge", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -171,6 +186,7 @@ class ConcordanceCorrelation(Metric):
         dtype: Optional[str] = None,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.axis = int(axis)
 
@@ -184,6 +200,7 @@ class CosineSimilarity(Metric):
         dtype: Optional[str] = None,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.axis = int(axis)
 
@@ -198,6 +215,7 @@ class F1Score(Metric):
         name: str = "f1_score",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.average = average
         self.threshold = threshold
@@ -214,6 +232,7 @@ class FBetaScore(Metric):
         name: str = "fbeta_score",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.average = average
         self.beta = beta
@@ -229,6 +248,7 @@ class FalseNegatives(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
 
@@ -242,6 +262,7 @@ class FalsePositives(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
 
@@ -250,6 +271,7 @@ class Hinge(Metric):
     """Computes the hinge metric between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "hinge", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -267,6 +289,7 @@ class IoU(Metric):
         sparse_y_pred: bool = True,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.num_classes = num_classes
         self.target_class_ids = target_class_ids
@@ -280,6 +303,7 @@ class KLDivergence(Metric):
     """Computes Kullback-Leibler divergence metric between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "kl_divergence", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -287,6 +311,7 @@ class LogCoshError(Metric):
     """Computes the logarithm of the hyperbolic cosine of the prediction error."""
 
     def __init__(self, name: str = "logcosh", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -294,11 +319,13 @@ class Mean(Metric):
     """Compute the (weighted) mean of the given values."""
 
     def __init__(self, name: str = "mean", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.total = 0.0
         self.count = 0.0
 
     def update_state(self, values: Any, sample_weight: Optional[Any] = None) -> None:
+        """docstring."""
         values = np.array(values)
         if sample_weight is not None:
             values = values * np.array(sample_weight)
@@ -308,6 +335,7 @@ class Mean(Metric):
         self.total += np.sum(values)
 
     def result(self) -> float:
+        """docstring."""
         return float(self.total / max(self.count, 1e-7))
 
 
@@ -315,6 +343,7 @@ class MeanAbsoluteError(Metric):
     """Computes the mean absolute error between the labels and predictions."""
 
     def __init__(self, name: str = "mean_absolute_error", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -324,6 +353,7 @@ class MeanAbsolutePercentageError(Metric):
     def __init__(
         self, name: str = "mean_absolute_percentage_error", dtype: Optional[str] = None
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -340,6 +370,7 @@ class MeanIoU(Metric):
         sparse_y_pred: bool = True,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.num_classes = num_classes
         self.ignore_class = ignore_class
@@ -358,6 +389,7 @@ class MeanMetricWrapper(Mean):
         dtype: Optional[str] = None,
         **kwargs: Any,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.fn = fn
         self.kwargs = kwargs
@@ -365,6 +397,7 @@ class MeanMetricWrapper(Mean):
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         val = self.fn(y_true, y_pred, **self.kwargs)
         super().update_state(val, sample_weight)
 
@@ -373,6 +406,7 @@ class MeanSquaredError(Metric):
     """Computes the mean squared error between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "mean_squared_error", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -382,6 +416,7 @@ class MeanSquaredLogarithmicError(Metric):
     def __init__(
         self, name: str = "mean_squared_logarithmic_error", dtype: Optional[str] = None
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -398,6 +433,7 @@ class OneHotIoU(Metric):
         sparse_y_pred: bool = False,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.num_classes = num_classes
         self.target_class_ids = target_class_ids
@@ -418,6 +454,7 @@ class OneHotMeanIoU(Metric):
         sparse_y_pred: bool = False,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.num_classes = num_classes
         self.ignore_class = ignore_class
@@ -434,6 +471,7 @@ class PearsonCorrelation(Metric):
         dtype: Optional[str] = None,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.axis = int(axis)
 
@@ -442,6 +480,7 @@ class Poisson(Metric):
     """Computes the Poisson metric between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "poisson", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -456,6 +495,7 @@ class Precision(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
         self.top_k = top_k
@@ -473,6 +513,7 @@ class PrecisionAtRecall(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.recall = recall
         self.num_thresholds = num_thresholds
@@ -489,6 +530,7 @@ class R2Score(Metric):
         name: str = "r2_score",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.class_aggregation = class_aggregation
         self.num_regressors = num_regressors
@@ -505,6 +547,7 @@ class Recall(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
         self.top_k = top_k
@@ -522,6 +565,7 @@ class RecallAtPrecision(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.precision = precision
         self.num_thresholds = num_thresholds
@@ -534,6 +578,7 @@ class RootMeanSquaredError(Metric):
     def __init__(
         self, name: str = "root_mean_squared_error", dtype: Optional[str] = None
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -548,6 +593,7 @@ class SensitivityAtSpecificity(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.specificity = specificity
         self.num_thresholds = num_thresholds
@@ -560,11 +606,13 @@ class SparseCategoricalAccuracy(Accuracy):
     def __init__(
         self, name: str = "sparse_categorical_accuracy", dtype: Optional[str] = None
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
     def update_state(
         self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
     ) -> None:
+        """docstring."""
         y_pred = np.argmax(np.array(y_pred), axis=-1)
         super().update_state(y_true, y_pred, sample_weight)
 
@@ -579,6 +627,7 @@ class SparseCategoricalCrossentropy(Metric):
         from_logits: bool = False,
         axis: float = -1.0,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.from_logits = from_logits
         self.axis = int(axis)
@@ -594,6 +643,7 @@ class SparseTopKCategoricalAccuracy(Metric):
         dtype: Optional[str] = None,
         from_sorted_ids: bool = False,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.k = k
         self.from_sorted_ids = from_sorted_ids
@@ -610,6 +660,7 @@ class SpecificityAtSensitivity(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.sensitivity = sensitivity
         self.num_thresholds = num_thresholds
@@ -620,6 +671,7 @@ class SquaredHinge(Metric):
     """Computes the hinge metric between `y_true` and `y_pred`."""
 
     def __init__(self, name: str = "squared_hinge", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
 
 
@@ -627,16 +679,19 @@ class Sum(Metric):
     """Compute the (weighted) sum of the given values."""
 
     def __init__(self, name: str = "sum", dtype: Optional[str] = None):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.total = 0.0
 
     def update_state(self, values: Any, sample_weight: Optional[Any] = None) -> None:
+        """docstring."""
         values = np.array(values)
         if sample_weight is not None:
             values = values * np.array(sample_weight)
         self.total += np.sum(values)
 
     def result(self) -> float:
+        """docstring."""
         return float(self.total)
 
 
@@ -649,6 +704,7 @@ class TopKCategoricalAccuracy(Metric):
         name: str = "top_k_categorical_accuracy",
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.k = k
 
@@ -662,6 +718,7 @@ class TrueNegatives(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
 
@@ -675,5 +732,6 @@ class TruePositives(Metric):
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """docstring."""
         super().__init__(name=name, dtype=dtype)
         self.thresholds = thresholds
