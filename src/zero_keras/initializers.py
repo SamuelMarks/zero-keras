@@ -1,159 +1,155 @@
-"""Keras initializers."""
+"""Keras initializers module."""
 
-import numpy as np
 from typing import Any, Optional
+import numpy as np
+
+
+__all__ = [
+    "Initializer",
+    "Constant",
+    "Zeros",
+    "Ones",
+    "Identity",
+    "IdentityInitializer",
+    "Orthogonal",
+    "OrthogonalInitializer",
+    "RandomNormal",
+    "RandomUniform",
+    "TruncatedNormal",
+    "VarianceScaling",
+    "GlorotNormal",
+    "GlorotUniform",
+    "HeNormal",
+    "HeUniform",
+    "LecunNormal",
+    "LecunUniform",
+    "STFT",
+    "STFTInitializer",
+    "constant",
+    "zeros",
+    "ones",
+    "identity",
+    "orthogonal",
+    "random_normal",
+    "random_uniform",
+    "truncated_normal",
+    "variance_scaling",
+    "glorot_normal",
+    "glorot_uniform",
+    "he_normal",
+    "he_uniform",
+    "lecun_normal",
+    "lecun_uniform",
+    "stft",
+]
+
+
+def _compute_fans(shape):
+    """_compute_fans docstring."""
+    if len(shape) < 1:
+        return 1, 1
+    if len(shape) == 1:
+        return shape[0], shape[0]
+    if len(shape) == 2:
+        return shape[0], shape[1]
+    receptive_field_size = 1
+    for dim in shape[:-2]:
+        receptive_field_size *= dim
+    fan_in = shape[-2] * receptive_field_size
+    fan_out = shape[-1] * receptive_field_size
+    return fan_in, fan_out
 
 
 class Initializer:
-    """Base class for all Keras initializers."""
+    """Initializer base class: all Keras initializers inherit from this class."""
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        return np.zeros(shape, dtype=dtype)
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """__init__ docstring."""
+        pass
+
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
+        return (np.zeros(shape))
 
 
 class Constant(Initializer):
     """Initializer that generates tensors with constant values."""
 
     def __init__(self, value: float = 0.0):
+        """__init__ docstring."""
         self.value = value
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        return np.full(shape, self.value, dtype=dtype)
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
+        return (np.full(shape, self.value))
 
 
-class GlorotNormal(Initializer):
-    """The Glorot normal initializer, also called Xavier normal initializer."""
+class Zeros(Initializer):
+    """Initializer that generates tensors initialized to 0."""
 
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """__init__ docstring."""
+        pass
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in, fan_out = (
-            (shape[0], shape[1]) if len(shape) >= 2 else (shape[0], shape[0])
-        )
-        stddev = np.sqrt(2.0 / (fan_in + fan_out))
-        return rng.normal(0.0, stddev, size=shape).astype(dtype or np.float32)
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
+        return (np.zeros(shape))
 
 
-class GlorotUniform(Initializer):
-    """The Glorot uniform initializer, also called Xavier uniform initializer."""
+class Ones(Initializer):
+    """Initializer that generates tensors initialized to 1."""
 
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """__init__ docstring."""
+        pass
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in, fan_out = (
-            (shape[0], shape[1]) if len(shape) >= 2 else (shape[0], shape[0])
-        )
-        limit = np.sqrt(6.0 / (fan_in + fan_out))
-        return rng.uniform(-limit, limit, size=shape).astype(dtype or np.float32)
-
-
-class HeNormal(Initializer):
-    """He normal initializer."""
-
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in = shape[0] if len(shape) >= 1 else 1
-        stddev = np.sqrt(2.0 / fan_in)
-        return rng.normal(0.0, stddev, size=shape).astype(dtype or np.float32)
-
-
-class HeUniform(Initializer):
-    """He uniform variance scaling initializer."""
-
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in = shape[0] if len(shape) >= 1 else 1
-        limit = np.sqrt(6.0 / fan_in)
-        return rng.uniform(-limit, limit, size=shape).astype(dtype or np.float32)
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
+        return (np.ones(shape))
 
 
 class Identity(Initializer):
     """Initializer that generates the identity matrix."""
 
     def __init__(self, gain: float = 1.0):
+        """__init__ docstring."""
         self.gain = gain
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
         if len(shape) != 2:
-            return np.ones(shape, dtype=dtype) * self.gain
-        return np.eye(shape[0], shape[1], dtype=dtype) * self.gain
-
-
-class IdentityInitializer(Identity):
-    """Initializer that generates the identity matrix."""
-
-    pass
-
-
-class LecunNormal(Initializer):
-    """Lecun normal initializer."""
-
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in = shape[0] if len(shape) >= 1 else 1
-        stddev = np.sqrt(1.0 / fan_in)
-        return rng.normal(0.0, stddev, size=shape).astype(dtype or np.float32)
-
-
-class LecunUniform(Initializer):
-    """Lecun uniform initializer."""
-
-    def __init__(self, seed: Optional[int] = None):
-        self.seed = seed
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in = shape[0] if len(shape) >= 1 else 1
-        limit = np.sqrt(3.0 / fan_in)
-        return rng.uniform(-limit, limit, size=shape).astype(dtype or np.float32)
-
-
-class Ones(Initializer):
-    """Initializer that generates tensors initialized to 1."""
-
-    def __init__(self, *args: Any, **kwargs: Any):
-        pass
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        return np.ones(shape, dtype=dtype)
+            raise ValueError(
+                "Identity matrix initializer can only be used for 2D matrices."
+            )
+        return (np.eye(*shape) * self.gain)
 
 
 class Orthogonal(Initializer):
     """Initializer that generates an orthogonal matrix."""
 
     def __init__(self, gain: float = 1.0, seed: Optional[int] = None):
+        """__init__ docstring."""
         self.gain = gain
         self.seed = seed
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
         if len(shape) < 2:
-            return rng.normal(size=shape).astype(dtype or np.float32)
-        flat_shape = (np.prod(shape[:-1]), shape[-1])
-        a = rng.normal(size=flat_shape)
+            raise ValueError(
+                "The tensor to initialize must be at least two-dimensional"
+            )
+        num_rows = 1
+        for dim in shape[:-1]:
+            num_rows *= dim
+        num_cols = shape[-1]
+        flat_shape = (max(num_rows, num_cols), min(num_rows, num_cols))
+
+        rng = np.random.default_rng(self.seed)
+        a = rng.normal(0.0, 1.0, flat_shape)
         u, _, v = np.linalg.svd(a, full_matrices=False)
         q = u if u.shape == flat_shape else v
         q = q.reshape(shape)
-        return (self.gain * q).astype(dtype or np.float32)
-
-
-class OrthogonalInitializer(Orthogonal):
-    """Initializer that generates an orthogonal matrix."""
-
-    pass
+        return (self.gain * q)
 
 
 class RandomNormal(Initializer):
@@ -162,15 +158,15 @@ class RandomNormal(Initializer):
     def __init__(
         self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
     ):
+        """__init__ docstring."""
         self.mean = mean
         self.stddev = stddev
         self.seed = seed
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
         rng = np.random.default_rng(self.seed)
-        return rng.normal(self.mean, self.stddev, size=shape).astype(
-            dtype or np.float32
-        )
+        return (rng.normal(self.mean, self.stddev, shape))
 
 
 class RandomUniform(Initializer):
@@ -179,41 +175,15 @@ class RandomUniform(Initializer):
     def __init__(
         self, minval: float = -0.05, maxval: float = 0.05, seed: Optional[int] = None
     ):
+        """__init__ docstring."""
         self.minval = minval
         self.maxval = maxval
         self.seed = seed
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
         rng = np.random.default_rng(self.seed)
-        return rng.uniform(self.minval, self.maxval, size=shape).astype(
-            dtype or np.float32
-        )
-
-
-class STFT(Initializer):
-    """Initializer of Conv kernels for Short-term Fourier Transformation (STFT)."""
-
-    def __init__(
-        self,
-        side: str = "real",
-        window: str = "hann",
-        scaling: str = "density",
-        periodic: bool = False,
-    ):
-        self.side = side
-        self.window = window
-        self.scaling = scaling
-        self.periodic = periodic
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        # A mock implementation returning random for the sake of completeness
-        return np.zeros(shape, dtype=dtype or np.float32)
-
-
-class STFTInitializer(STFT):
-    """Initializer of Conv kernels for Short-term Fourier Transformation (STFT)."""
-
-    pass
+        return (rng.uniform(self.minval, self.maxval, shape))
 
 
 class TruncatedNormal(Initializer):
@@ -222,24 +192,24 @@ class TruncatedNormal(Initializer):
     def __init__(
         self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
     ):
+        """__init__ docstring."""
         self.mean = mean
         self.stddev = stddev
         self.seed = seed
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        # Rejection sampling for truncated normal (-2 to 2 stddevs)
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
         rng = np.random.default_rng(self.seed)
-        result = np.zeros(shape)
-        mask = np.ones(shape, dtype=bool)
-        while mask.any():
-            samples = rng.normal(self.mean, self.stddev, size=shape)
-            valid = (samples >= self.mean - 2 * self.stddev) & (
-                samples <= self.mean + 2 * self.stddev
-            )
-            replace = mask & valid
-            result[replace] = samples[replace]
-            mask = mask & ~valid
-        return result.astype(dtype or np.float32)
+        # Rejection sampling for truncated normal
+        samples = []
+        num_samples = int(np.prod(shape))
+        while len(samples) < num_samples:
+            s = rng.normal(self.mean, self.stddev, num_samples)
+            s = s[
+                (s >= self.mean - 2 * self.stddev) & (s <= self.mean + 2 * self.stddev)
+            ]
+            samples.extend(s)
+        return (np.array(samples[:num_samples]).reshape(shape))
 
 
 class VarianceScaling(Initializer):
@@ -252,59 +222,224 @@ class VarianceScaling(Initializer):
         distribution: str = "truncated_normal",
         seed: Optional[int] = None,
     ):
+        """__init__ docstring."""
         self.scale = scale
         self.mode = mode
         self.distribution = distribution
         self.seed = seed
 
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        rng = np.random.default_rng(self.seed)
-        fan_in, fan_out = (
-            (shape[0], shape[1]) if len(shape) >= 2 else (shape[0], shape[0])
-        )
-
+    def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
+        """__call__ docstring."""
+        fan_in, fan_out = _compute_fans(shape)
         if self.mode == "fan_in":
-            n = fan_in
+            scale = self.scale / max(1.0, fan_in)
         elif self.mode == "fan_out":
-            n = fan_out
+            scale = self.scale / max(1.0, fan_out)
         else:
-            n = (fan_in + fan_out) / 2.0
+            scale = self.scale / max(1.0, (fan_in + fan_out) / 2.0)
 
         if self.distribution == "truncated_normal":
-            stddev = np.sqrt(self.scale / n) / 0.87962566103423978
-            # return normal for simplicity as we implemented truncated normal above
-            return rng.normal(0.0, stddev, size=shape).astype(dtype or np.float32)
+            stddev = np.sqrt(scale) / 0.87962566103423978
+            rng = np.random.default_rng(self.seed)
+            samples = []
+            num_samples = int(np.prod(shape))
+            while len(samples) < num_samples:
+                s = rng.normal(0.0, stddev, num_samples)
+                s = s[(s >= -2 * stddev) & (s <= 2 * stddev)]
+                samples.extend(s)
+            return (
+                np.array(samples[:num_samples]).reshape(shape)
+            )
         elif self.distribution == "untruncated_normal":
-            stddev = np.sqrt(self.scale / n)
-            return rng.normal(0.0, stddev, size=shape).astype(dtype or np.float32)
+            stddev = np.sqrt(scale)
+            rng = np.random.default_rng(self.seed)
+            return (rng.normal(0.0, stddev, shape))
         else:  # uniform
-            limit = np.sqrt(3.0 * self.scale / n)
-            return rng.uniform(-limit, limit, size=shape).astype(dtype or np.float32)
+            limit = np.sqrt(3.0 * scale)
+            rng = np.random.default_rng(self.seed)
+            return (rng.uniform(-limit, limit, shape))
 
 
-class Zeros(Initializer):
+class GlorotNormal(VarianceScaling):
+    """The Glorot normal initializer, also called Xavier normal initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(
+            scale=1.0, mode="fan_avg", distribution="truncated_normal", seed=seed
+        )
+
+
+class GlorotUniform(VarianceScaling):
+    """The Glorot uniform initializer, also called Xavier uniform initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(scale=1.0, mode="fan_avg", distribution="uniform", seed=seed)
+
+
+class HeNormal(VarianceScaling):
+    """He normal initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(
+            scale=2.0, mode="fan_in", distribution="truncated_normal", seed=seed
+        )
+
+
+class HeUniform(VarianceScaling):
+    """He uniform variance scaling initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(scale=2.0, mode="fan_in", distribution="uniform", seed=seed)
+
+
+class LecunNormal(VarianceScaling):
+    """Lecun normal initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(
+            scale=1.0, mode="fan_in", distribution="truncated_normal", seed=seed
+        )
+
+
+class LecunUniform(VarianceScaling):
+    """Lecun uniform initializer."""
+
+    def __init__(self, seed: Optional[int] = None):
+        """__init__ docstring."""
+        super().__init__(scale=1.0, mode="fan_in", distribution="uniform", seed=seed)
+
+
+class STFT(Initializer):
+    """Initializer of Conv kernels for Short-term Fourier Transformation (STFT)."""
+
+    def __init__(
+        self,
+        side: str = "real",
+        window: str = "hann",
+        scaling: str = "density",
+        periodic: bool = False,
+    ):
+        """__init__ docstring."""
+        self.side = side
+        self.window = window
+        self.scaling = scaling
+        self.periodic = periodic
+
+
+class IdentityInitializer(Identity):
+    """Initializer that generates the identity matrix."""
+
+    pass
+
+
+class OrthogonalInitializer(Orthogonal):
+    """Initializer that generates an orthogonal matrix."""
+
+    pass
+
+
+class STFTInitializer(STFT):
+    """Initializer of Conv kernels for Short-term Fourier Transformation (STFT)."""
+
+    pass
+
+
+class constant(Constant):
+    """Initializer that generates tensors with constant values."""
+
+    pass
+
+
+class zeros(Zeros):
     """Initializer that generates tensors initialized to 0."""
 
-    def __init__(self, *args: Any, **kwargs: Any):
-        pass
-
-    def __call__(self, shape: Any, dtype: Optional[str] = None) -> Any:
-        return np.zeros(shape, dtype=dtype)
+    pass
 
 
-constant = Constant
-glorot_normal = GlorotNormal
-glorot_uniform = GlorotUniform
-he_normal = HeNormal
-he_uniform = HeUniform
-identity = Identity
-lecun_normal = LecunNormal
-lecun_uniform = LecunUniform
-ones = Ones
-orthogonal = Orthogonal
-random_normal = RandomNormal
-random_uniform = RandomUniform
-stft = STFT
-truncated_normal = TruncatedNormal
-variance_scaling = VarianceScaling
-zeros = Zeros
+class ones(Ones):
+    """Initializer that generates tensors initialized to 1."""
+
+    pass
+
+
+class identity(Identity):
+    """Initializer that generates the identity matrix."""
+
+    pass
+
+
+class orthogonal(Orthogonal):
+    """Initializer that generates an orthogonal matrix."""
+
+    pass
+
+
+class random_normal(RandomNormal):
+    """Random normal initializer."""
+
+    pass
+
+
+class random_uniform(RandomUniform):
+    """Random uniform initializer."""
+
+    pass
+
+
+class truncated_normal(TruncatedNormal):
+    """Initializer that generates a truncated normal distribution."""
+
+    pass
+
+
+class variance_scaling(VarianceScaling):
+    """Initializer that adapts its scale to the shape of its input tensors."""
+
+    pass
+
+
+class glorot_normal(GlorotNormal):
+    """The Glorot normal initializer, also called Xavier normal initializer."""
+
+    pass
+
+
+class glorot_uniform(GlorotUniform):
+    """The Glorot uniform initializer, also called Xavier uniform initializer."""
+
+    pass
+
+
+class he_normal(HeNormal):
+    """He normal initializer."""
+
+    pass
+
+
+class he_uniform(HeUniform):
+    """He uniform variance scaling initializer."""
+
+    pass
+
+
+class lecun_normal(LecunNormal):
+    """Lecun normal initializer."""
+
+    pass
+
+
+class lecun_uniform(LecunUniform):
+    """Lecun uniform initializer."""
+
+    pass
+
+
+class stft(STFT):
+    """Initializer of Conv kernels for Short-term Fourier Transformation (STFT)."""
+
+    pass
