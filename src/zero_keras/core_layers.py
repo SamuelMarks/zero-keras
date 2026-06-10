@@ -1,7 +1,7 @@
 """Core layers module."""
 
 from typing import Any
-import numpy as np
+from ml_switcheroo.core import tensor_utils
 
 
 class KerasTensor:
@@ -11,7 +11,7 @@ class KerasTensor:
         self.shape = shape
         self.dtype = dtype
         self.name = name
-        self.data = data if data is not None else np.zeros(shape)
+        self.data = data if data is not None else tensor_utils.zeros(shape)
 
     def __add__(self, other: Any) -> Any:
         return KerasTensor(self.shape, self.dtype)
@@ -31,7 +31,7 @@ class KerasTensor:
     def __eq__(self, other):
         if self.data is not None:  # pragma: no cover
             return self.data == other  # pragma: no cover
-        return np.ones(self.shape, dtype=bool)  # pragma: no cover
+        return tensor_utils.ones(self.shape, dtype=bool)  # pragma: no cover
 
     def numpy(self):
         return self.data
@@ -40,8 +40,10 @@ class KerasTensor:
         if copy is False:  # pragma: no cover
             return self.data  # pragma: no cover
         if copy is None:  # pragma: no cover
-            return np.array(self.data, dtype=dtype)
-        return np.array(self.data, dtype=dtype, copy=copy)  # pragma: no cover
+            return tensor_utils.to_array(self.data, dtype=dtype)
+        return tensor_utils.to_array(
+            self.data, dtype=dtype, copy=copy
+        )  # pragma: no cover
 
     def __getitem__(self, key):
         if self.data is not None:  # pragma: no cover
@@ -97,7 +99,7 @@ class Model(Layer):
         return {"loss": 0.0}
 
     def predict(self, x: Any, **kwargs) -> Any:
-        return np.zeros((len(x) if hasattr(x, "__len__") else 1, 1))
+        return tensor_utils.zeros((len(x) if hasattr(x, "__len__") else 1, 1))
 
 
 class Functional(Model):

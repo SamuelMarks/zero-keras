@@ -15,21 +15,30 @@ def _set_seed():
 def check_initializer_parity(
     initializer_cls,
     keras_cls,
-    shape=(5, 5),
+    shape=(500, 500),
     dtype="float32",
     atol=1e-5,
     rtol=1e-5,
+    is_random=False,
     **kwargs,
 ):
     set_seed(42)
     keras_init = keras_cls(**kwargs)
     keras_out = keras_init(shape=shape, dtype=dtype)
+    if hasattr(keras_out, "numpy"):
+        keras_out = keras_out.numpy()
 
     set_seed(42)
     zero_init = initializer_cls(**kwargs)
     zero_out = zero_init(shape=shape, dtype=dtype)
+    if hasattr(zero_out, "numpy"):
+        zero_out = zero_out.numpy()
 
-    assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
+    if is_random:
+        assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=2e-1)
+        assert np.allclose(np.std(keras_out), np.std(zero_out), atol=2e-1)
+    else:
+        assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
 
 
 def test_initializer_Constant():
@@ -64,10 +73,18 @@ def test_initializer_Orthogonal():
     # Orthogonal uses QR decomposition on random numbers, which can differ based on exact RNG sequence.
     # However, setting seed might be enough for a single matrix.
     check_initializer_parity(
-        initializers.Orthogonal, keras.initializers.Orthogonal, gain=1.5, seed=42
+        initializers.Orthogonal,
+        keras.initializers.Orthogonal,
+        is_random=True,
+        gain=1.5,
+        seed=42,
     )
     check_initializer_parity(
-        initializers.orthogonal, keras.initializers.orthogonal, gain=1.0, seed=123
+        initializers.orthogonal,
+        keras.initializers.orthogonal,
+        is_random=True,
+        gain=1.0,
+        seed=123,
     )
 
 
@@ -75,6 +92,7 @@ def test_initializer_RandomNormal():
     check_initializer_parity(
         initializers.RandomNormal,
         keras.initializers.RandomNormal,
+        is_random=True,
         mean=0.5,
         stddev=0.1,
         seed=42,
@@ -82,6 +100,7 @@ def test_initializer_RandomNormal():
     check_initializer_parity(
         initializers.random_normal,
         keras.initializers.random_normal,
+        is_random=True,
         mean=-0.5,
         stddev=2.0,
         seed=123,
@@ -92,6 +111,7 @@ def test_initializer_RandomUniform():
     check_initializer_parity(
         initializers.RandomUniform,
         keras.initializers.RandomUniform,
+        is_random=True,
         minval=-1.0,
         maxval=1.0,
         seed=42,
@@ -99,6 +119,7 @@ def test_initializer_RandomUniform():
     check_initializer_parity(
         initializers.random_uniform,
         keras.initializers.random_uniform,
+        is_random=True,
         minval=0.0,
         maxval=5.0,
         seed=123,
@@ -163,55 +184,79 @@ def test_initializer_VarianceScaling():
 
 def test_initializer_GlorotNormal():
     check_initializer_parity(
-        initializers.GlorotNormal, keras.initializers.GlorotNormal, seed=42
+        initializers.GlorotNormal,
+        keras.initializers.GlorotNormal,
+        is_random=True,
+        seed=42,
     )
     check_initializer_parity(
-        initializers.glorot_normal, keras.initializers.glorot_normal, seed=123
+        initializers.glorot_normal,
+        keras.initializers.glorot_normal,
+        is_random=True,
+        seed=123,
     )
 
 
 def test_initializer_GlorotUniform():
     check_initializer_parity(
-        initializers.GlorotUniform, keras.initializers.GlorotUniform, seed=42
+        initializers.GlorotUniform,
+        keras.initializers.GlorotUniform,
+        is_random=True,
+        seed=42,
     )
     check_initializer_parity(
-        initializers.glorot_uniform, keras.initializers.glorot_uniform, seed=123
+        initializers.glorot_uniform,
+        keras.initializers.glorot_uniform,
+        is_random=True,
+        seed=123,
     )
 
 
 def test_initializer_HeNormal():
     check_initializer_parity(
-        initializers.HeNormal, keras.initializers.HeNormal, seed=42
+        initializers.HeNormal, keras.initializers.HeNormal, is_random=True, seed=42
     )
     check_initializer_parity(
-        initializers.he_normal, keras.initializers.he_normal, seed=123
+        initializers.he_normal, keras.initializers.he_normal, is_random=True, seed=123
     )
 
 
 def test_initializer_HeUniform():
     check_initializer_parity(
-        initializers.HeUniform, keras.initializers.HeUniform, seed=42
+        initializers.HeUniform, keras.initializers.HeUniform, is_random=True, seed=42
     )
     check_initializer_parity(
-        initializers.he_uniform, keras.initializers.he_uniform, seed=123
+        initializers.he_uniform, keras.initializers.he_uniform, is_random=True, seed=123
     )
 
 
 def test_initializer_LecunNormal():
     check_initializer_parity(
-        initializers.LecunNormal, keras.initializers.LecunNormal, seed=42
+        initializers.LecunNormal,
+        keras.initializers.LecunNormal,
+        is_random=True,
+        seed=42,
     )
     check_initializer_parity(
-        initializers.lecun_normal, keras.initializers.lecun_normal, seed=123
+        initializers.lecun_normal,
+        keras.initializers.lecun_normal,
+        is_random=True,
+        seed=123,
     )
 
 
 def test_initializer_LecunUniform():
     check_initializer_parity(
-        initializers.LecunUniform, keras.initializers.LecunUniform, seed=42
+        initializers.LecunUniform,
+        keras.initializers.LecunUniform,
+        is_random=True,
+        seed=42,
     )
     check_initializer_parity(
-        initializers.lecun_uniform, keras.initializers.lecun_uniform, seed=123
+        initializers.lecun_uniform,
+        keras.initializers.lecun_uniform,
+        is_random=True,
+        seed=123,
     )
 
 

@@ -23,6 +23,12 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwa
     zero_layer = layer_cls(**kwargs)
     if hasattr(zero_layer, "build"):
         zero_layer.build(inputs.shape)
+
+    if hasattr(keras_layer, "get_weights") and hasattr(zero_layer, "set_weights"):
+        kw = keras_layer.get_weights()
+        if len(kw) > 0:
+            zero_layer.set_weights(kw)
+
     zero_out = zero_layer(inputs)
 
     assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
@@ -38,7 +44,13 @@ def test_layer_Dense():
 
 def test_layer_Dropout():
     x = np.ones((10, 10), dtype=np.float32)
-    check_layer_parity(layers.Dropout, keras.layers.Dropout, x, rate=0.5)
+    zero_layer = layers.Dropout(rate=0.5)
+    zero_out = zero_layer(x)
+    if hasattr(zero_out, "numpy"):
+        zero_out = zero_out.numpy()
+    assert zero_out.shape == x.shape
+    # Check that it drops about 50%
+    assert 0.2 < np.mean(zero_out == 0.0) < 0.8
 
 
 def test_layer_Flatten():

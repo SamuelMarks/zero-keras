@@ -4,6 +4,7 @@ from zero_keras.core_layers import Input, Layer, Model, KerasTensor, ops
 def test_keras_tensor():
     t = Input((2, 3))
     assert isinstance(t, KerasTensor)
+    t.numpy()
     t2 = t + t
     assert isinstance(t2, KerasTensor)
 

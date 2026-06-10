@@ -1,6 +1,5 @@
 """Keras activations."""
 
-import numpy as np
 from typing import Any, Dict, Optional
 import ml_switcheroo.nn as _nn
 
@@ -12,14 +11,9 @@ def _to_tensor(x):
 
     if isinstance(x, ml_switcheroo.Tensor):  # pragma: no cover
         return x  # pragma: no cover
-    from ml_switcheroo.core.config import config
+    from ml_switcheroo.core.tensor_utils import convert_to_tensor
 
-    return ml_switcheroo.Tensor(
-        np.array(x),
-        np.array(x).shape,
-        config.default_float_dtype,
-        config.default_device,
-    )
+    return convert_to_tensor(x)
 
 
 def _wrap(x):
@@ -67,7 +61,7 @@ def deserialize(config: Any, custom_objects: Optional[Dict[str, Any]] = None) ->
 
 def linear(x: Any) -> Any:
     """Linear activation function (pass-through)."""
-    return x
+    return _wrap(_nn.linear(_to_tensor(x)))
 
 
 def relu(
@@ -77,379 +71,147 @@ def relu(
     threshold: float = 0.0,
 ) -> Any:
     """Applies the rectified linear unit activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data
-        if threshold != 0.0:  # pragma: no cover
-            res = np.where(data > threshold, data, negative_slope * (data - threshold))
-        elif negative_slope != 0.0:  # pragma: no cover
-            res = np.where(data > 0.0, data, negative_slope * data)
-        else:
-            res = np.maximum(data, 0.0)
-        if max_value is not None:  # pragma: no cover
-            res = np.minimum(res, max_value)
-        return _wrap(_to_tensor(res))
-
-    # nn fallback (might not support all args exactly, but this handles eager correctly)
-    # pragma: no cover
-    res = _nn.relu(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.relu(_to_tensor(x), negative_slope, max_value, threshold))
 
 
 def leaky_relu(x: Any, negative_slope: float = 0.2) -> Any:
     """Leaky relu activation function."""
-    # pragma: no cover
-    res = _nn.leaky_relu(_to_tensor(x), negative_slope)
-    return _wrap(res)
+    return _wrap(_nn.leaky_relu(_to_tensor(x), negative_slope))
 
 
 def elu(x: Any, alpha: float = 1.0) -> Any:
     """Exponential Linear Unit."""
-    # pragma: no cover
-    res = _nn.elu(_to_tensor(x), alpha)
-    return _wrap(res)
+    return _wrap(_nn.elu(_to_tensor(x), alpha))
 
 
 def celu(x: Any, alpha: float = 1.0) -> Any:
     """Continuously Differentiable Exponential Linear Unit."""
-    # pragma: no cover
-    res = _nn.celu(_to_tensor(x), alpha)
-    return _wrap(res)
+    return _wrap(_nn.celu(_to_tensor(x), alpha))
 
 
 def selu(x: Any) -> Any:
     """Scaled Exponential Linear Unit (SELU)."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        scale = 1.0507009873554804934193349852946
-        alpha_val = 1.6732632423543772848170429916717
-        res = scale * np.where(data > 0, data, alpha_val * (np.exp(data) - 1))
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.selu(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.selu(_to_tensor(x)))
 
 
 def sigmoid(x: Any) -> Any:
     """Sigmoid activation function."""
-    # pragma: no cover
-    res = _nn.sigmoid(_to_tensor(x))
-    return _wrap(res)
+    return _wrap(_nn.sigmoid(_to_tensor(x)))
 
 
 def hard_sigmoid(x: Any) -> Any:
     """Hard sigmoid activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.clip((1.0 / 6.0) * data + 0.5, 0.0, 1.0)
-        return _wrap(_to_tensor(res))
-    # fallback
-    return _wrap(_nn.sigmoid(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.hard_sigmoid(_to_tensor(x)))
 
 
 def log_sigmoid(x: Any) -> Any:
     """Logarithm of the sigmoid activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = -np.log1p(np.exp(-data))
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.log_softmax(_to_tensor(x), dim=-1))  # pragma: no cover
+    return _wrap(_nn.log_sigmoid(_to_tensor(x)))
 
 
 def tanh(x: Any) -> Any:
     """Hyperbolic tangent activation function."""
-    # pragma: no cover
-    res = _nn.tanh(_to_tensor(x))
-    return _wrap(res)
+    return _wrap(_nn.tanh(_to_tensor(x)))
 
 
 def hard_tanh(x: Any) -> Any:
     """HardTanh activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.clip(data, -1.0, 1.0)
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.tanh(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.hard_tanh(_to_tensor(x)))
 
 
 def softmax(x: Any, axis: int = -1) -> Any:
     """Softmax converts a vector of values to a probability distribution."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        e_x = np.exp(data - np.max(data, axis=axis, keepdims=True))
-        res = e_x / e_x.sum(axis=axis, keepdims=True)
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.softmax(_to_tensor(x), dim=axis)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.softmax(_to_tensor(x), axis))
 
 
 def log_softmax(x: Any, axis: int = -1) -> Any:
     """Log-Softmax activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        c = np.max(data, axis=axis, keepdims=True)
-        res = data - c - np.log(np.sum(np.exp(data - c), axis=axis, keepdims=True))
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.log_softmax(_to_tensor(x), dim=axis)  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.log_softmax(_to_tensor(x), axis))
 
 
 def softplus(x: Any) -> Any:
     """Softplus activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.log1p(np.exp(-np.abs(data))) + np.maximum(data, 0)
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.softplus(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.softplus(_to_tensor(x)))
 
 
 def softsign(x: Any) -> Any:
     """Softsign activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data / (1.0 + np.abs(data))
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.softplus(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.softsign(_to_tensor(x)))
 
 
 def swish(x: Any) -> Any:
     """Swish (or Silu) activation function."""
-    # pragma: no cover
-    res = _nn.swish(_to_tensor(x))
-    return _wrap(res)
+    return _wrap(_nn.swish(_to_tensor(x)))
 
 
 def silu(x: Any) -> Any:
     """Swish (or Silu) activation function."""
-    # pragma: no cover
-    res = _nn.swish(_to_tensor(x))
-    return _wrap(res)
+    return _wrap(_nn.silu(_to_tensor(x)))
 
 
 def hard_swish(x: Any) -> Any:
     """Hard SiLU activation function, also known as Hard Swish."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data * np.clip(data + 3, 0, 6) / 6
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.hardswish(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.hard_swish(_to_tensor(x)))
 
 
 def hard_silu(x: Any) -> Any:
     """Hard SiLU activation function, also known as Hard Swish."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data * np.clip(data + 3, 0, 6) / 6
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.hardswish(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.hard_silu(_to_tensor(x)))
 
 
 def gelu(x: Any, approximate: bool = False) -> Any:
     """Gaussian error linear unit (GELU) activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        if approximate:  # pragma: no cover
-            res = (
-                0.5
-                * data
-                * (1.0 + np.tanh(np.sqrt(2.0 / np.pi) * (data + 0.044715 * data**3)))
-            )
-        else:
-            from scipy.special import erf
-
-            res = 0.5 * data * (1.0 + erf(data / np.sqrt(2.0)))
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.gelu(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.gelu(_to_tensor(x), approximate))
 
 
 def glu(x: Any, axis: float = -1.0) -> Any:
     """Gated Linear Unit (GLU) activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        axis = int(axis)
-        split_size = data.shape[axis] // 2
-        a = np.take(data, range(split_size), axis=axis)
-        b = np.take(data, range(split_size, data.shape[axis]), axis=axis)
-        from scipy.special import expit
-
-        res = a * expit(b)
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.glu(_to_tensor(x), int(axis))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.glu(_to_tensor(x), axis))
 
 
 def mish(x: Any) -> Any:
     """Mish activation function."""
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data * np.tanh(np.log1p(np.exp(data)))
-        return _wrap(_to_tensor(res))
-    # pragma: no cover
-    res = _nn.mish(_to_tensor(x))  # pragma: no cover
-    return _wrap(res)  # pragma: no cover
+    return _wrap(_nn.mish(_to_tensor(x)))
 
 
 def exponential(x: Any) -> Any:
-    import ml_switcheroo.ops as _ops
-
-    return _wrap(_ops.exp(_to_tensor(x)))
+    return _wrap(_nn.exponential(_to_tensor(x)))
 
 
 def relu6(x: Any) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        return _wrap(_to_tensor(np.minimum(np.maximum(x, 0), 6)))
-    return _wrap(_nn.relu(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.relu6(_to_tensor(x)))
 
 
 def sparse_plus(x: Any) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.where(
-            data <= -1.0, 0.0, np.where(data >= 1.0, data, 0.25 * (data + 1.0) ** 2)
-        )
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.softplus(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.sparse_plus(_to_tensor(x)))
 
 
 def sparse_sigmoid(x: Any) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.clip(0.5 * data + 0.5, 0.0, 1.0)
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.sigmoid(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.sparse_sigmoid(_to_tensor(x)))
 
 
 def sparsemax(x: Any, axis: int = -1) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        # Sort along axis in descending order
-        z = np.sort(data, axis=axis)
-        # reverse sort
-        z = np.flip(z, axis=axis)
-
-        # Calculate cumulative sum
-        kz = np.cumsum(z, axis=axis) - 1
-
-        # Determine the support size
-        k = np.arange(1, data.shape[axis] + 1)
-        # reshape k to match kz
-        shape = [1] * data.ndim
-        shape[axis] = -1
-        k = k.reshape(shape)
-
-        is_valid = z > kz / k
-
-        # Find the support size per element
-        k_max = np.sum(is_valid, axis=axis, keepdims=True)
-
-        # Calculate tau
-        tau = (np.take_along_axis(kz, k_max - 1, axis=axis)) / k_max
-        res = np.maximum(data - tau, 0)
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.softmax(_to_tensor(x), dim=axis))  # pragma: no cover
+    return _wrap(_nn.sparsemax(_to_tensor(x), axis))
 
 
 def squareplus(x: Any, b: int = 4) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = 0.5 * (data + np.sqrt(data * data + b))
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.softplus(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.squareplus(_to_tensor(x), b))
 
 
 def tanh_shrink(x: Any) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = data - np.tanh(data)
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.tanh(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.tanh_shrink(_to_tensor(x)))
 
 
 def hard_shrink(x: Any, threshold: float = 0.5) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.where(np.abs(data) > threshold, data, 0)
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.tanh(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.hard_shrink(_to_tensor(x), threshold))
 
 
 def soft_shrink(x: Any, threshold: float = 0.5) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.where(
-            data > threshold,
-            data - threshold,
-            np.where(data < -threshold, data + threshold, 0),
-        )
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.tanh(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.soft_shrink(_to_tensor(x), threshold))
 
 
 def threshold(x: Any, threshold: float, default_value: float) -> Any:
-    from ml_switcheroo.core.config import config
-
-    if config.eager_mode:  # pragma: no cover
-        data = np.array(x)
-        res = np.where(data > threshold, data, default_value)
-        return _wrap(_to_tensor(res))
-    return _wrap(_nn.relu(_to_tensor(x)))  # pragma: no cover
+    return _wrap(_nn.threshold(_to_tensor(x), threshold, default_value))
 
 
 for n, f in list(locals().items()):  # pragma: no cover

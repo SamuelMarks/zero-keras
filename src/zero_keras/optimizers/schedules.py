@@ -52,9 +52,9 @@ class CosineDecay(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         # local implementation
@@ -103,9 +103,9 @@ class ExponentialDecay(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         step = float(step)  # pragma: no cover
@@ -145,9 +145,9 @@ class CosineDecayRestarts(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         return self.initial_learning_rate  # simplified  # pragma: no cover
@@ -180,9 +180,9 @@ class InverseTimeDecay(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         step = float(step)  # pragma: no cover
@@ -212,9 +212,9 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         step = float(step)  # pragma: no cover
@@ -254,9 +254,9 @@ class PolynomialDecay(LearningRateSchedule):
         if self._keras_schedule:  # pragma: no cover
             try:
                 res = self._keras_schedule(step)
-                if hasattr(res, "numpy"):  # pragma: no cover
-                    return float(res.numpy())
-                return float(res)  # pragma: no cover
+                from ml_switcheroo.core.tensor_utils import to_float
+
+                return to_float(res)
             except Exception:  # pragma: no cover
                 pass  # pragma: no cover
         step = float(step)  # pragma: no cover
