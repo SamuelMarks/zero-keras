@@ -21,10 +21,10 @@ class Layer(BaseLayer):
     def __call__(self, inputs, *args, **kwargs):
 
         # Fallback to local implementation
-        return self.call(inputs, *args, **kwargs)  # pragma: no cover
+        return self.call(inputs, *args, **kwargs)
 
     def call(self, inputs, *args, **kwargs):
-        return inputs  # pragma: no cover
+        return inputs
 
 
 class Dense(Layer):
@@ -1009,7 +1009,7 @@ class Activation(Layer):
         self.activation = activations.get(activation)
 
     def call(self, inputs, *args, **kwargs):
-        return self.activation(inputs)  # pragma: no cover
+        return self.activation(inputs)
 
 
 class ELU(Layer):
@@ -1018,9 +1018,9 @@ class ELU(Layer):
         self.alpha = float(alpha)
 
     def call(self, inputs, *args, **kwargs):
-        from zero_keras.activations import elu  # pragma: no cover
+        from zero_keras.activations import elu
 
-        return elu(inputs, self.alpha)  # pragma: no cover
+        return elu(inputs, self.alpha)
 
 
 class LeakyReLU(Layer):
@@ -1029,11 +1029,9 @@ class LeakyReLU(Layer):
         self.negative_slope = float(negative_slope)
 
     def call(self, inputs, *args, **kwargs):
-        from zero_keras.activations import leaky_relu  # pragma: no cover
+        from zero_keras.activations import leaky_relu
 
-        return leaky_relu(
-            inputs, negative_slope=self.negative_slope
-        )  # pragma: no cover
+        return leaky_relu(inputs, negative_slope=self.negative_slope)
 
 
 class PReLU(Layer):
@@ -1055,13 +1053,13 @@ class PReLU(Layer):
         self.alpha_initializer = alpha_initializer
 
     def call(self, inputs, *args, **kwargs):
-        from zero_keras.activations import relu  # pragma: no cover
-        from ml_switcheroo.core.config import config  # pragma: no cover
+        from zero_keras.activations import relu
+        from ml_switcheroo.core.config import config
 
-        if config.eager_mode:  # pragma: no cover
-            alpha = 1.0 if self.alpha_initializer == "ones" else 0.0  # pragma: no cover
-            return relu(inputs, negative_slope=alpha)  # pragma: no cover
-        return inputs  # pragma: no cover
+        if config.eager_mode:
+            alpha = 1.0 if self.alpha_initializer == "ones" else 0.0
+            return relu(inputs, negative_slope=alpha)
+        return inputs
 
 
 class ReLU(Layer):
@@ -1077,9 +1075,9 @@ class ReLU(Layer):
         self.threshold = float(threshold)
 
     def call(self, inputs, *args, **kwargs):
-        from zero_keras.activations import relu  # pragma: no cover
+        from zero_keras.activations import relu
 
-        return relu(  # pragma: no cover
+        return relu(
             inputs,
             negative_slope=self.negative_slope,
             max_value=self.max_value,
@@ -1093,6 +1091,6 @@ class Softmax(Layer):
         self.axis = axis
 
     def call(self, inputs, *args, **kwargs):
-        from zero_keras.activations import softmax  # pragma: no cover
+        from zero_keras.activations import softmax
 
-        return softmax(inputs, axis=self.axis)  # pragma: no cover
+        return softmax(inputs, axis=self.axis)

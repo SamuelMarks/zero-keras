@@ -131,3 +131,39 @@ def test_metrics():
     metrics.TopKCategoricalAccuracy()
     metrics.TrueNegatives()
     metrics.TruePositives()
+
+
+def test_metrics_coverage():
+    from zero_keras.metrics import _get_keras_metric, Metric
+    from ml_switcheroo.core.config import config
+
+    # test 12
+    # mock eager_mode to False
+    old_eager = config.eager_mode
+    config.eager_mode = False
+    assert _get_keras_metric("Mean") is None
+    config.eager_mode = old_eager
+
+    # test 53-54
+    m = Metric(name="dummy")
+    # since we don't implement anything, result() will return 0.0
+    res = m("foo", bar="baz")
+    assert res == 0.0
+
+
+def test_metrics_reset_state():
+    from zero_keras.metrics import Metric
+
+    m = Metric(name="dummy")
+    m.reset_state()  # _keras_metric is None, so this should just pass silently
+
+    class MockKerasMetric:
+        def __init__(self):
+            self.reset_called = False
+
+        def reset_state(self):
+            self.reset_called = True
+
+    m._keras_metric = MockKerasMetric()
+    m.reset_state()
+    assert m._keras_metric.reset_called

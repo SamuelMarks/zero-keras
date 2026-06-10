@@ -5,12 +5,12 @@ import ml_switcheroo.nn as _nn
 
 
 def _to_tensor(x):
-    if hasattr(x, "_tensor"):  # pragma: no cover
-        return x._tensor  # pragma: no cover
+    if hasattr(x, "_tensor"):
+        return x._tensor
     import ml_switcheroo
 
-    if isinstance(x, ml_switcheroo.Tensor):  # pragma: no cover
-        return x  # pragma: no cover
+    if isinstance(x, ml_switcheroo.Tensor):
+        return x
     from ml_switcheroo.core.tensor_utils import convert_to_tensor
 
     return convert_to_tensor(x)
@@ -19,8 +19,8 @@ def _to_tensor(x):
 def _wrap(x):
     from zero_keras.core_layers import KerasTensor
 
-    if hasattr(x, "data") and hasattr(x.data, "id"):  # pragma: no cover
-        return KerasTensor(x.shape, x.dtype)  # pragma: no cover
+    if hasattr(x, "data") and hasattr(x.data, "id"):
+        return KerasTensor(x.shape, x.dtype)
     return x.data if hasattr(x, "data") else x
 
 
@@ -29,32 +29,32 @@ _ACTIVATIONS = {}
 
 def get(identifier: Any) -> Any:
     """Retrieve a Keras activation function via an identifier."""
-    if identifier is None:  # pragma: no cover
+    if identifier is None:
         return linear
-    if isinstance(identifier, str):  # pragma: no cover
+    if isinstance(identifier, str):
         res = deserialize(identifier)
-        if res is None:  # pragma: no cover
+        if res is None:
             return linear
         return res
-    if isinstance(identifier, dict):  # pragma: no cover
-        return deserialize(identifier)  # pragma: no cover
-    if callable(identifier):  # pragma: no cover
+    if isinstance(identifier, dict):
+        return deserialize(identifier)
+    if callable(identifier):
         return identifier
     return linear
 
 
 def serialize(activation: Any) -> Any:
     """Serialize an activation function."""
-    if isinstance(activation, str):  # pragma: no cover
+    if isinstance(activation, str):
         return activation
-    if hasattr(activation, "__name__"):  # pragma: no cover
+    if hasattr(activation, "__name__"):
         return activation.__name__
-    return activation.__class__.__name__  # pragma: no cover
+    return activation.__class__.__name__
 
 
 def deserialize(config: Any, custom_objects: Optional[Dict[str, Any]] = None) -> Any:
     """Return a Keras activation function via its config."""
-    if isinstance(config, dict):  # pragma: no cover
+    if isinstance(config, dict):
         return config
     return _ACTIVATIONS.get(config)
 
@@ -214,6 +214,6 @@ def threshold(x: Any, threshold: float, default_value: float) -> Any:
     return _wrap(_nn.threshold(_to_tensor(x), threshold, default_value))
 
 
-for n, f in list(locals().items()):  # pragma: no cover
-    if callable(f) and not n.startswith("_"):  # pragma: no cover
+for n, f in list(locals().items()):
+    if callable(f) and not n.startswith("_"):
         _ACTIVATIONS[n] = f

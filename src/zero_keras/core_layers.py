@@ -17,38 +17,36 @@ class KerasTensor:
         return KerasTensor(self.shape, self.dtype)
 
     def __sub__(self, other: Any) -> Any:
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
     def __mul__(self, other: Any) -> Any:
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
     def __truediv__(self, other: Any) -> Any:
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
     def __pow__(self, other: Any) -> Any:
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
     def __eq__(self, other):
-        if self.data is not None:  # pragma: no cover
-            return self.data == other  # pragma: no cover
-        return tensor_utils.ones(self.shape, dtype=bool)  # pragma: no cover
+        if self.data is not None:
+            return self.data == other
+        return tensor_utils.ones(self.shape, dtype=bool)
 
     def numpy(self):
         return self.data
 
     def __array__(self, dtype=None, copy=None):
-        if copy is False:  # pragma: no cover
-            return self.data  # pragma: no cover
-        if copy is None:  # pragma: no cover
+        if copy is False:
+            return self.data
+        if copy is None:
             return tensor_utils.to_array(self.data, dtype=dtype)
-        return tensor_utils.to_array(
-            self.data, dtype=dtype, copy=copy
-        )  # pragma: no cover
+        return tensor_utils.to_array(self.data, dtype=dtype, copy=copy)
 
     def __getitem__(self, key):
-        if self.data is not None:  # pragma: no cover
-            return self.data[key]  # pragma: no cover
-        return 0.0  # pragma: no cover
+        if self.data is not None:
+            return self.data[key]
+        return 0.0
 
 
 def Input(shape: Any, name: Any = None, **kwargs) -> Any:
@@ -64,7 +62,7 @@ class Layer:
 
     @property
     def name(self) -> str:
-        return self._name or "layer"  # pragma: no cover
+        return self._name or "layer"
 
     def build(self, input_shape: Any) -> None:
         self.built = True
@@ -73,7 +71,7 @@ class Layer:
         return inputs
 
     def __call__(self, inputs: Any, *args: Any, **kwargs: Any) -> Any:
-        if not self.built:  # pragma: no cover
+        if not self.built:
             self.build(getattr(inputs, "shape", None))
         return self.call(inputs, *args, **kwargs)
 
@@ -116,7 +114,7 @@ class Sequential(Model):
 
     def call(self, inputs, *args, **kwargs):
         x = inputs
-        for layer in self.layers:  # pragma: no cover
+        for layer in self.layers:
             x = layer(x)
         return x
 

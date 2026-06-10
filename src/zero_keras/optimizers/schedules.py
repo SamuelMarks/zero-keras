@@ -7,12 +7,12 @@ def _get_keras_schedule(cls_name, **kwargs):
     import keras
     from ml_switcheroo.core.config import config
 
-    if config.eager_mode:  # pragma: no cover
+    if config.eager_mode:
         try:
             return getattr(keras.optimizers.schedules, cls_name)(**kwargs)
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
-    return None  # pragma: no cover
+        except Exception:
+            pass
+    return None
 
 
 class LearningRateSchedule:
@@ -49,18 +49,18 @@ class CosineDecay(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
+            except Exception:
+                pass
         # local implementation
-        step = float(step)  # pragma: no cover
-        if step < self.warmup_steps:  # pragma: no cover
-            return (  # pragma: no cover
+        step = float(step)
+        if step < self.warmup_steps:
+            return (
                 self.initial_learning_rate
                 + (self.warmup_target - self.initial_learning_rate)
                 * step
@@ -68,12 +68,12 @@ class CosineDecay(LearningRateSchedule):
                 if self.warmup_target is not None
                 else self.initial_learning_rate * step / self.warmup_steps
             )
-        step = min(step, self.decay_steps)  # pragma: no cover
-        cosine_decay = 0.5 * (  # pragma: no cover
+        step = min(step, self.decay_steps)
+        cosine_decay = 0.5 * (
             1 + __import__("math").cos(3.141592653589793 * step / self.decay_steps)
         )
-        decayed = (1 - self.alpha) * cosine_decay + self.alpha  # pragma: no cover
-        return self.initial_learning_rate * decayed  # pragma: no cover
+        decayed = (1 - self.alpha) * cosine_decay + self.alpha
+        return self.initial_learning_rate * decayed
 
 
 class ExponentialDecay(LearningRateSchedule):
@@ -100,19 +100,19 @@ class ExponentialDecay(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
-        step = float(step)  # pragma: no cover
-        p = step / self.decay_steps  # pragma: no cover
-        if self.staircase:  # pragma: no cover
-            p = float(__import__("math").floor(p))  # pragma: no cover
-        return self.initial_learning_rate * (self.decay_rate**p)  # pragma: no cover
+            except Exception:
+                pass
+        step = float(step)
+        p = step / self.decay_steps
+        if self.staircase:
+            p = float(__import__("math").floor(p))
+        return self.initial_learning_rate * (self.decay_rate**p)
 
 
 class CosineDecayRestarts(LearningRateSchedule):
@@ -142,15 +142,15 @@ class CosineDecayRestarts(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
-        return self.initial_learning_rate  # simplified  # pragma: no cover
+            except Exception:
+                pass
+        return self.initial_learning_rate  # simplified
 
 
 class InverseTimeDecay(LearningRateSchedule):
@@ -177,21 +177,19 @@ class InverseTimeDecay(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
-        step = float(step)  # pragma: no cover
-        p = step / self.decay_steps  # pragma: no cover
-        if self.staircase:  # pragma: no cover
-            p = float(__import__("math").floor(p))  # pragma: no cover
-        return self.initial_learning_rate / (
-            1.0 + self.decay_rate * p
-        )  # pragma: no cover
+            except Exception:
+                pass
+        step = float(step)
+        p = step / self.decay_steps
+        if self.staircase:
+            p = float(__import__("math").floor(p))
+        return self.initial_learning_rate / (1.0 + self.decay_rate * p)
 
 
 class PiecewiseConstantDecay(LearningRateSchedule):
@@ -209,19 +207,19 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
-        step = float(step)  # pragma: no cover
-        for b, v in zip(self.boundaries, self.values[:-1]):  # pragma: no cover
-            if step < b:  # pragma: no cover
-                return v  # pragma: no cover
-        return self.values[-1]  # pragma: no cover
+            except Exception:
+                pass
+        step = float(step)
+        for b, v in zip(self.boundaries, self.values[:-1]):
+            if step < b:
+                return v
+        return self.values[-1]
 
 
 class PolynomialDecay(LearningRateSchedule):
@@ -251,24 +249,22 @@ class PolynomialDecay(LearningRateSchedule):
         )
 
     def __call__(self, step: int) -> float:
-        if self._keras_schedule:  # pragma: no cover
+        if self._keras_schedule:
             try:
                 res = self._keras_schedule(step)
                 from ml_switcheroo.core.tensor_utils import to_float
 
                 return to_float(res)
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
-        step = float(step)  # pragma: no cover
-        if self.cycle:  # pragma: no cover
-            c = __import__("math").ceil(step / self.decay_steps)  # pragma: no cover
-            c = 1.0 if c == 0.0 else c  # pragma: no cover
-            step = step - (c - 1) * self.decay_steps  # pragma: no cover
+            except Exception:
+                pass
+        step = float(step)
+        if self.cycle:
+            c = __import__("math").ceil(step / self.decay_steps)
+            c = 1.0 if c == 0.0 else c
+            step = step - (c - 1) * self.decay_steps
         else:
-            step = min(step, self.decay_steps)  # pragma: no cover
-        p = step / self.decay_steps  # pragma: no cover
-        return (
-            self.initial_learning_rate - self.end_learning_rate
-        ) * (  # pragma: no cover
+            step = min(step, self.decay_steps)
+        p = step / self.decay_steps
+        return (self.initial_learning_rate - self.end_learning_rate) * (
             (1 - p) ** self.power
         ) + self.end_learning_rate

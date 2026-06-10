@@ -65,7 +65,7 @@ def _wrap(x):
     """docstring."""
     from zero_keras.core_layers import KerasTensor
 
-    if hasattr(x, "data") and hasattr(x.data, "id"):  # pragma: no cover
+    if hasattr(x, "data") and hasattr(x.data, "id"):
         return KerasTensor(x.shape, x.dtype, data=x)
     return x.data if hasattr(x, "data") else x
 
@@ -123,7 +123,7 @@ class Identity(Initializer):
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """docstring."""
-        if len(shape) != 2:  # pragma: no cover
+        if len(shape) != 2:
             raise ValueError(
                 "Identity matrix initializer can only be used for 2D matrices."
             )
@@ -143,7 +143,7 @@ class Orthogonal(Initializer):
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """docstring."""
-        if len(shape) < 2:  # pragma: no cover
+        if len(shape) < 2:
             raise ValueError(
                 "The tensor to initialize must be at least two-dimensional"
             )

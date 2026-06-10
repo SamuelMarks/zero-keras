@@ -7,9 +7,9 @@ def _get_keras_metric(cls_name, **kwargs):
     import keras
     from ml_switcheroo.core.config import config
 
-    if config.eager_mode:  # pragma: no cover
+    if config.eager_mode:
         return getattr(keras.metrics, cls_name)(**kwargs)
-    return None  # pragma: no cover
+    return None
 
 
 class Metric:
@@ -25,20 +25,20 @@ class Metric:
         self._kwargs = kwargs
 
     def update_state(self, *args: Any, **kwargs: Any) -> Any:
-        if self._keras_metric is None:  # pragma: no cover
+        if self._keras_metric is None:
             km = _get_keras_metric(
                 self._keras_class, name=self.name, dtype=self.dtype, **self._kwargs
             )
-            if km:  # pragma: no cover
+            if km:
                 self._keras_metric = km
-        if self._keras_metric:  # pragma: no cover
+        if self._keras_metric:
             try:
                 return self._keras_metric.update_state(*args, **kwargs)
             except NotImplementedError:
                 pass
 
     def result(self) -> Any:
-        if self._keras_metric:  # pragma: no cover
+        if self._keras_metric:
             try:
                 return self._keras_metric.result()
             except NotImplementedError:
@@ -46,12 +46,12 @@ class Metric:
         return 0.0
 
     def reset_state(self) -> None:
-        if self._keras_metric:  # pragma: no cover
+        if self._keras_metric:
             self._keras_metric.reset_state()
 
     def __call__(self, *args, **kwargs):
-        self.update_state(*args, **kwargs)  # pragma: no cover
-        return self.result()  # pragma: no cover
+        self.update_state(*args, **kwargs)
+        return self.result()
 
 
 class Mean(Metric):

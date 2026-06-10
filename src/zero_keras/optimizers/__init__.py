@@ -5,7 +5,7 @@ def _get_keras_optimizer(cls_name, **kwargs):
     import keras
     from ml_switcheroo.core.config import config
 
-    if config.eager_mode:  # pragma: no cover
+    if config.eager_mode:
         try:
             return getattr(keras.optimizers, cls_name)(**kwargs)
         except Exception:
@@ -22,11 +22,11 @@ class Optimizer:
         self._kwargs = kwargs
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        if self._keras_optimizer is None:  # pragma: no cover
+        if self._keras_optimizer is None:
             ko = _get_keras_optimizer(self._keras_class, **self._kwargs)
-            if ko:  # pragma: no cover
+            if ko:
                 self._keras_optimizer = ko
-        if self._keras_optimizer:  # pragma: no cover
+        if self._keras_optimizer:
             try:
                 return self._keras_optimizer.apply_gradients(
                     grads_and_vars, *args, **kwargs
@@ -36,17 +36,15 @@ class Optimizer:
         return None
 
     def build(self, var_list):
-        if self._keras_optimizer is None:  # pragma: no cover
-            ko = _get_keras_optimizer(
-                self._keras_class, **self._kwargs
-            )  # pragma: no cover
-            if ko:  # pragma: no cover
-                self._keras_optimizer = ko  # pragma: no cover
-        if self._keras_optimizer:  # pragma: no cover
-            try:  # pragma: no cover
-                self._keras_optimizer.build(var_list)  # pragma: no cover
-            except Exception:  # pragma: no cover
-                pass  # pragma: no cover
+        if self._keras_optimizer is None:
+            ko = _get_keras_optimizer(self._keras_class, **self._kwargs)
+            if ko:
+                self._keras_optimizer = ko
+        if self._keras_optimizer:
+            try:
+                self._keras_optimizer.build(var_list)
+            except Exception:
+                pass
 
 
 class Adadelta(Optimizer):
