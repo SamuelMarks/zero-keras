@@ -2,3 +2,5 @@ pytest
 pytest-cov
 numpy
 keras>=3.0.0
+tensorflow-macos
+jax[cpu]

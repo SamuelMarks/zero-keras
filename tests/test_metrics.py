@@ -12,43 +12,67 @@ def test_metrics():
     # Base class
     m_base = metrics.Metric()
     m_base.update_state(y_true, y_pred)
-    assert isinstance(m_base.result(), float)
+    res = m_base.result()
+    assert hasattr(res, "numpy") or isinstance(
+        res, (float, np.float32, np.float64, np.ndarray)
+    )
 
     # Accuracy
     m = metrics.Accuracy()
     m.update_state(y_true, y_pred)
-    assert m.result() == 0.5  # 2 correct out of 4
+    res = m.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 0.5)
 
     m2 = metrics.Accuracy()
     m2.update_state(y_true, y_pred, sample_weight=sample_weight)
-    assert m2.result() == 1.5 / 3.0
+    res = m2.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 1.5 / 3.0)
 
     # BinaryAccuracy
     m_bin = metrics.BinaryAccuracy()
     m_bin.update_state(y_true, y_pred)
-    assert m_bin.result() == 0.5
+    res = m_bin.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 0.5)
 
     # CategoricalAccuracy
     y_true_cat = np.array([[1, 0], [0, 1]])
     y_pred_cat = np.array([[0.9, 0.1], [0.8, 0.2]])
     m_cat = metrics.CategoricalAccuracy()
     m_cat.update_state(y_true_cat, y_pred_cat)
-    assert m_cat.result() == 0.5
+    res = m_cat.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 0.5)
 
     # SparseCategoricalAccuracy
     y_true_sparse = np.array([0, 1])
     m_sparse_cat = metrics.SparseCategoricalAccuracy()
     m_sparse_cat.update_state(y_true_sparse, y_pred_cat)
-    assert m_sparse_cat.result() == 0.5
+    res = m_sparse_cat.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 0.5)
 
     # Mean
     m_mean = metrics.Mean()
     m_mean.update_state(y_true)
-    assert m_mean.result() == 3.0 / 4.0
+    res = m_mean.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 3.0 / 4.0)
 
     m_mean2 = metrics.Mean()
     m_mean2.update_state(y_true, sample_weight=sample_weight)
-    assert m_mean2.result() == 2.0 / 3.0
+    res = m_mean2.result()
+    if hasattr(res, "numpy"):
+        res = res.numpy()
+    assert np.allclose(res, 2.0 / 3.0)
 
     # MeanMetricWrapper
     def mock_loss(yt, yp):
@@ -56,7 +80,10 @@ def test_metrics():
 
     m_wrap = metrics.MeanMetricWrapper(fn=mock_loss)
     m_wrap.update_state(y_true, y_pred)
-    assert isinstance(m_wrap.result(), float)
+    res = m_wrap.result()
+    assert hasattr(res, "numpy") or isinstance(
+        res, (float, np.float32, np.float64, np.ndarray)
+    )
 
     # Sum
     m_sum = metrics.Sum()

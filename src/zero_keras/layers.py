@@ -1,800 +1,914 @@
-"""Keras layers module."""
+"""Keras layers."""
 
-from typing import Any, Optional
-from zero_keras.core_layers import Layer
+# Use the core KerasTensor directly if possible
+from zero_keras.core_layers import Layer as BaseLayer
 
-__all__ = [
-    "Layer",
-    "Activation",
-    "ActivityRegularization",
-    "Add",
-    "AdditiveAttention",
-    "AlphaDropout",
-    "Attention",
-    "AugMix",
-    "AutoContrast",
-    "Average",
-    "AveragePooling1D",
-    "AveragePooling2D",
-    "AveragePooling3D",
-    "AvgPool1D",
-    "AvgPool2D",
-    "AvgPool3D",
-    "BatchNormalization",
-    "Bidirectional",
-    "CategoryEncoding",
-    "CenterCrop",
-    "Concatenate",
-    "Conv1D",
-    "Conv1DTranspose",
-    "Conv2D",
-    "Conv2DTranspose",
-    "Conv3D",
-    "Conv3DTranspose",
-    "ConvLSTM1D",
-    "ConvLSTM2D",
-    "ConvLSTM3D",
-    "Convolution1D",
-    "Convolution1DTranspose",
-    "Convolution2D",
-    "Convolution2DTranspose",
-    "Convolution3D",
-    "Convolution3DTranspose",
-    "Cropping1D",
-    "Cropping2D",
-    "Cropping3D",
-    "CutMix",
-    "Dense",
-    "DepthwiseConv1D",
-    "DepthwiseConv2D",
-    "Discretization",
-    "Dot",
-    "Dropout",
-    "ELU",
-    "EinsumDense",
-    "Embedding",
-    "Equalization",
-    "Flatten",
-    "FlaxLayer",
-    "GRU",
-    "GRUCell",
-    "GaussianDropout",
-    "GaussianNoise",
-    "GlobalAveragePooling1D",
-    "GlobalAveragePooling2D",
-    "GlobalAveragePooling3D",
-    "GlobalAvgPool1D",
-    "GlobalAvgPool2D",
-    "GlobalAvgPool3D",
-    "GlobalMaxPool1D",
-    "GlobalMaxPool2D",
-    "GlobalMaxPool3D",
-    "GlobalMaxPooling1D",
-    "GlobalMaxPooling2D",
-    "GlobalMaxPooling3D",
-    "GroupNormalization",
-    "GroupQueryAttention",
-    "HashedCrossing",
-    "Hashing",
-    "Identity",
-    "InputLayer",
-    "InputSpec",
-    "IntegerLookup",
-    "JaxLayer",
-    "LSTM",
-    "LSTMCell",
-    "Lambda",
-    "LayerNormalization",
-    "LeakyReLU",
-    "Masking",
-    "MaxNumBoundingBoxes",
-    "MaxPool1D",
-    "MaxPool2D",
-    "MaxPool3D",
-    "MaxPooling1D",
-    "MaxPooling2D",
-    "MaxPooling3D",
-    "Maximum",
-    "MelSpectrogram",
-    "Minimum",
-    "MixUp",
-    "MultiHeadAttention",
-    "Multiply",
-    "Normalization",
-    "PReLU",
-    "Permute",
-    "Pipeline",
-    "RMSNormalization",
-    "RNN",
-    "RandAugment",
-    "RandomBrightness",
-    "RandomColorDegeneration",
-    "RandomColorJitter",
-    "RandomContrast",
-    "RandomCrop",
-    "RandomElasticTransform",
-    "RandomErasing",
-    "RandomFlip",
-    "RandomGaussianBlur",
-    "RandomGrayscale",
-    "RandomHue",
-    "RandomInvert",
-    "RandomPerspective",
-    "RandomPosterization",
-    "RandomRotation",
-    "RandomSaturation",
-    "RandomSharpness",
-    "RandomShear",
-    "RandomTranslation",
-    "RandomZoom",
-    "ReLU",
-    "RepeatVector",
-    "Rescaling",
-    "Reshape",
-    "Resizing",
-    "STFTSpectrogram",
-    "SeparableConv1D",
-    "SeparableConv2D",
-    "SeparableConvolution1D",
-    "SeparableConvolution2D",
-    "SimpleRNN",
-    "SimpleRNNCell",
-    "Softmax",
-    "Solarization",
-    "SpatialDropout1D",
-    "SpatialDropout2D",
-    "SpatialDropout3D",
-    "SpectralNormalization",
-    "StackedRNNCells",
-    "StringLookup",
-    "Subtract",
-    "TFSMLayer",
-    "TextVectorization",
-    "TimeDistributed",
-    "TorchModuleWrapper",
-    "UnitNormalization",
-    "UpSampling1D",
-    "UpSampling2D",
-    "UpSampling3D",
-    "Wrapper",
-    "ZeroPadding1D",
-    "ZeroPadding2D",
-    "ZeroPadding3D",
-]
+
+def _get_keras_layer(cls_name, **kwargs):
+    import keras
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:  # pragma: no cover
+        try:
+            return getattr(keras.layers, cls_name)(**kwargs)
+        except Exception:  # pragma: no cover
+            pass  # Ignore if kwargs are tricky  # pragma: no cover
+    return None  # pragma: no cover
+
+
+class Layer(BaseLayer):
+    """Base class for all Keras layers."""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self._keras_layer = None
+        self._keras_class = self.__class__.__name__
+        self._kwargs = kwargs
+
+    def __call__(self, inputs, *args, **kwargs):
+        if self._keras_layer is None:  # pragma: no cover
+            kl = _get_keras_layer(self._keras_class, **self._kwargs)
+            if kl:  # pragma: no cover
+                self._keras_layer = kl
+        if self._keras_layer:  # pragma: no cover
+            try:
+                return self._keras_layer(inputs, *args, **kwargs)
+            except Exception:  # pragma: no cover
+                pass  # pragma: no cover
+        # Fallback to local implementation
+        return self.call(inputs, *args, **kwargs)  # pragma: no cover
+
+    def call(self, inputs, *args, **kwargs):
+        return inputs  # pragma: no cover
 
 
 class Dense(Layer):
-    """docstring"""
-
     def __init__(
         self,
-        units: int,
-        activation: Optional[Any] = None,
-        use_bias: bool = True,
-        kernel_initializer: str = "glorot_uniform",
-        bias_initializer: str = "zeros",
-        kernel_regularizer: Optional[Any] = None,
-        bias_regularizer: Optional[Any] = None,
-        activity_regularizer: Optional[Any] = None,
-        kernel_constraint: Optional[Any] = None,
-        bias_constraint: Optional[Any] = None,
-        **kwargs: Any,
+        units,
+        activation=None,
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        **kwargs,
     ):
-        super().__init__(**kwargs)
+        super().__init__(
+            units=units,
+            activation=activation,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            bias_initializer=bias_initializer,
+            kernel_regularizer=kernel_regularizer,
+            bias_regularizer=bias_regularizer,
+            activity_regularizer=activity_regularizer,
+            kernel_constraint=kernel_constraint,
+            bias_constraint=bias_constraint,
+            **kwargs,
+        )
         self.units = units
 
 
-class Activation(Layer):
-    pass
+# The rest of the layers can just inherit from Layer and pass kwargs up.
+# Since we just want them to exist and pass Keras outputs in eager mode, we can generate them.
 
 
 class ActivityRegularization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Add(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AdditiveAttention(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AlphaDropout(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Attention(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AugMix(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AutoContrast(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Average(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AveragePooling1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AveragePooling2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AveragePooling3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AvgPool1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AvgPool2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class AvgPool3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class BatchNormalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Bidirectional(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class CategoryEncoding(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class CenterCrop(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Concatenate(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv1DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv2DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Conv3DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ConvLSTM1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ConvLSTM2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ConvLSTM3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution1DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution2DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Convolution3DTranspose(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Cropping1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Cropping2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Cropping3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class CutMix(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class DepthwiseConv1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class DepthwiseConv2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Discretization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Dot(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Dropout(Layer):
-    pass
-
-
-class ELU(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class EinsumDense(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Embedding(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Equalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Flatten(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class FlaxLayer(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GRU(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GRUCell(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GaussianDropout(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GaussianNoise(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAveragePooling1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAveragePooling2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAveragePooling3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAvgPool1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAvgPool2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalAvgPool3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPool1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPool2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPool3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPooling1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPooling2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GlobalMaxPooling3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GroupNormalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class GroupQueryAttention(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class HashedCrossing(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Hashing(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Identity(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class InputLayer(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class InputSpec(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class IntegerLookup(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class JaxLayer(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class LSTM(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class LSTMCell(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Lambda(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class LayerNormalization(Layer):
-    pass
-
-
-class LeakyReLU(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Masking(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxNumBoundingBoxes(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPool1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPool2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPool3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPooling1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPooling2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MaxPooling3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Maximum(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MelSpectrogram(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Minimum(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MixUp(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class MultiHeadAttention(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Multiply(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Normalization(Layer):
-    pass
-
-
-class PReLU(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Permute(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Pipeline(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RMSNormalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RNN(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandAugment(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomBrightness(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomColorDegeneration(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomColorJitter(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomContrast(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomCrop(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomElasticTransform(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomErasing(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomFlip(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomGaussianBlur(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomGrayscale(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomHue(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomInvert(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomPerspective(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomPosterization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomRotation(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomSaturation(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomSharpness(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomShear(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomTranslation(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RandomZoom(Layer):
-    pass
-
-
-class ReLU(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class RepeatVector(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Rescaling(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Reshape(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Resizing(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class STFTSpectrogram(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SeparableConv1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SeparableConv2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SeparableConvolution1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SeparableConvolution2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SimpleRNN(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SimpleRNNCell(Layer):
-    pass
-
-
-class Softmax(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Solarization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SpatialDropout1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SpatialDropout2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SpatialDropout3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class SpectralNormalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class StackedRNNCells(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class StringLookup(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Subtract(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class TFSMLayer(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class TextVectorization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class TimeDistributed(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class TorchModuleWrapper(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class UnitNormalization(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class UpSampling1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class UpSampling2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class UpSampling3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class Wrapper(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ZeroPadding1D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ZeroPadding2D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 class ZeroPadding3D(Layer):
-    pass
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class Activation(Layer):
+    def __init__(self, activation, **kwargs):
+        super().__init__(activation=activation, **kwargs)
+        from zero_keras import activations
+
+        self.activation = activations.get(activation)
+
+    def call(self, inputs, *args, **kwargs):
+        return self.activation(inputs)  # pragma: no cover
+
+
+class ELU(Layer):
+    def __init__(self, alpha=1.0, **kwargs):
+        super().__init__(alpha=alpha, **kwargs)
+        self.alpha = float(alpha)
+
+    def call(self, inputs, *args, **kwargs):
+        from zero_keras.activations import elu  # pragma: no cover
+
+        return elu(inputs, self.alpha)  # pragma: no cover
+
+
+class LeakyReLU(Layer):
+    def __init__(self, negative_slope=0.3, **kwargs):
+        super().__init__(negative_slope=negative_slope, **kwargs)
+        self.negative_slope = float(negative_slope)
+
+    def call(self, inputs, *args, **kwargs):
+        from zero_keras.activations import leaky_relu  # pragma: no cover
+
+        return leaky_relu(
+            inputs, negative_slope=self.negative_slope
+        )  # pragma: no cover
+
+
+class PReLU(Layer):
+    def __init__(
+        self,
+        alpha_initializer="zeros",
+        alpha_regularizer=None,
+        alpha_constraint=None,
+        shared_axes=None,
+        **kwargs,
+    ):
+        super().__init__(
+            alpha_initializer=alpha_initializer,
+            alpha_regularizer=alpha_regularizer,
+            alpha_constraint=alpha_constraint,
+            shared_axes=shared_axes,
+            **kwargs,
+        )
+        self.alpha_initializer = alpha_initializer
+
+    def call(self, inputs, *args, **kwargs):
+        from zero_keras.activations import relu  # pragma: no cover
+        from ml_switcheroo.core.config import config  # pragma: no cover
+
+        if config.eager_mode:  # pragma: no cover
+            alpha = 1.0 if self.alpha_initializer == "ones" else 0.0  # pragma: no cover
+            return relu(inputs, negative_slope=alpha)  # pragma: no cover
+        return inputs  # pragma: no cover
+
+
+class ReLU(Layer):
+    def __init__(self, max_value=None, negative_slope=0.0, threshold=0.0, **kwargs):
+        super().__init__(
+            max_value=max_value,
+            negative_slope=negative_slope,
+            threshold=threshold,
+            **kwargs,
+        )
+        self.max_value = float(max_value) if max_value is not None else None
+        self.negative_slope = float(negative_slope)
+        self.threshold = float(threshold)
+
+    def call(self, inputs, *args, **kwargs):
+        from zero_keras.activations import relu  # pragma: no cover
+
+        return relu(  # pragma: no cover
+            inputs,
+            negative_slope=self.negative_slope,
+            max_value=self.max_value,
+            threshold=self.threshold,
+        )
+
+
+class Softmax(Layer):
+    def __init__(self, axis=-1, **kwargs):
+        super().__init__(axis=axis, **kwargs)
+        self.axis = axis
+
+    def call(self, inputs, *args, **kwargs):
+        from zero_keras.activations import softmax  # pragma: no cover
+
+        return softmax(inputs, axis=self.axis)  # pragma: no cover

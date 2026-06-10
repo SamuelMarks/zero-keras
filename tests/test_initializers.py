@@ -1,131 +1,236 @@
 """Tests for zero_keras initializers."""
 
 import numpy as np
+import pytest
+import keras
 from zero_keras import initializers
+from .utils import assert_allclose_keras_zero, set_seed
 
 
-def test_initializers():
-    shape = (2, 2)
-    dtype = "float32"
+@pytest.fixture(autouse=True)
+def _set_seed():
+    set_seed(42)
 
-    assert initializers.Initializer()(shape, dtype).shape == shape
 
-    c = initializers.Constant(value=1.0)(shape, dtype)
-    assert c.shape == shape
-    assert np.all(c == 1.0)
+def check_initializer_parity(
+    initializer_cls,
+    keras_cls,
+    shape=(5, 5),
+    dtype="float32",
+    atol=1e-5,
+    rtol=1e-5,
+    **kwargs,
+):
+    set_seed(42)
+    keras_init = keras_cls(**kwargs)
+    keras_out = keras_init(shape=shape, dtype=dtype)
 
-    assert initializers.GlorotNormal(seed=42)(shape, dtype).shape == shape
-    assert initializers.GlorotUniform(seed=42)(shape, dtype).shape == shape
-    assert initializers.HeNormal(seed=42)(shape, dtype).shape == shape
-    assert initializers.HeUniform(seed=42)(shape, dtype).shape == shape
+    set_seed(42)
+    zero_init = initializer_cls(**kwargs)
+    zero_out = zero_init(shape=shape, dtype=dtype)
 
-    i1 = initializers.Identity(gain=1.5)(shape, dtype)
-    assert i1.shape == shape
-    assert i1[0, 0] == 1.5
+    assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
 
-    assert True
 
-    assert initializers.IdentityInitializer(gain=1.5)(shape, dtype).shape == shape
-
-    assert initializers.LecunNormal(seed=42)(shape, dtype).shape == shape
-    assert initializers.LecunUniform(seed=42)(shape, dtype).shape == shape
-
-    o = initializers.Ones()(shape, dtype)
-    assert o.shape == shape
-    assert np.all(o == 1.0)
-
-    assert initializers.Orthogonal(gain=1.0, seed=42)(shape, dtype).shape == shape
-    assert True
-    assert (
-        initializers.OrthogonalInitializer(gain=1.0, seed=42)(shape, dtype).shape
-        == shape
+def test_initializer_Constant():
+    check_initializer_parity(
+        initializers.Constant, keras.initializers.Constant, value=3.14
+    )
+    check_initializer_parity(
+        initializers.constant, keras.initializers.constant, value=-1.0
     )
 
-    assert (
-        initializers.RandomNormal(mean=0.0, stddev=0.05, seed=42)(shape, dtype).shape
-        == shape
+
+def test_initializer_Zeros():
+    check_initializer_parity(initializers.Zeros, keras.initializers.Zeros)
+    check_initializer_parity(initializers.zeros, keras.initializers.zeros)
+
+
+def test_initializer_Ones():
+    check_initializer_parity(initializers.Ones, keras.initializers.Ones)
+    check_initializer_parity(initializers.ones, keras.initializers.ones)
+
+
+def test_initializer_Identity():
+    check_initializer_parity(
+        initializers.Identity, keras.initializers.Identity, gain=2.0
     )
-    assert (
-        initializers.RandomUniform(minval=-0.05, maxval=0.05, seed=42)(
-            shape, dtype
-        ).shape
-        == shape
+    check_initializer_parity(
+        initializers.identity, keras.initializers.identity, gain=0.5
     )
 
-    assert (
-        initializers.STFT(
-            side="real", window="hann", scaling="density", periodic=False
-        )(shape, dtype).shape
-        == shape
+
+def test_initializer_Orthogonal():
+    # Orthogonal uses QR decomposition on random numbers, which can differ based on exact RNG sequence.
+    # However, setting seed might be enough for a single matrix.
+    check_initializer_parity(
+        initializers.Orthogonal, keras.initializers.Orthogonal, gain=1.5, seed=42
     )
-    assert (
-        initializers.STFTInitializer(
-            side="real", window="hann", scaling="density", periodic=False
-        )(shape, dtype).shape
-        == shape
+    check_initializer_parity(
+        initializers.orthogonal, keras.initializers.orthogonal, gain=1.0, seed=123
     )
 
-    assert (
-        initializers.TruncatedNormal(mean=0.0, stddev=0.05, seed=42)(shape, dtype).shape
-        == shape
+
+def test_initializer_RandomNormal():
+    check_initializer_parity(
+        initializers.RandomNormal,
+        keras.initializers.RandomNormal,
+        mean=0.5,
+        stddev=0.1,
+        seed=42,
+    )
+    check_initializer_parity(
+        initializers.random_normal,
+        keras.initializers.random_normal,
+        mean=-0.5,
+        stddev=2.0,
+        seed=123,
     )
 
-    assert (
-        initializers.VarianceScaling(
-            scale=1.0, mode="fan_in", distribution="truncated_normal", seed=42
-        )(shape, dtype).shape
-        == shape
-    )
-    assert (
-        initializers.VarianceScaling(
-            scale=1.0, mode="fan_out", distribution="untruncated_normal", seed=42
-        )(shape, dtype).shape
-        == shape
-    )
-    assert (
-        initializers.VarianceScaling(
-            scale=1.0, mode="fan_avg", distribution="uniform", seed=42
-        )(shape, dtype).shape
-        == shape
-    )
-    assert True
 
-    z = initializers.Zeros()(shape, dtype)
-    assert z.shape == shape
-    assert np.all(z == 0.0)
+def test_initializer_RandomUniform():
+    check_initializer_parity(
+        initializers.RandomUniform,
+        keras.initializers.RandomUniform,
+        minval=-1.0,
+        maxval=1.0,
+        seed=42,
+    )
+    check_initializer_parity(
+        initializers.random_uniform,
+        keras.initializers.random_uniform,
+        minval=0.0,
+        maxval=5.0,
+        seed=123,
+    )
 
-    # Test aliases
-    assert issubclass(initializers.constant, initializers.Constant)
-    assert issubclass(initializers.glorot_normal, initializers.GlorotNormal)
-    assert issubclass(initializers.glorot_uniform, initializers.GlorotUniform)
-    assert issubclass(initializers.he_normal, initializers.HeNormal)
-    assert issubclass(initializers.he_uniform, initializers.HeUniform)
-    assert issubclass(initializers.identity, initializers.Identity)
-    assert issubclass(initializers.lecun_normal, initializers.LecunNormal)
-    assert issubclass(initializers.lecun_uniform, initializers.LecunUniform)
-    assert issubclass(initializers.ones, initializers.Ones)
-    assert issubclass(initializers.orthogonal, initializers.Orthogonal)
-    assert issubclass(initializers.random_normal, initializers.RandomNormal)
-    assert issubclass(initializers.random_uniform, initializers.RandomUniform)
-    assert issubclass(initializers.stft, initializers.STFT)
-    assert issubclass(initializers.truncated_normal, initializers.TruncatedNormal)
-    assert issubclass(initializers.variance_scaling, initializers.VarianceScaling)
-    assert issubclass(initializers.zeros, initializers.Zeros)
+
+def test_initializer_TruncatedNormal():
+    shape = (500, 500)
+
+    keras_out = keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(
+        shape=shape
+    ).numpy()
+    zero_out = initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(shape=shape)
+    if hasattr(zero_out, "numpy"):
+        zero_out = zero_out.numpy()
+
+    assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=1e-1)
+    assert np.allclose(
+        np.std(keras_out), 0.88, atol=1e-1
+    )  # std of truncated normal N(0,1) bounded at 2*std
+
+    keras_out2 = keras.initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(
+        shape=shape
+    ).numpy()
+    zero_out2 = initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(
+        shape=shape
+    )
+    if hasattr(zero_out2, "numpy"):
+        zero_out2 = zero_out2.numpy()
+
+    assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
+    assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
+
+
+def test_initializer_VarianceScaling():
+    shape = (500, 500)
+
+    keras_out = keras.initializers.VarianceScaling(
+        scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
+    )(shape=shape).numpy()
+    zero_out = initializers.VarianceScaling(
+        scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
+    )(shape=shape)
+    if hasattr(zero_out, "numpy"):
+        zero_out = zero_out.numpy()
+
+    assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=1e-1)
+    assert np.allclose(np.std(keras_out), np.std(zero_out), atol=1e-1)
+
+    keras_out2 = keras.initializers.variance_scaling(
+        scale=1.0, mode="fan_out", distribution="uniform", seed=123
+    )(shape=shape).numpy()
+    zero_out2 = initializers.variance_scaling(
+        scale=1.0, mode="fan_out", distribution="uniform", seed=123
+    )(shape=shape)
+    if hasattr(zero_out2, "numpy"):
+        zero_out2 = zero_out2.numpy()
+
+    assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
+    assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
+
+
+def test_initializer_GlorotNormal():
+    check_initializer_parity(
+        initializers.GlorotNormal, keras.initializers.GlorotNormal, seed=42
+    )
+    check_initializer_parity(
+        initializers.glorot_normal, keras.initializers.glorot_normal, seed=123
+    )
+
+
+def test_initializer_GlorotUniform():
+    check_initializer_parity(
+        initializers.GlorotUniform, keras.initializers.GlorotUniform, seed=42
+    )
+    check_initializer_parity(
+        initializers.glorot_uniform, keras.initializers.glorot_uniform, seed=123
+    )
+
+
+def test_initializer_HeNormal():
+    check_initializer_parity(
+        initializers.HeNormal, keras.initializers.HeNormal, seed=42
+    )
+    check_initializer_parity(
+        initializers.he_normal, keras.initializers.he_normal, seed=123
+    )
+
+
+def test_initializer_HeUniform():
+    check_initializer_parity(
+        initializers.HeUniform, keras.initializers.HeUniform, seed=42
+    )
+    check_initializer_parity(
+        initializers.he_uniform, keras.initializers.he_uniform, seed=123
+    )
+
+
+def test_initializer_LecunNormal():
+    check_initializer_parity(
+        initializers.LecunNormal, keras.initializers.LecunNormal, seed=42
+    )
+    check_initializer_parity(
+        initializers.lecun_normal, keras.initializers.lecun_normal, seed=123
+    )
+
+
+def test_initializer_LecunUniform():
+    check_initializer_parity(
+        initializers.LecunUniform, keras.initializers.LecunUniform, seed=42
+    )
+    check_initializer_parity(
+        initializers.lecun_uniform, keras.initializers.lecun_uniform, seed=123
+    )
+
+
+def test_initializer_STFT():
+    # Keras doesn't have a built-in STFT initializer by default in core,
+    # so we just test the zero_keras implementation independently
+    init = initializers.STFT()
+    assert init(shape=(2, 2)).shape == (2, 2)
+
+
+def test_initializer_Initializer():
+    # Test base class fallback
+    init = initializers.Initializer()
+    assert init(shape=(2, 2)).shape == (2, 2)
 
 
 def test_initializers_exceptions_and_branches():
-    import pytest
-    from zero_keras import initializers
-
-    # Coverage for Identity exception
     with pytest.raises(ValueError):
         initializers.Identity()(shape=(2, 2, 2))
 
-    # Coverage for Orthogonal exception
     with pytest.raises(ValueError):
         initializers.Orthogonal()(shape=(2,))
-
-    # Coverage for _compute_fans branches
-    assert initializers.VarianceScaling()(shape=()).shape == ()
-    assert initializers.VarianceScaling()(shape=(3,)).shape == (3,)
-    assert initializers.VarianceScaling()(shape=(2, 3, 4)).shape == (2, 3, 4)

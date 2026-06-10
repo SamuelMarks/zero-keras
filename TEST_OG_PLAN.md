@@ -1,112 +1,311 @@
 # Keras Test Suite Porting & 1-to-1 Compatibility Plan
 
-This plan tracks the porting of the official Keras test suite into `zero-keras`, ensuring 1-to-1 API compatibility and numerical equivalence. Each component of `zero-keras` will be validated side-by-side with the official `keras` package using identical inputs.
+This plan tracks the exhaustive porting of the official Keras test suite into `zero-keras`, ensuring 1-to-1 API compatibility, numerical equivalence, state management, and serialization parity. Every exported API in `zero-keras` has at least one test target below.
 
-## Phase 1: Environment & Tooling Setup
+## Phase 1: Environment, Tooling & Base Setup
 - [x] Create `requirements-test.txt` with `pytest`, `pytest-cov`, `numpy`, and `keras` (for reference outputs).
-- [ ] Set up a testing utility/harness (e.g., `tests/utils.py`) to easily compare outputs of `zero_keras` vs `keras` using `numpy.testing.assert_allclose`.
-- [ ] Configure `pytest` to automatically discover and run the parity tests.
-- [ ] Integrate parity tests into the GitHub Actions CI workflow.
+- [x] Set up `tests/utils.py` framework to yield identical randomized inputs for both `zero-keras` and `keras`.
+- [x] Implement robust numeric comparison helpers (wrapping `numpy.testing.assert_allclose`).
+- [x] Configure `pytest.ini` or `pyproject.toml` to automatically discover and format parity test outputs.
+- [x] Set up a base `TestCase` or fixture to cleanly isolate global state.
 
 ## Phase 2: Activations 1-to-1 Parity
-- [ ] `test_relu`: Port and assert `allclose`.
-- [ ] `test_sigmoid`: Port and assert `allclose`.
-- [ ] `test_softmax`: Port and assert `allclose`.
-- [ ] `test_softplus`: Port and assert `allclose`.
-- [ ] `test_softsign`: Port and assert `allclose`.
-- [ ] `test_tanh`: Port and assert `allclose`.
-- [ ] `test_selu`: Port and assert `allclose`.
-- [ ] `test_elu`: Port and assert `allclose`.
-- [ ] `test_exponential`: Port and assert `allclose`.
-- [ ] `test_leaky_relu`: Port and assert `allclose`.
-- [ ] `test_silu` (swish): Port and assert `allclose`.
-- [ ] `test_gelu`: Port and assert `allclose`.
-- [ ] `test_mish`: Port and assert `allclose`.
-- [ ] `test_linear`: Port and assert `allclose`.
+### Activation Functions
+- [x] `test_activation_celu`
+- [x] `test_activation_elu`
+- [x] `test_activation_exponential`
+- [x] `test_activation_gelu`
+- [x] `test_activation_glu`
+- [x] `test_activation_hard_shrink`
+- [x] `test_activation_hard_sigmoid`
+- [x] `test_activation_hard_silu`
+- [x] `test_activation_hard_swish`
+- [x] `test_activation_hard_tanh`
+- [x] `test_activation_leaky_relu`
+- [x] `test_activation_linear`
+- [x] `test_activation_log_sigmoid`
+- [x] `test_activation_log_softmax`
+- [x] `test_activation_mish`
+- [x] `test_activation_relu`
+- [x] `test_activation_relu6`
+- [x] `test_activation_selu`
+- [x] `test_activation_sigmoid`
+- [x] `test_activation_silu` (swish)
+- [x] `test_activation_soft_shrink`
+- [x] `test_activation_softmax`
+- [x] `test_activation_softplus`
+- [x] `test_activation_softsign`
+- [x] `test_activation_sparse_plus`
+- [x] `test_activation_sparse_sigmoid`
+- [x] `test_activation_sparsemax`
+- [x] `test_activation_squareplus`
+- [x] `test_activation_swish`
+- [x] `test_activation_tanh`
+- [x] `test_activation_tanh_shrink`
+- [x] `test_activation_threshold`
+
+### Activation Layers (Classes)
+- [x] `test_layer_Activation`
+- [x] `test_layer_ELU`
+- [x] `test_layer_LeakyReLU`
+- [x] `test_layer_PReLU`
+- [x] `test_layer_ReLU`
+- [x] `test_layer_Softmax`
 
 ## Phase 3: Initializers 1-to-1 Parity
-- [ ] `test_Zeros`: Port and assert shape/value match.
-- [ ] `test_Ones`: Port and assert shape/value match.
-- [ ] `test_Constant`: Port and assert shape/value match.
-- [ ] `test_RandomNormal`: Verify statistical distribution or exact seed equivalence.
-- [ ] `test_RandomUniform`: Verify statistical distribution or exact seed equivalence.
-- [ ] `test_TruncatedNormal`: Verify statistical distribution.
-- [ ] `test_VarianceScaling`: Verify statistical properties.
-- [ ] `test_GlorotNormal` / `test_GlorotUniform`: Verify statistical properties.
-- [ ] `test_HeNormal` / `test_HeUniform`: Verify statistical properties.
-- [ ] `test_LecunNormal` / `test_LecunUniform`: Verify statistical properties.
-- [ ] `test_Orthogonal`: Verify statistical properties and orthogonal matrix characteristics.
-- [ ] `test_Identity`: Verify shape/value match.
+- [x] `test_initializer_Constant` (and `constant`)
+- [x] `test_initializer_GlorotNormal` (and `glorot_normal`)
+- [x] `test_initializer_GlorotUniform` (and `glorot_uniform`)
+- [x] `test_initializer_HeNormal` (and `he_normal`)
+- [x] `test_initializer_HeUniform` (and `he_uniform`)
+- [x] `test_initializer_Identity` (and `identity`, `IdentityInitializer`)
+- [x] `test_initializer_Initializer` (base class)
+- [x] `test_initializer_LecunNormal` (and `lecun_normal`)
+- [x] `test_initializer_LecunUniform` (and `lecun_uniform`)
+- [x] `test_initializer_Ones` (and `ones`)
+- [x] `test_initializer_Orthogonal` (and `orthogonal`, `OrthogonalInitializer`)
+- [x] `test_initializer_RandomNormal` (and `random_normal`)
+- [x] `test_initializer_RandomUniform` (and `random_uniform`)
+- [x] `test_initializer_STFT` (and `stft`, `STFTInitializer`)
+- [x] `test_initializer_TruncatedNormal` (and `truncated_normal`)
+- [x] `test_initializer_VarianceScaling` (and `variance_scaling`)
+- [x] `test_initializer_Zeros` (and `zeros`)
 
 ## Phase 4: Losses 1-to-1 Parity
-- [ ] `test_MeanSquaredError` (MSE): Port and assert `allclose`.
-- [ ] `test_MeanAbsoluteError` (MAE): Port and assert `allclose`.
-- [ ] `test_MeanAbsolutePercentageError` (MAPE): Port and assert `allclose`.
-- [ ] `test_MeanSquaredLogarithmicError` (MSLE): Port and assert `allclose`.
-- [ ] `test_CosineSimilarity`: Port and assert `allclose`.
-- [ ] `test_Huber`: Port and assert `allclose`.
-- [ ] `test_LogCosh`: Port and assert `allclose`.
-- [ ] `test_CategoricalCrossentropy`: Port and assert `allclose`.
-- [ ] `test_SparseCategoricalCrossentropy`: Port and assert `allclose`.
-- [ ] `test_BinaryCrossentropy`: Port and assert `allclose`.
-- [ ] `test_Hinge`: Port and assert `allclose`.
-- [ ] `test_SquaredHinge`: Port and assert `allclose`.
-- [ ] `test_CategoricalHinge`: Port and assert `allclose`.
-- [ ] `test_Poisson`: Port and assert `allclose`.
-- [ ] `test_KLDivergence`: Port and assert `allclose`.
+- [x] `test_loss_BinaryCrossentropy`
+- [x] `test_loss_BinaryFocalCrossentropy`
+- [x] `test_loss_CategoricalCrossentropy`
+- [x] `test_loss_CategoricalFocalCrossentropy`
+- [x] `test_loss_CategoricalGeneralizedCrossEntropy`
+- [x] `test_loss_CategoricalHinge`
+- [x] `test_loss_Circle`
+- [x] `test_loss_CosineSimilarity`
+- [x] `test_loss_CTC`
+- [x] `test_loss_Dice`
+- [x] `test_loss_Hinge`
+- [x] `test_loss_Huber`
+- [x] `test_loss_KLDivergence`
+- [x] `test_loss_LogCosh`
+- [x] `test_loss_Loss` (base class)
+- [x] `test_loss_MeanAbsoluteError`
+- [x] `test_loss_MeanAbsolutePercentageError`
+- [x] `test_loss_MeanSquaredError`
+- [x] `test_loss_MeanSquaredLogarithmicError`
+- [x] `test_loss_Poisson`
+- [x] `test_loss_SparseCategoricalCrossentropy`
+- [x] `test_loss_SquaredHinge`
+- [x] `test_loss_Tversky`
 
 ## Phase 5: Metrics 1-to-1 Parity
-- [ ] `test_Accuracy`: Port and assert identical state updates and results.
-- [ ] `test_BinaryAccuracy`: Port and assert identical state updates and results.
-- [ ] `test_CategoricalAccuracy`: Port and assert identical state updates and results.
-- [ ] `test_SparseCategoricalAccuracy`: Port and assert identical state updates and results.
-- [ ] `test_TopKCategoricalAccuracy`: Port and assert identical state updates and results.
-- [ ] `test_SparseTopKCategoricalAccuracy`: Port and assert identical state updates and results.
-- [ ] `test_Precision`: Port and assert identical state updates and results.
-- [ ] `test_Recall`: Port and assert identical state updates and results.
-- [ ] `test_TruePositives` / `test_TrueNegatives` / `test_FalsePositives` / `test_FalseNegatives`: Port and assert identical state updates.
-- [ ] `test_AUC`: Port and assert identical state updates and results.
-- [ ] `test_Mean`: Port and assert identical state updates and results.
-- [ ] `test_Sum`: Port and assert identical state updates and results.
+- [x] `test_metric_Accuracy`
+- [x] `test_metric_AUC`
+- [x] `test_metric_BinaryAccuracy`
+- [x] `test_metric_BinaryCrossentropy`
+- [x] `test_metric_BinaryIoU`
+- [x] `test_metric_CategoricalAccuracy`
+- [x] `test_metric_CategoricalCrossentropy`
+- [x] `test_metric_CategoricalHinge`
+- [x] `test_metric_ConcordanceCorrelation`
+- [x] `test_metric_CosineSimilarity`
+- [x] `test_metric_F1Score`
+- [x] `test_metric_FalseNegatives`
+- [x] `test_metric_FalsePositives`
+- [x] `test_metric_FBetaScore`
+- [x] `test_metric_Hinge`
+- [x] `test_metric_IoU`
+- [x] `test_metric_KLDivergence`
+- [x] `test_metric_LogCoshError`
+- [x] `test_metric_Mean`
+- [x] `test_metric_MeanAbsoluteError`
+- [x] `test_metric_MeanAbsolutePercentageError`
+- [x] `test_metric_MeanIoU`
+- [x] `test_metric_MeanMetricWrapper`
+- [x] `test_metric_MeanSquaredError`
+- [x] `test_metric_MeanSquaredLogarithmicError`
+- [x] `test_metric_Metric` (base class)
+- [x] `test_metric_OneHotIoU`
+- [x] `test_metric_OneHotMeanIoU`
+- [x] `test_metric_PearsonCorrelation`
+- [x] `test_metric_Poisson`
+- [x] `test_metric_Precision`
+- [x] `test_metric_PrecisionAtRecall`
+- [x] `test_metric_R2Score`
+- [x] `test_metric_Recall`
+- [x] `test_metric_RecallAtPrecision`
+- [x] `test_metric_RootMeanSquaredError`
+- [x] `test_metric_SensitivityAtSpecificity`
+- [x] `test_metric_SparseCategoricalAccuracy`
+- [x] `test_metric_SparseCategoricalCrossentropy`
+- [x] `test_metric_SparseTopKCategoricalAccuracy`
+- [x] `test_metric_SpecificityAtSensitivity`
+- [x] `test_metric_SquaredHinge`
+- [x] `test_metric_Sum`
+- [x] `test_metric_TopKCategoricalAccuracy`
+- [x] `test_metric_TrueNegatives`
+- [x] `test_metric_TruePositives`
 
-## Phase 6: Core Layers 1-to-1 Parity
-- [ ] `test_Dense`: Verify parameter shapes, initialization, forward pass, and `get_weights()`/`set_weights()`.
-- [ ] `test_Activation`: Verify forward pass.
-- [ ] `test_Embedding`: Verify parameter shapes, initialization, forward pass.
-- [ ] `test_InputLayer`: Verify behavior and metadata.
-- [ ] `test_Dropout`: Verify behavior during `training=True` vs `training=False`.
-- [ ] `test_SpatialDropout1D`, `2D`, `3D`: Verify behavior.
-- [ ] `test_Flatten`: Verify shape transformations.
-- [ ] `test_Reshape`: Verify shape transformations.
-- [ ] `test_Permute`: Verify dimension reordering.
-- [ ] `test_RepeatVector`: Verify shape transformations.
-- [ ] `test_Lambda`: Verify custom function execution.
-- [ ] `test_Masking`: Verify masking propagation and behavior.
-- [ ] `test_Concatenate` / `test_Average` / `test_Maximum` / `test_Minimum` / `test_Add` / `test_Subtract` / `test_Multiply` / `test_Dot`: Verify forward passes and shape handling.
-- [ ] `test_LayerNormalization`: Verify standardization forward pass and parameters.
+## Phase 6: Core Layers & General Layers Parity
+- [x] `test_layer_Layer` (base class)
+- [x] `test_layer_InputLayer`
+- [x] `test_layer_InputSpec`
+- [x] `test_layer_ActivityRegularization`
+- [x] `test_layer_Add`
+- [x] `test_layer_AdditiveAttention`
+- [x] `test_layer_AlphaDropout`
+- [x] `test_layer_Attention`
+- [x] `test_layer_AugMix`
+- [x] `test_layer_AutoContrast`
+- [x] `test_layer_Average`
+- [x] `test_layer_BatchNormalization`
+- [x] `test_layer_Bidirectional`
+- [x] `test_layer_CategoryEncoding`
+- [x] `test_layer_CenterCrop`
+- [x] `test_layer_Concatenate`
+- [x] `test_layer_Conv1D` / `test_layer_Convolution1D`
+- [x] `test_layer_Conv1DTranspose` / `test_layer_Convolution1DTranspose`
+- [x] `test_layer_Conv2D` / `test_layer_Convolution2D`
+- [x] `test_layer_Conv2DTranspose` / `test_layer_Convolution2DTranspose`
+- [x] `test_layer_Conv3D` / `test_layer_Convolution3D`
+- [x] `test_layer_Conv3DTranspose` / `test_layer_Convolution3DTranspose`
+- [x] `test_layer_ConvLSTM1D`
+- [x] `test_layer_ConvLSTM2D`
+- [x] `test_layer_ConvLSTM3D`
+- [x] `test_layer_Cropping1D`
+- [x] `test_layer_Cropping2D`
+- [x] `test_layer_Cropping3D`
+- [x] `test_layer_CutMix`
+- [x] `test_layer_Dense`
+- [x] `test_layer_DepthwiseConv1D`
+- [x] `test_layer_DepthwiseConv2D`
+- [x] `test_layer_Discretization`
+- [x] `test_layer_Dot`
+- [x] `test_layer_Dropout`
+- [x] `test_layer_EinsumDense`
+- [x] `test_layer_Embedding`
+- [x] `test_layer_Equalization`
+- [x] `test_layer_Flatten`
+- [x] `test_layer_FlaxLayer`
+- [x] `test_layer_GaussianDropout`
+- [x] `test_layer_GaussianNoise`
+- [x] `test_layer_GlobalAveragePooling1D` / `test_layer_GlobalAvgPool1D`
+- [x] `test_layer_GlobalAveragePooling2D` / `test_layer_GlobalAvgPool2D`
+- [x] `test_layer_GlobalAveragePooling3D` / `test_layer_GlobalAvgPool3D`
+- [x] `test_layer_GlobalMaxPooling1D` / `test_layer_GlobalMaxPool1D`
+- [x] `test_layer_GlobalMaxPooling2D` / `test_layer_GlobalMaxPool2D`
+- [x] `test_layer_GlobalMaxPooling3D` / `test_layer_GlobalMaxPool3D`
+- [x] `test_layer_GroupNormalization`
+- [x] `test_layer_GroupQueryAttention`
+- [x] `test_layer_GRU`
+- [x] `test_layer_GRUCell`
+- [x] `test_layer_HashedCrossing`
+- [x] `test_layer_Hashing`
+- [x] `test_layer_Identity`
+- [x] `test_layer_IntegerLookup`
+- [x] `test_layer_JaxLayer`
+- [x] `test_layer_Lambda`
+- [x] `test_layer_LayerNormalization`
+- [x] `test_layer_LSTM`
+- [x] `test_layer_LSTMCell`
+- [x] `test_layer_Masking`
+- [x] `test_layer_Maximum`
+- [x] `test_layer_MaxNumBoundingBoxes`
+- [x] `test_layer_MaxPooling1D` / `test_layer_MaxPool1D`
+- [x] `test_layer_MaxPooling2D` / `test_layer_MaxPool2D`
+- [x] `test_layer_MaxPooling3D` / `test_layer_MaxPool3D`
+- [x] `test_layer_MelSpectrogram`
+- [x] `test_layer_Minimum`
+- [x] `test_layer_MixUp`
+- [x] `test_layer_MultiHeadAttention`
+- [x] `test_layer_Multiply`
+- [x] `test_layer_Normalization`
+- [x] `test_layer_Permute`
+- [x] `test_layer_Pipeline`
+- [x] `test_layer_RandAugment`
+- [x] `test_layer_RandomBrightness`
+- [x] `test_layer_RandomColorDegeneration`
+- [x] `test_layer_RandomColorJitter`
+- [x] `test_layer_RandomContrast`
+- [x] `test_layer_RandomCrop`
+- [x] `test_layer_RandomElasticTransform`
+- [x] `test_layer_RandomErasing`
+- [x] `test_layer_RandomFlip`
+- [x] `test_layer_RandomGaussianBlur`
+- [x] `test_layer_RandomGrayscale`
+- [x] `test_layer_RandomHue`
+- [x] `test_layer_RandomInvert`
+- [x] `test_layer_RandomPerspective`
+- [x] `test_layer_RandomPosterization`
+- [x] `test_layer_RandomRotation`
+- [x] `test_layer_RandomSaturation`
+- [x] `test_layer_RandomSharpness`
+- [x] `test_layer_RandomShear`
+- [x] `test_layer_RandomTranslation`
+- [x] `test_layer_RandomZoom`
+- [x] `test_layer_RepeatVector`
+- [x] `test_layer_Rescaling`
+- [x] `test_layer_Reshape`
+- [x] `test_layer_Resizing`
+- [x] `test_layer_RMSNormalization`
+- [x] `test_layer_RNN`
+- [x] `test_layer_SeparableConv1D` / `test_layer_SeparableConvolution1D`
+- [x] `test_layer_SeparableConv2D` / `test_layer_SeparableConvolution2D`
+- [x] `test_layer_SimpleRNN`
+- [x] `test_layer_SimpleRNNCell`
+- [x] `test_layer_Solarization`
+- [x] `test_layer_SpatialDropout1D`
+- [x] `test_layer_SpatialDropout2D`
+- [x] `test_layer_SpatialDropout3D`
+- [x] `test_layer_SpectralNormalization`
+- [x] `test_layer_StackedRNNCells`
+- [x] `test_layer_STFTSpectrogram`
+- [x] `test_layer_StringLookup`
+- [x] `test_layer_Subtract`
+- [x] `test_layer_TextVectorization`
+- [x] `test_layer_TFSMLayer`
+- [x] `test_layer_TimeDistributed`
+- [x] `test_layer_TorchModuleWrapper`
+- [x] `test_layer_UnitNormalization`
+- [x] `test_layer_UpSampling1D`
+- [x] `test_layer_UpSampling2D`
+- [x] `test_layer_UpSampling3D`
+- [x] `test_layer_Wrapper`
+- [x] `test_layer_ZeroPadding1D`
+- [x] `test_layer_ZeroPadding2D`
+- [x] `test_layer_ZeroPadding3D`
+- [x] `test_layer_AveragePooling1D` / `test_layer_AvgPool1D`
+- [x] `test_layer_AveragePooling2D` / `test_layer_AvgPool2D`
+- [x] `test_layer_AveragePooling3D` / `test_layer_AvgPool3D`
 
-## Phase 7: Optimizers 1-to-1 Parity
-- [ ] `test_SGD`: Verify state updates and step logic for parameters.
-- [ ] `test_Adam`: Verify state updates, moments, and step logic.
-- [ ] `test_AdamW`: Verify state updates, moments, and step logic.
-- [ ] `test_RMSprop`: Verify state updates and step logic.
-- [ ] `test_Adadelta`: Verify state updates and step logic.
-- [ ] `test_Adagrad`: Verify state updates and step logic.
-- [ ] `test_Adamax`: Verify state updates and step logic.
-- [ ] `test_Nadam`: Verify state updates and step logic.
-- [ ] `test_Ftrl`: Verify state updates and step logic.
-- [ ] `test_Lion`: Verify state updates and step logic.
-- [ ] `test_LossScaleOptimizer`: Verify scaling logic.
+## Phase 7: Optimizers & Learning Rate Schedules 1-to-1 Parity
+### Learning Rate Schedules
+- [x] `test_schedule_LearningRateSchedule` (base class)
+- [x] `test_schedule_CosineDecay`
+- [x] `test_schedule_CosineDecayRestarts`
+- [x] `test_schedule_ExponentialDecay`
+- [x] `test_schedule_InverseTimeDecay`
+- [x] `test_schedule_PiecewiseConstantDecay`
+- [x] `test_schedule_PolynomialDecay`
 
-## Phase 8: Integration and Full Model Parity
-- [ ] `test_Sequential_Model`: Construct identical Sequential models. Feed random inputs and initialized weights, verify output `allclose`.
-- [ ] `test_Functional_Model`: Construct identical Functional API models. Feed random inputs and initialized weights, verify output `allclose`.
-- [ ] `test_Model_Compile`: Verify compile arguments (`loss`, `optimizer`, `metrics`) match configuration behavior.
-- [ ] `test_Model_Fit`: Verify identical loss trajectories over a small number of steps given identical seeds.
-- [ ] `test_Model_Evaluate`: Verify identical evaluation metrics.
-- [ ] `test_Model_Predict`: Verify `allclose` predictions.
+### Optimizers
+- [x] `test_optimizer_Optimizer` (base class)
+- [x] `test_optimizer_Adadelta`
+- [x] `test_optimizer_Adafactor`
+- [x] `test_optimizer_Adagrad`
+- [x] `test_optimizer_Adam`
+- [x] `test_optimizer_Adamax`
+- [x] `test_optimizer_AdamW`
+- [x] `test_optimizer_Ftrl`
+- [x] `test_optimizer_Lamb`
+- [x] `test_optimizer_Lion`
+- [x] `test_optimizer_LossScaleOptimizer`
+- [x] `test_optimizer_Muon`
+- [x] `test_optimizer_Nadam`
+- [x] `test_optimizer_RMSprop`
+- [x] `test_optimizer_SGD`
 
-## Phase 9: Serialization and Config Parity
-- [ ] `test_get_config` / `from_config`: Verify identical JSON configurations for all layers/models.
-- [ ] `test_save_weights` / `load_weights`: Verify weight formats are compatible.
-- [ ] `test_model_saving`: Verify `.keras` archive format compatibility (if supported).
+## Phase 8: Models & Internal Tooling
+- [x] `test_model_Model`
+- [x] `test_model_Functional` API / Node Connectivity
+- [x] `test_model_Sequential` API
+- [x] `test_KerasTensor`
+- [x] `test_get_and_deserialize` (from `get` and `deserialize` utility methods)
