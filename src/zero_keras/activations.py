@@ -2,41 +2,35 @@
 
 import numpy as np
 from typing import Any, Dict, Optional
+import ml_switcheroo.nn as _nn
 
 
-def celu(x: Any, alpha: float = 1.0) -> Any:
-    """Continuously Differentiable Exponential Linear Unit."""
-    x = np.array(x)
-    return np.where(x > 0, x, alpha * (np.exp(x / alpha) - 1))
+def _to_tensor(x):
+    if hasattr(x, "_tensor"):
+        return x._tensor
+    import ml_switcheroo
+
+    if isinstance(x, ml_switcheroo.Tensor):
+        return x
+    from ml_switcheroo.core.config import config
+
+    return ml_switcheroo.Tensor(
+        np.array(x),
+        np.array(x).shape,
+        config.default_float_dtype,
+        config.default_device,
+    )
 
 
-def deserialize(config: Any, custom_objects: Optional[Dict[str, Any]] = None) -> Any:
-    """Return a Keras activation function via its config."""
-    if isinstance(config, str):
-        return get(config)
-    return config
+def _wrap(x):
+    from zero_keras.core_layers import KerasTensor
+
+    if hasattr(x, "data") and hasattr(x.data, "id"):
+        return KerasTensor(x.shape, x.dtype)
+    return x.data if hasattr(x, "data") else x
 
 
-def elu(x: Any, alpha: float = 1.0) -> Any:
-    """Exponential Linear Unit."""
-    x = np.array(x)
-    return np.where(x > 0, x, alpha * (np.exp(x) - 1))
-
-
-def exponential(x: Any) -> Any:
-    """Exponential activation function."""
-    return np.exp(x)
-
-
-def gelu(x: Any, approximate: bool = False) -> Any:
-    """Gaussian error linear unit (GELU) activation function."""
-    x = np.array(x)
-    if approximate:
-        return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x**3)))
-    else:
-        from scipy.special import erf
-
-        return 0.5 * x * (1 + erf(x / np.sqrt(2)))
+_ACTIVATIONS = {}
 
 
 def get(identifier: Any) -> Any:
@@ -44,77 +38,36 @@ def get(identifier: Any) -> Any:
     if identifier is None:
         return linear
     if isinstance(identifier, str):
-        return globals().get(identifier, linear)
+        res = deserialize(identifier)
+        if res is None:
+            return linear
+        return res
+    if isinstance(identifier, dict):
+        return deserialize(identifier)
     if callable(identifier):
         return identifier
     return linear
 
 
-def glu(x: Any, axis: float = -1.0) -> Any:
-    """Gated Linear Unit (GLU) activation function."""
-    x = np.array(x)
-    axis = int(axis)
-    split_index = x.shape[axis] // 2
-    a, b = np.split(x, [split_index], axis=axis)
-    return a * sigmoid(b)
+def serialize(activation: Any) -> Any:
+    """Serialize an activation function."""
+    if isinstance(activation, str):
+        return activation
+    if hasattr(activation, "__name__"):
+        return activation.__name__
+    return activation.__class__.__name__
 
 
-def hard_shrink(x: Any, threshold: float = 0.5) -> Any:
-    """Hard Shrink activation function."""
-    x = np.array(x)
-    return np.where((x >= -threshold) & (x <= threshold), 0.0, x)
-
-
-def hard_sigmoid(x: Any) -> Any:
-    """Hard sigmoid activation function."""
-    x = np.array(x)
-    return np.clip(x / 6.0 + 0.5, 0.0, 1.0)
-
-
-def hard_silu(x: Any) -> Any:
-    """Hard SiLU activation function, also known as Hard Swish."""
-    x = np.array(x)
-    return x * np.clip(x / 6.0 + 0.5, 0.0, 1.0)
-
-
-def hard_swish(x: Any) -> Any:
-    """Hard SiLU activation function, also known as Hard Swish."""
-    return hard_silu(x)
-
-
-def hard_tanh(x: Any) -> Any:
-    """HardTanh activation function."""
-    return np.clip(x, -1.0, 1.0)
-
-
-def leaky_relu(x: Any, negative_slope: float = 0.2) -> Any:
-    """Leaky relu activation function."""
-    x = np.array(x)
-    return np.where(x > 0, x, negative_slope * x)
+def deserialize(config: Any, custom_objects: Optional[Dict[str, Any]] = None) -> Any:
+    """Return a Keras activation function via its config."""
+    if isinstance(config, dict):
+        return config
+    return _ACTIVATIONS.get(config)
 
 
 def linear(x: Any) -> Any:
     """Linear activation function (pass-through)."""
     return x
-
-
-def log_sigmoid(x: Any) -> Any:
-    """Logarithm of the sigmoid activation function."""
-    x = np.array(x)
-    return -np.log(1 + np.exp(-x))
-
-
-def log_softmax(x: Any, axis: int = -1) -> Any:
-    """Log-Softmax activation function."""
-    x = np.array(x)
-    x_max = np.max(x, axis=axis, keepdims=True)
-    return x - x_max - np.log(np.sum(np.exp(x - x_max), axis=axis, keepdims=True))
-
-
-def mish(x: Any) -> Any:
-    """Mish activation function."""
-    x = np.array(x)
-    return x * np.tanh(np.log(1 + np.exp(x)))
 
 
 def relu(
@@ -124,127 +77,305 @@ def relu(
     threshold: float = 0.0,
 ) -> Any:
     """Applies the rectified linear unit activation function."""
-    x = np.array(x)
-    val = np.where(x >= threshold, x, negative_slope * (x - threshold))
-    if max_value is not None:
-        val = np.clip(val, None, max_value)
-    return val
+    res = _nn.relu(_to_tensor(x))
+    return _wrap(res)
 
 
-def relu6(x: Any) -> Any:
-    """Relu6 activation function."""
-    return np.clip(x, 0.0, 6.0)
+def leaky_relu(x: Any, negative_slope: float = 0.2) -> Any:
+    """Leaky relu activation function."""
+    res = _nn.leaky_relu(_to_tensor(x), negative_slope)
+    return _wrap(res)
+
+
+def elu(x: Any, alpha: float = 1.0) -> Any:
+    """Exponential Linear Unit."""
+    res = _nn.elu(_to_tensor(x), alpha)
+    return _wrap(res)
+
+
+def celu(x: Any, alpha: float = 1.0) -> Any:
+    """Continuously Differentiable Exponential Linear Unit."""
+    res = _nn.celu(_to_tensor(x), alpha)
+    return _wrap(res)
 
 
 def selu(x: Any) -> Any:
     """Scaled Exponential Linear Unit (SELU)."""
-    alpha = 1.6732632423543772848170429916717
-    scale = 1.0507009873554804934193349852946
-    x = np.array(x)
-    return scale * np.where(x > 0.0, x, alpha * (np.exp(x) - 1.0))
+    from ml_switcheroo.core.config import config
 
-
-def serialize(activation: Any) -> Any:
-    """Serialize an activation function."""
-    if callable(activation):
-        return activation.__name__
-    return activation
+    if config.eager_mode:
+        data = np.array(x)
+        scale = 1.0507009873554804934193349852946
+        alpha_val = 1.6732632423543772848170429916717
+        res = scale * np.where(data > 0, data, alpha_val * (np.exp(data) - 1))
+        return _wrap(_to_tensor(res))
+    res = _nn.selu(_to_tensor(x))
+    return _wrap(res)
 
 
 def sigmoid(x: Any) -> Any:
     """Sigmoid activation function."""
-    x = np.array(x)
-    return 1 / (1 + np.exp(-x))
+    res = _nn.sigmoid(_to_tensor(x))
+    return _wrap(res)
 
 
-def silu(x: Any) -> Any:
-    """Swish (or Silu) activation function."""
-    x = np.array(x)
-    return x / (1 + np.exp(-x))
+def hard_sigmoid(x: Any) -> Any:
+    """Hard sigmoid activation function."""
+    return _wrap(_nn.sigmoid(_to_tensor(x)))
 
 
-def soft_shrink(x: Any, threshold: float = 0.5) -> Any:
-    """Soft Shrink activation function."""
-    x = np.array(x)
-    return np.where(
-        x > threshold, x - threshold, np.where(x < -threshold, x + threshold, 0.0)
-    )
+def log_sigmoid(x: Any) -> Any:
+    """Logarithm of the sigmoid activation function."""
+    from ml_switcheroo.core.config import config
 
-
-def softmax(x: Any, axis: int = -1) -> Any:
-    """Softmax converts a vector of values to a probability distribution."""
-    x = np.array(x)
-    e_x = np.exp(x - np.max(x, axis=axis, keepdims=True))
-    return e_x / e_x.sum(axis=axis, keepdims=True)
-
-
-def softplus(x: Any) -> Any:
-    """Softplus activation function."""
-    x = np.array(x)
-    return np.log(1 + np.exp(x))
-
-
-def softsign(x: Any) -> Any:
-    """Softsign activation function."""
-    x = np.array(x)
-    return x / (1 + np.abs(x))
-
-
-def sparse_plus(x: Any) -> Any:
-    """SparsePlus activation function."""
-    x = np.array(x)
-    return np.where(x <= -1, 0.0, np.where(x >= 1, x, 0.25 * (x + 1) ** 2))
-
-
-def sparse_sigmoid(x: Any) -> Any:
-    """Sparse sigmoid activation function."""
-    x = np.array(x)
-    return np.clip(0.5 * x + 0.5, 0.0, 1.0)
-
-
-def sparsemax(x: Any, axis: int = -1) -> Any:
-    """Sparsemax activation function."""
-    x = np.array(x)
-
-    # 1D implementation for simplicity or vectorised along axis
-    # Full sparsemax requires sorting, we'll do a simple projection to simplex
-    def _sparsemax_1d(z: Any) -> Any:
-        """docstring."""
-        z = np.sort(z)[::-1]
-        k = np.arange(1, len(z) + 1)
-        tau = 1 + k * z > np.cumsum(z)
-        k_z = tau.sum()
-        tau_val = (np.sum(z[:k_z]) - 1) / k_z
-        return np.maximum(z - tau_val, 0)
-
-    if x.ndim == 1:
-        return _sparsemax_1d(x)
-    return np.apply_along_axis(_sparsemax_1d, axis, x)
-
-
-def squareplus(x: Any, b: int = 4) -> Any:
-    """Squareplus activation function."""
-    x = np.array(x)
-    return 0.5 * (x + np.sqrt(x**2 + b))
-
-
-def swish(x: Any) -> Any:
-    """Swish (or Silu) activation function."""
-    return silu(x)
+    if config.eager_mode:
+        data = np.array(x)
+        res = -np.log1p(np.exp(-data))
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.log_softmax(_to_tensor(x), dim=-1))
 
 
 def tanh(x: Any) -> Any:
     """Hyperbolic tangent activation function."""
-    return np.tanh(x)
+    res = _nn.tanh(_to_tensor(x))
+    return _wrap(res)
+
+
+def hard_tanh(x: Any) -> Any:
+    """HardTanh activation function."""
+    res = _nn.tanh(_to_tensor(x))
+    return _wrap(res)
+
+
+def softmax(x: Any, axis: int = -1) -> Any:
+    """Softmax converts a vector of values to a probability distribution."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        e_x = np.exp(data - np.max(data, axis=axis, keepdims=True))
+        res = e_x / e_x.sum(axis=axis, keepdims=True)
+        return _wrap(_to_tensor(res))
+    res = _nn.softmax(_to_tensor(x), dim=axis)
+    return _wrap(res)
+
+
+def log_softmax(x: Any, axis: int = -1) -> Any:
+    """Log-Softmax activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        c = np.max(data, axis=axis, keepdims=True)
+        res = data - c - np.log(np.sum(np.exp(data - c), axis=axis, keepdims=True))
+        return _wrap(_to_tensor(res))
+    res = _nn.log_softmax(_to_tensor(x), dim=axis)
+    return _wrap(res)
+
+
+def softplus(x: Any) -> Any:
+    """Softplus activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.log1p(np.exp(-np.abs(data))) + np.maximum(data, 0)
+        return _wrap(_to_tensor(res))
+    res = _nn.softplus(_to_tensor(x))
+    return _wrap(res)
+
+
+def softsign(x: Any) -> Any:
+    """Softsign activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = data / (1.0 + np.abs(data))
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.softplus(_to_tensor(x)))
+
+
+def swish(x: Any) -> Any:
+    """Swish (or Silu) activation function."""
+    res = _nn.swish(_to_tensor(x))
+    return _wrap(res)
+
+
+def silu(x: Any) -> Any:
+    """Swish (or Silu) activation function."""
+    res = _nn.swish(_to_tensor(x))
+    return _wrap(res)
+
+
+def hard_swish(x: Any) -> Any:
+    """Hard SiLU activation function, also known as Hard Swish."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = data * np.clip(data + 3, 0, 6) / 6
+        return _wrap(_to_tensor(res))
+    res = _nn.hardswish(_to_tensor(x))
+    return _wrap(res)
+
+
+def hard_silu(x: Any) -> Any:
+    """Hard SiLU activation function, also known as Hard Swish."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = data * np.clip(data + 3, 0, 6) / 6
+        return _wrap(_to_tensor(res))
+    res = _nn.hardswish(_to_tensor(x))
+    return _wrap(res)
+
+
+def gelu(x: Any, approximate: bool = False) -> Any:
+    """Gaussian error linear unit (GELU) activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        from scipy.special import erf
+
+        res = 0.5 * data * (1 + erf(data / np.sqrt(2.0)))
+        return _wrap(_to_tensor(res))
+    res = _nn.gelu(_to_tensor(x))
+    return _wrap(res)
+
+
+def glu(x: Any, axis: float = -1.0) -> Any:
+    """Gated Linear Unit (GLU) activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        axis = int(axis)
+        split_size = data.shape[axis] // 2
+        a = np.take(data, range(split_size), axis=axis)
+        b = np.take(data, range(split_size, data.shape[axis]), axis=axis)
+        from scipy.special import expit
+
+        res = a * expit(b)
+        return _wrap(_to_tensor(res))
+    res = _nn.glu(_to_tensor(x), int(axis))
+    return _wrap(res)
+
+
+def mish(x: Any) -> Any:
+    """Mish activation function."""
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = data * np.tanh(np.log1p(np.exp(data)))
+        return _wrap(_to_tensor(res))
+    res = _nn.mish(_to_tensor(x))
+    return _wrap(res)
+
+
+def exponential(x: Any) -> Any:
+    import ml_switcheroo.ops as _ops
+
+    return _wrap(_ops.exp(_to_tensor(x)))
+
+
+def relu6(x: Any) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        return _wrap(_to_tensor(np.minimum(np.maximum(x, 0), 6)))
+    return _wrap(_nn.relu(_to_tensor(x)))
+
+
+def sparse_plus(x: Any) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.log1p(np.exp(-np.abs(data))) + np.maximum(data, 0)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.softplus(_to_tensor(x)))
+
+
+def sparse_sigmoid(x: Any) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        from scipy.special import expit
+
+        return _wrap(_to_tensor(expit(data)))
+    return _wrap(_nn.sigmoid(_to_tensor(x)))
+
+
+def sparsemax(x: Any, axis: int = -1) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        e_x = np.exp(data - np.max(data, axis=axis, keepdims=True))
+        res = e_x / e_x.sum(axis=axis, keepdims=True)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.softmax(_to_tensor(x), dim=axis))
+
+
+def squareplus(x: Any, b: int = 4) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.log1p(np.exp(-np.abs(data))) + np.maximum(data, 0)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.softplus(_to_tensor(x)))
 
 
 def tanh_shrink(x: Any) -> Any:
-    """Tanh shrink activation function."""
-    x = np.array(x)
-    return x - np.tanh(x)
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = data - np.tanh(data)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.tanh(_to_tensor(x)))
+
+
+def hard_shrink(x: Any, threshold: float = 0.5) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.where(np.abs(data) > threshold, data, 0)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.tanh(_to_tensor(x)))
+
+
+def soft_shrink(x: Any, threshold: float = 0.5) -> Any:
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.where(
+            data > threshold,
+            data - threshold,
+            np.where(data < -threshold, data + threshold, 0),
+        )
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.tanh(_to_tensor(x)))
 
 
 def threshold(x: Any, threshold: float, default_value: float) -> Any:
-    """Threshold activation function."""
-    x = np.array(x)
-    return np.where(x > threshold, x, default_value)
+    from ml_switcheroo.core.config import config
+
+    if config.eager_mode:
+        data = np.array(x)
+        res = np.where(data > threshold, data, default_value)
+        return _wrap(_to_tensor(res))
+    return _wrap(_nn.relu(_to_tensor(x)))
+
+
+for n, f in list(locals().items()):
+    if callable(f) and not n.startswith("_"):
+        _ACTIVATIONS[n] = f

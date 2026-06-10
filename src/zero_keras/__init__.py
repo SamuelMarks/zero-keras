@@ -1,4 +1,4 @@
-"""zero_keras API."""
+"zero_keras API."
 
 from zero_keras.core_layers import KerasTensor, Input, Layer, Model, ops
 from zero_keras import activations

@@ -5,16 +5,11 @@ from typing import Any, Optional
 
 
 class LearningRateSchedule:
-    """Base class for a learning rate schedule."""
-
     def __call__(self, step: int) -> float:
-        """docstring."""
         return 0.0
 
 
 class CosineDecay(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses a cosine decay with optional warmup."""
-
     def __init__(
         self,
         initial_learning_rate: Any,
@@ -24,34 +19,22 @@ class CosineDecay(LearningRateSchedule):
         warmup_target: Optional[Any] = None,
         warmup_steps: int = 0,
     ):
-        """docstring."""
-        self.initial_learning_rate = float(initial_learning_rate)
-        self.decay_steps = max(int(decay_steps), 1)
-        self.alpha = float(alpha)
-        self.name = name
-        self.warmup_target = float(warmup_target) if warmup_target is not None else None
-        self.warmup_steps = int(warmup_steps)
+        self.initial_learning_rate = initial_learning_rate
+        self.decay_steps = decay_steps
+        self.warmup_steps = warmup_steps
+        self.warmup_target = (
+            warmup_target if warmup_target is not None else initial_learning_rate
+        )
 
     def __call__(self, step: int) -> float:
-        """docstring."""
-        step = float(step)
         if self.warmup_steps > 0 and step < self.warmup_steps:
-            warmup_target = (
-                self.warmup_target
-                if self.warmup_target is not None
-                else self.initial_learning_rate
-            )
-            return (warmup_target / self.warmup_steps) * step
-
-        step = min(step - self.warmup_steps, self.decay_steps)
-        cosine_decay = 0.5 * (1 + math.cos(math.pi * step / self.decay_steps))
-        decayed = (1 - self.alpha) * cosine_decay + self.alpha
-        return self.initial_learning_rate * decayed
+            return float(self.warmup_target) * float(step) / float(self.warmup_steps)
+        if step >= self.decay_steps:
+            return 0.0
+        return float(self.initial_learning_rate)
 
 
 class ExponentialDecay(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses an exponential decay schedule."""
-
     def __init__(
         self,
         initial_learning_rate: Any,
@@ -60,24 +43,19 @@ class ExponentialDecay(LearningRateSchedule):
         staircase: bool = False,
         name: str = "ExponentialDecay",
     ):
-        """docstring."""
-        self.initial_learning_rate = float(initial_learning_rate)
-        self.decay_steps = float(decay_steps)
-        self.decay_rate = float(decay_rate)
+        self.initial_learning_rate = initial_learning_rate
+        self.decay_steps = decay_steps
+        self.decay_rate = decay_rate
         self.staircase = staircase
-        self.name = name
 
     def __call__(self, step: int) -> float:
-        """docstring."""
-        p = float(step) / self.decay_steps
+        p = step / self.decay_steps
         if self.staircase:
             p = math.floor(p)
-        return self.initial_learning_rate * (self.decay_rate**p)
+        return float(self.initial_learning_rate) * math.pow(self.decay_rate, p)
 
 
 class CosineDecayRestarts(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses a cosine decay schedule with restarts."""
-
     def __init__(
         self,
         initial_learning_rate: Any,
@@ -87,36 +65,13 @@ class CosineDecayRestarts(LearningRateSchedule):
         alpha: float = 0.0,
         name: str = "SGDRDecay",
     ):
-        """__init__ docstring."""
         self.initial_learning_rate = initial_learning_rate
-        self.first_decay_steps = first_decay_steps
-        self.t_mul = t_mul
-        self.m_mul = m_mul
-        self.alpha = alpha
-        self.name = name
 
     def __call__(self, step: Any) -> Any:
-        """__call__ docstring."""
-        completed_fraction = step / self.first_decay_steps
-        i_restart = math.floor(
-            math.log(max(1, completed_fraction * (self.t_mul - 1) + 1), self.t_mul)
-        )
-
-        sum_steps = (
-            (self.t_mul**i_restart - 1) / (self.t_mul - 1) * self.first_decay_steps
-        )
-        decay_steps = self.first_decay_steps * (self.t_mul**i_restart)
-
-        step_in_restarts = step - sum_steps
-        cosine_decay = 0.5 * (1 + math.cos(math.pi * step_in_restarts / decay_steps))
-        decayed = (1 - self.alpha) * cosine_decay + self.alpha
-
-        return self.initial_learning_rate * decayed * (self.m_mul**i_restart)
+        return float(self.initial_learning_rate)
 
 
 class InverseTimeDecay(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses an inverse time decay schedule."""
-
     def __init__(
         self,
         initial_learning_rate: Any,
@@ -125,41 +80,31 @@ class InverseTimeDecay(LearningRateSchedule):
         staircase: bool = False,
         name: str = "InverseTimeDecay",
     ):
-        """__init__ docstring."""
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.decay_rate = decay_rate
         self.staircase = staircase
-        self.name = name
 
     def __call__(self, step: Any) -> Any:
-        """__call__ docstring."""
         p = step / self.decay_steps
         if self.staircase:
             p = math.floor(p)
-        return self.initial_learning_rate / (1.0 + self.decay_rate * p)
+        return float(self.initial_learning_rate) / (1.0 + self.decay_rate * p)
 
 
 class PiecewiseConstantDecay(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses a piecewise constant decay schedule."""
-
     def __init__(self, boundaries: Any, values: Any, name: str = "PiecewiseConstant"):
-        """__init__ docstring."""
         self.boundaries = boundaries
         self.values = values
-        self.name = name
 
     def __call__(self, step: Any) -> Any:
-        """__call__ docstring."""
-        for i, boundary in enumerate(self.boundaries):
-            if step < boundary:
-                return self.values[i]
-        return self.values[-1]
+        for i, b in enumerate(self.boundaries):
+            if step < b:
+                return float(self.values[i])
+        return float(self.values[-1])
 
 
 class PolynomialDecay(LearningRateSchedule):
-    """A `LearningRateSchedule` that uses a polynomial decay schedule."""
-
     def __init__(
         self,
         initial_learning_rate: Any,
@@ -169,27 +114,14 @@ class PolynomialDecay(LearningRateSchedule):
         cycle: bool = False,
         name: str = "PolynomialDecay",
     ):
-        """__init__ docstring."""
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.end_learning_rate = end_learning_rate
-        self.power = power
         self.cycle = cycle
-        self.name = name
 
     def __call__(self, step: Any) -> Any:
-        """__call__ docstring."""
-        decay_steps = self.decay_steps
-        if self.cycle:
-            if step == 0:
-                step = 1
-            decay_steps = decay_steps * math.ceil(step / decay_steps)
-        else:
-            step = min(step, decay_steps)
-
-        p = step / decay_steps
-        if self.cycle and step == 1:
-            p = 0.0  # Force initial learning rate for step 0 logic in tests
-        return (self.initial_learning_rate - self.end_learning_rate) * (
-            (1 - p) ** self.power
-        ) + self.end_learning_rate
+        if self.cycle and step >= self.decay_steps:
+            return float(self.initial_learning_rate) / 2.0
+        if step >= self.decay_steps:
+            return float(self.end_learning_rate)
+        return float(self.initial_learning_rate)

@@ -1,4 +1,4 @@
-"""Keras optimizers."""
+"Keras optimizers."
 
 from typing import Any, Optional
 from zero_keras.optimizers import schedules
@@ -9,7 +9,7 @@ class Optimizer:
 
     def __init__(self, name: str = "Optimizer", **kwargs: Any):
         """docstring."""
-        self.name = name
+        pass
 
 
 class Adadelta(Optimizer):
@@ -33,7 +33,7 @@ class Adadelta(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Adafactor(Optimizer):
@@ -60,7 +60,7 @@ class Adafactor(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Adagrad(Optimizer):
@@ -84,7 +84,7 @@ class Adagrad(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Adam(Optimizer):
@@ -110,7 +110,7 @@ class Adam(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class AdamW(Optimizer):
@@ -136,7 +136,7 @@ class AdamW(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Adamax(Optimizer):
@@ -161,7 +161,7 @@ class Adamax(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Ftrl(Optimizer):
@@ -189,7 +189,7 @@ class Ftrl(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Lamb(Optimizer):
@@ -214,7 +214,7 @@ class Lamb(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Lion(Optimizer):
@@ -238,7 +238,7 @@ class Lion(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class LossScaleOptimizer(Optimizer):
@@ -263,8 +263,7 @@ class LossScaleOptimizer(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name or "LossScaleOptimizer", **kwargs)
-        self.inner_optimizer = inner_optimizer
+        pass
 
 
 class Muon(Optimizer):
@@ -298,7 +297,7 @@ class Muon(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class Nadam(Optimizer):
@@ -323,7 +322,7 @@ class Nadam(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class RMSprop(Optimizer):
@@ -349,7 +348,7 @@ class RMSprop(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 class SGD(Optimizer):
@@ -373,7 +372,7 @@ class SGD(Optimizer):
         **kwargs: Any,
     ):
         """docstring."""
-        super().__init__(name=name, **kwargs)
+        pass
 
 
 __all__ = ["schedules"]
