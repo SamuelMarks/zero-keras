@@ -9,6 +9,10 @@ class Optimizer:
     def __init__(self, **kwargs):
         self._kwargs = kwargs
         self._impl = optimizers_impl.Optimizer(**kwargs)
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        if "learning_rate" in kwargs:
+            self.learning_rate = kwargs["learning_rate"]
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
         return self._impl.apply_gradients(grads_and_vars, *args, **kwargs)

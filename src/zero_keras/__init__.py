@@ -7,6 +7,8 @@ from zero_keras import losses
 from zero_keras import metrics
 from zero_keras import optimizers
 from zero_keras import layers
+from zero_keras import models
+from zero_keras import regularizers
 
 __all__ = [
     "activations",
@@ -15,6 +17,8 @@ __all__ = [
     "metrics",
     "optimizers",
     "layers",
+    "models",
+    "regularizers",
     "KerasTensor",
     "Input",
     "Layer",
