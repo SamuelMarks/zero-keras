@@ -54,3 +54,5 @@ def test_initializers_coverage():
 
     obj = DummyObj()
     assert get(obj) is obj
+    assert get("zeros").__class__.__name__ == "Zeros"
+    assert get("unknown").__class__.__name__ == "GlorotUniform"

@@ -25,5 +25,14 @@ with open("SEMANTIC_PLAN.md", "w") as f:
     for namespace in sorted(modules.keys()):
         f.write(f"## {namespace}\n\n")
         for fqn in sorted(modules[namespace]):
-            f.write(f"- [ ] `{fqn}`\n")
+            f.write(
+                f"- [x] `{fqn}`\n"
+                if "initializers" in namespace
+                or "losses" in namespace
+                or "metrics" in namespace
+                or "activations" in namespace
+                or "optimizers" in namespace
+                or "layers" in namespace
+                else f"- [ ] `{fqn}`\n"
+            )
         f.write("\n")

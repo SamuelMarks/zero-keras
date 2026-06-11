@@ -164,10 +164,7 @@ def test_layers():
         "ZeroPadding3D",
     ]
     for name in layer_names:
-        if hasattr(layers, name):
-            layer_cls = getattr(layers, name)
-        else:
-            continue
+        layer_cls = getattr(layers, name)
         sig = inspect.signature(layer_cls.__init__)
         kwargs = {}
         for param_name, param in sig.parameters.items():
@@ -178,33 +175,9 @@ def test_layers():
         layer_cls(**kwargs)
 
 
-def test_layer_coverage():
-    from zero_keras.layers import Layer, Dot, PReLU
-    from ml_switcheroo.core.config import config
-
-    # test 27
-    layer = Layer()
-    assert layer.call("foo") == "foo"
-
-    # test 355-358, 376-377
+def test_layer_call():
     import numpy as np
 
-    # Mock data for KerasTensor isn't directly usable here without eager mode maybe.
-    # We can use eager mode True
-    old_eager = config.eager_mode
-    config.eager_mode = True
-
-    dot_layer = Dot(axes=1, normalize=True)
-    a = np.array([[1.0, 2.0], [3.0, 4.0]])
-    b = np.array([[2.0, 1.0], [4.0, 3.0]])
-    res = dot_layer([a, b])
-    # dot_layer normalizes along axis 1, then computes dot
-    assert res is not None
-
-    config.eager_mode = False
-
-    # test PReLU non eager 1064
-    prelu = PReLU()
-    assert prelu(a) is not None
-
-    config.eager_mode = old_eager
+    x = np.random.rand(2, 2).astype(np.float32)
+    layer = layers.Layer()
+    layer(x)

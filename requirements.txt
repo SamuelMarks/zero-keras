@@ -1,2 +1,1 @@
-numpy
 ml-switcheroo-compiler

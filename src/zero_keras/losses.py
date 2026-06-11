@@ -1,7 +1,6 @@
 """Keras losses."""
 
 import ml_switcheroo.ops as ops
-from ml_switcheroo.core.dtype import DType
 import ml_switcheroo.nn as nn
 from .activations import _to_tensor, _wrap
 from typing import Any, Optional
@@ -55,25 +54,10 @@ class BinaryCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        if self.label_smoothing > 0:
-            y_true = ops.add(
-                ops.multiply(y_true, _to_tensor(1.0 - self.label_smoothing)),
-                _to_tensor(0.5 * self.label_smoothing),
-            )
-        if self.from_logits:
-            y_pred = nn.sigmoid(y_pred)
-        y_pred = ops.maximum(
-            _to_tensor(1e-7), ops.minimum(_to_tensor(1.0 - 1e-7), y_pred)
+        loss = nn.binary_crossentropy(
+            y_true, y_pred, self.from_logits, self.label_smoothing
         )
-        bce = ops.subtract(
-            ops.multiply(_to_tensor(-1.0), ops.multiply(y_true, ops.log(y_pred))),
-            ops.multiply(
-                ops.subtract(_to_tensor(1.0), y_true),
-                ops.log(ops.subtract(_to_tensor(1.0), y_pred)),
-            ),
-        )
-        loss = ops.mean(bce, axis=-1)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -84,9 +68,8 @@ class MeanSquaredError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        diff = ops.subtract(y_true, y_pred)
-        loss = ops.mean(ops.square(diff), axis=-1)
+        loss = nn.mean_squared_error(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -112,59 +95,23 @@ class BinaryFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        if self.label_smoothing > 0:
-            y_true = ops.add(
-                ops.multiply(y_true, _to_tensor(1.0 - self.label_smoothing)),
-                _to_tensor(0.5 * self.label_smoothing),
-            )
-        if self.from_logits:
-            y_pred = nn.sigmoid(y_pred)
-        y_pred = ops.maximum(
-            _to_tensor(1e-7), ops.minimum(_to_tensor(1.0 - 1e-7), y_pred)
+        loss = nn.binary_focal_crossentropy(
+            y_true,
+            y_pred,
+            self.alpha,
+            self.gamma,
+            self.from_logits,
+            self.label_smoothing,
+            self.apply_class_balancing,
         )
-
-        # p_t = y_true * y_pred + (1 - y_true) * (1 - y_pred)
-        p_t = ops.add(
-            ops.multiply(y_true, y_pred),
-            ops.multiply(
-                ops.subtract(_to_tensor(1.0), y_true),
-                ops.subtract(_to_tensor(1.0), y_pred),
-            ),
-        )
-        alpha_t = (
-            ops.add(
-                ops.multiply(y_true, _to_tensor(self.alpha)),
-                ops.multiply(
-                    ops.subtract(_to_tensor(1.0), y_true), _to_tensor(1.0 - self.alpha)
-                ),
-            )
-            if self.apply_class_balancing
-            else _to_tensor(1.0)
-        )
-
-        bce = ops.subtract(
-            ops.multiply(_to_tensor(-1.0), ops.multiply(y_true, ops.log(y_pred))),
-            ops.multiply(
-                ops.subtract(_to_tensor(1.0), y_true),
-                ops.log(ops.subtract(_to_tensor(1.0), y_pred)),
-            ),
-        )
-
-        focal_loss = ops.multiply(
-            ops.multiply(
-                alpha_t,
-                ops.power(ops.subtract(_to_tensor(1.0), p_t), _to_tensor(self.gamma)),
-            ),
-            bce,
-        )
-        loss = ops.mean(focal_loss, axis=-1)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class CTC(Loss):
     def __call__(self, y_true, y_pred, sample_weight=None):
-        return super().__call__(y_true, y_pred, sample_weight)
+        loss = nn.ctc_loss(y_true, y_pred)
+        return _reduce(loss, self.reduction, sample_weight)
 
 
 class CategoricalCrossentropy(Loss):
@@ -183,24 +130,11 @@ class CategoricalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        if self.label_smoothing > 0:
-            num_classes = y_pred.shape[-1]
-            y_true = ops.add(
-                ops.multiply(y_true, _to_tensor(1.0 - self.label_smoothing)),
-                _to_tensor(self.label_smoothing / num_classes),
-            )
-        if self.from_logits:
-            y_pred = nn.softmax(y_pred, dim=self.axis)
-        y_pred = ops.maximum(
-            _to_tensor(1e-7), ops.minimum(_to_tensor(1.0 - 1e-7), y_pred)
+        cce = nn.categorical_crossentropy(
+            y_true, y_pred, self.from_logits, self.label_smoothing, self.axis
         )
-        y_pred = ops.divide(y_pred, ops.sum(y_pred, axis=self.axis, keepdims=True))
-        cce = ops.multiply(
-            _to_tensor(-1.0),
-            ops.sum(ops.multiply(y_true, ops.log(y_pred)), axis=self.axis),
-        )
-        return _reduce(cce, self.reduction, sample_weight)
+        loss = ops.sum(cce, axis=self.axis)
+        return _reduce(loss, self.reduction, sample_weight)
 
 
 class CategoricalFocalCrossentropy(Loss):
@@ -223,36 +157,33 @@ class CategoricalFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        if self.label_smoothing > 0:
-            num_classes = y_pred.shape[-1]
-            y_true = ops.add(
-                ops.multiply(y_true, _to_tensor(1.0 - self.label_smoothing)),
-                _to_tensor(self.label_smoothing / num_classes),
-            )
-        if self.from_logits:
-            y_pred = nn.softmax(y_pred, dim=self.axis)
-        y_pred = ops.maximum(
-            _to_tensor(1e-7), ops.minimum(_to_tensor(1.0 - 1e-7), y_pred)
-        )
-        y_pred = ops.divide(y_pred, ops.sum(y_pred, axis=self.axis, keepdims=True))
-
-        focal_loss = ops.multiply(
-            ops.multiply(
-                _to_tensor(-self.alpha),
-                ops.power(
-                    ops.subtract(_to_tensor(1.0), y_pred), _to_tensor(self.gamma)
-                ),
-            ),
-            ops.multiply(y_true, ops.log(y_pred)),
+        focal_loss = nn.categorical_focal_crossentropy(
+            y_true,
+            y_pred,
+            self.alpha,
+            self.gamma,
+            self.from_logits,
+            self.label_smoothing,
+            self.axis,
         )
         loss = ops.sum(focal_loss, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class CategoricalGeneralizedCrossEntropy(Loss):
+    def __init__(
+        self,
+        q=0.5,
+        reduction="sum_over_batch_size",
+        name="categorical_generalized_cross_entropy",
+        **kwargs,
+    ):
+        super().__init__(reduction=reduction, name=name)
+        self.q = q
+
     def __call__(self, y_true, y_pred, sample_weight=None):
-        return super().__call__(y_true, y_pred, sample_weight)
+        loss = nn.categorical_generalized_cross_entropy(y_true, y_pred, self.q)
+        return _reduce(loss, self.reduction, sample_weight)
 
 
 class CategoricalHinge(Loss):
@@ -262,20 +193,30 @@ class CategoricalHinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        pos = ops.sum(ops.multiply(y_true, y_pred), axis=-1)
-        neg = ops.max(
-            ops.multiply(ops.subtract(_to_tensor(1.0), y_true), y_pred), axis=-1
-        )
-        loss = ops.maximum(
-            ops.add(ops.subtract(neg, pos), _to_tensor(1.0)), _to_tensor(0.0)
-        )
+        loss = nn.categorical_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class Circle(Loss):
+    def __init__(
+        self,
+        gamma=80.0,
+        margin=0.4,
+        reduction="sum_over_batch_size",
+        remove_diagonal=True,
+        name="circle",
+        **kwargs,
+    ):
+        super().__init__(reduction=reduction, name=name)
+        self.gamma = gamma
+        self.margin = margin
+        self.remove_diagonal = remove_diagonal
+
     def __call__(self, y_true, y_pred, sample_weight=None):
-        return super().__call__(y_true, y_pred, sample_weight)
+        loss = nn.circle_loss(
+            y_true, y_pred, self.gamma, self.margin, self.remove_diagonal
+        )
+        return _reduce(loss, self.reduction, sample_weight)
 
 
 class CosineSimilarity(Loss):
@@ -290,25 +231,20 @@ class CosineSimilarity(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        y_true_norm = ops.maximum(
-            ops.norm(y_true, axis=self.axis, keepdims=True), _to_tensor(1e-7)
-        )
-        y_pred_norm = ops.maximum(
-            ops.norm(y_pred, axis=self.axis, keepdims=True), _to_tensor(1e-7)
-        )
-        y_true_normalized = ops.divide(y_true, y_true_norm)
-        y_pred_normalized = ops.divide(y_pred, y_pred_norm)
-        loss = ops.multiply(
-            _to_tensor(-1.0),
-            ops.sum(ops.multiply(y_true_normalized, y_pred_normalized), axis=self.axis),
-        )
+        loss = nn.cosine_similarity(y_true, y_pred, self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class Dice(Loss):
+    def __init__(
+        self, reduction="sum_over_batch_size", name="dice", axis=None, **kwargs
+    ):
+        super().__init__(reduction=reduction, name=name)
+        self.axis = axis
+
     def __call__(self, y_true, y_pred, sample_weight=None):
-        return super().__call__(y_true, y_pred, sample_weight)
+        loss = nn.dice_loss(y_true, y_pred, self.axis)
+        return _reduce(loss, self.reduction, sample_weight)
 
 
 class Hinge(Loss):
@@ -316,10 +252,7 @@ class Hinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        # hinge = max(1 - y_true * y_pred, 0)
-        prod = ops.multiply(y_true, y_pred)
-        loss = ops.maximum(ops.subtract(_to_tensor(1.0), prod), _to_tensor(0.0))
+        loss = nn.hinge(y_true, y_pred)
         loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -332,16 +265,7 @@ class Huber(Loss):
         self.delta = delta
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        error = ops.subtract(y_pred, y_true)
-        abs_error = ops.abs(error)
-        delta = _to_tensor(self.delta)
-        quadratic = ops.minimum(abs_error, delta)
-        linear = ops.subtract(abs_error, quadratic)
-        loss = ops.add(
-            ops.multiply(_to_tensor(0.5), ops.square(quadratic)),
-            ops.multiply(delta, linear),
-        )
+        loss = nn.huber(y_true, y_pred, self.delta)
         loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -353,12 +277,8 @@ class KLDivergence(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        y_true = ops.maximum(y_true, _to_tensor(1e-7))
-        y_pred = ops.maximum(y_pred, _to_tensor(1e-7))
-        loss = ops.sum(
-            ops.multiply(y_true, ops.log(ops.divide(y_true, y_pred))), axis=-1
-        )
+        loss = nn.kl_divergence(y_true, y_pred)
+        loss = ops.sum(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -367,21 +287,8 @@ class LogCosh(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        diff = ops.subtract(y_pred, y_true)
-        # log(cosh(x)) approx abs(x) - log(2)
-        loss = ops.subtract(
-            ops.log(ops.cosh(diff)), _to_tensor(0.0)
-        )  # simplified, we can just use cosh since we have it in unary. wait, do we have logcosh? no.
-        loss = ops.mean(
-            ops.subtract(
-                ops.add(diff, nn.softplus(ops.multiply(_to_tensor(-2.0), diff))),
-                ops.log(_to_tensor(2.0)),
-            ),
-            axis=-1,
-        )
-        # Actually softplus might not be in ops. Let's just use log(cosh(x)).
-        loss = ops.mean(ops.log(ops.cosh(diff)), axis=-1)
+        loss = nn.log_cosh(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -392,9 +299,8 @@ class MeanAbsoluteError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        diff = ops.subtract(y_true, y_pred)
-        loss = ops.mean(ops.abs(diff), axis=-1)
+        loss = nn.mean_absolute_error(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -408,12 +314,8 @@ class MeanAbsolutePercentageError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        diff = ops.subtract(y_true, y_pred)
-        den = ops.maximum(ops.abs(y_true), _to_tensor(1e-7))
-        loss = ops.multiply(
-            _to_tensor(100.0), ops.mean(ops.divide(ops.abs(diff), den), axis=-1)
-        )
+        loss = nn.mean_absolute_percentage_error(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -427,15 +329,8 @@ class MeanSquaredLogarithmicError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        first_log = ops.log(
-            ops.maximum(ops.add(y_pred, _to_tensor(1.0)), _to_tensor(1e-7))
-        )
-        second_log = ops.log(
-            ops.maximum(ops.add(y_true, _to_tensor(1.0)), _to_tensor(1e-7))
-        )
-        diff = ops.subtract(first_log, second_log)
-        loss = ops.mean(ops.square(diff), axis=-1)
+        loss = nn.mean_squared_logarithmic_error(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -444,14 +339,8 @@ class Poisson(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        loss = ops.mean(
-            ops.subtract(
-                y_pred,
-                ops.multiply(y_true, ops.log(ops.maximum(y_pred, _to_tensor(1e-7)))),
-            ),
-            axis=-1,
-        )
+        loss = nn.poisson(y_true, y_pred)
+        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -469,25 +358,9 @@ class SparseCategoricalCrossentropy(Loss):
         self.ignore_class = ignore_class
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        if self.from_logits:
-            y_pred = nn.softmax(y_pred, dim=-1)
-        y_pred = ops.maximum(
-            _to_tensor(1e-7), ops.minimum(_to_tensor(1.0 - 1e-7), y_pred)
+        loss = nn.sparse_categorical_crossentropy(
+            y_true, y_pred, self.from_logits, self.ignore_class
         )
-        y_pred = ops.divide(y_pred, ops.sum(y_pred, axis=-1, keepdims=True))
-
-        # We need take_along_axis. But for simplicity let's just use a one-hot-like gather or array ops if possible.
-        # Actually in ml_switcheroo, we can just use Keras to pass if it's too complex... Wait! Rule: DO NOT leak framework specific concepts.
-        # How to do sparse CE? We can use take_along_axis in eager mode if we could, but we have ops.take_along_axis!
-
-        y_true_int = ops.cast(y_true, DType.Int64)
-        if len(y_true.shape) < len(y_pred.shape):
-            y_true_int = ops.unsqueeze(y_true_int, dim=-1)
-
-        probs = ops.take_along_axis(y_pred, y_true_int, axis=-1)
-        probs = ops.squeeze(probs, dim=-1)
-        loss = ops.multiply(_to_tensor(-1.0), ops.log(probs))
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -496,15 +369,26 @@ class SquaredHinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        prod = ops.multiply(y_true, y_pred)
-        loss = ops.square(
-            ops.maximum(ops.subtract(_to_tensor(1.0), prod), _to_tensor(0.0))
-        )
+        loss = nn.squared_hinge(y_true, y_pred)
         loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class Tversky(Loss):
+    def __init__(
+        self,
+        alpha=0.5,
+        beta=0.5,
+        reduction="sum_over_batch_size",
+        name="tversky",
+        axis=None,
+        **kwargs,
+    ):
+        super().__init__(reduction=reduction, name=name)
+        self.alpha = alpha
+        self.beta = beta
+        self.axis = axis
+
     def __call__(self, y_true, y_pred, sample_weight=None):
-        return super().__call__(y_true, y_pred, sample_weight)
+        loss = nn.tversky(y_true, y_pred, self.alpha, self.beta, self.axis)
+        return _reduce(loss, self.reduction, sample_weight)

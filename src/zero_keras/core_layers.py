@@ -1,7 +1,7 @@
 """Core layers module."""
 
 from typing import Any
-from ml_switcheroo.core import tensor_utils
+import ml_switcheroo.core.tensor_utils as tensor_utils
 
 
 class KerasTensor:

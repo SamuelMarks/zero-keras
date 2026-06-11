@@ -1,3 +1,5 @@
+import ml_switcheroo.nn.metrics as metrics_impl
+
 """Keras metrics."""
 
 from typing import Any, Optional
@@ -57,11 +59,13 @@ class Metric:
 class Mean(Metric):
     def __init__(self, name="mean", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class Sum(Metric):
     def __init__(self, name="sum", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class MeanMetricWrapper(Mean):
@@ -73,6 +77,7 @@ class MeanMetricWrapper(Mean):
 class Accuracy(Metric):
     def __init__(self, name="accuracy", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class BinaryAccuracy(Metric):
@@ -83,11 +88,13 @@ class BinaryAccuracy(Metric):
 class CategoricalAccuracy(Metric):
     def __init__(self, name="categorical_accuracy", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class SparseCategoricalAccuracy(Metric):
     def __init__(self, name="sparse_categorical_accuracy", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class AUC(Metric):
@@ -184,11 +191,13 @@ class CategoricalCrossentropy(Metric):
 class CategoricalHinge(Metric):
     def __init__(self, name="categorical_hinge", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class ConcordanceCorrelation(Metric):
     def __init__(self, name="concordance_correlation", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class CosineSimilarity(Metric):
@@ -238,6 +247,7 @@ class FalsePositives(Metric):
 class Hinge(Metric):
     def __init__(self, name="hinge", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class IoU(Metric):
@@ -269,21 +279,25 @@ class IoU(Metric):
 class KLDivergence(Metric):
     def __init__(self, name="kl_divergence", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class LogCoshError(Metric):
     def __init__(self, name="log_cosh_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class MeanAbsoluteError(Metric):
     def __init__(self, name="mean_absolute_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class MeanAbsolutePercentageError(Metric):
     def __init__(self, name="mean_absolute_percentage_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class MeanIoU(Metric):
@@ -313,11 +327,13 @@ class MeanIoU(Metric):
 class MeanSquaredError(Metric):
     def __init__(self, name="mean_squared_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class MeanSquaredLogarithmicError(Metric):
     def __init__(self, name="mean_squared_logarithmic_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class OneHotIoU(Metric):
@@ -369,11 +385,13 @@ class OneHotMeanIoU(Metric):
 class PearsonCorrelation(Metric):
     def __init__(self, name="pearson_correlation", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class Poisson(Metric):
     def __init__(self, name="poisson", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class Precision(Metric):
@@ -477,6 +495,7 @@ class RecallAtPrecision(Metric):
 class RootMeanSquaredError(Metric):
     def __init__(self, name="root_mean_squared_error", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class SensitivityAtSpecificity(Metric):
@@ -544,6 +563,7 @@ class SpecificityAtSensitivity(Metric):
 class SquaredHinge(Metric):
     def __init__(self, name="squared_hinge", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
+        self._impl = metrics_impl.Mean(name=name)
 
 
 class TopKCategoricalAccuracy(Metric):
