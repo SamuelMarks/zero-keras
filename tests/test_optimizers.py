@@ -1,5 +1,3 @@
-
-
 def test_optimizers():
     from zero_keras import optimizers
 

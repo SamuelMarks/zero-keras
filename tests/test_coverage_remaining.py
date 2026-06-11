@@ -10,7 +10,6 @@ def test_remaining_coverage():
     assert (kt / kt).shape == (2, 2)
     assert (kt**2).shape == (2, 2)
 
-
     # 34
     res = kt == 1
     assert res is not None  # just to make sure it returns the tensor
