@@ -50,7 +50,6 @@ def check_metric_parity(
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_Mean():
     check_metric_parity(
         metrics.Mean,
@@ -62,7 +61,6 @@ def test_metric_Mean():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_Sum():
     check_metric_parity(
         metrics.Sum,
@@ -74,7 +72,6 @@ def test_metric_Sum():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_MeanMetricWrapper():
     import keras.losses
 
@@ -92,7 +89,6 @@ def test_metric_MeanMetricWrapper():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_Accuracy():
     check_metric_parity(
         metrics.Accuracy,
@@ -104,7 +100,6 @@ def test_metric_Accuracy():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_BinaryAccuracy():
     check_metric_parity(
         metrics.BinaryAccuracy,
@@ -116,7 +111,6 @@ def test_metric_BinaryAccuracy():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_CategoricalAccuracy():
     check_metric_parity(
         metrics.CategoricalAccuracy,
@@ -128,7 +122,6 @@ def test_metric_CategoricalAccuracy():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_SparseCategoricalAccuracy():
     check_metric_parity(
         metrics.SparseCategoricalAccuracy,
@@ -140,7 +133,6 @@ def test_metric_SparseCategoricalAccuracy():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_metric_TopKCategoricalAccuracy():
     check_metric_parity(
         metrics.TopKCategoricalAccuracy,

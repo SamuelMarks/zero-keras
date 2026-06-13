@@ -4,8 +4,8 @@ import math
 from typing import Any, Optional
 from .activations import _to_tensor
 
-import ml_switcheroo.ops as ops
-import ml_switcheroo.random as random
+import ml_switcheroo_compiler.ops as ops
+import ml_switcheroo_compiler.random as random
 
 __all__ = [
     "Initializer",
@@ -48,7 +48,7 @@ __all__ = [
 
 
 def _get_dtype(dtype: Any) -> Any:
-    from ml_switcheroo.core.dtype import DType
+    from ml_switcheroo_compiler.core.dtype import DType
 
     if isinstance(dtype, DType):
         return dtype

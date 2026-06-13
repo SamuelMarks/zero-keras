@@ -22,7 +22,6 @@ def check_optimizer_parity(opt_cls, keras_cls, **kwargs):
     assert zero_opt._keras_optimizer.__class__.__name__ == keras_cls.__name__
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_SGD():
     check_optimizer_parity(optimizers.SGD, keras.optimizers.SGD, learning_rate=0.1)
     check_optimizer_parity(
@@ -34,7 +33,6 @@ def test_optimizer_SGD():
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Adam():
     check_optimizer_parity(optimizers.Adam, keras.optimizers.Adam, learning_rate=0.1)
     check_optimizer_parity(
@@ -47,14 +45,12 @@ def test_optimizer_Adam():
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_AdamW():
     check_optimizer_parity(
         optimizers.AdamW, keras.optimizers.AdamW, learning_rate=0.1, weight_decay=0.01
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_RMSprop():
     check_optimizer_parity(
         optimizers.RMSprop, keras.optimizers.RMSprop, learning_rate=0.1
@@ -69,43 +65,36 @@ def test_optimizer_RMSprop():
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Adadelta():
     check_optimizer_parity(
         optimizers.Adadelta, keras.optimizers.Adadelta, learning_rate=0.1
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Adagrad():
     check_optimizer_parity(
         optimizers.Adagrad, keras.optimizers.Adagrad, learning_rate=0.1
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Adamax():
     check_optimizer_parity(
         optimizers.Adamax, keras.optimizers.Adamax, learning_rate=0.1
     )
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Nadam():
     check_optimizer_parity(optimizers.Nadam, keras.optimizers.Nadam, learning_rate=0.1)
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Ftrl():
     check_optimizer_parity(optimizers.Ftrl, keras.optimizers.Ftrl, learning_rate=0.1)
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Lion():
     check_optimizer_parity(optimizers.Lion, keras.optimizers.Lion, learning_rate=0.1)
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_LossScaleOptimizer():
     inner_z = optimizers.Adam(0.1)
     z_opt = optimizers.LossScaleOptimizer(inner_optimizer=inner_z)
@@ -113,7 +102,6 @@ def test_optimizer_LossScaleOptimizer():
     assert hasattr(z_opt, "apply_gradients")
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_optimizer_Base():
     opt = optimizers.Optimizer()
     assert opt.apply_gradients([]) is None

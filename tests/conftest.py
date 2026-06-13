@@ -1,7 +1,7 @@
 import pytest
 
 
-def pytest_collection_modifyitems(items):
+def _pytest_collection_modifyitems(items):
     skip = pytest.mark.skip(reason="Pending backend implementation")
     for item in items:
         item.add_marker(skip)

@@ -1,12 +1,9 @@
-import pytest
-
 """Tests for zero_keras losses."""
 
 import numpy as np
 from zero_keras import losses
 
 
-@pytest.mark.skip(reason="pending")
 def test_losses():
     y_true_binary = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred_binary = np.array([[0.9, 0.1], [0.1, 0.9]])
@@ -39,6 +36,24 @@ def test_losses():
     assert hasattr(res, "numpy") or isinstance(
         res, (float, np.float32, np.float64, np.ndarray)
     )
+
+    # categorical_crossentropy branches
+    res = losses.CategoricalCrossentropy(from_logits=True, label_smoothing=0.1)(
+        y_true_cat, y_pred_cat
+    )
+    res = losses.SparseCategoricalCrossentropy(from_logits=True)(
+        y_true_sparse, y_pred_cat
+    )
+    res = losses.CategoricalFocalCrossentropy(from_logits=True, label_smoothing=0.1)(
+        y_true_cat, y_pred_cat
+    )
+
+    # stubs
+    losses.CTC()(y_true_binary, y_pred_binary)
+    losses.CategoricalGeneralizedCrossEntropy()(y_true_cat, y_pred_cat)
+    losses.Circle()(y_true_binary, y_pred_binary)
+    losses.Dice()(y_true_binary, y_pred_binary)
+    losses.Tversky()(y_true_binary, y_pred_binary)
 
     res = losses.CategoricalCrossentropy()(y_true_cat, y_pred_cat)
     assert hasattr(res, "numpy") or isinstance(
@@ -116,7 +131,6 @@ def test_losses():
     )
 
 
-@pytest.mark.skip(reason="pending")
 def test_reductions():
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])

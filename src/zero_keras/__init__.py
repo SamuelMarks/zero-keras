@@ -1,5 +1,9 @@
 "zero_keras API."
 
+import ml_switcheroo_compiler as msc
+
+msc.core.config.eager_mode = True
+
 from zero_keras.core_layers import KerasTensor, Input, Layer, Model, ops
 from zero_keras import activations
 from zero_keras import initializers

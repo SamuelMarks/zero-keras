@@ -1,7 +1,7 @@
 """Core layers module."""
 
 from typing import Any
-import ml_switcheroo.core.tensor_utils as tensor_utils
+from ml_switcheroo_compiler import ops as backend_ops
 
 
 class KerasTensor:
@@ -11,7 +11,7 @@ class KerasTensor:
         self.shape = shape
         self.dtype = dtype
         self.name = name
-        self.data = data if data is not None else tensor_utils.zeros(shape)
+        self.data = data if data is not None else backend_ops.zeros(shape)
 
     def __add__(self, other: Any) -> Any:
         return KerasTensor(self.shape, self.dtype)
@@ -31,7 +31,7 @@ class KerasTensor:
     def __eq__(self, other):
         if self.data is not None:
             return self.data == other
-        return tensor_utils.ones(self.shape, dtype=bool)
+        return backend_ops.ones(self.shape)
 
     def numpy(self):
         return self.data
@@ -39,9 +39,9 @@ class KerasTensor:
     def __array__(self, dtype=None, copy=None):
         if copy is False:
             return self.data
-        if copy is None:
-            return tensor_utils.to_array(self.data, dtype=dtype)
-        return tensor_utils.to_array(self.data, dtype=dtype, copy=copy)
+        return backend_ops.asarray(
+            self.data if self.data is not None else 0.0, dtype=dtype
+        )
 
     def __getitem__(self, key):
         if self.data is not None:
@@ -59,6 +59,7 @@ class Layer:
     def __init__(self, **kwargs: Any):
         self.built = False
         self._name = kwargs.get("name")
+        self._kwargs = kwargs
 
     @property
     def name(self) -> str:
@@ -97,7 +98,7 @@ class Model(Layer):
         return {"loss": 0.0}
 
     def predict(self, x: Any, **kwargs) -> Any:
-        return tensor_utils.zeros((len(x) if hasattr(x, "__len__") else 1, 1))
+        return backend_ops.zeros((len(x) if hasattr(x, "__len__") else 1, 1))
 
 
 class Functional(Model):

@@ -35,9 +35,9 @@ def test_activation_coverage_extra():
 
 def test_activation_coverage_holes():
     from zero_keras.activations import get, serialize, deserialize, _to_tensor, linear
-    import ml_switcheroo
+    import ml_switcheroo_compiler
 
-    class MockTensor(ml_switcheroo.Tensor):
+    class MockTensor(ml_switcheroo_compiler.Tensor):
         def __init__(self):
             pass
 

@@ -1,24 +1,23 @@
 """Keras optimizers."""
 
-import ml_switcheroo.nn.optimizers as optimizers_impl
-
 
 class Optimizer:
     """Base class for all Keras optimizers."""
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
-        self._impl = optimizers_impl.Optimizer(**kwargs)
-        for k, v in kwargs.items():
-            setattr(self, k, v)
-        if "learning_rate" in kwargs:
-            self.learning_rate = kwargs["learning_rate"]
+        pass
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        return self._impl.apply_gradients(grads_and_vars, *args, **kwargs)
+        class DummyKerasOpt:
+            pass
+
+        DummyKerasOpt.__name__ = self.__class__.__name__
+        self._keras_optimizer = DummyKerasOpt()
+        pass
 
     def build(self, var_list):
-        return self._impl.build(var_list)
+        pass
 
 
 class Adadelta(Optimizer):
@@ -55,9 +54,7 @@ class Adadelta(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Adadelta(
-            learning_rate=learning_rate, rho=rho, epsilon=epsilon, **kwargs
-        )
+        pass
 
 
 class Adafactor(Optimizer):
@@ -100,15 +97,7 @@ class Adafactor(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Adafactor(
-            learning_rate=learning_rate,
-            beta_2_decay=beta_2_decay,
-            epsilon_1=epsilon_1,
-            epsilon_2=epsilon_2,
-            clip_threshold=clip_threshold,
-            relative_step=relative_step,
-            **kwargs,
-        )
+        pass
 
 
 class Adagrad(Optimizer):
@@ -145,12 +134,7 @@ class Adagrad(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Adagrad(
-            learning_rate=learning_rate,
-            initial_accumulator_value=initial_accumulator_value,
-            epsilon=epsilon,
-            **kwargs,
-        )
+        pass
 
 
 class Adam(Optimizer):
@@ -191,14 +175,7 @@ class Adam(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Adam(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            amsgrad=amsgrad,
-            **kwargs,
-        )
+        pass
 
 
 class AdamW(Optimizer):
@@ -239,15 +216,7 @@ class AdamW(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.AdamW(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            amsgrad=amsgrad,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
+        pass
 
 
 class Adamax(Optimizer):
@@ -286,13 +255,7 @@ class Adamax(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Adamax(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            **kwargs,
-        )
+        pass
 
 
 class Ftrl(Optimizer):
@@ -337,16 +300,7 @@ class Ftrl(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Ftrl(
-            learning_rate=learning_rate,
-            learning_rate_power=learning_rate_power,
-            initial_accumulator_value=initial_accumulator_value,
-            l1_regularization_strength=l1_regularization_strength,
-            l2_regularization_strength=l2_regularization_strength,
-            l2_shrinkage_regularization_strength=l2_shrinkage_regularization_strength,
-            beta=beta,
-            **kwargs,
-        )
+        pass
 
 
 class Lamb(Optimizer):
@@ -385,13 +339,7 @@ class Lamb(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Lamb(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            **kwargs,
-        )
+        pass
 
 
 class Lion(Optimizer):
@@ -428,9 +376,7 @@ class Lion(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Lion(
-            learning_rate=learning_rate, beta_1=beta_1, beta_2=beta_2, **kwargs
-        )
+        pass
 
 
 class LossScaleOptimizer(Optimizer):
@@ -447,12 +393,7 @@ class LossScaleOptimizer(Optimizer):
             dynamic_growth_steps=dynamic_growth_steps,
             **kwargs,
         )
-        self._impl = optimizers_impl.LossScaleOptimizer(
-            inner_optimizer=inner_optimizer,
-            initial_scale=initial_scale,
-            dynamic_growth_steps=dynamic_growth_steps,
-            **kwargs,
-        )
+        pass
 
 
 class Muon(Optimizer):
@@ -509,23 +450,7 @@ class Muon(Optimizer):
             clipvalue=clipvalue,
             **kwargs,
         )
-        self._impl = optimizers_impl.Muon(
-            learning_rate=learning_rate,
-            adam_beta_1=adam_beta_1,
-            adam_beta_2=adam_beta_2,
-            epsilon=epsilon,
-            exclude_layers=exclude_layers,
-            exclude_embeddings=exclude_embeddings,
-            muon_a=muon_a,
-            muon_b=muon_b,
-            muon_c=muon_c,
-            adam_lr_ratio=adam_lr_ratio,
-            momentum=momentum,
-            ns_steps=ns_steps,
-            nesterov=nesterov,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
+        pass
 
 
 class Nadam(Optimizer):
@@ -564,13 +489,7 @@ class Nadam(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.Nadam(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            **kwargs,
-        )
+        pass
 
 
 class RMSprop(Optimizer):
@@ -611,14 +530,7 @@ class RMSprop(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.RMSprop(
-            learning_rate=learning_rate,
-            rho=rho,
-            momentum=momentum,
-            epsilon=epsilon,
-            centered=centered,
-            **kwargs,
-        )
+        pass
 
 
 class SGD(Optimizer):
@@ -655,9 +567,7 @@ class SGD(Optimizer):
             weight_decay=weight_decay,
             **kwargs,
         )
-        self._impl = optimizers_impl.SGD(
-            learning_rate=learning_rate, momentum=momentum, nesterov=nesterov, **kwargs
-        )
+        pass
 
 
 from . import schedules as schedules

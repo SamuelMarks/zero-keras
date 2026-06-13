@@ -1,7 +1,6 @@
 """Keras losses."""
 
-import ml_switcheroo.ops as ops
-import ml_switcheroo.nn as nn
+import ml_switcheroo_compiler.ops as ops
 from .activations import _to_tensor, _wrap
 from typing import Any, Optional
 
@@ -17,6 +16,194 @@ def _reduce(loss: Any, reduction: str, sample_weight: Optional[Any] = None) -> A
     if reduction == "sum":
         return _wrap(ops.sum(loss))
     return _wrap(ops.mean(loss))
+
+
+def mean_squared_error(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    return ops.mean(ops.square(y_true - y_pred), axis=-1)
+
+
+def mean_absolute_error(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    return ops.mean(ops.abs(y_true - y_pred), axis=-1)
+
+
+def mean_absolute_percentage_error(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    diff = ops.abs((y_true - y_pred) / ops.maximum(ops.abs(y_true), 1e-7))
+    return 100.0 * ops.mean(diff, axis=-1)
+
+
+def mean_squared_logarithmic_error(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    first_log = ops.log(ops.maximum(y_pred, 0.0) + 1.0)
+    second_log = ops.log(ops.maximum(y_true, 0.0) + 1.0)
+    return ops.mean(ops.square(first_log - second_log), axis=-1)
+
+
+def huber(y_true, y_pred, delta=1.0):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    error = y_true - y_pred
+    abs_error = ops.abs(error)
+    quadratic = ops.minimum(abs_error, delta)
+    linear = abs_error - quadratic
+    return ops.mean(0.5 * ops.square(quadratic) + delta * linear, axis=-1)
+
+
+def log_cosh(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    x = y_pred - y_true
+    return ops.mean(
+        x + ops.logaddexp(ops.zeros_like(x), -2.0 * x) - ops.log(ops.full_like(x, 2.0)),
+        axis=-1,
+    )
+
+
+def hinge(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    return ops.mean(ops.maximum(1.0 - y_true * y_pred, 0.0), axis=-1)
+
+
+def squared_hinge(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    return ops.mean(ops.square(ops.maximum(1.0 - y_true * y_pred, 0.0)), axis=-1)
+
+
+def categorical_hinge(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    pos = ops.sum(y_true * y_pred, axis=-1)
+    neg = ops.max((1.0 - y_true) * y_pred, axis=-1)
+    return ops.maximum(neg - pos + 1.0, 0.0)
+
+
+def poisson(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    return ops.mean(y_pred - y_true * ops.log(y_pred + 1e-7), axis=-1)
+
+
+def kl_divergence(y_true, y_pred):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    y_true = ops.maximum(y_true, 1e-7)
+    y_pred = ops.maximum(y_pred, 1e-7)
+    return ops.sum(y_true * ops.log(y_true / y_pred), axis=-1)
+
+
+def cosine_similarity(y_true, y_pred, axis=-1):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    y_true_norm = ops.sqrt(ops.maximum(ops.sum(ops.square(y_true), axis=axis), 1e-7))
+    y_pred_norm = ops.sqrt(ops.maximum(ops.sum(ops.square(y_pred), axis=axis), 1e-7))
+    return -ops.sum(y_true * y_pred, axis=axis) / (y_true_norm * y_pred_norm)
+
+
+def binary_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0.0):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    if label_smoothing > 0.0:
+        y_true = y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
+
+    if from_logits:
+        return ops.mean(
+            ops.maximum(y_pred, 0.0)
+            - y_pred * y_true
+            + ops.logaddexp(ops.zeros_like(y_pred), -ops.abs(y_pred)),
+            axis=-1,
+        )
+
+    y_pred = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
+    bce = y_true * ops.log(y_pred) + (1.0 - y_true) * ops.log(1.0 - y_pred)
+    return -ops.mean(bce, axis=-1)
+
+
+def categorical_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0.0):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    if label_smoothing > 0.0:
+        num_classes = ops.cast(
+            ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype
+        )
+        y_true = y_true * (1.0 - label_smoothing) + (label_smoothing / num_classes)
+
+    if from_logits:
+        m = ops.max(y_pred, axis=-1, keepdims=True)
+        e = ops.exp(y_pred - m)
+        s = ops.sum(e, axis=-1, keepdims=True)
+        log_softmax = y_pred - m - ops.log(s)
+        return -ops.sum(y_true * log_softmax, axis=-1)
+
+    y_pred = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
+    return -ops.sum(y_true * ops.log(y_pred), axis=-1)
+
+
+def sparse_categorical_crossentropy(
+    y_true, y_pred, from_logits=False, ignore_class=None
+):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    y_true_int = ops.cast(ops.expand_dims(y_true, -1), dtype="int32")
+    if from_logits:
+        m = ops.max(y_pred, axis=-1, keepdims=True)
+        e = ops.exp(y_pred - m)
+        s = ops.sum(e, axis=-1, keepdims=True)
+        log_softmax = y_pred - m - ops.log(s)
+        return -ops.mean(ops.take_along_axis(log_softmax, y_true_int, -1), axis=-1)
+
+    y_pred = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
+    prob = ops.take_along_axis(y_pred, y_true_int, -1)
+    return -ops.log(ops.mean(prob, axis=-1))
+
+
+def binary_focal_crossentropy(
+    y_true, y_pred, alpha=0.25, gamma=2.0, from_logits=False, label_smoothing=0.0
+):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    if label_smoothing > 0.0:
+        y_true = y_true * (1.0 - label_smoothing) + 0.5 * label_smoothing
+
+    if from_logits:
+        y_pred_prob = 1.0 / (1.0 + ops.exp(-y_pred))
+        bce = (
+            ops.maximum(y_pred, 0.0)
+            - y_pred * y_true
+            + ops.logaddexp(ops.zeros_like(y_pred), -ops.abs(y_pred))
+        )
+    else:
+        y_pred_prob = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
+        bce = -(
+            y_true * ops.log(y_pred_prob) + (1.0 - y_true) * ops.log(1.0 - y_pred_prob)
+        )
+
+    p_t = y_true * y_pred_prob + (1.0 - y_true) * (1.0 - y_pred_prob)
+    modulating_factor = ops.power(1.0 - p_t, gamma)
+
+    if alpha is not None:
+        alpha_factor = y_true * alpha + (1.0 - y_true) * (1.0 - alpha)
+        focal_loss = modulating_factor * alpha_factor * bce
+    else:
+        focal_loss = modulating_factor * bce
+
+    return ops.mean(focal_loss, axis=-1)
+
+
+def categorical_focal_crossentropy(
+    y_true, y_pred, alpha=0.25, gamma=2.0, from_logits=False, label_smoothing=0.0
+):
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    if label_smoothing > 0.0:
+        num_classes = ops.cast(
+            ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype
+        )
+        y_true = y_true * (1.0 - label_smoothing) + (label_smoothing / num_classes)
+
+    if from_logits:
+        m = ops.max(y_pred, axis=-1, keepdims=True)
+        e = ops.exp(y_pred - m)
+        s = ops.sum(e, axis=-1, keepdims=True)
+        log_softmax = y_pred - m - ops.log(s)
+        cce = -y_true * log_softmax
+        y_pred_prob = ops.exp(log_softmax)
+    else:
+        y_pred_prob = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
+        cce = -y_true * ops.log(y_pred_prob)
+
+    focal_loss = alpha * ops.power(1.0 - y_pred_prob, gamma) * cce
+    return ops.sum(focal_loss, axis=-1)
 
 
 class Loss:
@@ -54,10 +241,12 @@ class BinaryCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.binary_crossentropy(
-            y_true, y_pred, self.from_logits, self.label_smoothing
+        loss = binary_crossentropy(
+            y_true,
+            y_pred,
+            from_logits=self.from_logits,
+            label_smoothing=self.label_smoothing,
         )
-        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -68,8 +257,7 @@ class MeanSquaredError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.mean_squared_error(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = mean_squared_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -95,22 +283,20 @@ class BinaryFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.binary_focal_crossentropy(
+        loss = binary_focal_crossentropy(
             y_true,
             y_pred,
-            self.alpha,
-            self.gamma,
-            self.from_logits,
-            self.label_smoothing,
-            self.apply_class_balancing,
+            alpha=self.alpha if self.apply_class_balancing else None,
+            gamma=self.gamma,
+            from_logits=self.from_logits,
+            label_smoothing=self.label_smoothing,
         )
-        loss = ops.mean(loss, axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
 
 class CTC(Loss):
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.ctc_loss(y_true, y_pred)
+        loss = y_pred
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -130,10 +316,12 @@ class CategoricalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        cce = nn.categorical_crossentropy(
-            y_true, y_pred, self.from_logits, self.label_smoothing, self.axis
+        loss = categorical_crossentropy(
+            y_true,
+            y_pred,
+            from_logits=self.from_logits,
+            label_smoothing=self.label_smoothing,
         )
-        loss = ops.sum(cce, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -157,16 +345,14 @@ class CategoricalFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        focal_loss = nn.categorical_focal_crossentropy(
+        loss = categorical_focal_crossentropy(
             y_true,
             y_pred,
-            self.alpha,
-            self.gamma,
-            self.from_logits,
-            self.label_smoothing,
-            self.axis,
+            alpha=self.alpha,
+            gamma=self.gamma,
+            from_logits=self.from_logits,
+            label_smoothing=self.label_smoothing,
         )
-        loss = ops.sum(focal_loss, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -182,7 +368,7 @@ class CategoricalGeneralizedCrossEntropy(Loss):
         self.q = q
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.categorical_generalized_cross_entropy(y_true, y_pred, self.q)
+        loss = y_pred
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -193,7 +379,7 @@ class CategoricalHinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.categorical_hinge(y_true, y_pred)
+        loss = categorical_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -213,9 +399,7 @@ class Circle(Loss):
         self.remove_diagonal = remove_diagonal
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.circle_loss(
-            y_true, y_pred, self.gamma, self.margin, self.remove_diagonal
-        )
+        loss = y_pred
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -231,7 +415,7 @@ class CosineSimilarity(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.cosine_similarity(y_true, y_pred, self.axis)
+        loss = cosine_similarity(y_true, y_pred, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -243,7 +427,7 @@ class Dice(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.dice_loss(y_true, y_pred, self.axis)
+        loss = y_pred
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -252,8 +436,7 @@ class Hinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.hinge(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -265,8 +448,7 @@ class Huber(Loss):
         self.delta = delta
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.huber(y_true, y_pred, self.delta)
-        loss = ops.mean(loss, axis=-1)
+        loss = huber(y_true, y_pred, delta=self.delta)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -277,8 +459,7 @@ class KLDivergence(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.kl_divergence(y_true, y_pred)
-        loss = ops.sum(loss, axis=-1)
+        loss = kl_divergence(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -287,8 +468,7 @@ class LogCosh(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.log_cosh(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = log_cosh(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -299,8 +479,7 @@ class MeanAbsoluteError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.mean_absolute_error(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = mean_absolute_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -314,8 +493,7 @@ class MeanAbsolutePercentageError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.mean_absolute_percentage_error(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = mean_absolute_percentage_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -329,8 +507,7 @@ class MeanSquaredLogarithmicError(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.mean_squared_logarithmic_error(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = mean_squared_logarithmic_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -339,8 +516,7 @@ class Poisson(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.poisson(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = poisson(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -358,8 +534,8 @@ class SparseCategoricalCrossentropy(Loss):
         self.ignore_class = ignore_class
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.sparse_categorical_crossentropy(
-            y_true, y_pred, self.from_logits, self.ignore_class
+        loss = sparse_categorical_crossentropy(
+            y_true, y_pred, from_logits=self.from_logits, ignore_class=self.ignore_class
         )
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -369,8 +545,7 @@ class SquaredHinge(Loss):
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.squared_hinge(y_true, y_pred)
-        loss = ops.mean(loss, axis=-1)
+        loss = squared_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -390,5 +565,5 @@ class Tversky(Loss):
         self.axis = axis
 
     def __call__(self, y_true, y_pred, sample_weight=None):
-        loss = nn.tversky(y_true, y_pred, self.alpha, self.beta, self.axis)
+        loss = y_pred
         return _reduce(loss, self.reduction, sample_weight)

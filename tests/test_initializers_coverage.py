@@ -6,7 +6,7 @@ def test_initializers_coverage():
         VarianceScaling,
         get,
     )
-    from ml_switcheroo.core.dtype import DType
+    from ml_switcheroo_compiler.core.dtype import DType
     from zero_keras.core_layers import KerasTensor
 
     # 54, 61

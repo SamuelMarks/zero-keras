@@ -33,7 +33,7 @@ ALLOWED_3RD_PARTY = {
     "pydantic",
     "cdd",
     "ml_switcheroo_ir",
-    "ml_switcheroo",
+    "ml_switcheroo_compiler",
 }
 
 ALLOWED_LOCAL = {"zero_keras"}

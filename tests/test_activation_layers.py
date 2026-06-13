@@ -15,7 +15,6 @@ def get_x():
     return np.array([[-3.0, -1.0, 0.0], [0.5, 1.0, 3.0]], dtype=np.float32)
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_Activation():
     x = get_x()
     keras_layer = keras.layers.Activation("relu")
@@ -27,7 +26,6 @@ def test_layer_Activation():
     assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_ELU():
     x = get_x()
     keras_layer = keras.layers.ELU(alpha=0.5)
@@ -35,7 +33,6 @@ def test_layer_ELU():
     assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_LeakyReLU():
     x = get_x()
     keras_layer = keras.layers.LeakyReLU(negative_slope=0.2)
@@ -43,7 +40,6 @@ def test_layer_LeakyReLU():
     assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_PReLU():
     x = get_x()
     # PReLU has weights, we need to initialize them and then copy weights from keras to zero.
@@ -58,7 +54,6 @@ def test_layer_PReLU():
     assert_allclose_keras_zero(keras_layer2(x), zero_layer2(x))
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_ReLU():
     x = get_x()
     keras_layer = keras.layers.ReLU(max_value=1.0, negative_slope=0.1, threshold=0.5)
@@ -66,7 +61,6 @@ def test_layer_ReLU():
     assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
 
 
-@pytest.mark.skip(reason="Semantic implementation pending")
 def test_layer_Softmax():
     x = get_x()
     keras_layer = keras.layers.Softmax(axis=-1)

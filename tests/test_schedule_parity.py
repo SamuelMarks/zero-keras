@@ -52,6 +52,7 @@ def test_schedule_ExponentialDecay():
 
 
 def test_schedule_CosineDecayRestarts():
+    schedules.CosineDecayRestarts(0.1, 100, t_mul=1.0)(5)
     check_schedule_parity(
         schedules.CosineDecayRestarts,
         keras.optimizers.schedules.CosineDecayRestarts,

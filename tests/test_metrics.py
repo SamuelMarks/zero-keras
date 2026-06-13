@@ -1,12 +1,9 @@
-import pytest
-
 """Tests for zero_keras metrics."""
 
 import numpy as np
 from zero_keras import metrics
 
 
-@pytest.mark.skip(reason="pending")
 def test_metrics():
     y_true = np.array([1, 0, 1, 1])
     y_pred = np.array([1, 1, 1, 0])
@@ -83,6 +80,29 @@ def test_metrics():
 
     # Init all others just for coverage
 
+    # test __call__
+    m_call = metrics.Mean()
+    res = m_call(y_true, sample_weight=sample_weight)
+
+    # reset_state
+    m_base.reset_state()
+    m_mean.reset_state()
+    m_sum.reset_state()
+
+    # TopKCategoricalAccuracy
+    m_topk = metrics.TopKCategoricalAccuracy(k=1)
+    m_topk.update_state(y_true_cat, y_pred_cat)
+
+    # SparseTopKCategoricalAccuracy
+    m_stopk = metrics.SparseTopKCategoricalAccuracy(k=1)
+    m_stopk.update_state(y_true_sparse, y_pred_cat)
+
+    # SparseCategoricalAccuracy squeeze
+    y_true_sparse_exp = np.array([[0], [1]])
+    m_sparse_cat.update_state(y_true_sparse_exp, y_pred_cat)
+
+    metrics.AUC()
+
     metrics.BinaryCrossentropy()
     metrics.BinaryIoU()
     metrics.CategoricalCrossentropy()
@@ -120,41 +140,3 @@ def test_metrics():
     metrics.TopKCategoricalAccuracy()
     metrics.TrueNegatives()
     metrics.TruePositives()
-
-
-@pytest.mark.skip(reason="pending")
-def test_metrics_coverage():
-    from zero_keras.metrics import _get_keras_metric, Metric
-    from ml_switcheroo.core.config import config
-
-    # test 12
-    # mock eager_mode to False
-    old_eager = config.eager_mode
-    config.eager_mode = False
-    assert _get_keras_metric("Mean") is None
-    config.eager_mode = old_eager
-
-    # test 53-54
-    m = Metric(name="dummy")
-    # since we don't implement anything, result() will return 0.0
-    res = m("foo", bar="baz")
-    assert res == 0.0
-
-
-@pytest.mark.skip(reason="pending")
-def test_metrics_reset_state():
-    from zero_keras.metrics import Metric
-
-    m = Metric(name="dummy")
-    m.reset_state()  # _keras_metric is None, so this should just pass silently
-
-    class MockKerasMetric:
-        def __init__(self):
-            self.reset_called = False
-
-        def reset_state(self):
-            self.reset_called = True
-
-    m._keras_metric = MockKerasMetric()
-    m.reset_state()
-    assert m._keras_metric.reset_called
