@@ -54,7 +54,7 @@ def test_model_Model_API():
     y = np.array([1, 2, 3])
 
     res = m.fit(x, y, epochs=2)
-    assert len(res["loss"]) == 2
+    assert len(res.history["loss"]) == 2
 
     res = m.evaluate(x, y)
     assert "loss" in res
@@ -67,3 +67,11 @@ def test_get_and_deserialize():
     # Basic structural mock
     assert core_layers.get("test") == "test"
     assert core_layers.deserialize({"class_name": "Test"}) == {"class_name": "Test"}
+
+
+def test_load_model_safe_stub():
+    # just cover the fallback stub
+    from zero_keras.models import load_model
+
+    m = load_model("nonexistent.h5")
+    assert m is not None

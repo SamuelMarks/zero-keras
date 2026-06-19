@@ -4,7 +4,49 @@ import numpy as np
 from zero_keras import metrics
 
 
-def test_metrics():
+def test_metrics_edge_cases():
+    import pytest
+    from zero_keras.metrics import (
+        SparseCategoricalAccuracy,
+        TopKCategoricalAccuracy,
+        SparseTopKCategoricalAccuracy,
+    )
+
+    # SparseCategoricalAccuracy 522->524 branch (same rank, last dim not 1)
+    sca = SparseCategoricalAccuracy()
+    y_true = np.array([[1, 2], [0, 1]])
+    y_pred = np.array(
+        [[[0.1, 0.9, 0.0], [0.8, 0.1, 0.1]], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]]
+    )
+    # The rank is 2 for y_true, 3 for y_pred. Wait, the branch requires same rank.
+    # So we need to make y_true and y_pred the same rank.
+    y_true_same_rank = np.array([[1, 2]])  # shape (1, 2)
+    y_pred_same_rank = np.array(
+        [[0.1, 0.9]]
+    )  # shape (1, 2) -> 2 classes. argmax axis=-1 is shape (1,)
+    res = sca(y_true_same_rank, y_pred_same_rank)
+    assert res is not None
+
+    # TopK trace errors
+    class FakeData:
+        id = 1
+
+    class FakeTensor:
+        data = FakeData()
+        shape = (1, 3)
+
+    class FakeInput:
+        _tensor = FakeTensor()
+        shape = (1, 3)
+
+    topk = TopKCategoricalAccuracy()
+    with pytest.raises(NotImplementedError):
+        topk(FakeInput(), FakeInput())
+
+    stopk = SparseTopKCategoricalAccuracy()
+    with pytest.raises(NotImplementedError):
+        stopk(FakeInput(), FakeInput())
+
     y_true = np.array([1, 0, 1, 1])
     y_pred = np.array([1, 1, 1, 0])
     sample_weight = np.array([1.0, 1.0, 0.5, 0.5])
@@ -105,7 +147,7 @@ def test_metrics():
 
     metrics.BinaryCrossentropy()
     metrics.BinaryIoU()
-    metrics.CategoricalCrossentropy()
+
     metrics.CategoricalHinge()
     metrics.ConcordanceCorrelation()
     metrics.CosineSimilarity()

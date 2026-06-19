@@ -16,13 +16,17 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwa
     set_seed(42)
     keras_layer = keras_cls(**kwargs)
     if hasattr(keras_layer, "build"):
-        keras_layer.build(inputs.shape)
+        keras_layer.build(
+            [x.shape for x in inputs] if isinstance(inputs, list) else inputs.shape
+        )
     keras_out = keras_layer(inputs)
 
     set_seed(42)
     zero_layer = layer_cls(**kwargs)
     if hasattr(zero_layer, "build"):
-        zero_layer.build(inputs.shape)
+        zero_layer.build(
+            [x.shape for x in inputs] if isinstance(inputs, list) else inputs.shape
+        )
 
     if hasattr(keras_layer, "get_weights") and hasattr(zero_layer, "set_weights"):
         kw = keras_layer.get_weights()
@@ -35,6 +39,7 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwa
 
 
 def test_layer_Dense():
+    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
 
     # Cover built/get_weights
     dense = layers.Dense(10)
@@ -173,138 +178,355 @@ def test_layer_Dot():
 
 def test_unsupported_layers_instantiate():
     for l_str in [
-        "ActivityRegularization",
-        "AdditiveAttention",
-        "AlphaDropout",
-        "Attention",
         "AugMix",
         "AutoContrast",
-        "AveragePooling1D",
-        "AveragePooling2D",
-        "AveragePooling3D",
-        "AvgPool1D",
-        "AvgPool2D",
-        "AvgPool3D",
-        "Bidirectional",
-        "CategoryEncoding",
-        "CenterCrop",
-        "Conv1D",
-        "Conv1DTranspose",
-        "Conv2D",
-        "Conv2DTranspose",
-        "Conv3D",
-        "Conv3DTranspose",
-        "ConvLSTM1D",
-        "ConvLSTM2D",
-        "ConvLSTM3D",
-        "Convolution1D",
-        "Convolution1DTranspose",
-        "Convolution2D",
-        "Convolution2DTranspose",
-        "Convolution3D",
-        "Convolution3DTranspose",
-        "Cropping1D",
-        "Cropping2D",
-        "Cropping3D",
         "CutMix",
-        "DepthwiseConv1D",
-        "DepthwiseConv2D",
         "Discretization",
-        "EinsumDense",
         "Embedding",
         "Equalization",
         "FlaxLayer",
-        "GRU",
-        "GRUCell",
-        "GaussianDropout",
-        "GaussianNoise",
-        "GlobalAveragePooling1D",
-        "GlobalAveragePooling2D",
-        "GlobalAveragePooling3D",
-        "GlobalAvgPool1D",
-        "GlobalAvgPool2D",
-        "GlobalAvgPool3D",
-        "GlobalMaxPool1D",
-        "GlobalMaxPool2D",
-        "GlobalMaxPool3D",
-        "GlobalMaxPooling1D",
-        "GlobalMaxPooling2D",
-        "GlobalMaxPooling3D",
-        "GroupNormalization",
-        "GroupQueryAttention",
-        "HashedCrossing",
-        "Hashing",
-        "Identity",
         "InputLayer",
         "InputSpec",
-        "IntegerLookup",
         "JaxLayer",
-        "LSTM",
-        "LSTMCell",
         "MaxNumBoundingBoxes",
-        "MaxPool1D",
-        "MaxPool2D",
-        "MaxPool3D",
-        "MaxPooling1D",
-        "MaxPooling2D",
-        "MaxPooling3D",
-        "MelSpectrogram",
         "MixUp",
-        "MultiHeadAttention",
-        "Normalization",
         "Pipeline",
-        "RMSNormalization",
-        "RNN",
         "RandAugment",
         "RandomBrightness",
         "RandomColorDegeneration",
         "RandomColorJitter",
         "RandomContrast",
-        "RandomCrop",
         "RandomElasticTransform",
         "RandomErasing",
-        "RandomFlip",
         "RandomGaussianBlur",
         "RandomGrayscale",
         "RandomHue",
         "RandomInvert",
         "RandomPerspective",
         "RandomPosterization",
-        "RandomRotation",
         "RandomSaturation",
         "RandomSharpness",
         "RandomShear",
-        "RandomTranslation",
-        "RandomZoom",
-        "Rescaling",
-        "Resizing",
-        "STFTSpectrogram",
-        "SeparableConv1D",
-        "SeparableConv2D",
-        "SeparableConvolution1D",
-        "SeparableConvolution2D",
-        "SimpleRNN",
-        "SimpleRNNCell",
         "Solarization",
-        "SpatialDropout1D",
-        "SpatialDropout2D",
-        "SpatialDropout3D",
-        "SpectralNormalization",
-        "StackedRNNCells",
-        "StringLookup",
         "TFSMLayer",
-        "TextVectorization",
-        "TimeDistributed",
         "TorchModuleWrapper",
-        "UnitNormalization",
-        "UpSampling1D",
-        "UpSampling2D",
-        "UpSampling3D",
         "Wrapper",
-        "ZeroPadding1D",
-        "ZeroPadding2D",
-        "ZeroPadding3D",
     ]:
+        import inspect
+        from unittest.mock import MagicMock
+
         cls = getattr(layers, l_str)
-        # Simply instantiate to cover the proxy logic
-        cls()
+        sig = inspect.signature(cls.__init__)
+        kwargs = {}
+        for param_name, param in sig.parameters.items():
+            if param_name in ("self", "kwargs", "args"):
+                continue
+            if param.default is inspect.Parameter.empty:
+                kwargs[param_name] = MagicMock()
+        cls(**kwargs)
+
+
+def test_layer_Conv1D():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv1D" == "Conv2D"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv1D" == "Conv3D"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    check_layer_parity(
+        layers.Conv1D, keras.layers.Conv1D, x, filters=4, kernel_size=3, padding="same"
+    )
+
+
+def test_layer_Conv2D():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv2D" == "Conv2D"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv2D" == "Conv3D"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    check_layer_parity(
+        layers.Conv2D, keras.layers.Conv2D, x, filters=4, kernel_size=3, padding="same"
+    )
+
+
+def test_layer_Conv3D():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv3D" == "Conv2D"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv3D" == "Conv3D"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    check_layer_parity(
+        layers.Conv3D, keras.layers.Conv3D, x, filters=4, kernel_size=3, padding="same"
+    )
+
+
+def test_layer_Conv1DTranspose():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv1DTranspose" == "Conv2DTranspose"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv1DTranspose" == "Conv3DTranspose"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    layer = layers.Conv1DTranspose(filters=4, kernel_size=3, padding="same")
+    layer.build(x.shape)
+    out = layer(x)
+    assert out is not None
+
+
+def test_layer_Conv2DTranspose():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv2DTranspose" == "Conv2DTranspose"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv2DTranspose" == "Conv3DTranspose"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    layer = layers.Conv2DTranspose(filters=4, kernel_size=3, padding="same")
+    layer.build(x.shape)
+    out = layer(x)
+    assert out is not None
+
+
+def test_layer_Conv3DTranspose():
+    x = (
+        np.random.rand(2, 5, 5, 3).astype(np.float32)
+        if "Conv3DTranspose" == "Conv2DTranspose"
+        else (
+            np.random.rand(2, 5, 5, 5, 3).astype(np.float32)
+            if "Conv3DTranspose" == "Conv3DTranspose"
+            else np.random.rand(2, 5, 3).astype(np.float32)
+        )
+    )
+    layer = layers.Conv3DTranspose(filters=4, kernel_size=3, padding="same")
+    layer.build(x.shape)
+    out = layer(x)
+    assert out is not None
+
+
+def test_pooling():
+    for rank in [1, 2, 3]:
+        for pool_type in ["Max", "Average"]:
+            name = f"{pool_type}Pooling{rank}D"
+            keras_cls = getattr(keras.layers, name)
+            zero_cls = getattr(layers, name)
+
+            shape = [2] + [6] * rank + [3]
+            x = np.random.rand(*shape).astype(np.float32)
+
+            check_layer_parity(
+                zero_cls, keras_cls, x, pool_size=2, strides=2, padding="valid"
+            )
+
+
+def test_global_pooling():
+    for rank in [1, 2, 3]:
+        for pool_type in ["Max", "Average"]:
+            name = f"Global{pool_type}Pooling{rank}D"
+            keras_cls = getattr(keras.layers, name)
+            zero_cls = getattr(layers, name)
+
+            shape = [2] + [6] * rank + [3]
+            x = np.random.rand(*shape).astype(np.float32)
+
+            check_layer_parity(zero_cls, keras_cls, x)
+
+
+def test_spatial_layers():
+    for rank in [1, 2, 3]:
+        for layer_type in ["ZeroPadding", "Cropping", "UpSampling"]:
+            name = f"{layer_type}{rank}D"
+            keras_cls = getattr(keras.layers, name)
+            zero_cls = getattr(layers, name)
+
+            shape = [2] + [6] * rank + [3]
+            x = np.random.rand(*shape).astype(np.float32)
+
+            if "ZeroPadding" in name:
+                check_layer_parity(zero_cls, keras_cls, x, padding=1)
+            elif "Cropping" in name:
+                check_layer_parity(zero_cls, keras_cls, x, cropping=1)
+            else:
+                check_layer_parity(zero_cls, keras_cls, x, size=2)
+
+
+def test_attention_layers():
+    q = np.random.rand(2, 5, 4).astype(np.float32)
+    v = np.random.rand(2, 5, 4).astype(np.float32)
+
+    layer = layers.Attention(use_scale=True)
+    out = layer([q, v])
+    assert out.shape == (2, 5, 4)
+
+    layer2 = layers.AdditiveAttention(use_scale=True)
+    out2 = layer2([q, v])
+    assert out2.shape == (2, 5, 4)
+
+
+def test_embedding_layer():
+    idx = np.random.randint(0, 10, size=(2, 5)).astype(np.int32)
+    check_layer_parity(
+        layers.Embedding, keras.layers.Embedding, idx, input_dim=10, output_dim=4
+    )
+
+
+def test_timedistributed_layer():
+    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
+    x = np.random.rand(2, 3, 4).astype(np.float32)
+    layer = layers.TimeDistributed(layers.Dense(5))
+    layer.build(x.shape)
+    out = layer(x)
+    assert out.shape == (2, 3, 5)
+
+
+def test_norm_layers():
+    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
+    x = np.random.rand(2, 5, 4).astype(np.float32)
+    check_layer_parity(
+        layers.ActivityRegularization, keras.layers.ActivityRegularization, x, l1=0.1
+    )
+
+    check_layer_parity(layers.AlphaDropout, keras.layers.AlphaDropout, x, rate=0.2)
+    check_layer_parity(
+        layers.GaussianDropout, keras.layers.GaussianDropout, x, rate=0.2
+    )
+    check_layer_parity(layers.GaussianNoise, keras.layers.GaussianNoise, x, stddev=0.2)
+
+    layer = layers.GroupNormalization(groups=2)
+    layer.build(x.shape)
+    out = layer(x)
+    assert out.shape == (2, 5, 4)
+
+    layer2 = layers.RMSNormalization()
+    layer2.build(x.shape)
+    assert layer2(x).shape == (2, 5, 4)
+
+    check_layer_parity(layers.UnitNormalization, keras.layers.UnitNormalization, x)
+
+    layer3 = layers.SpectralNormalization(layers.Dense(4))
+    layer3.build(x.shape)
+    assert layer3(x).shape == (2, 5, 4)
+
+
+def test_augmentation_layers():
+    aug_layers = [
+        "AugMix",
+        "AutoContrast",
+        "CutMix",
+        "Equalization",
+        "MixUp",
+        "RandAugment",
+        "RandomBrightness",
+        "RandomColorDegeneration",
+        "RandomColorJitter",
+        "RandomContrast",
+        "RandomElasticTransform",
+        "RandomErasing",
+        "RandomGaussianBlur",
+        "RandomGrayscale",
+        "RandomHue",
+        "RandomInvert",
+        "RandomPerspective",
+        "RandomPosterization",
+        "RandomSaturation",
+        "RandomSharpness",
+        "RandomShear",
+        "Solarization",
+    ]
+    x = np.random.rand(2, 5, 4, 3).astype(np.float32)
+    for name in aug_layers:
+        zero_cls = getattr(layers, name)
+
+        # Test just the execution for coverage, as these are pass-through stubs right now
+        layer = zero_cls()
+        layer.build(x.shape)
+        out = layer(x, training=True)
+        assert out.shape == (2, 5, 4, 3)
+
+
+def test_misc_layers():
+    x = np.random.rand(2, 5, 4, 3).astype(np.float32)
+
+    check_layer_parity(layers.Identity, keras.layers.Identity, x)
+    check_layer_parity(layers.Normalization, keras.layers.Normalization, x)
+
+    for rank in [1, 2, 3]:
+        shape = [2] + [5] * rank + [3]
+        x_rank = np.random.rand(*shape).astype(np.float32)
+        zero_cls = getattr(layers, f"SpatialDropout{rank}D")
+        keras_cls = getattr(keras.layers, f"SpatialDropout{rank}D")
+        check_layer_parity(zero_cls, keras_cls, x_rank, rate=0.2)
+
+    misc_stubs = ["Discretization", "MaxNumBoundingBoxes"]
+    for name in misc_stubs:
+        layer = getattr(layers, name)()
+        if hasattr(layer, "build"):
+            layer.build(x.shape)
+        assert layer(x).shape == (2, 5, 4, 3)
+
+
+def test_reshaping_layers():
+    for rank in [1, 2, 3]:
+        shape = [2] + [6] * rank + [3]
+        x = np.random.rand(*shape).astype(np.float32)
+
+        # Cropping
+        keras_cls = getattr(keras.layers, f"Cropping{rank}D")
+        zero_cls = getattr(layers, f"Cropping{rank}D")
+        check_layer_parity(zero_cls, keras_cls, x, cropping=1)
+
+        # UpSampling
+        keras_cls = getattr(keras.layers, f"UpSampling{rank}D")
+        zero_cls = getattr(layers, f"UpSampling{rank}D")
+        check_layer_parity(zero_cls, keras_cls, x, size=2)
+
+        # ZeroPadding
+        keras_cls = getattr(keras.layers, f"ZeroPadding{rank}D")
+        zero_cls = getattr(layers, f"ZeroPadding{rank}D")
+        check_layer_parity(zero_cls, keras_cls, x, padding=1)
+
+
+def test_norm_layers_more():
+    x = np.random.rand(2, 5, 4).astype(np.float32)
+    check_layer_parity(layers.UnitNormalization, keras.layers.UnitNormalization, x)
+    check_layer_parity(
+        layers.GroupNormalization, keras.layers.GroupNormalization, x, groups=2
+    )
+    check_layer_parity(
+        layers.RMSNormalization, keras.layers.RMSNormalization, x, rtol=1e-2
+    )
+
+    # SpectralNormalization needs a layer
+    def layer_cls(**kwargs):
+        return layers.SpectralNormalization(layer=layers.Dense(5), **kwargs)
+
+    def k_layer_cls(**kwargs):
+        return keras.layers.SpectralNormalization(layer=keras.layers.Dense(5), **kwargs)
+
+    check_layer_parity(layer_cls, k_layer_cls, x)
+
+
+def test_attention_layers_more():
+    query = np.random.rand(2, 4, 3).astype(np.float32)
+    value = np.random.rand(2, 4, 3).astype(np.float32)
+    x = [query, value]
+
+    check_layer_parity(
+        layers.AdditiveAttention, keras.layers.AdditiveAttention, x, use_scale=False
+    )
+    check_layer_parity(layers.Attention, keras.layers.Attention, x, use_scale=False)

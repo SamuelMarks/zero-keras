@@ -27,3 +27,4 @@ def test_regularizer_get():
     assert regularizers.get(reg) is reg
     assert isinstance(regularizers.get("l2"), regularizers.L2)
     assert regularizers.get("unknown") == "unknown"
+    assert regularizers.get(123) == 123

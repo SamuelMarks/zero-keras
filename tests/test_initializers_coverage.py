@@ -12,6 +12,7 @@ def test_initializers_coverage():
     # 54, 61
     assert _get_dtype(DType.Float32) == DType.Float32
     assert _get_dtype("doesnotexist") == DType.Float32
+    assert _get_dtype(123) == DType.Float32
 
     # 69
     class DummyData:

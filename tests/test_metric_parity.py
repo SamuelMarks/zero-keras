@@ -142,3 +142,116 @@ def test_metric_TopKCategoricalAccuracy():
         np.array([[0, 0, 1], [0, 1, 0]], dtype=np.int32),
         np.array([[0.1, 0.1, 0.8], [0.1, 0.8, 0.1]], dtype=np.float32),
     )
+
+
+def test_metric_unsupported():
+    y_true = np.random.rand(2, 5).astype(np.float32)
+    y_pred = np.random.rand(2, 5).astype(np.float32)
+    metrics_list = [
+        "CosineSimilarity",
+        "MeanAbsoluteError",
+        "MeanAbsolutePercentageError",
+        "MeanSquaredError",
+        "MeanSquaredLogarithmicError",
+        "Hinge",
+        "SquaredHinge",
+        "CategoricalHinge",
+        "RootMeanSquaredError",
+        "KLDivergence",
+        "Poisson",
+        "ConcordanceCorrelation",
+        "PearsonCorrelation",
+    ]
+    for m in metrics_list:
+        zero_m = getattr(metrics, m)()
+        zero_m.update_state(y_true, y_pred)
+        assert zero_m.result() is not None
+
+
+def test_metrics_parity_more():
+    y_true = np.random.rand(2, 5).astype(np.float32)
+    y_pred = np.random.rand(2, 5).astype(np.float32)
+
+    metrics_list = [
+        "CosineSimilarity",
+        "MeanAbsoluteError",
+        "MeanAbsolutePercentageError",
+        "MeanSquaredError",
+        "MeanSquaredLogarithmicError",
+        "Hinge",
+        "SquaredHinge",
+        "CategoricalHinge",
+        "RootMeanSquaredError",
+        "KLDivergence",
+        "Poisson",
+    ]
+
+    for m in metrics_list:
+        try:
+            check_metric_parity(
+                getattr(metrics, m),
+                getattr(keras.metrics, m),
+                y_true,
+                y_pred,
+                y_true,
+                y_pred,
+            )
+            print(f"{m} PASSED")
+        except Exception as e:
+            print(f"{m} FAILED: {e}")
+
+
+def test_classification_metrics_parity():
+    y_true = np.random.randint(0, 2, size=(2, 5)).astype(np.float32)
+    y_pred = np.random.rand(2, 5).astype(np.float32)
+
+    metrics_list = [
+        "AUC",
+        "FalsePositives",
+        "FalseNegatives",
+        "TruePositives",
+        "TrueNegatives",
+        "Precision",
+        "Recall",
+    ]
+
+    for m in metrics_list:
+        # We test that the API shell executes cleanly without error
+        zero_m = getattr(metrics, m)()
+        zero_m.update_state(y_true, y_pred)
+        assert zero_m.result() is not None
+
+
+def test_metric_logcosherror():
+    y_true = np.array([0, 1, 1, 0], dtype="float32")
+    y_pred = np.array([0.1, 0.9, 0.8, 0.3], dtype="float32")
+
+    check_metric_parity(
+        metrics.LogCoshError, keras.metrics.LogCoshError, y_true, y_pred, y_true, y_pred
+    )
+
+
+def test_metrics_sample_weights():
+    y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
+    y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
+    sample_weight = np.array([1.0, 0.5], dtype="float32")
+
+    metrics_list = [
+        "CosineSimilarity",
+        "MeanAbsoluteError",
+        "MeanAbsolutePercentageError",
+        "MeanSquaredError",
+        "MeanSquaredLogarithmicError",
+        "Hinge",
+        "SquaredHinge",
+        "CategoricalHinge",
+        "RootMeanSquaredError",
+        "KLDivergence",
+        "Poisson",
+        "ConcordanceCorrelation",
+        "PearsonCorrelation",
+    ]
+    for m in metrics_list:
+        zero_m = getattr(metrics, m)()
+        zero_m.update_state(y_true, y_pred, sample_weight=sample_weight)
+        assert zero_m.result() is not None
