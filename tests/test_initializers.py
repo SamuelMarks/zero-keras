@@ -129,9 +129,9 @@ def test_initializer_RandomUniform():
 def test_initializer_TruncatedNormal():
     shape = (500, 500)
 
-    keras_out = keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(
-        shape=shape
-    ).numpy()
+    keras_out = np.array(
+        keras.initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(shape=shape)
+    )
     zero_out = initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(shape=shape)
     if hasattr(zero_out, "numpy"):
         zero_out = zero_out.numpy()
@@ -141,9 +141,9 @@ def test_initializer_TruncatedNormal():
         np.std(keras_out), 0.88, atol=1e-1
     )  # std of truncated normal N(0,1) bounded at 2*std
 
-    keras_out2 = keras.initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(
-        shape=shape
-    ).numpy()
+    keras_out2 = np.array(
+        keras.initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(shape=shape)
+    )
     zero_out2 = initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(
         shape=shape
     )
@@ -153,13 +153,23 @@ def test_initializer_TruncatedNormal():
     assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
     assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
 
+    zero_out3 = initializers.VarianceScaling(
+        scale=1.0, mode="fan_avg", distribution="untruncated_normal", seed=123
+    )(shape=shape)
+
+    zero_out4 = initializers.VarianceScaling(
+        scale=1.0, mode="fan_avg", distribution="untruncated_normal", seed=123
+    )(shape=(10,))
+
 
 def test_initializer_VarianceScaling():
     shape = (500, 500)
 
-    keras_out = keras.initializers.VarianceScaling(
-        scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
-    )(shape=shape).numpy()
+    keras_out = np.array(
+        keras.initializers.VarianceScaling(
+            scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
+        )(shape=shape)
+    )
     zero_out = initializers.VarianceScaling(
         scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
     )(shape=shape)
@@ -169,9 +179,11 @@ def test_initializer_VarianceScaling():
     assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=1e-1)
     assert np.allclose(np.std(keras_out), np.std(zero_out), atol=1e-1)
 
-    keras_out2 = keras.initializers.variance_scaling(
-        scale=1.0, mode="fan_out", distribution="uniform", seed=123
-    )(shape=shape).numpy()
+    keras_out2 = np.array(
+        keras.initializers.variance_scaling(
+            scale=1.0, mode="fan_out", distribution="uniform", seed=123
+        )(shape=shape)
+    )
     zero_out2 = initializers.variance_scaling(
         scale=1.0, mode="fan_out", distribution="uniform", seed=123
     )(shape=shape)
@@ -180,6 +192,14 @@ def test_initializer_VarianceScaling():
 
     assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
     assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
+
+    zero_out3 = initializers.VarianceScaling(
+        scale=1.0, mode="fan_avg", distribution="untruncated_normal", seed=123
+    )(shape=shape)
+
+    zero_out4 = initializers.VarianceScaling(
+        scale=1.0, mode="fan_avg", distribution="untruncated_normal", seed=123
+    )(shape=(10,))
 
 
 def test_initializer_GlorotNormal():

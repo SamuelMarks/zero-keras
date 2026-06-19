@@ -6903,6 +6903,9 @@ class SimpleRNNCell(Layer):
                 self.bias = self.add_weight(
                     shape=(self.units,), initializer=self.bias_initializer, name="bias"
                 )
+        else:
+            if getattr(self, "bias", None) is None:
+                self.bias = None
         self.built = True
 
     def call(self, inputs, states, training=None, **kwargs):
@@ -7172,7 +7175,8 @@ class GRUCell(Layer):
                         shape=(self.units * 3,), initializer="zeros", name="bias"
                     )
         else:
-            self.bias = None
+            if getattr(self, "bias", None) is None:
+                self.bias = None
         self.built = True
 
     def call(self, inputs, states, training=None, **kwargs):
@@ -7201,7 +7205,7 @@ class GRUCell(Layer):
             state,
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias) if self.bias is not None else None,
+            _to_tensor(self.bias) if getattr(self, "bias", None) is not None else None,
         )
         return _wrap(out), _wrap(new_state)
 
@@ -7503,7 +7507,8 @@ class LSTMCell(Layer):
                     shape=(self.units * 4,), initializer=bias_init, name="bias"
                 )
         else:
-            self.bias = None
+            if getattr(self, "bias", None) is None:
+                self.bias = None
         self.built = True
 
     def call(self, inputs, states, training=None, **kwargs):
@@ -7529,7 +7534,7 @@ class LSTMCell(Layer):
             (h, c),
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias) if self.bias is not None else None,
+            _to_tensor(self.bias) if getattr(self, "bias", None) is not None else None,
         )
         return _wrap(out), [_wrap(s) for s in new_state]
 

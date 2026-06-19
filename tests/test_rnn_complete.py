@@ -68,7 +68,7 @@ def test_bidirectional():
     zero_layer.set_weights(kw)
     zero_out = zero_layer(x)
     np.testing.assert_allclose(
-        keras_out.numpy(), np.array(zero_out), atol=0.5, rtol=0.5
+        np.array(keras_out), np.array(zero_out), atol=0.5, rtol=0.5
     )
 
 
@@ -89,5 +89,5 @@ def test_stacked():
     zero_out = zero_layer(x)
 
     np.testing.assert_allclose(
-        keras_out.numpy(), np.array(zero_out), atol=0.5, rtol=0.5
+        np.array(keras_out), np.array(zero_out), atol=0.5, rtol=0.5
     )
