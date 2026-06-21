@@ -54,6 +54,10 @@ class LearningRateSchedule:
         """Call self as a function."""
         return 0.0
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
 
 class CosineDecay(LearningRateSchedule):
     """A `LearningRateSchedule` that uses a cosine decay with optional warmup.
@@ -190,6 +194,16 @@ class CosineDecay(LearningRateSchedule):
         decayed = (1.0 - self.alpha) * cosine_decay + self.alpha
         return self.initial_learning_rate * decayed
 
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "decay_steps": self.decay_steps,
+            "alpha": self.alpha,
+            "name": self.name,
+            "warmup_target": self.warmup_target,
+            "warmup_steps": self.warmup_steps,
+        }
+
 
 class ExponentialDecay(LearningRateSchedule):
     """A `LearningRateSchedule` that uses an exponential decay schedule.
@@ -273,6 +287,15 @@ class ExponentialDecay(LearningRateSchedule):
         if self.staircase:
             p = math.floor(p)
         return self.initial_learning_rate * math.pow(self.decay_rate, p)
+
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "decay_steps": self.decay_steps,
+            "decay_rate": self.decay_rate,
+            "staircase": self.staircase,
+            "name": self.name,
+        }
 
 
 class CosineDecayRestarts(LearningRateSchedule):
@@ -378,6 +401,16 @@ class CosineDecayRestarts(LearningRateSchedule):
 
         return self.initial_learning_rate * math.pow(m_mul, i_restart) * decayed
 
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "first_decay_steps": self.first_decay_steps,
+            "t_mul": self.t_mul,
+            "m_mul": self.m_mul,
+            "alpha": self.alpha,
+            "name": self.name,
+        }
+
 
 class InverseTimeDecay(LearningRateSchedule):
     """A `LearningRateSchedule` that uses an inverse time decay schedule.
@@ -463,6 +496,15 @@ class InverseTimeDecay(LearningRateSchedule):
             p = math.floor(p)
         return self.initial_learning_rate / (1.0 + self.decay_rate * p)
 
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "decay_steps": self.decay_steps,
+            "decay_rate": self.decay_rate,
+            "staircase": self.staircase,
+            "name": self.name,
+        }
+
 
 class PiecewiseConstantDecay(LearningRateSchedule):
     """A `LearningRateSchedule` that uses a piecewise constant decay schedule.
@@ -534,6 +576,9 @@ class PiecewiseConstantDecay(LearningRateSchedule):
             if step <= boundary:
                 return value
         return self.values[-1]
+
+    def get_config(self):
+        return {"boundaries": self.boundaries, "values": self.values, "name": self.name}
 
 
 class PolynomialDecay(LearningRateSchedule):
@@ -650,3 +695,13 @@ class PolynomialDecay(LearningRateSchedule):
         return (self.initial_learning_rate - self.end_learning_rate) * math.pow(
             1.0 - p, self.power
         ) + self.end_learning_rate
+
+    def get_config(self):
+        return {
+            "initial_learning_rate": self.initial_learning_rate,
+            "decay_steps": self.decay_steps,
+            "end_learning_rate": self.end_learning_rate,
+            "power": self.power,
+            "cycle": self.cycle,
+            "name": self.name,
+        }

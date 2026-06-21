@@ -2189,3 +2189,80 @@ class Tversky(Loss):
         tversky = ops.divide(ops.add(true_pos, eps), ops.add(denom, eps))
         loss = ops.subtract(_to_tensor(1.0), tversky)
         return _reduce(loss, self.reduction, sample_weight)
+
+
+def serialize(loss):
+    """Serialize a loss."""
+    if loss is None:
+        return None
+    if isinstance(loss, str):
+        return loss
+    return {
+        "class_name": loss.__class__.__name__,
+        "config": loss.get_config() if hasattr(loss, "get_config") else {},
+    }
+
+
+def deserialize(config, custom_objects=None):
+    """Deserialize a loss."""
+    if config is None:
+        return None
+    if isinstance(config, str):
+        return get(config)
+    if isinstance(config, dict):
+        class_name = config.get("class_name")
+        conf = config.get("config", {})
+        cls = globals().get(class_name)
+        if cls:
+            return cls(**conf)
+    return config
+
+
+def get(identifier):
+    """Retrieve a Keras loss object via an identifier."""
+    if identifier is None:
+        return None
+    if isinstance(identifier, str):
+        identifier = identifier.lower()
+        if identifier in ["mse", "mean_squared_error"]:
+            return MeanSquaredError()
+        # simplified stub
+        return identifier
+    return identifier
+
+
+# Additional esoteric Keras losses
+
+
+def dice(y_true, y_pred, axis=None):
+    from ml_switcheroo_compiler.ops.nn.loss import dice_loss
+
+    return dice_loss(y_true, y_pred, axis=axis)
+
+
+def tversky(y_true, y_pred, alpha=0.5, beta=0.5):
+    from ml_switcheroo_compiler.ops.nn.loss import tversky_loss
+
+    return tversky_loss(y_true, y_pred, alpha=alpha, beta=beta)
+
+
+def ctc(y_true, y_pred):
+    from ml_switcheroo_compiler.ops import ctc_loss
+    from ml_switcheroo_compiler.ops.creation import ones
+
+    # Keras backend signature fallback for CTC
+    y_true_len = ones((y_true.shape[0], 1)) if hasattr(y_true, "shape") else ones((1,))
+    y_pred_len = ones((y_pred.shape[0], 1)) if hasattr(y_pred, "shape") else ones((1,))
+    return ctc_loss(y_true, y_pred, y_true_len, y_pred_len)
+
+
+def circle(y_true, y_pred, margin=0.25, gamma=256):
+    from ml_switcheroo_compiler.ops import circle_loss
+
+    return circle_loss(y_true, y_pred, margin=margin, gamma=gamma)
+
+
+def categorical_generalized_cross_entropy(y_true, y_pred):
+    from ml_switcheroo_compiler.ops import categorical_generalized_cross_entropy as gce
+
+    return gce(y_true, y_pred)

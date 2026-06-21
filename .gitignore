@@ -149,3 +149,4 @@ cython_debug/
 *.cache
 *.zip
 *.tar.gz
+.venv_311

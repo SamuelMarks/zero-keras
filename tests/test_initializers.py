@@ -299,3 +299,21 @@ def test_initializers_exceptions_and_branches():
 
     with pytest.raises(ValueError):
         initializers.Orthogonal()(shape=(2,))
+
+
+def test_serialize_deserialize():
+    from zero_keras import initializers
+
+    init = initializers.Constant(value=2.0)
+    config = initializers.serialize(init)
+    assert isinstance(config, dict)
+
+    init2 = initializers.deserialize(config)
+    assert isinstance(init2, initializers.Constant)
+
+    assert initializers.serialize(None) is None
+    assert initializers.serialize("constant") == "constant"
+
+    assert initializers.deserialize(None) is None
+    assert initializers.deserialize("constant") is not None
+    assert initializers.deserialize(init) is init

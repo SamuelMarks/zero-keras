@@ -1,3 +1,5 @@
+from zero_keras.activations import _to_tensor
+
 """Keras optimizers."""
 
 
@@ -220,23 +222,62 @@ class Adadelta(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            rho=rho,
-            epsilon=epsilon,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.rho = rho
+        self.epsilon = epsilon
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.accumulated_grads = []
+        self.accumulated_delta_vars = []
+        for var in var_list:
+            self.accumulated_grads.append(
+                self.add_variable(shape=var.shape, name="accumulated_grads")
+            )
+            self.accumulated_delta_vars.append(
+                self.add_variable(shape=var.shape, name="accumulated_delta_vars")
+            )
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            acc_g = self.accumulated_grads[i]
+            acc_delta = self.accumulated_delta_vars[i]
+
+            acc_g_new = self.rho * acc_g + (1.0 - self.rho) * ops.square(g)
+
+            delta_var = (
+                -ops.sqrt(acc_delta + self.epsilon)
+                / ops.sqrt(acc_g_new + self.epsilon)
+                * g
+            )
+            var_new = var + lr * delta_var
+
+            acc_delta_new = self.rho * acc_delta + (1.0 - self.rho) * ops.square(
+                delta_var
+            )
+
+            try:
+                acc_g.assign(acc_g_new)
+                acc_delta.assign(acc_delta_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Adafactor(Optimizer):
@@ -327,43 +368,59 @@ class Adafactor(Optimizer):
     def __init__(
         self,
         learning_rate=0.001,
+        factored=True,
+        multiply_by_parameter_scale=True,
+        clipping_threshold=1.0,
         beta_2_decay=-0.8,
         epsilon_1=1e-30,
-        epsilon_2=0.001,
-        clip_threshold=1.0,
-        relative_step=True,
+        epsilon_2=1e-3,
+        weight_decay=None,
         use_ema=False,
         ema_overwrite_frequency=None,
-        ema_momentum=0.99,
         loss_scale_factor=None,
         global_clipnorm=None,
         gradient_accumulation_steps=None,
         clipnorm=None,
         clipvalue=None,
+        ema_momentum=0.99,
         name="adafactor",
-        weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_2_decay=beta_2_decay,
-            epsilon_1=epsilon_1,
-            epsilon_2=epsilon_2,
-            clip_threshold=clip_threshold,
-            relative_step=relative_step,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            ema_momentum=ema_momentum,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.factored = factored
+        self.epsilon_2 = epsilon_2
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.v = []
+        for var in var_list:
+            self.v.append(self.add_variable(shape=var.shape, name="v"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+            v = self.v[i]
+            v_new = 0.9 * v + 0.1 * ops.square(g)
+            var_new = var - lr * g / ops.sqrt(v_new + self.epsilon_2)
+            try:
+                v.assign(v_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Adagrad(Optimizer):
@@ -460,23 +517,52 @@ class Adagrad(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            initial_accumulator_value=initial_accumulator_value,
-            epsilon=epsilon,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.initial_accumulator_value = initial_accumulator_value
+        self.epsilon = epsilon
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.accumulator = []
+        for var in var_list:
+            import ml_switcheroo_compiler.ops as ops
+
+            acc = self.add_variable(shape=var.shape, name="accumulator")
+            init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
+            try:
+                acc.assign(init_val)
+            except AttributeError:
+                pass
+            self.accumulator.append(acc)
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            acc = self.accumulator[i]
+            acc_new = acc + ops.square(g)
+
+            var_new = var - lr * g / ops.sqrt(acc_new + self.epsilon)
+
+            try:
+                acc.assign(acc_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Adam(Optimizer):
@@ -740,6 +826,7 @@ class AdamW(Optimizer):
     def __init__(
         self,
         learning_rate=0.001,
+        weight_decay=0.004,
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-07,
@@ -753,28 +840,79 @@ class AdamW(Optimizer):
         clipvalue=None,
         ema_momentum=0.99,
         name="adamw",
-        weight_decay=0.004,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            amsgrad=amsgrad,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.weight_decay = weight_decay
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+        self.amsgrad = amsgrad
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        self.v = []
+        if self.amsgrad:
+            self.v_hat = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+            self.v.append(self.add_variable(shape=var.shape, name="v"))
+            if self.amsgrad:
+                self.v_hat.append(self.add_variable(shape=var.shape, name="v_hat"))
+        self.iterations = self.add_variable(shape=(), name="iterations")
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        try:
+            self.iterations.assign(self.iterations + 1)
+        except AttributeError:
+            pass
+
+        t = self.iterations + 1
+        lr_t = (
+            self.learning_rate
+            * ops.sqrt(1.0 - ops.power(self.beta_2, t))
+            / (1.0 - ops.power(self.beta_1, t))
         )
-        pass
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            var_new = var - self.learning_rate * self.weight_decay * var
+
+            m = self.m[i]
+            v = self.v[i]
+
+            m_new = self.beta_1 * m + (1.0 - self.beta_1) * g
+            v_new = self.beta_2 * v + (1.0 - self.beta_2) * ops.square(g)
+
+            if self.amsgrad:
+                v_hat = self.v_hat[i]
+                v_hat_new = ops.maximum(v_hat, v_new)
+                var_new = var_new - lr_t * m_new / (ops.sqrt(v_hat_new) + self.epsilon)
+                try:
+                    v_hat.assign(v_hat_new)
+                except AttributeError:
+                    pass
+            else:
+                var_new = var_new - lr_t * m_new / (ops.sqrt(v_new) + self.epsilon)
+
+            try:
+                m.assign(m_new)
+                v.assign(v_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Adamax(Optimizer):
@@ -891,24 +1029,56 @@ class Adamax(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        self.u = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+            self.u.append(self.add_variable(shape=var.shape, name="u"))
+        self.iterations = self.add_variable(shape=(), name="iterations")
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        try:
+            self.iterations.assign(self.iterations + 1)
+        except AttributeError:
+            pass
+
+        t = self.iterations + 1
+        lr_t = self.learning_rate / (1.0 - ops.power(self.beta_1, t))
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            m = self.m[i]
+            u = self.u[i]
+
+            m_new = self.beta_1 * m + (1.0 - self.beta_1) * g
+            u_new = ops.maximum(self.beta_2 * u, ops.abs(g))
+
+            var_new = var - lr_t * m_new / (u_new + self.epsilon)
+
+            try:
+                m.assign(m_new)
+                u.assign(u_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Ftrl(Optimizer):
@@ -1051,27 +1221,54 @@ class Ftrl(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            learning_rate_power=learning_rate_power,
-            initial_accumulator_value=initial_accumulator_value,
-            l1_regularization_strength=l1_regularization_strength,
-            l2_regularization_strength=l2_regularization_strength,
-            l2_shrinkage_regularization_strength=l2_shrinkage_regularization_strength,
-            beta=beta,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            ema_momentum=ema_momentum,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.initial_accumulator_value = initial_accumulator_value
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.z = []
+        self.n = []
+        for var in var_list:
+            import ml_switcheroo_compiler.ops as ops
+
+            n_var = self.add_variable(shape=var.shape, name="n")
+            init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
+            try:
+                n_var.assign(init_val)
+            except AttributeError:
+                pass
+            self.n.append(n_var)
+            self.z.append(self.add_variable(shape=var.shape, name="z"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+            n = self.n[i]
+            z = self.z[i]
+            n_new = n + ops.square(g)
+            sigma = (ops.sqrt(n_new) - ops.sqrt(n)) / lr
+            z_new = z + g - sigma * var
+            var_new = var - lr * z_new / ops.sqrt(n_new)
+            try:
+                n.assign(n_new)
+                z.assign(z_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Lamb(Optimizer):
@@ -1161,6 +1358,7 @@ class Lamb(Optimizer):
         beta_1=0.9,
         beta_2=0.999,
         epsilon=1e-07,
+        weight_decay=None,
         use_ema=False,
         ema_overwrite_frequency=None,
         loss_scale_factor=None,
@@ -1170,27 +1368,61 @@ class Lamb(Optimizer):
         clipvalue=None,
         ema_momentum=0.99,
         name="lamb",
-        weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+        self.weight_decay = weight_decay if weight_decay is not None else 0.0
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        self.v = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+            self.v.append(self.add_variable(shape=var.shape, name="v"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+            m = self.m[i]
+            v = self.v[i]
+            m_new = self.beta_1 * m + (1.0 - self.beta_1) * g
+            v_new = self.beta_2 * v + (1.0 - self.beta_2) * ops.square(g)
+
+            update = m_new / (ops.sqrt(v_new) + self.epsilon) + self.weight_decay * var
+
+            w_norm = ops.sqrt(ops.sum(ops.square(var)))
+            u_norm = ops.sqrt(ops.sum(ops.square(update)))
+            ratio = ops.where(
+                ops.greater(w_norm, 0.0),
+                ops.where(ops.greater(u_norm, 0.0), w_norm / u_norm, _to_tensor(1.0)),
+                _to_tensor(1.0),
+            )
+
+            var_new = var - lr * ratio * update
+            try:
+                m.assign(m_new)
+                v.assign(v_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Lion(Optimizer):
@@ -1280,7 +1512,7 @@ class Lion(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
+        learning_rate=0.0001,
         beta_1=0.9,
         beta_2=0.99,
         use_ema=False,
@@ -1295,23 +1527,45 @@ class Lion(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            m = self.m[i]
+
+            c = self.beta_1 * m + (1.0 - self.beta_1) * g
+            var_new = var - lr * ops.sign(c)
+            m_new = self.beta_2 * m + (1.0 - self.beta_2) * g
+
+            try:
+                m.assign(m_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class LossScaleOptimizer(Optimizer):
@@ -1396,17 +1650,29 @@ class LossScaleOptimizer(Optimizer):
     def __init__(
         self,
         inner_optimizer,
-        initial_scale=32768.0,
+        initial_scale=1024.0,
+        dynamic=True,
         dynamic_growth_steps=2000,
+        name="LossScaleOptimizer",
         **kwargs,
     ):
-        super().__init__(
-            inner_optimizer=inner_optimizer,
-            initial_scale=initial_scale,
-            dynamic_growth_steps=dynamic_growth_steps,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.inner_optimizer = inner_optimizer
+        self.initial_scale = initial_scale
+
+    def build(self, var_list):
+        if self.built:
+            return
+        if hasattr(self.inner_optimizer, "build"):
+            self.inner_optimizer.build(var_list)
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if hasattr(self.inner_optimizer, "apply_gradients"):
+            self.inner_optimizer.apply_gradients(grads_and_vars, *args, **kwargs)
 
 
 class Muon(Optimizer):
@@ -1481,57 +1747,44 @@ class Muon(Optimizer):
     def __init__(
         self,
         learning_rate=0.001,
-        adam_beta_1=0.9,
-        adam_beta_2=0.999,
-        epsilon=1e-07,
-        exclude_layers=None,
-        exclude_embeddings=True,
-        muon_a=3.4445,
-        muon_b=-4.775,
-        muon_c=2.0315,
-        adam_lr_ratio=0.1,
-        momentum=0.95,
-        ns_steps=6,
-        nesterov=True,
-        weight_decay=0.1,
-        loss_scale_factor=None,
-        ema_overwrite_frequency=None,
-        gradient_accumulation_steps=None,
+        momentum=0.0,
         name="muon",
-        use_ema=False,
-        global_clipnorm=None,
-        clipnorm=None,
-        ema_momentum=0.99,
-        clipvalue=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            adam_beta_1=adam_beta_1,
-            adam_beta_2=adam_beta_2,
-            epsilon=epsilon,
-            exclude_layers=exclude_layers,
-            exclude_embeddings=exclude_embeddings,
-            muon_a=muon_a,
-            muon_b=muon_b,
-            muon_c=muon_c,
-            adam_lr_ratio=adam_lr_ratio,
-            momentum=momentum,
-            ns_steps=ns_steps,
-            nesterov=nesterov,
-            weight_decay=weight_decay,
-            loss_scale_factor=loss_scale_factor,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            name=name,
-            use_ema=use_ema,
-            global_clipnorm=global_clipnorm,
-            clipnorm=clipnorm,
-            ema_momentum=ema_momentum,
-            clipvalue=clipvalue,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.momentum = momentum
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+            m = self.m[i]
+            m_new = self.momentum * m + (1.0 - self.momentum) * g
+            var_new = var - lr * m_new
+            try:
+                m.assign(m_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class Nadam(Optimizer):
@@ -1632,24 +1885,65 @@ class Nadam(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            beta_1=beta_1,
-            beta_2=beta_2,
-            epsilon=epsilon,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.beta_1 = beta_1
+        self.beta_2 = beta_2
+        self.epsilon = epsilon
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.m = []
+        self.v = []
+        for var in var_list:
+            self.m.append(self.add_variable(shape=var.shape, name="m"))
+            self.v.append(self.add_variable(shape=var.shape, name="v"))
+        self.iterations = self.add_variable(shape=(), name="iterations")
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        try:
+            self.iterations.assign(self.iterations + 1)
+        except AttributeError:
+            pass
+
+        t = self.iterations + 1
+
+        beta_1_t = self.beta_1 * ops.power(0.96, t * 0.004)
+        beta_1_t_next = self.beta_1 * ops.power(0.96, (t + 1) * 0.004)
+
+        lr_t = (
+            self.learning_rate
+            * ops.sqrt(1.0 - ops.power(self.beta_2, t))
+            / (1.0 - ops.power(self.beta_1, t))
         )
-        pass
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            m = self.m[i]
+            v = self.v[i]
+
+            m_new = self.beta_1 * m + (1.0 - self.beta_1) * g
+            v_new = self.beta_2 * v + (1.0 - self.beta_2) * ops.square(g)
+
+            m_hat = beta_1_t_next * m_new + (1.0 - beta_1_t) * g
+            var_new = var - lr_t * m_hat / (ops.sqrt(v_new) + self.epsilon)
+
+            try:
+                m.assign(m_new)
+                v.assign(v_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class RMSprop(Optimizer):
@@ -1766,25 +2060,76 @@ class RMSprop(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
-        super().__init__(
-            learning_rate=learning_rate,
-            rho=rho,
-            momentum=momentum,
-            epsilon=epsilon,
-            centered=centered,
-            use_ema=use_ema,
-            ema_overwrite_frequency=ema_overwrite_frequency,
-            loss_scale_factor=loss_scale_factor,
-            global_clipnorm=global_clipnorm,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            clipnorm=clipnorm,
-            clipvalue=clipvalue,
-            ema_momentum=ema_momentum,
-            name=name,
-            weight_decay=weight_decay,
-            **kwargs,
-        )
-        pass
+        super().__init__(**kwargs)
+        self.learning_rate = learning_rate
+        self.rho = rho
+        self.momentum = momentum
+        self.epsilon = epsilon
+        self.centered = centered
+
+    def build(self, var_list):
+        if self.built:
+            return
+        self.v = []
+        if self.centered:
+            self.mg = []
+        if self.momentum > 0.0:
+            self.m = []
+        for var in var_list:
+            self.v.append(self.add_variable(shape=var.shape, name="v"))
+            if self.centered:
+                self.mg.append(self.add_variable(shape=var.shape, name="mg"))
+            if self.momentum > 0.0:
+                self.m.append(self.add_variable(shape=var.shape, name="m"))
+        self.built = True
+
+    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        import ml_switcheroo_compiler.ops as ops
+
+        grads_and_vars = list(grads_and_vars)
+        if not self.built:
+            self.build([v for _, v in grads_and_vars])
+
+        if not grads_and_vars:
+            return
+        lr = ops.cast(_to_tensor(self.learning_rate), grads_and_vars[0][1].dtype)
+
+        for i, (g, var) in enumerate(grads_and_vars):
+            if g is None:
+                continue
+
+            v = self.v[i]
+            v_new = self.rho * v + (1.0 - self.rho) * ops.square(g)
+
+            if self.centered:
+                mg = self.mg[i]
+                mg_new = self.rho * mg + (1.0 - self.rho) * g
+                denominator = v_new - ops.square(mg_new) + self.epsilon
+                try:
+                    mg.assign(mg_new)
+                except AttributeError:
+                    pass
+            else:
+                denominator = v_new + self.epsilon
+
+            denominator = ops.sqrt(denominator)
+
+            if self.momentum > 0.0:
+                m = self.m[i]
+                m_new = self.momentum * m + lr * g / denominator
+                var_new = var - m_new
+                try:
+                    m.assign(m_new)
+                except AttributeError:
+                    pass
+            else:
+                var_new = var - lr * g / denominator
+
+            try:
+                v.assign(v_new)
+                var.assign(var_new)
+            except AttributeError:
+                pass
 
 
 class SGD(Optimizer):
@@ -1943,3 +2288,49 @@ class SGD(Optimizer):
 
 
 from . import schedules as schedules
+
+
+# Legacy namespace support
+class legacy:
+    pass
+
+
+def serialize(optimizer):
+    """Serialize an optimizer."""
+    if optimizer is None:
+        return None
+    if isinstance(optimizer, str):
+        return optimizer
+    return {
+        "class_name": optimizer.__class__.__name__,
+        "config": optimizer.get_config() if hasattr(optimizer, "get_config") else {},
+    }
+
+
+def deserialize(config, custom_objects=None):
+    """Deserialize an optimizer."""
+    if config is None:
+        return None
+    if isinstance(config, str):
+        return get(config)
+    if isinstance(config, dict):
+        class_name = config.get("class_name")
+        conf = config.get("config", {})
+        cls = globals().get(class_name)
+        if cls:
+            return cls(**conf)
+    return config
+
+
+def get(identifier):
+    """Retrieve a Keras optimizer object via an identifier."""
+    if identifier is None:
+        return None
+    if isinstance(identifier, str):
+        identifier = identifier.lower()
+        if identifier == "adam":
+            return Adam()
+        if identifier == "sgd":
+            return SGD()
+        return identifier
+    return identifier

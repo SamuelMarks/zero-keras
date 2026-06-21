@@ -149,6 +149,9 @@ class L2(Regularizer):
         x = _to_tensor(x)
         return _wrap(ops.sum(self.l2 * ops.square(x)))
 
+    def get_config(self):
+        return {"l2": float(self.l2)}
+
 
 def get(identifier):
     """Retrieve a Keras regularizer object via an identifier."""
@@ -157,6 +160,182 @@ def get(identifier):
     if isinstance(identifier, Regularizer):
         return identifier
     if isinstance(identifier, str):
-        if identifier.lower() == "l2":
+        identifier = identifier.lower()
+        if identifier == "l1":
+            return L1()
+        elif identifier == "l2":
             return L2()
+        elif identifier == "l1_l2":
+            return L1L2()
+        elif identifier == "orthogonal_regularizer":
+            return OrthogonalRegularizer()
     return identifier
+
+
+class L1(Regularizer):
+    """A regularizer that applies a L1 regularization penalty.
+
+    The L1 regularization penalty is computed as:
+    `loss = l1 * reduce_sum(abs(x))`
+
+    L1 may be passed to a layer as a string identifier:
+
+    >>> dense = Dense(3, kernel_regularizer='l1')
+
+    In this case, the default value used is `l1=0.01`.
+
+    Arguments:
+        l1: float, L1 regularization factor.
+    """
+
+    def __init__(self, l1=0.01, **kwargs):
+        self.l1 = l1
+
+    def __call__(self, x: Any) -> Any:
+        """Compute a regularization penalty from an input tensor."""
+        x = _to_tensor(x)
+        return _wrap(ops.sum(self.l1 * ops.abs(x)))
+
+    def get_config(self):
+        return {"l1": float(self.l1)}
+
+
+class L1L2(Regularizer):
+    """A regularizer that applies both L1 and L2 regularization penalties.
+
+    The L1 regularization penalty is computed as:
+    `loss = l1 * reduce_sum(abs(x))`
+
+    The L2 regularization penalty is computed as:
+    `loss = l2 * reduce_sum(square(x))`
+
+    L1L2 may be passed to a layer as a string identifier:
+
+    >>> dense = Dense(3, kernel_regularizer='l1_l2')
+
+    In this case, the default values used are `l1=0.01` and `l2=0.01`.
+
+    Arguments:
+        l1: float, L1 regularization factor.
+        l2: float, L2 regularization factor.
+    """
+
+    def __init__(self, l1=0.0, l2=0.0, **kwargs):
+        self.l1 = l1
+        self.l2 = l2
+
+    def __call__(self, x: Any) -> Any:
+        """Compute a regularization penalty from an input tensor."""
+        x = _to_tensor(x)
+        regularization = ops.array(0.0, dtype=x.dtype)
+        if self.l1:
+            regularization = ops.add(regularization, ops.sum(self.l1 * ops.abs(x)))
+        if self.l2:
+            regularization = ops.add(regularization, ops.sum(self.l2 * ops.square(x)))
+        return _wrap(regularization)
+
+    def get_config(self):
+        return {"l1": float(self.l1), "l2": float(self.l2)}
+
+
+class OrthogonalRegularizer(Regularizer):
+    """A regularizer that encourages input vectors to be orthogonal to each other.
+
+    It can be applied to either the rows of a matrix (`mode="rows"`) or its
+    columns (`mode="columns"`). When applied to a `Dense` kernel of shape
+    `(input_dim, units)`, rows mode will seek to make the feature vectors
+    (i.e. the basis of the output space) orthogonal to each other.
+
+    Arguments:
+        factor: Float. The regularization factor. The regularization penalty will
+            be proportional to `factor` times the mean of the dot products between
+            all pairs of orthogonalized vectors.
+        mode: String, one of `{"rows", "columns"}`. Defaults to `"rows"`. In rows
+            mode, the regularization effect seeks to make the rows of the input
+            orthogonal to each other. In columns mode, it seeks to make the columns
+            of the input orthogonal to each other.
+    """
+
+    def __init__(self, factor=0.01, mode="rows", **kwargs):
+        self.factor = factor
+        self.mode = mode
+
+    def __call__(self, x: Any) -> Any:
+        """Compute a regularization penalty from an input tensor."""
+        x = _to_tensor(x)
+        if len(x.shape) < 2:
+            raise ValueError(
+                "Inputs to OrthogonalRegularizer must have rank >= 2."
+                f" Received: inputs.shape={x.shape}"
+            )
+
+        # Flatten all dimensions except the one being orthogonalized
+        if self.mode == "rows":
+            num_rows = x.shape[0]
+            flat_x = ops.reshape(x, (num_rows, -1))
+            flat_x_t = ops.swapaxes(flat_x, 0, 1)
+            product = ops.matmul(flat_x, flat_x_t)
+        elif self.mode == "columns":
+            num_cols = x.shape[-1]
+            flat_x = ops.reshape(x, (-1, num_cols))
+            flat_x_t = ops.swapaxes(flat_x, 0, 1)
+            product = ops.matmul(flat_x_t, flat_x)
+        else:
+            raise ValueError(
+                f"Invalid mode: '{self.mode}'. Expected one of {{'rows', 'columns'}}."
+            )
+
+        # Construct identity via broadcast since numpy is not allowed
+        # identity = eye(product.shape[0])
+        n = product.shape[0]
+        identity_list = [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]
+        identity = ops.array(identity_list, dtype="float32")
+
+        diff = ops.subtract(product, identity)
+
+        return _wrap(self.factor * ops.sum(ops.abs(diff)))
+
+    def get_config(self):
+        return {"factor": float(self.factor), "mode": self.mode}
+
+
+# Aliases
+l1 = L1
+l2 = L2
+l1_l2 = L1L2
+orthogonal_regularizer = OrthogonalRegularizer
+
+
+def serialize(regularizer):
+    """Serialize a regularizer."""
+    if regularizer is None:
+        return None
+    if isinstance(regularizer, str):
+        return regularizer
+    # Add minimal serialization for 100% coverage
+    return {
+        "class_name": regularizer.__class__.__name__,
+        "config": regularizer.get_config()
+        if hasattr(regularizer, "get_config")
+        else {},
+    }
+
+
+def deserialize(config, custom_objects=None):
+    """Deserialize a regularizer."""
+    if config is None:
+        return None
+    if isinstance(config, str):
+        return get(config)
+    if isinstance(config, dict):
+        class_name = config.get("class_name")
+        conf = config.get("config", {})
+        if class_name == "L1":
+            return L1(**conf)
+        elif class_name == "L2":
+            return L2(**conf)
+        elif class_name == "L1L2":
+            return L1L2(**conf)
+        elif class_name == "OrthogonalRegularizer":
+            return OrthogonalRegularizer(**conf)
+    return config

@@ -12,7 +12,7 @@ def is_stdlib(base_name):
         spec = importlib.util.find_spec(base_name)
         if spec is None:
             return False
-        if spec.origin == "built-in":
+        if spec.origin in ("built-in", "frozen"):
             return True
         if spec.origin is None:
             return False

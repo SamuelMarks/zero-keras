@@ -1,6 +1,22 @@
 """Module docstring."""
 
 import ml_switcheroo_compiler.ops as ops
+
+
+def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
+    import ml_switcheroo_compiler.ops as ops
+
+    if top_k is not None:
+        top_k_vals, _ = ops.top_k(y_pred, k=top_k)
+        min_top_k = ops.min(top_k_vals, axis=-1, keepdims=True)
+        y_pred = ops.where(y_pred >= min_top_k, y_pred, _to_tensor(0.0))
+    if class_id is not None:
+        y_true = y_true[..., class_id]
+        y_pred = y_pred[..., class_id]
+    return y_true, y_pred
+
+
+import ml_switcheroo_compiler.nn as nn
 from zero_keras.activations import _to_tensor, _wrap
 
 """Keras metrics."""
@@ -66,8 +82,8 @@ class Metric:
             )
 
         def update_state(self, y_true, y_pred, sample_weight=None):
-            y_true = ops.cast(y_true, "bool")
-            y_pred = ops.cast(y_pred, "bool")
+            y_true = ops.cast(_to_tensor(y_true), "bool")
+            y_pred = ops.cast(_to_tensor(y_pred), "bool")
 
             values = ops.logical_and(
                 ops.equal(y_true, True), ops.equal(y_pred, True))
@@ -581,24 +597,10 @@ class TopKCategoricalAccuracy(MeanMetricWrapper):
             y_true = _to_tensor(y_true)
             y_pred = _to_tensor(y_pred)
             y_true_rank = ops.argmax(y_true, axis=-1)
-            # Find the value of the k-th top element
-            # Actually, `numpy.argsort` is what we need. We can just use python/numpy for eager mode if we need to.
-            # But ops.top_k is not implemented.
-
-            if hasattr(y_pred, "data") and not hasattr(y_pred.data, "id"):
-                # Eager mode
-                np = __import__("numpy")
-                np_pred = np.asarray(y_pred.data)
-                np = __import__("numpy")
-                top_indices = np.argsort(np_pred, axis=-1)[..., -k:]
-                y_true_np = np.asarray(y_true_rank.data)[..., np.newaxis]
-                matches = np.any(top_indices == y_true_np, axis=-1).astype(np.float32)
-
-                return ops.asarray(matches)
-            else:
-                raise NotImplementedError(
-                    "ops.top_k not implemented for symbolic tensors"
-                )
+            _, top_indices = ops.top_k(y_pred, k)
+            y_true_rank = ops.expand_dims(y_true_rank, -1)
+            matches = ops.any(ops.equal(top_indices, y_true_rank), axis=-1)
+            return ops.cast(matches, "float32")
 
         super().__init__(fn=top_k_fn, name=name, dtype=dtype, **kwargs)
 
@@ -680,26 +682,97 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
             y_true = _to_tensor(y_true)
             y_pred = _to_tensor(y_pred)
 
-            if hasattr(y_pred, "data") and not hasattr(y_pred.data, "id"):
-                # Eager mode
-                np = __import__("numpy")
-                np_pred = np.asarray(y_pred.data)
-                np = __import__("numpy")
-                top_indices = np.argsort(np_pred, axis=-1)[..., -k:]
-                y_true_np = np.asarray(y_true.data)[..., np.newaxis]
-                matches = np.any(top_indices == y_true_np, axis=-1).astype(np.float32)
-                from zero_keras.core_layers import KerasTensor
+            # Ensure y_true has the correct dtype for comparison, if needed
+            y_true = ops.cast(y_true, "int32")
 
-                return KerasTensor(matches.shape, "float32", data=matches)
+            _, top_indices = ops.top_k(y_pred, k)
+            # Expand dims if y_true is just shape (batch,) but top_indices is (batch, k)
+            # Assuming y_true is a 1D tensor of class indices
+            if len(y_true.shape) == 1:
+                y_true = ops.expand_dims(y_true, -1)
+            elif len(y_true.shape) == 2 and y_true.shape[-1] == 1:
+                pass
             else:
-                raise NotImplementedError(
-                    "ops.top_k not implemented for symbolic tensors"
-                )
+                y_true = ops.expand_dims(y_true, -1)
+
+            matches = ops.any(ops.equal(top_indices, y_true), axis=-1)
+            return ops.cast(matches, "float32")
 
         super().__init__(fn=sparse_top_k_fn, name=name, dtype=dtype, **kwargs)
 
 
-class FalsePositives(Metric):
+class _ConfusionMatrixMetric(Metric):
+    def __init__(
+        self, thresholds=None, metric_type="FP", name=None, dtype=None, **kwargs
+    ):
+        super().__init__(name=name, dtype=dtype, **kwargs)
+        self.thresholds = 0.5 if thresholds is None else thresholds
+        self.metric_type = metric_type
+        self.reset_state()
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true = ops.cast(_to_tensor(y_true), "bool")
+
+        if isinstance(self.thresholds, (list, tuple)):
+            for i, t in enumerate(self.thresholds):
+                y_pred_i = ops.cast(ops.greater_equal(y_pred, t), "bool")
+                if self.metric_type == "FP":
+                    val = ops.logical_and(ops.logical_not(y_true), y_pred_i)
+                elif self.metric_type == "FN":
+                    val = ops.logical_and(y_true, ops.logical_not(y_pred_i))
+                elif self.metric_type == "TP":
+                    val = ops.logical_and(y_true, y_pred_i)
+                elif self.metric_type == "TN":
+                    val = ops.logical_and(
+                        ops.logical_not(y_true), ops.logical_not(y_pred_i)
+                    )
+
+                val = ops.cast(val, "float32")
+                if sample_weight is not None:
+                    val = val * ops.cast(sample_weight, "float32")
+                try:
+                    self.accumulator[i].assign(self.accumulator[i] + ops.sum(val))
+                except AttributeError:
+                    self.accumulator[i] += ops.sum(val)
+        else:
+            y_pred_bool = ops.cast(ops.greater_equal(y_pred, self.thresholds), "bool")
+            if self.metric_type == "FP":
+                val = ops.logical_and(ops.logical_not(y_true), y_pred_bool)
+            elif self.metric_type == "FN":
+                val = ops.logical_and(y_true, ops.logical_not(y_pred_bool))
+            elif self.metric_type == "TP":
+                val = ops.logical_and(y_true, y_pred_bool)
+            elif self.metric_type == "TN":
+                val = ops.logical_and(
+                    ops.logical_not(y_true), ops.logical_not(y_pred_bool)
+                )
+
+            val = ops.cast(val, "float32")
+            if sample_weight is not None:
+                val = val * ops.cast(sample_weight, "float32")
+
+            try:
+                self.accumulator.assign(self.accumulator + ops.sum(val))
+            except AttributeError:
+                self.accumulator += ops.sum(val)
+
+    def result(self):
+        if isinstance(self.accumulator, list):
+            import ml_switcheroo_compiler.ops as ops
+
+            return ops.stack(self.accumulator)
+        return self.accumulator
+
+    def reset_state(self):
+        if isinstance(self.thresholds, (list, tuple)):
+            self.accumulator = [0.0] * len(self.thresholds)
+        else:
+            self.accumulator = 0.0
+
+
+class FalsePositives(_ConfusionMatrixMetric):
     """Calculates the number of false positives.
 
     If `sample_weight` is given, calculates the sum of the weights of
@@ -734,11 +807,12 @@ class FalsePositives(Metric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            thresholds=thresholds, metric_type="FP", name=name, dtype=dtype, **kwargs
+        )
 
 
-class FalseNegatives(Metric):
+class FalseNegatives(_ConfusionMatrixMetric):
     """Calculates the number of false negatives.
 
     If `sample_weight` is given, calculates the sum of the weights of
@@ -773,11 +847,12 @@ class FalseNegatives(Metric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            thresholds=thresholds, metric_type="FN", name=name, dtype=dtype, **kwargs
+        )
 
 
-class TrueNegatives(Metric):
+class TrueNegatives(_ConfusionMatrixMetric):
     """Calculates the number of true negatives.
 
     If `sample_weight` is given, calculates the sum of the weights of
@@ -812,11 +887,12 @@ class TrueNegatives(Metric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            thresholds=thresholds, metric_type="TN", name=name, dtype=dtype, **kwargs
+        )
 
 
-class TruePositives(Metric):
+class TruePositives(_ConfusionMatrixMetric):
     """Calculates the number of true positives.
 
     If `sample_weight` is given, calculates the sum of the weights of
@@ -851,8 +927,9 @@ class TruePositives(Metric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            thresholds=thresholds, metric_type="TP", name=name, dtype=dtype, **kwargs
+        )
 
 
 class Precision(Metric):
@@ -947,7 +1024,40 @@ class Precision(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.thresholds = 0.5 if thresholds is None and top_k is None else thresholds
+        self.top_k = top_k
+        self.class_id = class_id
+
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+
+        # tp and fp could be lists or arrays if multiple thresholds.
+        # But our confusion matrix result() handles it.
+        # Just safely divide.
+        import ml_switcheroo_compiler.ops as ops
+
+        # We need to handle list of thresholds properly if it returns an array
+        res = ops.where(
+            ops.greater(tp + fp, 0.0), ops.divide(tp, tp + fp + 1e-7), _to_tensor(0.0)
+        )
+        return res
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
 
 
 class Recall(Metric):
@@ -1026,7 +1136,35 @@ class Recall(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.thresholds = 0.5 if thresholds is None and top_k is None else thresholds
+        self.top_k = top_k
+        self.class_id = class_id
+
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        res = ops.where(
+            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
+        )
+        return res
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class PrecisionAtRecall(Metric):
@@ -1079,10 +1217,63 @@ class PrecisionAtRecall(Metric):
     """
 
     def __init__(
-        self, recall, num_thresholds=200, class_id=None, name=None, dtype=None, **kwargs
+        self,
+        recall,
+        num_thresholds=200,
+        class_id=None,
+        name=None,
+        dtype=None,
+        **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.recall = recall
+        self.num_thresholds = num_thresholds
+        self.class_id = class_id
+
+        self.thresholds = [
+            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
+        ]
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+        self.true_negatives = TrueNegatives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+        self.true_negatives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+        self.true_negatives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        recalls = ops.where(
+            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
+        )
+        precisions = ops.where(
+            ops.greater(tp + fp, 0.0), ops.divide(tp, tp + fp + 1e-7), _to_tensor(0.0)
+        )
+
+        # We need the maximum precision where recall >= self.recall
+        # If no such threshold exists, return 0.0
+        condition = ops.greater_equal(recalls, self.recall)
+        valid_precisions = ops.where(condition, precisions, _to_tensor(0.0))
+        return ops.max(valid_precisions)
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
+        self.true_negatives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class RecallAtPrecision(Metric):
@@ -1147,7 +1338,52 @@ class RecallAtPrecision(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.precision = precision
+        self.num_thresholds = num_thresholds
+        self.class_id = class_id
+
+        self.thresholds = [
+            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
+        ]
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+        self.true_negatives = TrueNegatives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+        self.true_negatives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+        self.true_negatives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        recalls = ops.where(
+            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
+        )
+        precisions = ops.where(
+            ops.greater(tp + fp, 0.0), ops.divide(tp, tp + fp + 1e-7), _to_tensor(0.0)
+        )
+
+        condition = ops.greater_equal(precisions, self.precision)
+        valid_recalls = ops.where(condition, recalls, _to_tensor(0.0))
+        return ops.max(valid_recalls)
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
+        self.true_negatives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class SensitivityAtSpecificity(Metric):
@@ -1218,7 +1454,52 @@ class SensitivityAtSpecificity(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.specificity = specificity
+        self.num_thresholds = num_thresholds
+        self.class_id = class_id
+
+        self.thresholds = [
+            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
+        ]
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+        self.true_negatives = TrueNegatives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+        self.true_negatives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+        tn = self.true_negatives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        specificities = ops.where(
+            ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
+        )
+        sensitivities = ops.where(
+            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
+        )
+
+        condition = ops.greater_equal(specificities, self.specificity)
+        valid_sensitivities = ops.where(condition, sensitivities, _to_tensor(0.0))
+        return ops.max(valid_sensitivities)
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
+        self.true_negatives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class SpecificityAtSensitivity(Metric):
@@ -1289,7 +1570,52 @@ class SpecificityAtSensitivity(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.sensitivity = sensitivity
+        self.num_thresholds = num_thresholds
+        self.class_id = class_id
+
+        self.thresholds = [
+            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
+        ]
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+        self.true_negatives = TrueNegatives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        y_true, y_pred = _filter_top_k_and_class_id(
+            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+        )
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+        self.true_negatives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+        tn = self.true_negatives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        specificities = ops.where(
+            ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
+        )
+        sensitivities = ops.where(
+            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
+        )
+
+        condition = ops.greater_equal(sensitivities, self.sensitivity)
+        valid_specificities = ops.where(condition, specificities, _to_tensor(0.0))
+        return ops.max(valid_specificities)
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
+        self.true_negatives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class AUC(Metric):
@@ -1427,7 +1753,88 @@ class AUC(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.num_thresholds = num_thresholds
+        self.curve = curve
+        self.summation_method = summation_method
+        self.from_logits = from_logits
+
+        if thresholds is not None:
+            self.thresholds = thresholds
+        else:
+            self.thresholds = [
+                i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
+            ]
+
+        self.true_positives = TruePositives(thresholds=self.thresholds)
+        self.false_positives = FalsePositives(thresholds=self.thresholds)
+        self.true_negatives = TrueNegatives(thresholds=self.thresholds)
+        self.false_negatives = FalseNegatives(thresholds=self.thresholds)
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        if self.from_logits:
+            from zero_keras.activations import sigmoid
+
+            y_pred = sigmoid(y_pred)
+
+        self.true_positives.update_state(y_true, y_pred, sample_weight)
+        self.false_positives.update_state(y_true, y_pred, sample_weight)
+        self.true_negatives.update_state(y_true, y_pred, sample_weight)
+        self.false_negatives.update_state(y_true, y_pred, sample_weight)
+
+    def result(self):
+        tp = self.true_positives.result()
+        fp = self.false_positives.result()
+        tn = self.true_negatives.result()
+        fn = self.false_negatives.result()
+        import ml_switcheroo_compiler.ops as ops
+
+        if self.curve == "ROC":
+            tpr = ops.where(
+                ops.greater(tp + fn, 0.0),
+                ops.divide(tp, tp + fn + 1e-7),
+                _to_tensor(0.0),
+            )
+            fpr = ops.where(
+                ops.greater(fp + tn, 0.0),
+                ops.divide(fp, fp + tn + 1e-7),
+                _to_tensor(0.0),
+            )
+            x = fpr
+            y = tpr
+        elif self.curve == "PR":
+            precision = ops.where(
+                ops.greater(tp + fp, 0.0),
+                ops.divide(tp, tp + fp + 1e-7),
+                _to_tensor(1.0),
+            )
+            recall = ops.where(
+                ops.greater(tp + fn, 0.0),
+                ops.divide(tp, tp + fn + 1e-7),
+                _to_tensor(0.0),
+            )
+            x = recall
+            y = precision
+        else:
+            raise ValueError(f"Invalid curve: {self.curve}")
+
+        # Riemann sum interpolation
+        # area = sum( (x[i] - x[i+1]) * (y[i] + y[i+1]) / 2 )
+        # Note: x is descending as threshold increases.
+        # So x[i-1] - x[i] is positive.
+        x_diff = x[:-1] - x[1:]
+        if self.summation_method in ("minoring", "minor"):
+            y_val = ops.minimum(y[:-1], y[1:])
+        elif self.summation_method in ("majoring", "major"):
+            y_val = ops.maximum(y[:-1], y[1:])
+        else:
+            y_val = (y[:-1] + y[1:]) / 2.0
+        return ops.sum(x_diff * y_val)
+
+    def reset_state(self):
+        self.true_positives.reset_state()
+        self.false_positives.reset_state()
+        self.true_negatives.reset_state()
+        self.false_negatives.reset_state()
 
 
 class CosineSimilarity(Metric):
@@ -2080,8 +2487,15 @@ class SparseCategoricalCrossentropy(MeanMetricWrapper):
         axis=-1,
         **kwargs,
     ):
-        super().__init__(fn=None, name=name, dtype=dtype, **kwargs)
-        pass
+
+        def scc_fn(y_true, y_pred):
+            from zero_keras.losses import sparse_categorical_crossentropy
+
+            return sparse_categorical_crossentropy(
+                y_true, y_pred, from_logits=from_logits
+            )
+
+        super().__init__(fn=scc_fn, name=name, dtype=dtype, **kwargs)
 
 
 class BinaryCrossentropy(MeanMetricWrapper):
@@ -2130,11 +2544,18 @@ class BinaryCrossentropy(MeanMetricWrapper):
         name="binary_crossentropy",
         dtype=None,
         from_logits=False,
-        label_smoothing=0,
+        label_smoothing=0.0,
         **kwargs,
     ):
-        super().__init__(fn=None, name=name, dtype=dtype, **kwargs)
-        pass
+
+        def bce_fn(y_true, y_pred):
+            from zero_keras.losses import binary_crossentropy
+
+            return binary_crossentropy(
+                y_true, y_pred, from_logits=from_logits, label_smoothing=label_smoothing
+            )
+
+        super().__init__(fn=bce_fn, name=name, dtype=dtype, **kwargs)
 
 
 class KLDivergence(Metric):
@@ -2320,89 +2741,6 @@ class LogCoshError(MeanMetricWrapper):
         super().__init__(fn=log_cosh, name=name, dtype=dtype, **kwargs)
 
 
-class MeanIoU(Metric):
-    """Computes the mean Intersection-Over-Union metric.
-
-    Formula:
-
-    ```python
-    iou = true_positives / (true_positives + false_positives + false_negatives)
-    ```
-    Intersection-Over-Union is a common evaluation metric for semantic image
-    segmentation.
-
-    To compute IoUs, the predictions are accumulated in a confusion matrix,
-    weighted by `sample_weight` and the metric is then calculated from it.
-
-    If `sample_weight` is `None`, weights default to 1.
-    Use `sample_weight` of 0 to mask values.
-
-    Note that this class first computes IoUs for all individual classes, then
-    returns the mean of these values.
-
-    Args:
-        num_classes: The possible number of labels the prediction task can have.
-            This value must be provided, since a confusion matrix of dimension =
-            [num_classes, num_classes] will be allocated.
-        name: (Optional) string name of the metric instance.
-        dtype: (Optional) data type of the metric result.
-        ignore_class: Optional integer. The ID of a class to be ignored during
-            metric computation. This is useful, for example, in segmentation
-            problems featuring a "void" class (commonly -1 or 255) in
-            segmentation maps. By default (`ignore_class=None`), all classes are
-            considered.
-        sparse_y_true: Whether labels are encoded using integers or
-            dense floating point vectors. If `False`, the `argmax` function
-            is used to determine each sample's most likely associated label.
-        sparse_y_pred: Whether predictions are encoded using integers or
-            dense floating point vectors. If `False`, the `argmax` function
-            is used to determine each sample's most likely associated label.
-        axis: (Optional) The dimension containing the logits. Defaults to `-1`.
-
-
-    Example:
-    >>> # cm = [[1, 1],
-    >>> #        [1, 1]]
-    >>> # sum_row = [2, 2], sum_col = [2, 2], true_positives = [1, 1]
-    >>> # iou = true_positives / (sum_row + sum_col - true_positives))
-    >>> # result = (1 / (2 + 2 - 1) + 1 / (2 + 2 - 1)) / 2 = 0.33
-    >>> m = keras.metrics.MeanIoU(num_classes=2)
-    >>> m.update_state([0, 0, 1, 1], [0, 1, 0, 1])
-    >>> m.result()
-    0.33333334
-
-    >>> m.reset_state()
-    >>> m.update_state([0, 0, 1, 1], [0, 1, 0, 1],
-    ...                sample_weight=[0.3, 0.3, 0.3, 0.1])
-    >>> m.result().numpy()
-    0.23809525
-
-    Usage with `compile()` API:
-
-    ```python
-    model.compile(
-        optimizer='sgd',
-        loss='mse',
-        metrics=[keras.metrics.MeanIoU(num_classes=2)])
-    ```
-
-    """
-
-    def __init__(
-        self,
-        num_classes,
-        name=None,
-        dtype=None,
-        ignore_class=None,
-        sparse_y_true=True,
-        sparse_y_pred=True,
-        axis=-1,
-        **kwargs,
-    ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
-
-
 class IoU(Metric):
     """Computes the Intersection-Over-Union metric for specific target classes.
 
@@ -2492,10 +2830,203 @@ class IoU(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.num_classes = num_classes
+        self.target_class_ids = target_class_ids
+        self.ignore_class = ignore_class
+        self.sparse_y_true = sparse_y_true
+        self.sparse_y_pred = sparse_y_pred
+        self.axis = axis
+        self.total_cm = 0.0
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
+
+        y_true = ops.cast(_to_tensor(y_true), "int32")
+        print("y_true init shape", y_true.shape)
+        print("sparse_y_true", self.sparse_y_true)
+        y_pred = ops.cast(_to_tensor(y_pred), "int32")
+
+        if not self.sparse_y_true:
+            y_true = ops.argmax(y_true, axis=self.axis)
+        if not self.sparse_y_pred:
+            y_pred = ops.argmax(y_pred, axis=self.axis)
+
+        y_true = ops.reshape(y_true, [-1])
+        y_pred = ops.reshape(y_pred, [-1])
+
+        if self.ignore_class is not None:
+            valid_mask = ops.logical_not(ops.equal(y_true, self.ignore_class))
+            # This is hard because boolean masking is not trivial without boolean indexing.
+            # But we can just zero out the one-hots where valid_mask is False.
+        else:
+            valid_mask = ops.ones_like(y_true)
+
+        valid_mask = ops.cast(valid_mask, "float32")
+        if sample_weight is not None:
+            sample_weight = ops.reshape(
+                ops.cast(_to_tensor(sample_weight), "float32"), [-1]
+            )
+            valid_mask = valid_mask * sample_weight
+
+        print("y_true before one_hot", y_true.shape)
+        y_true_one_hot = nn.one_hot(y_true, self.num_classes)
+        y_pred_one_hot = nn.one_hot(y_pred, self.num_classes)
+
+        # apply weights and mask
+        y_true_one_hot = y_true_one_hot * ops.expand_dims(valid_mask, -1)
+
+        # Transpose and matmul
+        print(
+            "y_true_one_hot",
+            y_true_one_hot.shape,
+            "y_pred_one_hot",
+            y_pred_one_hot.shape,
+        )
+        cm = ops.sum(
+            ops.expand_dims(y_true_one_hot, -1) * ops.expand_dims(y_pred_one_hot, 1),
+            axis=0,
+        )
+
+        if hasattr(self.total_cm, "assign"):
+            self.total_cm.assign(self.total_cm + cm)
+        else:
+            self.total_cm += cm
+
+    def result(self):
+        import ml_switcheroo_compiler.ops as ops
+
+        cm = self.total_cm
+        sum_over_row = ops.sum(cm, axis=0)
+        sum_over_col = ops.sum(cm, axis=1)
+
+        # True positives are on the diagonal
+        # Keras uses trace, but we don't have trace. We can just use one-hot multiply or extract diagonal.
+        # Wait, how to extract diagonal without gather?
+        # elementwise multiply with identity matrix!
+        arange = ops.arange(self.num_classes)
+        identity = ops.cast(
+            ops.equal(ops.expand_dims(arange, 1), ops.expand_dims(arange, 0)), "float32"
+        )
+        true_positives = ops.sum(cm * identity, axis=1)
+
+        denominator = sum_over_row + sum_over_col - true_positives
+
+        iou = ops.where(
+            ops.greater(denominator, 0.0), true_positives / denominator, _to_tensor(0.0)
+        )
+
+        # Filter by target_class_ids if provided
+        if isinstance(self.target_class_ids, (list, tuple)):
+            # gather the specific indices
+            # we can use one-hot mask
+            mask = ops.sum(
+                nn.one_hot(ops.asarray(self.target_class_ids), self.num_classes), axis=0
+            )
+            iou = iou * mask
+            num_valid = ops.cast(len(self.target_class_ids), "float32")
+            return ops.sum(iou) / num_valid
+
+        # If target_class_ids is not provided, mean over all classes
+        return ops.mean(iou)
+
+    def reset_state(self):
+        self.total_cm = 0.0
 
 
-class BinaryIoU(Metric):
+class MeanIoU(IoU):
+    """Computes the mean Intersection-Over-Union metric.
+
+    Formula:
+
+    ```python
+    iou = true_positives / (true_positives + false_positives + false_negatives)
+    ```
+    Intersection-Over-Union is a common evaluation metric for semantic image
+    segmentation.
+
+    To compute IoUs, the predictions are accumulated in a confusion matrix,
+    weighted by `sample_weight` and the metric is then calculated from it.
+
+    If `sample_weight` is `None`, weights default to 1.
+    Use `sample_weight` of 0 to mask values.
+
+    Note that this class first computes IoUs for all individual classes, then
+    returns the mean of these values.
+
+    Args:
+        num_classes: The possible number of labels the prediction task can have.
+            This value must be provided, since a confusion matrix of dimension =
+            [num_classes, num_classes] will be allocated.
+        name: (Optional) string name of the metric instance.
+        dtype: (Optional) data type of the metric result.
+        ignore_class: Optional integer. The ID of a class to be ignored during
+            metric computation. This is useful, for example, in segmentation
+            problems featuring a "void" class (commonly -1 or 255) in
+            segmentation maps. By default (`ignore_class=None`), all classes are
+            considered.
+        sparse_y_true: Whether labels are encoded using integers or
+            dense floating point vectors. If `False`, the `argmax` function
+            is used to determine each sample's most likely associated label.
+        sparse_y_pred: Whether predictions are encoded using integers or
+            dense floating point vectors. If `False`, the `argmax` function
+            is used to determine each sample's most likely associated label.
+        axis: (Optional) The dimension containing the logits. Defaults to `-1`.
+
+
+    Example:
+    >>> # cm = [[1, 1],
+    >>> #        [1, 1]]
+    >>> # sum_row = [2, 2], sum_col = [2, 2], true_positives = [1, 1]
+    >>> # iou = true_positives / (sum_row + sum_col - true_positives))
+    >>> # result = (1 / (2 + 2 - 1) + 1 / (2 + 2 - 1)) / 2 = 0.33
+    >>> m = keras.metrics.MeanIoU(num_classes=2)
+    >>> m.update_state([0, 0, 1, 1], [0, 1, 0, 1])
+    >>> m.result()
+    0.33333334
+
+    >>> m.reset_state()
+    >>> m.update_state([0, 0, 1, 1], [0, 1, 0, 1],
+    ...                sample_weight=[0.3, 0.3, 0.3, 0.1])
+    >>> m.result().numpy()
+    0.23809525
+
+    Usage with `compile()` API:
+
+    ```python
+    model.compile(
+        optimizer='sgd',
+        loss='mse',
+        metrics=[keras.metrics.MeanIoU(num_classes=2)])
+    ```
+
+    """
+
+    def __init__(
+        self,
+        num_classes,
+        name=None,
+        dtype=None,
+        ignore_class=None,
+        sparse_y_true=True,
+        sparse_y_pred=True,
+        axis=-1,
+        **kwargs,
+    ):
+        super().__init__(
+            num_classes,
+            target_class_ids=None,
+            name=name,
+            dtype=dtype,
+            ignore_class=ignore_class,
+            sparse_y_true=sparse_y_true,
+            sparse_y_pred=sparse_y_pred,
+            axis=axis,
+            **kwargs,
+        )
+
+
+class BinaryIoU(IoU):
     """Computes the Intersection-Over-Union metric for class 0 and/or 1.
 
     Formula:
@@ -2568,13 +3099,33 @@ class BinaryIoU(Metric):
     """
 
     def __init__(
-        self, target_class_ids=(0, 1), threshold=0.5, name=None, dtype=None, **kwargs
+        self,
+        target_class_ids=(0, 1),
+        threshold=0.5,
+        name=None,
+        dtype=None,
+        **kwargs,
     ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            num_classes=2,
+            target_class_ids=target_class_ids,
+            name=name,
+            dtype=dtype,
+            **kwargs,
+        )
+        self.threshold = threshold
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
+
+        y_true = ops.cast(_to_tensor(y_true), "float32")
+        y_pred = ops.cast(_to_tensor(y_pred), "float32")
+        y_pred = ops.cast(ops.greater(y_pred, self.threshold), "int32")
+        super().update_state(y_true, y_pred, sample_weight)
 
 
-class OneHotMeanIoU(Metric):
+class OneHotMeanIoU(MeanIoU):
     """Computes mean Intersection-Over-Union metric for one-hot encoded labels.
 
     Formula:
@@ -2661,11 +3212,19 @@ class OneHotMeanIoU(Metric):
         axis=-1,
         **kwargs,
     ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            num_classes,
+            name=name,
+            dtype=dtype,
+            ignore_class=ignore_class,
+            sparse_y_true=False,
+            sparse_y_pred=sparse_y_pred,
+            axis=axis,
+            **kwargs,
+        )
 
 
-class OneHotIoU(Metric):
+class OneHotIoU(IoU):
     """Computes the Intersection-Over-Union metric for one-hot encoded labels.
 
     Formula:
@@ -2758,328 +3317,246 @@ class OneHotIoU(Metric):
         axis=-1,
         **kwargs,
     ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        super().__init__(
+            num_classes,
+            target_class_ids,
+            name=name,
+            dtype=dtype,
+            ignore_class=ignore_class,
+            sparse_y_true=False,
+            sparse_y_pred=sparse_y_pred,
+            axis=axis,
+            **kwargs,
+        )
 
 
 class ConcordanceCorrelation(Metric):
-    """Calculates the Concordance Correlation Coefficient (CCC).
-
-    CCC evaluates the agreement between true values (`y_true`) and predicted
-    values (`y_pred`) by considering both precision and accuracy. The
-    coefficient ranges from -1 to 1, where a value of 1 indicates perfect
-    agreement.
-
-    This metric is useful in regression tasks where it is important to assess
-    how well the predictions match the true values, taking into account both
-    their correlation and proximity to the 45-degree line of perfect
-    concordance.
-
-    Args:
-        name: (Optional) string name of the metric instance.
-        dtype: (Optional) data type of the metric result.
-        axis: (Optional) integer or tuple of integers of the axis/axes along
-            which to compute the metric. Defaults to `-1`.
-
-    Example:
-    >>> ccc = keras.metrics.ConcordanceCorrelation(axis=-1)
-    >>> y_true = [[0, 1, 0.5], [1, 1, 0.2]]
-    >>> y_pred = [[0.1, 0.9, 0.5], [1, 0.9, 0.2]]
-    >>> ccc.update_state(y_true, y_pred)
-    >>> ccc.result()
-    0.9816320385426076
-
-    Usage with `compile()` API:
-
-    ```python
-    model.compile(optimizer='sgd',
-                  loss='mean_squared_error',
-                  metrics=[keras.metrics.ConcordanceCorrelation()])
-    ```
-
-    """
-
     def __init__(self, name="concordancecorrelation", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        self.total = 0.0
-        self.count = 0.0
+        self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        from zero_keras import losses
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
 
-        val = ops.mean(losses.mean_squared_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total = ops.add(_to_tensor(self.total), val)
-        self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
+
+        y_true = ops.cast(y_true, "float32")
+        y_pred = ops.cast(y_pred, "float32")
+        w = ops.cast(w, "float32")
+
+        sx = ops.sum(y_true * w, axis=0)
+        sy = ops.sum(y_pred * w, axis=0)
+        sx2 = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
+        sy2 = ops.sum((y_pred ** _to_tensor(2.0)) * w, axis=0)
+        sxy = ops.sum(y_true * y_pred * w, axis=0)
+        c = ops.sum(w, axis=0)
+
+        try:
+            self.sum_x.assign(ops.add(self.sum_x, sx))
+            self.sum_y.assign(ops.add(self.sum_y, sy))
+            self.sum_x2.assign(ops.add(self.sum_x2, sx2))
+            self.sum_y2.assign(ops.add(self.sum_y2, sy2))
+            self.sum_xy.assign(ops.add(self.sum_xy, sxy))
+            self.count.assign(ops.add(self.count, c))
+        except AttributeError:
+            self.sum_x += sx
+            self.sum_y += sy
+            self.sum_x2 += sx2
+            self.sum_y2 += sy2
+            self.sum_xy += sxy
+            self.count += c
 
     def result(self):
-        """Compute the current metric value.
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _wrap, _to_tensor
 
-        Returns:
-            A scalar tensor, or a dictionary of scalar tensors.
+        n = ops.maximum(self.count, _to_tensor(1e-7))
+        mean_x = self.sum_x / n
+        mean_y = self.sum_y / n
 
-        """
-        return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
-            )
+        var_x = (self.sum_x2 / n) - (mean_x ** _to_tensor(2.0))
+        var_y = (self.sum_y2 / n) - (mean_y ** _to_tensor(2.0))
+        cov_xy = (self.sum_xy / n) - (mean_x * mean_y)
+
+        ccc = (ops.array(2.0, dtype="float32") * cov_xy) / ops.maximum(
+            var_x + var_y + ((mean_x - mean_y) ** _to_tensor(2.0)), _to_tensor(1e-7)
         )
+        return _wrap(ops.mean(ccc))
+
+    def reset_state(self):
+        from zero_keras.activations import _to_tensor
+
+        self.sum_x = _to_tensor(0.0)
+        self.sum_y = _to_tensor(0.0)
+        self.sum_x2 = _to_tensor(0.0)
+        self.sum_y2 = _to_tensor(0.0)
+        self.sum_xy = _to_tensor(0.0)
+        self.count = _to_tensor(0.0)
 
 
 class PearsonCorrelation(Metric):
-    """Calculates the Pearson Correlation Coefficient (PCC).
-
-    PCC measures the linear relationship between the true values (`y_true`) and
-    the predicted values (`y_pred`). The coefficient ranges from -1 to 1, where
-    a value of 1 implies a perfect positive linear correlation, 0 indicates no
-    linear correlation, and -1 indicates a perfect negative linear correlation.
-
-    This metric is widely used in regression tasks where the strength of the
-    linear relationship between predictions and true labels is an
-    important evaluation criterion.
-
-    Args:
-        name: (Optional) string name of the metric instance.
-        dtype: (Optional) data type of the metric result.
-        axis: (Optional) integer or tuple of integers of the axis/axes along
-            which to compute the metric. Defaults to `-1`.
-
-    Example:
-    >>> pcc = keras.metrics.PearsonCorrelation(axis=-1)
-    >>> y_true = [[0, 1, 0.5], [1, 1, 0.2]]
-    >>> y_pred = [[0.1, 0.9, 0.5], [1, 0.9, 0.2]]
-    >>> pcc.update_state(y_true, y_pred)
-    >>> pcc.result()
-    0.9966996338993913
-
-    Usage with `compile()` API:
-
-    ```python
-    model.compile(optimizer='sgd',
-                  loss='mean_squared_error',
-                  metrics=[keras.metrics.PearsonCorrelation()])
-    ```
-
-    """
-
     def __init__(self, name="pearsoncorrelation", dtype=None, **kwargs):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        self.total = 0.0
-        self.count = 0.0
+        self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
-        y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        from zero_keras import losses
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
 
-        val = ops.mean(losses.mean_squared_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total = ops.add(_to_tensor(self.total), val)
-        self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
+
+        y_true = ops.cast(y_true, "float32")
+        y_pred = ops.cast(y_pred, "float32")
+        w = ops.cast(w, "float32")
+
+        sx = ops.sum(y_true * w, axis=0)
+        sy = ops.sum(y_pred * w, axis=0)
+        sx2 = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
+        sy2 = ops.sum((y_pred ** _to_tensor(2.0)) * w, axis=0)
+        sxy = ops.sum(y_true * y_pred * w, axis=0)
+        c = ops.sum(w, axis=0)
+
+        try:
+            self.sum_x.assign(ops.add(self.sum_x, sx))
+            self.sum_y.assign(ops.add(self.sum_y, sy))
+            self.sum_x2.assign(ops.add(self.sum_x2, sx2))
+            self.sum_y2.assign(ops.add(self.sum_y2, sy2))
+            self.sum_xy.assign(ops.add(self.sum_xy, sxy))
+            self.count.assign(ops.add(self.count, c))
+        except AttributeError:
+            self.sum_x += sx
+            self.sum_y += sy
+            self.sum_x2 += sx2
+            self.sum_y2 += sy2
+            self.sum_xy += sxy
+            self.count += c
 
     def result(self):
-        """Compute the current metric value.
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _wrap, _to_tensor
 
-        Returns:
-            A scalar tensor, or a dictionary of scalar tensors.
+        n = ops.maximum(self.count, _to_tensor(1e-7))
+        mean_x = self.sum_x / n
+        mean_y = self.sum_y / n
 
-        """
-        return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
-            )
-        )
+        var_x = (self.sum_x2 / n) - (mean_x ** _to_tensor(2.0))
+        var_y = (self.sum_y2 / n) - (mean_y ** _to_tensor(2.0))
+        cov_xy = (self.sum_xy / n) - (mean_x * mean_y)
 
+        pcc = cov_xy / ops.maximum(ops.sqrt(var_x * var_y), _to_tensor(1e-7))
+        return _wrap(ops.mean(pcc))
 
-class F1Score(Metric):
-    """Computes F-1 Score.
+    def reset_state(self):
+        from zero_keras.activations import _to_tensor
 
-    Formula:
-
-    ```python
-    f1_score = 2 * (precision * recall) / (precision + recall)
-    ```
-    This is the harmonic mean of precision and recall.
-    Its output range is `[0, 1]`. It works for both multi-class
-    and multi-label classification.
-
-    Args:
-        average: Type of averaging to be performed on data.
-            Acceptable values are `None`, `"micro"`, `"macro"`
-            and `"weighted"`. Defaults to `None`.
-            If `None`, no averaging is performed and `result()` will return
-            the score for each class.
-            If `"micro"`, compute metrics globally by counting the total
-            true positives, false negatives and false positives.
-            If `"macro"`, compute metrics for each label,
-            and return their unweighted mean.
-            This does not take label imbalance into account.
-            If `"weighted"`, compute metrics for each label,
-            and return their average weighted by support
-            (the number of true instances for each label).
-            This alters `"macro"` to account for label imbalance.
-            It can result in an score that is not between precision and recall.
-        threshold: Elements of `y_pred` greater than `threshold` are
-            converted to be 1, and the rest 0. If `threshold` is
-            `None`, the argmax of `y_pred` is converted to 1, and the rest to 0.
-        name: Optional. String name of the metric instance.
-        dtype: Optional. Data type of the metric result.
-
-    Returns:
-        F-1 Score: float.
-
-    Example:
-    >>> metric = keras.metrics.F1Score(threshold=0.5)
-    >>> y_true = np.array([[1, 1, 1],
-    ...                    [1, 0, 0],
-    ...                    [1, 1, 0]], np.int32)
-    >>> y_pred = np.array([[0.2, 0.6, 0.7],
-    ...                    [0.2, 0.6, 0.6],
-    ...                    [0.6, 0.8, 0.0]], np.float32)
-    >>> metric.update_state(y_true, y_pred)
-    >>> result = metric.result()
-    array([0.5      , 0.8      , 0.6666667], dtype=float32)
-
-    """
-
-    def __init__(
-        self, average=None, threshold=None, name="f1_score", dtype=None, **kwargs
-    ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.sum_x = _to_tensor(0.0)
+        self.sum_y = _to_tensor(0.0)
+        self.sum_x2 = _to_tensor(0.0)
+        self.sum_y2 = _to_tensor(0.0)
+        self.sum_xy = _to_tensor(0.0)
+        self.count = _to_tensor(0.0)
 
 
 class FBetaScore(Metric):
-    """Computes F-Beta score.
-
-    Formula:
-
-    ```python
-    b2 = beta ** 2
-    f_beta_score = (1 + b2) * (precision * recall) / (precision * b2 + recall)
-    ```
-    This is the weighted harmonic mean of precision and recall.
-    Its output range is `[0, 1]`. It works for both multi-class
-    and multi-label classification.
-
-    Args:
-        average: Type of averaging to be performed across per-class results
-            in the multi-class case.
-            Acceptable values are `None`, `"micro"`, `"macro"` and
-            `"weighted"`. Defaults to `None`.
-            If `None`, no averaging is performed and `result()` will return
-            the score for each class.
-            If `"micro"`, compute metrics globally by counting the total
-            true positives, false negatives and false positives.
-            If `"macro"`, compute metrics for each label,
-            and return their unweighted mean.
-            This does not take label imbalance into account.
-            If `"weighted"`, compute metrics for each label,
-            and return their average weighted by support
-            (the number of true instances for each label).
-            This alters `"macro"` to account for label imbalance.
-            It can result in an score that is not between precision and recall.
-        beta: Determines the weight of given to recall
-            in the harmonic mean between precision and recall (see pseudocode
-            equation above). Defaults to `1`.
-        threshold: Elements of `y_pred` greater than `threshold` are
-            converted to be 1, and the rest 0. If `threshold` is
-            `None`, the argmax of `y_pred` is converted to 1, and the rest to 0.
-        name: Optional. String name of the metric instance.
-        dtype: Optional. Data type of the metric result.
-
-    Returns:
-        F-Beta Score: float.
-
-    Example:
-    >>> metric = keras.metrics.FBetaScore(beta=2.0, threshold=0.5)
-    >>> y_true = np.array([[1, 1, 1],
-    ...                    [1, 0, 0],
-    ...                    [1, 1, 0]], np.int32)
-    >>> y_pred = np.array([[0.2, 0.6, 0.7],
-    ...                    [0.2, 0.6, 0.6],
-    ...                    [0.6, 0.8, 0.0]], np.float32)
-    >>> metric.update_state(y_true, y_pred)
-    >>> result = metric.result()
-    >>> result
-    [0.3846154 , 0.90909094, 0.8333334 ]
-
-    """
-
     def __init__(
         self,
         average=None,
-        beta=1,
+        beta=1.0,
         threshold=None,
         name="fbeta_score",
         dtype=None,
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.average = average
+        self.beta = beta
+        self.threshold = threshold
+        self.reset_state()
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
+
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        if sample_weight is not None:
+            sample_weight = _to_tensor(sample_weight)
+
+        if self.threshold is not None:
+            y_pred = ops.cast(
+                ops.greater(y_pred, _to_tensor(self.threshold)), y_true.dtype
+            )
+        else:
+            y_pred = ops.cast(
+                ops.equal(y_pred, ops.max(y_pred, axis=-1, keepdims=True)), y_true.dtype
+            )
+
+        w = sample_weight if sample_weight is not None else _to_tensor(1.0)
+
+        tp = ops.sum(y_true * y_pred * w, axis=0)
+        fp = ops.sum((_to_tensor(1.0) - y_true) * y_pred * w, axis=0)
+        fn = ops.sum(y_true * (_to_tensor(1.0) - y_pred) * w, axis=0)
+
+        if self.average == "micro":
+            tp = ops.sum(tp)
+            fp = ops.sum(fp)
+            fn = ops.sum(fn)
+
+        try:
+            self.tp.assign(ops.add(self.tp, tp))
+            self.fp.assign(ops.add(self.fp, fp))
+            self.fn.assign(ops.add(self.fn, fn))
+        except AttributeError:
+            self.tp += tp
+            self.fp += fp
+            self.fn += fn
+
+    def result(self):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _wrap, _to_tensor
+
+        beta2 = _to_tensor(self.beta**2)
+        p = self.tp / ops.maximum(self.tp + self.fp, _to_tensor(1e-7))
+        r = self.tp / ops.maximum(self.tp + self.fn, _to_tensor(1e-7))
+        f_beta = (
+            (ops.add(_to_tensor(1.0), beta2))
+            * p
+            * r
+            / ops.maximum(beta2 * p + r, _to_tensor(1e-7))
+        )
+
+        if self.average == "macro":
+            return _wrap(ops.mean(f_beta))
+        return _wrap(f_beta)
+
+    def reset_state(self):
+        from zero_keras.activations import _to_tensor
+
+        self.tp = _to_tensor(0.0)
+        self.fp = _to_tensor(0.0)
+        self.fn = _to_tensor(0.0)
+
+
+class F1Score(FBetaScore):
+    def __init__(
+        self, average=None, threshold=None, name="f1_score", dtype=None, **kwargs
+    ):
+        super().__init__(
+            average=average,
+            beta=1.0,
+            threshold=threshold,
+            name=name,
+            dtype=dtype,
+            **kwargs,
+        )
 
 
 class R2Score(Metric):
-    """Computes R2 score.
-
-    Formula:
-
-    ```python
-    sum_squares_residuals = sum((y_true - y_pred) ** 2)
-    sum_squares = sum((y_true - mean(y_true)) ** 2)
-    R2 = 1 - sum_squares_residuals / sum_squares
-    ```
-
-    This is also called the
-    [coefficient of determination](
-    https://en.wikipedia.org/wiki/Coefficient_of_determination).
-
-    It indicates how close the fitted regression line
-    is to ground-truth data.
-
-    - The highest score possible is 1.0. It indicates that the predictors
-        perfectly accounts for variation in the target.
-    - A score of 0.0 indicates that the predictors do not
-        account for variation in the target.
-    - It can also be negative if the model is worse than random.
-
-    This metric can also compute the "Adjusted R2" score.
-
-    Args:
-        class_aggregation: Specifies how to aggregate scores corresponding to
-            different output classes (or target dimensions),
-            i.e. different dimensions on the last axis of the predictions.
-            Equivalent to `multioutput` argument in Scikit-Learn.
-            Should be one of
-            `None` (no aggregation), `"uniform_average"`,
-            `"variance_weighted_average"`.
-        num_regressors: Number of independent regressors used
-            ("Adjusted R2" score). 0 is the standard R2 score.
-            Defaults to `0`.
-        name: Optional. string name of the metric instance.
-        dtype: Optional. data type of the metric result.
-
-    Example:
-    >>> y_true = np.array([[1], [4], [3]], dtype=np.float32)
-    >>> y_pred = np.array([[2], [4], [4]], dtype=np.float32)
-    >>> metric = keras.metrics.R2Score()
-    >>> metric.update_state(y_true, y_pred)
-    >>> result = metric.result()
-    >>> result
-    0.57142854
-
-    """
-
     def __init__(
         self,
         class_aggregation="uniform_average",
@@ -3089,4 +3566,141 @@ class R2Score(Metric):
         **kwargs,
     ):
         super().__init__(name=name, dtype=dtype, **kwargs)
-        pass
+        self.class_aggregation = class_aggregation
+        self.num_regressors = num_regressors
+        self.reset_state()
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _to_tensor
+
+        y_true = _to_tensor(y_true)
+        y_pred = _to_tensor(y_pred)
+        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
+
+        ss = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
+        su = ops.sum(y_true * w, axis=0)
+        re = ops.sum(((y_true - y_pred) ** _to_tensor(2.0)) * w, axis=0)
+        cn = ops.sum(w, axis=0)
+        try:
+            self.squared_sum.assign(ops.add(self.squared_sum, ss))
+            self.sum.assign(ops.add(self.sum, su))
+            self.res.assign(ops.add(self.res, re))
+            self.count.assign(ops.add(self.count, cn))
+        except AttributeError:
+            self.squared_sum += ss
+            self.sum += su
+            self.res += re
+            self.count += cn
+
+    def result(self):
+        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.activations import _wrap, _to_tensor
+
+        cnt = ops.maximum(self.count, _to_tensor(1e-7))
+        self.sum / cnt
+        total = self.squared_sum - (self.sum ** _to_tensor(2.0)) / cnt
+        r2 = _to_tensor(1.0) - self.res / ops.maximum(total, _to_tensor(1e-7))
+        if self.class_aggregation == "uniform_average":
+            return _wrap(ops.mean(r2))
+        elif self.class_aggregation == "variance_weighted_average":
+            weight = total / ops.maximum(ops.sum(total), _to_tensor(1e-7))
+            return _wrap(ops.sum(r2 * weight))
+        return _wrap(r2)
+
+    def reset_state(self):
+        from zero_keras.activations import _to_tensor
+
+        self.squared_sum = _to_tensor(0.0)
+        self.sum = _to_tensor(0.0)
+        self.res = _to_tensor(0.0)
+        self.count = _to_tensor(0.0)
+
+
+def serialize(metric):
+    """Serialize a metric."""
+    if metric is None:
+        return None
+    if isinstance(metric, str):
+        return metric
+    return {
+        "class_name": metric.__class__.__name__,
+        "config": metric.get_config() if hasattr(metric, "get_config") else {},
+    }
+
+
+def deserialize(config, custom_objects=None):
+    """Deserialize a metric."""
+    if config is None:
+        return None
+    if isinstance(config, str):
+        return get(config)
+    if isinstance(config, dict):
+        class_name = config.get("class_name")
+        conf = config.get("config", {})
+        cls = globals().get(class_name)
+        if cls:
+            return cls(**conf)
+    return config
+
+
+def get(identifier):
+    """Retrieve a Keras metric object via an identifier."""
+    if identifier is None:
+        return None
+    if isinstance(identifier, str):
+        identifier = identifier.lower()
+        if identifier in ["mse", "mean_squared_error"]:
+            return MeanSquaredError()
+        return identifier
+    return identifier
+
+
+concordance_correlation = ConcordanceCorrelation
+pearson_correlation = PearsonCorrelation
+
+
+def binary_accuracy(y_true, y_pred, threshold=0.5):
+    from zero_keras import ops
+
+    y_true = ops.cast(y_true, y_pred.dtype)
+    threshold = ops.cast(threshold, y_pred.dtype)
+    y_pred_thresholded = ops.cast(y_pred > threshold, y_pred.dtype)
+    return ops.mean(
+        ops.cast(ops.equal(y_true, y_pred_thresholded), y_pred.dtype), axis=-1
+    )
+
+
+def categorical_accuracy(y_true, y_pred):
+    from zero_keras import ops
+
+    return ops.cast(
+        ops.equal(ops.argmax(y_true, axis=-1), ops.argmax(y_pred, axis=-1)),
+        y_pred.dtype,
+    )
+
+
+def sparse_categorical_accuracy(y_true, y_pred):
+    from zero_keras import ops
+
+    y_pred_rank = len(y_pred.shape)
+    y_true_rank = len(y_true.shape)
+    y_true = ops.squeeze(y_true, -1) if y_true_rank == y_pred_rank else y_true
+    return ops.cast(
+        ops.equal(
+            ops.cast(y_true, "int32"), ops.cast(ops.argmax(y_pred, axis=-1), "int32")
+        ),
+        y_pred.dtype,
+    )
+
+
+def top_k_categorical_accuracy(y_true, y_pred, k=5):
+    from zero_keras import ops
+
+    return ops.top_k_categorical_accuracy(y_true, y_pred, k=k)
+
+
+def sparse_top_k_categorical_accuracy(y_true, y_pred, k=5):
+    from zero_keras import ops
+
+    return ops.sparse_top_k_categorical_accuracy(y_true, y_pred, k=k)

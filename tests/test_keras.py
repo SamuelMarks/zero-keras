@@ -124,6 +124,7 @@ def test_model_functional():
     i = Input((2,))
     layer_obj = Dense(1)(i)
     m = Model(inputs=i, outputs=layer_obj)
+    print("type of m is", type(m))
     # mock loss
     m.compile(optimizer="sgd", loss="mse")
 
@@ -278,6 +279,7 @@ def test_model_uncompiled():
     i = Input((2,))
     layer_obj = Layer()(i)
     m = Model(inputs=i, outputs=layer_obj)
+    print("type of m is", type(m))
     # Fit without compile
     res = m.fit([1], [1])
     assert "loss" in res.history
@@ -604,3 +606,56 @@ def test_models_sequential():
     assert keras_ops.add(Input((2,)), Input((2,))) is not None
     assert deserialize("a") == "a"
     assert get("b") == "b"
+
+
+def test_model_dict_in_out():
+    from zero_keras.core_layers import Input, Model
+    from zero_keras.layers import Dense
+
+    i1 = Input((2,), name="in1")
+    i2 = Input((2,), name="in2")
+
+    d1 = Dense(1)(i1)
+    d2 = Dense(1)(i2)
+
+    m = Model(inputs={"a": i1, "b": i2}, outputs={"x": d1, "y": d2})
+    assert len(m.layers) == 2  # 2 dense
+
+    # Also test single scalar outputs/inputs not in lists
+    i3 = Input((2,))
+    d3 = Dense(1)(i3)
+    m2 = Model(inputs=i3, outputs=d3)
+    assert len(m2.layers) == 1
+
+
+def test_model_coverage_edges():
+    from zero_keras.core_layers import Input, Model, Layer
+    from zero_keras.layers import Dense
+
+    # Custom layer to take a list and a dict
+    class ListLayer(Layer):
+        def call(self, inputs):
+            return inputs[0] + inputs[1]
+
+    class DictLayer(Layer):
+        def call(self, inputs):
+            return inputs["a"] + inputs["b"]
+
+    i1 = Input((2,))
+    i2 = Input((2,))
+    d1 = Dense(1)(i1)
+    d2 = Dense(1)(i2)
+
+    l1 = ListLayer()([d1, d2])
+    l2 = DictLayer()({"a": d1, "b": d2})
+
+    # layer used twice to trigger return
+    class AddLayer(Layer):
+        def call(self, inputs):
+            return inputs[0] + inputs[1]
+
+    d3 = Dense(1)(i1)
+    a1 = AddLayer()([d3, d3])
+
+    m = Model(inputs=[i1, i2], outputs=[l1, l2, a1])
+    assert m is not None

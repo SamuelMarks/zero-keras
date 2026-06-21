@@ -1563,3 +1563,32 @@ def get(identifier):
         }
         return mapping.get(identifier, GlorotUniform())
     return identifier
+
+
+def serialize(initializer):
+    """Serialize an initializer."""
+    if initializer is None:
+        return None
+    if isinstance(initializer, str):
+        return initializer
+    return {
+        "class_name": initializer.__class__.__name__,
+        "config": initializer.get_config()
+        if hasattr(initializer, "get_config")
+        else {},
+    }
+
+
+def deserialize(config, custom_objects=None):
+    """Deserialize an initializer."""
+    if config is None:
+        return None
+    if isinstance(config, str):
+        return get(config)
+    if isinstance(config, dict):
+        class_name = config.get("class_name")
+        conf = config.get("config", {})
+        cls = globals().get(class_name)
+        if cls:
+            return cls(**conf)
+    return config

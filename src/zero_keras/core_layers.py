@@ -4,7 +4,26 @@
 class TensorShape(tuple):
     """TensorShape class."""
 
-    pass
+    def __new__(cls, dims):
+        if dims is None:
+            return super().__new__(cls, ())
+        if isinstance(dims, int):
+            dims = (dims,)
+        return super().__new__(cls, tuple(dims))
+
+    @property
+    def dims(self):
+        return list(self)
+
+    @property
+    def rank(self):
+        return len(self)
+
+    def as_list(self):
+        return list(self)
+
+    def is_fully_defined(self):
+        return all(d is not None for d in self)
 
 
 from zero_keras.activations import _to_tensor
@@ -15,6 +34,13 @@ from typing import Any, Dict, Optional
 from ml_switcheroo_compiler import ops as backend_ops
 
 
+class _GraphNode:
+    def __init__(self, layer, inputs, outputs):
+        self.layer = layer
+        self.inputs = inputs
+        self.outputs = outputs
+
+
 class KerasTensor:
     """docstring."""
 
@@ -22,6 +48,7 @@ class KerasTensor:
         self.shape = shape
         self.dtype = dtype
         self.name = name
+        self._keras_history = None
         if data is not None:
             self.data = data
         else:
@@ -408,6 +435,10 @@ class Layer:
         """
         return self._name or "layer"
 
+    @classmethod
+    def from_config(cls, config):
+        return cls(**config)
+
     def add_loss(self, loss):
         """Can be called inside of the `call()` method to add a scalar loss.
 
@@ -578,11 +609,65 @@ class Layer:
         """Call self as a function."""
         if not self.built:
             self.build(getattr(inputs, "shape", None))
-        return self.call(inputs, *args, **kwargs)
+
+        outputs = self.call(inputs, *args, **kwargs)
+
+        # Simple tracing
+        is_tracing = False
+
+        def check_tracing(x):
+            nonlocal is_tracing
+            if isinstance(x, KerasTensor):
+                is_tracing = True
+
+        if isinstance(inputs, list):
+            for x in inputs:
+                check_tracing(x)
+        elif isinstance(inputs, dict):
+            for x in inputs.values():
+                check_tracing(x)
+        else:
+            check_tracing(inputs)
+
+        if is_tracing:
+            node = _GraphNode(self, inputs, outputs)
+
+            def wrap_output(x):
+                if (
+                    hasattr(x, "shape")
+                    and hasattr(x, "dtype")
+                    and not isinstance(x, KerasTensor)
+                ):
+                    res = KerasTensor(x.shape, x.dtype, data=x)
+                    res._keras_history = node
+                    return res
+                elif isinstance(x, KerasTensor):
+                    res = KerasTensor(x.shape, x.dtype, data=x.data)
+                    res._keras_history = node
+                    return res
+                return x
+
+            if isinstance(outputs, list):
+                outputs = [wrap_output(x) for x in outputs]
+            elif isinstance(outputs, tuple):
+                outputs = tuple(wrap_output(x) for x in outputs)
+            elif isinstance(outputs, dict):
+                outputs = {k: wrap_output(v) for k, v in outputs.items()}
+            else:
+                outputs = wrap_output(outputs)
+
+            node.outputs = outputs
+
+        return outputs
 
 
 class Model(Layer):
     """docstring."""
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Model and ("inputs" in kwargs and "outputs" in kwargs):
+            return Functional(*args, **kwargs)
+        return super().__new__(cls)
 
     def compute_loss(self, x=None, y=None, y_pred=None, sample_weight=None):
         """compute_loss function.
@@ -1193,7 +1278,116 @@ class Model(Layer):
 class Functional(Model):
     """Functional class."""
 
-    pass
+    def __init__(self, inputs=None, outputs=None, **kwargs):
+        super().__init__(**kwargs)
+        self.inputs = inputs
+        self.outputs = outputs
+        self._nodes_by_depth = self._map_graph_network(inputs, outputs)
+
+        # Collect layers
+        layers = []
+        for depth in sorted(self._nodes_by_depth.keys(), reverse=True):
+            for node in self._nodes_by_depth[depth]:
+                if node.layer not in layers and node.layer is not self:
+                    layers.append(node.layer)
+        self.layers = layers
+
+    def _map_graph_network(self, inputs, outputs):
+        nodes_by_depth = {}
+
+        # Simple DFS to map depths
+        def _get_depth(tensor, current_depth):
+            if not isinstance(tensor, KerasTensor):
+                return
+            node = getattr(tensor, "_keras_history", None)
+            if node is None:
+                return
+
+            if current_depth not in nodes_by_depth:
+                nodes_by_depth[current_depth] = []
+            if node not in nodes_by_depth[current_depth]:
+                nodes_by_depth[current_depth].append(node)
+            else:
+                return
+
+            node_inputs = node.inputs
+            print("NODE INPUTS:", type(node_inputs))
+            if isinstance(node_inputs, (list, tuple)):
+                for x in node_inputs:
+                    _get_depth(x, current_depth + 1)
+            elif isinstance(node_inputs, dict):
+                for x in node_inputs.values():
+                    _get_depth(x, current_depth + 1)
+            else:
+                _get_depth(node_inputs, current_depth + 1)
+
+        if isinstance(outputs, (list, tuple)):
+            for x in outputs:
+                _get_depth(x, 0)
+        elif isinstance(outputs, dict):
+            for x in outputs.values():
+                _get_depth(x, 0)
+        else:
+            _get_depth(outputs, 0)
+
+        return nodes_by_depth
+
+    def call(self, inputs, *args, **kwargs):
+        tensor_dict = {}
+
+        def _add_input(key, val):
+            if isinstance(key, KerasTensor):
+                tensor_dict[id(key)] = val
+
+        if isinstance(self.inputs, (list, tuple)):
+            for k, v in zip(self.inputs, inputs):
+                _add_input(k, v)
+        elif isinstance(self.inputs, dict):
+            for k in self.inputs:
+                _add_input(self.inputs[k], inputs[k])
+        else:
+            _add_input(self.inputs, inputs)
+
+        for depth in sorted(self._nodes_by_depth.keys(), reverse=True):
+            for node in self._nodes_by_depth[depth]:
+                # Prepare inputs
+                def _get_input(x):
+                    if isinstance(x, KerasTensor) and id(x) in tensor_dict:
+                        return tensor_dict[id(x)]
+                    return x
+
+                if isinstance(node.inputs, (list, tuple)):
+                    node_in = [_get_input(x) for x in node.inputs]
+                elif isinstance(node.inputs, dict):
+                    node_in = {k: _get_input(v) for k, v in node.inputs.items()}
+                else:
+                    node_in = _get_input(node.inputs)
+
+                out = node.layer(node_in, *args, **kwargs)
+
+                if isinstance(node.outputs, (list, tuple)):
+                    for k, v in zip(node.outputs, out):
+                        if isinstance(k, KerasTensor):
+                            tensor_dict[id(k)] = v
+                elif isinstance(node.outputs, dict):
+                    for k in node.outputs:
+                        if isinstance(node.outputs[k], KerasTensor):
+                            tensor_dict[id(node.outputs[k])] = out[k]
+                else:
+                    if isinstance(node.outputs, KerasTensor):
+                        tensor_dict[id(node.outputs)] = out
+
+        def _get_output(x):
+            if isinstance(x, KerasTensor) and id(x) in tensor_dict:
+                return tensor_dict[id(x)]
+            return x
+
+        if isinstance(self.outputs, (list, tuple)):
+            return [_get_output(x) for x in self.outputs]
+        elif isinstance(self.outputs, dict):
+            return {k: _get_output(v) for k, v in self.outputs.items()}
+        else:
+            return _get_output(self.outputs)
 
 
 class Sequential(Model):

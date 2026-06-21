@@ -6,7 +6,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml/badge.svg)](https://github.com/SamuelMarks/zero-keras/actions)
-[![Test Coverage](https://img.shields.io/badge/test_coverage-96.3%25-green.svg)](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml)
+[![Test Coverage](https://img.shields.io/badge/test_coverage-93.2%25-green.svg)](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml)
 [![Doc Coverage](https://img.shields.io/badge/doc_coverage-100%25-brightgreen.svg)](https://github.com/SamuelMarks/zero-keras/tree/master/docs)
 
 ## System Architecture & Purpose

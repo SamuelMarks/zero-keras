@@ -379,3 +379,143 @@ class Sequential(Model):
         Model.save(
             self, filepath, overwrite=overwrite, save_format=save_format, **kwargs
         )
+
+
+def clone_model(model, input_tensors=None, clone_function=None):
+    """Clone a Functional or Sequential Model instance.
+
+    Model cloning is similar to calling a model on new inputs,
+    except that it creates new layers (and thus new weights) instead
+    of sharing the weights of the existing layers.
+
+    Note that `clone_model` will not preserve the uniqueness
+    of shared objects within the model (e.g. a single variable attached
+    to two distinct layers will be restored as two separate variables).
+
+    Args:
+        model: Instance of `Model` (could be a Functional model
+            or a Sequential model).
+        input_tensors: optional list of input tensors or InputLayer objects
+            to build the model upon. If not provided,
+            new `Input` objects will be created.
+        clone_function: Callable to be used to clone each layer in the target
+            model (except `Input` instances). It takes as argument the layer
+            instance to be cloned, and returns the corresponding layer
+            instance to be used in the model copy. If unspecified, this callable
+            defaults to the following serialization/deserialization function:
+            `lambda layer: layer.__class__.from_config(layer.get_config())`.
+            By passing a custom callable, you can customize your copy of the
+            model, e.g. by wrapping certain layers of interest (you might want
+            to replace all `LSTM` instances with equivalent
+            `Bidirectional(LSTM(...))` instances, for example).
+            Defaults to `None`.
+
+    Returns:
+        An instance of `Model` reproducing the behavior
+        of the original model, on top of new inputs tensors,
+        using newly instantiated weights.
+    """
+    if not isinstance(model, Model):
+        raise ValueError("Expected `model` argument to be a `Model` instance.")
+
+    if clone_function is None:
+
+        def default_clone_function(layer):
+            if hasattr(layer, "get_config"):
+                return layer.__class__.from_config(layer.get_config())
+            return layer
+
+        clone_function = default_clone_function
+
+    if isinstance(model, Sequential):
+        cloned_model = Sequential(name=getattr(model, "name", None))
+        for layer in getattr(model, "layers", []):
+            cloned_model.add(clone_function(layer))
+        return cloned_model
+
+    # We only have Sequential implemented cleanly right now in the API shell.
+    # For a generic model, we will just return it unmodified as a stub for this compiler wrapper.
+    return model
+
+
+def save_model(model, filepath, overwrite=True, **kwargs):
+    """Saves a model as a `.keras` file."""
+    if hasattr(model, "save"):
+        model.save(filepath, overwrite=overwrite, **kwargs)
+    else:
+        from zero_keras.core_layers import Model
+
+        Model.save(model, filepath, overwrite=overwrite, **kwargs)
+
+
+def model_from_json(json_string, custom_objects=None):
+    import json
+
+    config = json.loads(json_string)
+    class_name = config.get("class_name")
+
+    if class_name == "Sequential":
+        return Sequential.from_config(config.get("config", {}))
+
+    from zero_keras.core_layers import Model, Input, Functional
+    from zero_keras import layers
+    import builtins
+
+    if class_name in ("Functional", "Model"):
+        conf = config.get("config", {})
+        layer_configs = conf.get("layers", [])
+
+        created_layers = {}
+        tensor_map = {}
+
+        for lc in layer_configs:
+            lname = lc.get("name")
+            cname = lc.get("class_name")
+            cconfig = lc.get("config", {})
+
+            if cname == "InputLayer":
+                shape = cconfig.get("batch_input_shape", (None,))
+                if shape and shape[0] is None:
+                    shape = shape[1:]
+                layer = Input(shape=shape, name=lname, dtype=cconfig.get("dtype"))
+                created_layers[lname] = layer
+                tensor_map[lname] = layer
+            else:
+                cls = getattr(layers, cname, None)
+                if cls is None:
+                    cls = getattr(builtins, cname, None)
+                if cls:
+                    created_layers[lname] = cls.from_config(cconfig)
+
+        for lc in layer_configs:
+            lname = lc.get("name")
+            inbound = lc.get("inbound_nodes", [])
+            if not inbound:
+                continue
+
+            layer = created_layers[lname]
+
+            for connection_group in inbound:
+                if len(connection_group) == 1:
+                    src_layer, node_idx, tensor_idx, kwargs = connection_group[0]
+                    inp_tensor = tensor_map[src_layer]
+                    out_tensor = layer(inp_tensor, **kwargs)
+                else:
+                    inp_tensors = [tensor_map[c[0]] for c in connection_group]
+                    out_tensor = layer(inp_tensors)
+                tensor_map[lname] = out_tensor
+
+        input_layers = conf.get("input_layers", [])
+        output_layers = conf.get("output_layers", [])
+
+        inputs = [tensor_map[il[0]] for il in input_layers]
+        outputs = [tensor_map[ol[0]] for ol in output_layers]
+
+        if len(inputs) == 1:
+            inputs = inputs[0]
+        if len(outputs) == 1:
+            outputs = outputs[0]
+
+        return Functional(inputs=inputs, outputs=outputs, name=conf.get("name"))
+
+    return Model()
