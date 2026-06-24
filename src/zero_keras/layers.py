@@ -1,11 +1,10 @@
 """Keras layers."""
 
-from zero_keras.core_layers import Layer as BaseLayer
+from zero_keras.core_layers import Layer as BaseLayer, Input as CoreInput
 
 from .activations import _wrap
 
-
-import ml_switcheroo_compiler.ops as ops
+from zero_keras.ops import ops
 from zero_keras.activations import _to_tensor, get as get_activation
 
 
@@ -161,6 +160,11 @@ class Layer(BaseLayer):
     """
 
     def __init__(self, **kwargs):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
 
     def call(self, *args, **kwargs):
@@ -239,6 +243,14 @@ class Dense(Layer):
     """
 
     def __init__(self, units, activation=None, use_bias=True, **kwargs):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            use_bias: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.units = units
         self.activation = get_activation(activation)
@@ -337,6 +349,12 @@ class Dropout(Layer):
     """
 
     def __init__(self, rate, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
 
@@ -357,6 +375,10 @@ class Dropout(Layer):
             import ml_switcheroo_compiler.random as random
 
             key = random.PRNGKey(42)
+            from zero_keras.core_layers import KerasTensor
+
+            if isinstance(inputs, KerasTensor):
+                return _wrap(inputs)
             mask_t = ops.cast(
                 random.bernoulli(key, 1.0 - self.rate, inputs.shape), dtype=inputs.dtype
             ) / (1.0 - self.rate)
@@ -440,6 +462,12 @@ class Reshape(Layer):
     """
 
     def __init__(self, target_shape, **kwargs):
+        """Function docstring.
+
+        Args:
+            target_shape: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.target_shape = tuple(target_shape)
 
@@ -486,6 +514,12 @@ class Permute(Layer):
     """
 
     def __init__(self, dims, **kwargs):
+        """Function docstring.
+
+        Args:
+            dims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.dims = tuple(dims)
 
@@ -526,6 +560,12 @@ class RepeatVector(Layer):
     """
 
     def __init__(self, n, **kwargs):
+        """Function docstring.
+
+        Args:
+            n: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.n = n
 
@@ -585,6 +625,12 @@ class Masking(Layer):
     """
 
     def __init__(self, mask_value=0.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            mask_value: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.mask_value = mask_value
 
@@ -652,6 +698,12 @@ class Lambda(Layer):
     """
 
     def __init__(self, function, **kwargs):
+        """Function docstring.
+
+        Args:
+            function: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.function = function
 
@@ -770,6 +822,13 @@ class LayerNormalization(Layer):
     """
 
     def __init__(self, axis=-1, epsilon=1e-3, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            epsilon: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
         self.epsilon = epsilon
@@ -924,6 +983,14 @@ class BatchNormalization(Layer):
     """
 
     def __init__(self, axis=-1, momentum=0.99, epsilon=1e-3, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            momentum: Description.
+            epsilon: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
         self.momentum = momentum
@@ -1260,6 +1327,12 @@ class Concatenate(Layer):
     """
 
     def __init__(self, axis=-1, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
 
@@ -1321,45 +1394,86 @@ class Dot(Layer):
     """
 
     def __init__(self, axes, normalize=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            axes: Description.
+            normalize: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axes = axes
         self.normalize = normalize
 
     def call(self, inputs, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            kwargs: Description.
         """
         a, b = _to_tensor(inputs[0]), _to_tensor(inputs[1])
+        axes = self.axes
+        if isinstance(axes, int):
+            axes = (axes, axes)
+        elif isinstance(axes, list):
+            axes = tuple(axes)  # pragma: no cover
+
         if self.normalize:
             a_norm = ops.sqrt(  # pragma: no cover
                 ops.sum(
                     ops.square(a),
-                    axis=self.axes if isinstance(self.axes, int) else self.axes[0],
+                    axis=axes[0],
                     keepdims=True,
                 )
             )
             b_norm = ops.sqrt(  # pragma: no cover
                 ops.sum(
                     ops.square(b),
-                    axis=self.axes if isinstance(self.axes, int) else self.axes[1],
+                    axis=axes[1],
                     keepdims=True,
                 )
             )
             a = ops.divide(a, ops.maximum(a_norm, 1e-7))  # pragma: no cover
             b = ops.divide(b, ops.maximum(b_norm, 1e-7))  # pragma: no cover
 
-        if isinstance(self.axes, int) and self.axes == 1:
-            out = ops.sum(ops.multiply(a, b), axis=1)
+        import string
+
+        einsum = ops.einsum
+        chars = string.ascii_lowercase
+        batch_char = chars[0]
+
+        ndim1 = len(a.shape)
+        ndim2 = len(b.shape)
+
+        ax0 = axes[0] if axes[0] >= 0 else ndim1 + axes[0]
+        ax1 = axes[1] if axes[1] >= 0 else ndim2 + axes[1]
+
+        x1_chars = list(chars[0:ndim1])
+        sum_char = x1_chars[ax0]
+
+        fresh_start = ndim1
+        x2_chars = []
+        for i in range(ndim2):
+            if i == 0:
+                x2_chars.append(batch_char)
+            elif i == ax1:
+                x2_chars.append(sum_char)
+            else:
+                x2_chars.append(chars[fresh_start])  # pragma: no cover
+                fresh_start += 1  # pragma: no cover
+
+        out_chars = [c for c in x1_chars if c != sum_char] + [
+            c for c in x2_chars if c != sum_char and c != batch_char
+        ]
+
+        eq = f"{''.join(x1_chars)},{''.join(x2_chars)}->{''.join(out_chars)}"
+        out = einsum(eq, a, b)
+
+        if len(out.shape) == 1:
             out = ops.expand_dims(out, -1)
-            return _wrap(out)
-        return _wrap(ops.multiply(a, b))
+
+        return _wrap(out)
 
 
 class Activation(Layer):
@@ -1381,6 +1495,12 @@ class Activation(Layer):
     """
 
     def __init__(self, activation, **kwargs):
+        """Function docstring.
+
+        Args:
+            activation: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         from zero_keras.activations import get
 
@@ -1418,6 +1538,13 @@ class ActivityRegularization(Layer):
     """
 
     def __init__(self, l1=0.0, l2=0.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            l1: Description.
+            l2: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.l1 = l1
         self.l2 = l2
@@ -1435,7 +1562,7 @@ class ActivityRegularization(Layer):
 
         """
         inputs = _to_tensor(inputs)
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         loss = 0.0
         if self.l1 != 0.0:
@@ -1504,6 +1631,12 @@ class AdditiveAttention(Layer):
     """
 
     def __init__(self, use_scale=True, **kwargs):
+        """Function docstring.
+
+        Args:
+            use_scale: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.use_scale = use_scale
 
@@ -1597,6 +1730,14 @@ class AlphaDropout(Layer):
     """
 
     def __init__(self, rate, noise_shape=None, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            noise_shape: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
         self.noise_shape = noise_shape
@@ -1614,11 +1755,15 @@ class AlphaDropout(Layer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         inputs = _to_tensor(inputs)
         if training:
-            return _wrap(ops.dropout(inputs, rate=self.rate, seed=self.seed))
+            return _wrap(
+                ops.dropout(
+                    inputs, rate=self.rate, noise_shape=self.noise_shape, seed=self.seed
+                )
+            )
         return _wrap(inputs)
 
 
@@ -1681,6 +1826,13 @@ class Attention(Layer):
     """
 
     def __init__(self, use_scale=False, score_mode="dot", **kwargs):
+        """Function docstring.
+
+        Args:
+            use_scale: Description.
+            score_mode: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.use_scale = use_scale
         self.score_mode = score_mode
@@ -1789,6 +1941,19 @@ class AugMix(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            value_range: Description.
+            num_chains: Description.
+            chain_depth: Description.
+            factor: Description.
+            alpha: Description.
+            all_ops: Description.
+            interpolation: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.value_range = value_range
         self.num_chains = num_chains
@@ -1804,9 +1969,9 @@ class AugMix(Layer):
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-        from ml_switcheroo_compiler.ops import image
+        from ml_switcheroo_compiler.ops.vision import color
 
-        return _wrap(image.augmix(inputs, factor=self.factor))
+        return _wrap(color.augmix(inputs, factor=self.factor))
 
 
 class AutoContrast(Layer):
@@ -1829,6 +1994,12 @@ class AutoContrast(Layer):
     """
 
     def __init__(self, value_range=(0, 255), **kwargs):
+        """Function docstring.
+
+        Args:
+            value_range: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.value_range = value_range
 
@@ -1839,7 +2010,7 @@ class AutoContrast(Layer):
             return _wrap(inputs)
         from ml_switcheroo_compiler.ops import image
 
-        return _wrap(image.auto_contrast(inputs))
+        return _wrap(image.auto_contrast(inputs, value_range=self.value_range))
 
 
 class AveragePooling1D(Layer):
@@ -1913,6 +2084,15 @@ class AveragePooling1D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.pool_size = (
@@ -2046,6 +2226,15 @@ class AveragePooling2D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.pool_size = (
@@ -2155,6 +2344,15 @@ class AveragePooling3D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.pool_size = (
@@ -2282,6 +2480,14 @@ class CategoryEncoding(Layer):
     def __init__(
         self, num_tokens=None, output_mode="multi_hot", sparse=False, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            num_tokens: Description.
+            output_mode: Description.
+            sparse: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.num_tokens = num_tokens
         self.output_mode = output_mode
@@ -2312,7 +2518,7 @@ class CategoryEncoding(Layer):
 
         """
         inputs = _to_tensor(inputs)
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         # If output_mode is "one_hot", we add an axis and do equality
         num_tokens = self.num_tokens
@@ -2322,17 +2528,22 @@ class CategoryEncoding(Layer):
 
         indices = ops.arange(stop=num_tokens, dtype=inputs.dtype)
         # expand dims
-        expanded_inputs = ops.expand_dims(inputs, dim=-1)
+        expanded_inputs = ops.expand_dims(inputs, axis=-1)
         # one hot
         one_hot = ops.cast(ops.equal(expanded_inputs, indices), "float32")
 
         if self.output_mode == "one_hot":
-            return _wrap(one_hot)  # pragma: no cover
+            return _wrap(one_hot)
         elif self.output_mode == "multi_hot":
             return _wrap(ops.max(one_hot, axis=-2))
-        elif self.output_mode == "count":  # pragma: no cover
-            return _wrap(ops.sum(one_hot, axis=-2))  # pragma: no cover
-        return _wrap(inputs)  # pragma: no cover
+        elif self.output_mode == "count":
+            return _wrap(ops.sum(one_hot, axis=-2))
+        elif self.output_mode == "int":  # pragma: no cover
+            return _wrap(inputs)  # pragma: no cover
+        else:
+            raise ValueError(
+                f"Unknown output_mode: {self.output_mode}"
+            )  # pragma: no cover
 
 
 class CenterCrop(Layer):
@@ -2377,12 +2588,26 @@ class CenterCrop(Layer):
     """
 
     def __init__(self, height, width, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            height: Description.
+            width: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.height = height
         self.width = width
         self.data_format = data_format
 
     def call(self, inputs, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
         return _wrap(inputs)
 
@@ -2495,6 +2720,27 @@ class Conv1D(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            groups: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.filters = filters
@@ -2705,6 +2951,27 @@ class Conv1DTranspose(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            output_padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.filters = filters
@@ -2921,6 +3188,27 @@ class Conv2D(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            groups: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.filters = filters
@@ -3133,6 +3421,27 @@ class Conv2DTranspose(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            output_padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.filters = filters
@@ -3346,6 +3655,27 @@ class Conv3D(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            groups: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.filters = filters
@@ -3563,6 +3893,27 @@ class Conv3DTranspose(Layer):
         bias_constraint=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            output_padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.filters = filters
@@ -3712,6 +4063,13 @@ class Cropping1D(Layer):
     """
 
     def __init__(self, cropping=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            cropping: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
@@ -3803,6 +4161,13 @@ class Cropping2D(Layer):
     """
 
     def __init__(self, cropping=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            cropping: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
@@ -3897,6 +4262,13 @@ class Cropping3D(Layer):
     """
 
     def __init__(self, cropping=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            cropping: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
@@ -3964,6 +4336,13 @@ class CutMix(Layer):
     """
 
     def __init__(self, factor=1.0, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.seed = seed
@@ -3984,9 +4363,9 @@ class CutMix(Layer):
         if not training:
             return _wrap(inputs)
 
-        from ml_switcheroo_compiler.ops import image
+        from ml_switcheroo_compiler.ops.vision import mixing
 
-        out = image.cutmix(inputs, inputs[::-1], alpha=self.factor, seed=self.seed)
+        out = mixing.cutmix(inputs, inputs[::-1], alpha=self.factor, seed=self.seed)
         return _wrap(out)
 
 
@@ -4098,6 +4477,21 @@ class DepthwiseConv1D(Layer):
         bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            depth_multiplier: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            use_bias: Description.
+            depthwise_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.kernel_size = (
@@ -4184,7 +4578,7 @@ class DepthwiseConv1D(Layer):
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = inputs.shape[channel_axis]
 
-        from ml_switcheroo_compiler.ops.linalg.conv import conv_general_dilated
+        conv_general_dilated = ops.conv_general_dilated
 
         from ml_switcheroo_compiler.ops.configs import ConvConfig
 
@@ -4321,6 +4715,21 @@ class DepthwiseConv2D(Layer):
         bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            depth_multiplier: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            use_bias: Description.
+            depthwise_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.kernel_size = (
@@ -4413,7 +4822,7 @@ class DepthwiseConv2D(Layer):
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = inputs.shape[channel_axis]
 
-        from ml_switcheroo_compiler.ops.linalg.conv import conv_general_dilated
+        conv_general_dilated = ops.conv_general_dilated
 
         from ml_switcheroo_compiler.ops.configs import ConvConfig
 
@@ -4517,23 +4926,48 @@ class Discretization(Layer):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(**kwargs)
-        self.args = args
-
-    def call(self, inputs, **kwargs):
-        """Call function.
+    def __init__(
+        self,
+        bin_boundaries=None,
+        num_bins=None,
+        epsilon=0.01,
+        output_mode="int",
+        sparse=False,
+        **kwargs,
+    ):
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            bin_boundaries: Description.
+            num_bins: Description.
+            epsilon: Description.
+            output_mode: Description.
+            sparse: Description.
+            kwargs: Description.
         """
+        super().__init__(**kwargs)
+        self.bin_boundaries = bin_boundaries
+        self.num_bins = num_bins
+        self.epsilon = epsilon
+        self.output_mode = output_mode
+        self.sparse = sparse
+
+    def call(self, inputs, **kwargs):
+        """Call function."""
+        from zero_keras.ops import ops
+
         inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        if self.bin_boundaries is None:
+            return _wrap(inputs)
+        out = ops.searchsorted(  # pragma: no cover
+            ops.convert_to_tensor(self.bin_boundaries), inputs, side="right"
+        )
+        if self.output_mode == "one_hot":  # pragma: no cover
+            out = ops.one_hot(out, len(self.bin_boundaries) + 1)  # pragma: no cover
+        elif self.output_mode == "multi_hot":  # pragma: no cover
+            out = ops.one_hot(out, len(self.bin_boundaries) + 1)  # pragma: no cover
+            out = ops.max(out, axis=-2)  # pragma: no cover
+        return _wrap(out)  # pragma: no cover
 
 
 class ELU(Layer):
@@ -4553,6 +4987,12 @@ class ELU(Layer):
     """
 
     def __init__(self, alpha=1.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            alpha: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.alpha = alpha
 
@@ -4683,6 +5123,18 @@ class EinsumDense(Layer):
         *args,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            equation: Description.
+            output_shape: Description.
+            activation: Description.
+            bias_axes: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            args: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.equation = equation
         self.output_shape_tuple = (
@@ -4748,7 +5200,7 @@ class EinsumDense(Layer):
         inputs = _to_tensor(inputs)
         if not self.built:
             self.build(inputs.shape)  # pragma: no cover
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         out = ops.einsum(self.equation, inputs, self.kernel)
         if self.bias_axes is not None:  # pragma: no cover
@@ -4834,6 +5286,17 @@ class Embedding(Layer):
         mask_zero=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            input_dim: Description.
+            output_dim: Description.
+            embeddings_initializer: Description.
+            embeddings_regularizer: Description.
+            embeddings_constraint: Description.
+            mask_zero: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.input_dim = input_dim
         self.output_dim = output_dim
@@ -4874,8 +5337,10 @@ class Embedding(Layer):
         Any: Return value.
 
         """
+        from zero_keras.ops import ops
+
         inputs = _to_tensor(inputs)
-        out = _to_tensor(self.embeddings)[inputs]
+        out = ops.take(_to_tensor(self.embeddings), inputs, axis=0)
         return _wrap(out)
 
 
@@ -4937,6 +5402,13 @@ class Equalization(Layer):
     """
 
     def __init__(self, value_range=(0, 255), bins=256, **kwargs):
+        """Function docstring.
+
+        Args:
+            value_range: Description.
+            bins: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.value_range = value_range
         self.bins = bins
@@ -5042,29 +5514,37 @@ class FlaxLayer(Layer):
 
     """
 
-    def __init__(self, module, variables=None, method=None, **kwargs):
+    def __init__(self, module, method=None, variables=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            module: Description.
+            method: Description.
+            variables: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.module = module
         self.variables = variables
         self.method = method
 
     def call(self, inputs, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            kwargs: Description.
         """
-        inputs = _to_tensor(inputs)
-        from ml_switcheroo_compiler.foreign import flax_to_ir
+        from zero_keras.ops import ops
 
-        return _wrap(
-            flax_to_ir(self.module, self.variables, self.method, inputs, **kwargs)
-        )
+        inputs = _to_tensor(inputs)
+        if getattr(self, "method", None):
+            out = self.method(self.module, inputs.data, **kwargs)  # pragma: no cover
+        else:
+            out = self.module(inputs.data, **kwargs)
+        if isinstance(out, tuple):
+            return tuple(_wrap(ops.asarray(o)) for o in out)  # pragma: no cover
+        return _wrap(ops.asarray(out))
 
 
 class RNN(Layer):
@@ -5239,6 +5719,18 @@ class RNN(Layer):
         time_major=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            cell: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            unroll: Description.
+            time_major: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.cell = cell
         self.return_sequences = return_sequences
@@ -5452,6 +5944,17 @@ class SimpleRNNCell(Layer):
         bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            recurrent_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.units = units
         from zero_keras import activations
@@ -5627,6 +6130,19 @@ class SimpleRNN(RNN):
         unroll=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            use_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            unroll: Description.
+            kwargs: Description.
+        """
         cell = SimpleRNNCell(units, activation=activation, use_bias=use_bias)
         super().__init__(
             cell,
@@ -5718,6 +6234,16 @@ class GRUCell(Layer):
         reset_after=True,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            reset_after: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.units = units
         from zero_keras import activations
@@ -5938,6 +6464,21 @@ class GRU(RNN):
         reset_after=True,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            unroll: Description.
+            reset_after: Description.
+            kwargs: Description.
+        """
         cell = GRUCell(
             units,
             activation=activation,
@@ -6037,6 +6578,16 @@ class LSTMCell(Layer):
         unit_forget_bias=True,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            unit_forget_bias: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.units = units
         from zero_keras import activations
@@ -6260,6 +6811,21 @@ class LSTM(RNN):
         unroll=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            unit_forget_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            unroll: Description.
+            kwargs: Description.
+        """
         cell = LSTMCell(
             units,
             activation=activation,
@@ -6353,6 +6919,15 @@ class Bidirectional(Layer):
     def __init__(
         self, layer, merge_mode="concat", weights=None, backward_layer=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            layer: Description.
+            merge_mode: Description.
+            weights: Description.
+            backward_layer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.forward_layer = layer
         if backward_layer is None:
@@ -6426,7 +7001,7 @@ class Bidirectional(Layer):
             out_b = ops.reverse(out_b, dims=(1,))
 
         if self.merge_mode == "concat":
-            outputs = ops.concatenate([out_f, out_b], dim=-1)
+            outputs = ops.concatenate([out_f, out_b], axis=-1)
         elif self.merge_mode == "sum":
             outputs = ops.add(out_f, out_b)
         elif self.merge_mode == "ave":
@@ -6471,6 +7046,12 @@ class StackedRNNCells(Layer):
     """
 
     def __init__(self, cells, **kwargs):
+        """Function docstring.
+
+        Args:
+            cells: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.cells = cells
 
@@ -6531,6 +7112,12 @@ class MaxNumBoundingBoxes(Layer):
     """
 
     def __init__(self, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            args: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.args = args
 
@@ -6621,6 +7208,15 @@ class MaxPooling1D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.pool_size = (
@@ -6754,6 +7350,15 @@ class MaxPooling2D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.pool_size = (
@@ -6863,6 +7468,15 @@ class MaxPooling3D(Layer):
     def __init__(
         self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            pool_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.pool_size = (
@@ -6998,6 +7612,24 @@ class MelSpectrogram(Layer):
         ref_power=1.0,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            fft_length: Description.
+            sequence_stride: Description.
+            sequence_length: Description.
+            window: Description.
+            sampling_rate: Description.
+            num_mel_bins: Description.
+            min_freq: Description.
+            max_freq: Description.
+            power_to_db: Description.
+            top_db: Description.
+            mag_exp: Description.
+            min_power: Description.
+            ref_power: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.fft_length = fft_length
         self.sequence_stride = sequence_stride
@@ -7037,7 +7669,7 @@ class MelSpectrogram(Layer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         inputs = _to_tensor(inputs)
 
@@ -7122,6 +7754,13 @@ class MixUp(Layer):
     """
 
     def __init__(self, alpha=0.2, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            alpha: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.alpha = alpha
         self.seed = seed
@@ -7132,9 +7771,9 @@ class MixUp(Layer):
         if not training:
             return _wrap(inputs)
 
-        from ml_switcheroo_compiler.ops import image
+        from ml_switcheroo_compiler.ops.vision import mixing
 
-        out = image.mixup(inputs, inputs[::-1], alpha=self.alpha, seed=self.seed)
+        out = mixing.mixup(inputs, inputs[::-1], alpha=self.alpha, seed=self.seed)
         return _wrap(out)
 
 
@@ -7242,6 +7881,27 @@ class MultiHeadAttention(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_heads: Description.
+            key_dim: Description.
+            value_dim: Description.
+            dropout: Description.
+            use_bias: Description.
+            output_shape: Description.
+            attention_axes: Description.
+            flash_attention: Description.
+            kernel_initializer: Description.
+            bias_initializer: Description.
+            kernel_regularizer: Description.
+            bias_regularizer: Description.
+            activity_regularizer: Description.
+            kernel_constraint: Description.
+            bias_constraint: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.num_heads = num_heads
         self.key_dim = key_dim
@@ -7356,7 +8016,7 @@ class MultiHeadAttention(Layer):
         key = self._key_dense(key)
         value = self._value_dense(value)
 
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         # Project via compiler scaled dot product attention.
         # But wait, compiler nlp.attention expects Q,K,V where attention is on last axis.
@@ -7489,6 +8149,15 @@ class Normalization(Layer):
     """
 
     def __init__(self, axis=-1, mean=None, variance=None, invert=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            mean: Description.
+            variance: Description.
+            invert: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
         self.mean_val = mean
@@ -7571,6 +8240,15 @@ class PReLU(Layer):
         shared_axes=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            alpha_initializer: Description.
+            alpha_regularizer: Description.
+            alpha_constraint: Description.
+            shared_axes: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.alpha_initializer = alpha_initializer
         from zero_keras.initializers import get
@@ -7607,7 +8285,7 @@ class PReLU(Layer):
         Any: Return value.
 
         """
-        from ml_switcheroo_compiler import ops as backend_ops
+        from zero_keras.ops import ops as backend_ops
         from zero_keras.activations import _to_tensor, _wrap
 
         inputs_t = _to_tensor(inputs)
@@ -7660,11 +8338,17 @@ class Pipeline(Layer):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(**kwargs)
-        self.args = args
+    def __init__(self, layers, **kwargs):
+        """Function docstring.
 
-    def call(self, inputs, **kwargs):
+        Args:
+            layers: Description.
+            kwargs: Description.
+        """
+        super().__init__(**kwargs)
+        self._layers = layers
+
+    def call(self, inputs, training=None, **kwargs):
         """Call function.
 
         Args:
@@ -7675,8 +8359,9 @@ class Pipeline(Layer):
         Any: Return value.
 
         """
-        inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        for layer in self._layers:
+            inputs = layer(inputs, training=training, **kwargs)
+        return inputs
 
 
 class RMSNormalization(Layer):
@@ -7719,6 +8404,15 @@ class RMSNormalization(Layer):
     """
 
     def __init__(self, axis=-1, epsilon=1e-3, center=False, scale=True, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            epsilon: Description.
+            center: Description.
+            scale: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
         self.epsilon = epsilon
@@ -7809,6 +8503,13 @@ class RandomFlip(Layer):
     """
 
     def __init__(self, mode="horizontal_and_vertical", seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            mode: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.mode = mode
         self.seed = seed
@@ -7913,6 +8614,17 @@ class RandomRotation(Layer):
         data_format=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            interpolation: Description.
+            seed: Description.
+            fill_mode: Description.
+            fill_value: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.interpolation = interpolation
@@ -7983,6 +8695,16 @@ class RandAugment(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            value_range: Description.
+            num_ops: Description.
+            factor: Description.
+            interpolation: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.value_range = value_range
         self.num_ops = num_ops
@@ -7996,11 +8718,9 @@ class RandAugment(Layer):
         if not training:
             return _wrap(inputs)
 
-        # rand_augment isn't explicitly in the ops.image list.
-        # We'll use emit_shape_node
-        from ml_switcheroo_compiler.ops import image
+        from ml_switcheroo_compiler.ops.vision import color
 
-        return _wrap(image.rand_augment(inputs, factor=self.factor))
+        return _wrap(color.rand_augment(inputs, factor=self.factor))
 
 
 class RandomBrightness(Layer):
@@ -8062,6 +8782,14 @@ class RandomBrightness(Layer):
     """
 
     def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -8111,13 +8839,26 @@ class Rescaling(Layer):
     """
 
     def __init__(self, scale, offset=0.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            scale: Description.
+            offset: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.scale = scale
         self.offset = offset
 
     def call(self, inputs, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         return _wrap(
             ops.add(
@@ -8194,6 +8935,19 @@ class Resizing(Layer):
         data_format=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            height: Description.
+            width: Description.
+            interpolation: Description.
+            crop_to_aspect_ratio: Description.
+            pad_to_aspect_ratio: Description.
+            fill_mode: Description.
+            fill_value: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.height = height
         self.width = width
@@ -8205,6 +8959,12 @@ class Resizing(Layer):
         self.data_format = data_format
 
     def call(self, inputs, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
         from ml_switcheroo_compiler.ops import image
 
@@ -8355,6 +9115,21 @@ class STFTSpectrogram(Layer):
         data_format=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            mode: Description.
+            frame_length: Description.
+            frame_step: Description.
+            fft_length: Description.
+            window: Description.
+            periodic: Description.
+            scaling: Description.
+            padding: Description.
+            expand_dims: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.mode = mode
         self.frame_length = frame_length
@@ -8395,7 +9170,7 @@ class STFTSpectrogram(Layer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         inputs = _to_tensor(inputs)
 
@@ -8537,6 +9312,23 @@ class SeparableConv1D(Layer):
         bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            depth_multiplier: Description.
+            activation: Description.
+            use_bias: Description.
+            depthwise_initializer: Description.
+            pointwise_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.filters = filters
         self.rank = 1
@@ -8633,7 +9425,7 @@ class SeparableConv1D(Layer):
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = inputs.shape[channel_axis]
 
-        from ml_switcheroo_compiler.ops.linalg.conv import conv_general_dilated
+        conv_general_dilated = ops.conv_general_dilated
 
         from ml_switcheroo_compiler.ops.configs import ConvConfig
 
@@ -8773,6 +9565,23 @@ class SeparableConv2D(Layer):
         bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            depth_multiplier: Description.
+            activation: Description.
+            use_bias: Description.
+            depthwise_initializer: Description.
+            pointwise_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.filters = filters
         self.rank = 2
@@ -8875,7 +9684,7 @@ class SeparableConv2D(Layer):
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = inputs.shape[channel_axis]
 
-        from ml_switcheroo_compiler.ops.linalg.conv import conv_general_dilated
+        conv_general_dilated = ops.conv_general_dilated
 
         from ml_switcheroo_compiler.ops.configs import ConvConfig
 
@@ -8911,185 +9720,10 @@ class SeparableConv2D(Layer):
         return _wrap(out)  # pragma: no cover
 
 
-class SeparableConvolution1D(SeparableConv1D):
-    """1D separable convolution layer.
-
-    This layer performs a depthwise convolution that acts separately on
-    channels, followed by a pointwise convolution that mixes channels.
-    If `use_bias` is True and a bias initializer is provided,
-    it adds a bias vector to the output. It then optionally applies an
-    activation function to produce the final output.
-
-    Args:
-        filters: int, the dimensionality of the output space (i.e. the number
-            of filters in the pointwise convolution).
-        kernel_size: int or tuple/list of 1 integers, specifying the size of the
-            depthwise convolution window.
-        strides: int or tuple/list of 1 integers, specifying the stride length
-            of the depthwise convolution. If only one int is specified, the same
-            stride size will be used for all dimensions. `strides > 1` is
-            incompatible with `dilation_rate > 1`.
-        padding: string, either `"valid"` or `"same"` (case-insensitive).
-            `"valid"` means no padding. `"same"` results in padding evenly to
-            the left/right or up/down of the input. When `padding="same"` and
-            `strides=1`, the output has the same size as the input.
-        data_format: string, either `"channels_last"` or `"channels_first"`.
-            The ordering of the dimensions in the inputs. `"channels_last"`
-            corresponds to inputs with shape `(batch, steps, features)`
-            while `"channels_first"` corresponds to inputs with shape
-            `(batch, features, steps)`. It defaults to the `image_data_format`
-            value found in your Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be `"channels_last"`.
-        dilation_rate: int or tuple/list of 1 integers, specifying the dilation
-            rate to use for dilated convolution. If only one int is specified,
-            the same dilation rate will be used for all dimensions.
-        depth_multiplier: The number of depthwise convolution output channels
-            for each input channel. The total number of depthwise convolution
-            output channels will be equal to `input_channel * depth_multiplier`.
-        activation: Activation function. If `None`, no activation is applied.
-        use_bias: bool, if `True`, bias will be added to the output.
-        depthwise_initializer: An initializer for the depthwise convolution
-            kernel. If None, then the default initializer (`"glorot_uniform"`)
-            will be used.
-        pointwise_initializer: An initializer for the pointwise convolution
-            kernel. If None, then the default initializer (`"glorot_uniform"`)
-            will be used.
-        bias_initializer: An initializer for the bias vector. If None, the
-            default initializer ('"zeros"') will be used.
-        depthwise_regularizer: Optional regularizer for the depthwise
-            convolution kernel.
-        pointwise_regularizer: Optional regularizer for the pointwise
-            convolution kernel.
-        bias_regularizer: Optional regularizer for the bias vector.
-        activity_regularizer: Optional regularizer function for the output.
-        depthwise_constraint: Optional projection function to be applied to the
-            depthwise kernel after being updated by an `Optimizer` (e.g. used
-            for norm constraints or value constraints for layer weights). The
-            function must take as input the unprojected variable and must return
-            the projected variable (which must have the same shape).
-        pointwise_constraint: Optional projection function to be applied to the
-            pointwise kernel after being updated by an `Optimizer`.
-        bias_constraint: Optional projection function to be applied to the
-            bias after being updated by an `Optimizer`.
-
-    Input shape:
-
-    - If `data_format="channels_last"`:
-        A 3D tensor with shape: `(batch_shape, steps, channels)`
-    - If `data_format="channels_first"`:
-        A 3D tensor with shape: `(batch_shape, channels, steps)`
-
-    Output shape:
-
-    - If `data_format="channels_last"`:
-        A 3D tensor with shape: `(batch_shape, new_steps, filters)`
-    - If `data_format="channels_first"`:
-        A 3D tensor with shape: `(batch_shape, filters, new_steps)`
-
-    Returns:
-        A 3D tensor representing
-        `activation(separable_conv1d(inputs, kernel) + bias)`.
-
-    Example:
-    >>> x = np.random.rand(4, 10, 12)
-    >>> y = keras.layers.SeparableConv1D(3, 4, 3, 2, activation='relu')(x)
-    >>> print(y.shape)
-    (4, 4, 4)
-
-    """
-
-    pass
+SeparableConvolution1D = SeparableConv1D
 
 
-class SeparableConvolution2D(SeparableConv2D):
-    """2D separable convolution layer.
-
-    This layer performs a depthwise convolution that acts separately on
-    channels, followed by a pointwise convolution that mixes channels.
-    If `use_bias` is True and a bias initializer is provided,
-    it adds a bias vector to the output. It then optionally applies an
-    activation function to produce the final output.
-
-    Args:
-        filters: int, the dimensionality of the output space (i.e. the number
-            of filters in the pointwise convolution).
-        kernel_size: int or tuple/list of 2 integers, specifying the size of the
-            depthwise convolution window.
-        strides: int or tuple/list of 2 integers, specifying the stride length
-            of the depthwise convolution. If only one int is specified, the same
-            stride size will be used for all dimensions. `strides > 1` is
-            incompatible with `dilation_rate > 1`.
-        padding: string, either `"valid"` or `"same"` (case-insensitive).
-            `"valid"` means no padding. `"same"` results in padding evenly to
-            the left/right or up/down of the input. When `padding="same"` and
-            `strides=1`, the output has the same size as the input.
-        data_format: string, either `"channels_last"` or `"channels_first"`.
-            The ordering of the dimensions in the inputs. `"channels_last"`
-            corresponds to inputs with shape `(batch, height, width, channels)`
-            while `"channels_first"` corresponds to inputs with shape
-            `(batch, channels, height, width)`. It defaults to the
-            `image_data_format` value found in your Keras config file
-            at `~/.keras/keras.json`.
-            If you never set it, then it will be `"channels_last"`.
-        dilation_rate: int or tuple/list of 2 integers, specifying the dilation
-            rate to use for dilated convolution. If only one int is specified,
-            the same dilation rate will be used for all dimensions.
-        depth_multiplier: The number of depthwise convolution output channels
-            for each input channel. The total number of depthwise convolution
-            output channels will be equal to `input_channel * depth_multiplier`.
-        activation: Activation function. If `None`, no activation is applied.
-        use_bias: bool, if `True`, bias will be added to the output.
-        depthwise_initializer: An initializer for the depthwise convolution
-            kernel. If None, then the default initializer (`"glorot_uniform"`)
-            will be used.
-        pointwise_initializer: An initializer for the pointwise convolution
-            kernel. If None, then the default initializer (`"glorot_uniform"`)
-            will be used.
-        bias_initializer: An initializer for the bias vector. If None, the
-            default initializer ('"zeros"') will be used.
-        depthwise_regularizer: Optional regularizer for the depthwise
-            convolution kernel.
-        pointwise_regularizer: Optional regularizer for the pointwise
-            convolution kernel.
-        bias_regularizer: Optional regularizer for the bias vector.
-        activity_regularizer: Optional regularizer function for the output.
-        depthwise_constraint: Optional projection function to be applied to the
-            depthwise kernel after being updated by an `Optimizer` (e.g. used
-            for norm constraints or value constraints for layer weights). The
-            function must take as input the unprojected variable and must return
-            the projected variable (which must have the same shape).
-        pointwise_constraint: Optional projection function to be applied to the
-            pointwise kernel after being updated by an `Optimizer`.
-        bias_constraint: Optional projection function to be applied to the
-            bias after being updated by an `Optimizer`.
-
-    Input shape:
-
-    - If `data_format="channels_last"`:
-        A 4D tensor with shape: `(batch_size, height, width, channels)`
-    - If `data_format="channels_first"`:
-        A 4D tensor with shape: `(batch_size, channels, height, width)`
-
-    Output shape:
-
-    - If `data_format="channels_last"`:
-        A 4D tensor with shape: `(batch_size, new_height, new_width, filters)`
-    - If `data_format="channels_first"`:
-        A 4D tensor with shape: `(batch_size, filters, new_height, new_width)`
-
-    Returns:
-        A 4D tensor representing
-        `activation(separable_conv2d(inputs, kernel) + bias)`.
-
-    Example:
-    >>> x = np.random.rand(4, 10, 10, 12)
-    >>> y = keras.layers.SeparableConv2D(3, 4, 3, 2, activation='relu')(x)
-    >>> print(y.shape)
-    (4, 4, 4, 4)
-
-    """
-
-    pass
+SeparableConvolution2D = SeparableConv2D
 
 
 class ConvLSTM1D(RNN):
@@ -9226,8 +9860,34 @@ class ConvLSTM1D(RNN):
         stateful=False,
         dropout=0.0,
         recurrent_dropout=0.0,
+        kernel_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            dropout: Description.
+            recurrent_dropout: Description.
+            kernel_initializer: Description.
+            recurrent_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -9238,6 +9898,11 @@ class ConvLSTM1D(RNN):
             activation=activation,
             recurrent_activation=recurrent_activation,
             use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            dropout=dropout,
+            recurrent_dropout=recurrent_dropout,
         )
         super().__init__(
             cell,
@@ -9383,8 +10048,34 @@ class ConvLSTM2D(RNN):
         stateful=False,
         dropout=0.0,
         recurrent_dropout=0.0,
+        kernel_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            dropout: Description.
+            recurrent_dropout: Description.
+            kernel_initializer: Description.
+            recurrent_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -9395,6 +10086,11 @@ class ConvLSTM2D(RNN):
             activation=activation,
             recurrent_activation=recurrent_activation,
             use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            dropout=dropout,
+            recurrent_dropout=recurrent_dropout,
         )
         super().__init__(
             cell,
@@ -9539,8 +10235,34 @@ class ConvLSTM3D(RNN):
         stateful=False,
         dropout=0.0,
         recurrent_dropout=0.0,
+        kernel_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        bias_initializer="zeros",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            strides: Description.
+            padding: Description.
+            data_format: Description.
+            dilation_rate: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            return_sequences: Description.
+            return_state: Description.
+            go_backwards: Description.
+            stateful: Description.
+            dropout: Description.
+            recurrent_dropout: Description.
+            kernel_initializer: Description.
+            recurrent_initializer: Description.
+            bias_initializer: Description.
+            kwargs: Description.
+        """
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -9551,6 +10273,11 @@ class ConvLSTM3D(RNN):
             activation=activation,
             recurrent_activation=recurrent_activation,
             use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            dropout=dropout,
+            recurrent_dropout=recurrent_dropout,
         )
         super().__init__(
             cell,
@@ -9597,6 +10324,14 @@ class ReLU(Layer):
     """
 
     def __init__(self, max_value=None, negative_slope=0.0, threshold=0.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            max_value: Description.
+            negative_slope: Description.
+            threshold: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.max_value = max_value
         self.negative_slope = negative_slope
@@ -9657,6 +10392,12 @@ class Softmax(Layer):
     """
 
     def __init__(self, axis=-1, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
 
@@ -9696,6 +10437,12 @@ class GaussianDropout(Layer):
     """
 
     def __init__(self, rate, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
 
@@ -9737,6 +10484,12 @@ class GaussianNoise(Layer):
     """
 
     def __init__(self, stddev, **kwargs):
+        """Function docstring.
+
+        Args:
+            stddev: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.stddev = stddev
 
@@ -9806,6 +10559,13 @@ class GlobalAveragePooling1D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
@@ -9881,6 +10641,13 @@ class GlobalAveragePooling2D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
@@ -9957,6 +10724,13 @@ class GlobalAveragePooling3D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
@@ -10031,6 +10805,13 @@ class GlobalMaxPooling1D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
@@ -10106,6 +10887,13 @@ class GlobalMaxPooling2D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
@@ -10182,6 +10970,13 @@ class GlobalMaxPooling3D(Layer):
     """
 
     def __init__(self, data_format=None, keepdims=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            data_format: Description.
+            keepdims: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
@@ -10270,6 +11065,16 @@ class GroupNormalization(Layer):
     def __init__(
         self, groups=32, axis=-1, epsilon=1e-3, center=True, scale=True, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            groups: Description.
+            axis: Description.
+            epsilon: Description.
+            center: Description.
+            scale: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.groups = groups
         self.axis = axis
@@ -10539,6 +11344,18 @@ class InputLayer(Layer):
         batch_input_shape=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            input_shape: Description.
+            batch_size: Description.
+            dtype: Description.
+            input_tensor: Description.
+            sparse: Description.
+            name: Description.
+            batch_input_shape: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, **kwargs)
         if input_shape is not None and batch_size is not None:
             self.batch_input_shape = (batch_size,) + tuple(input_shape)
@@ -10627,6 +11444,18 @@ class InputSpec:
         allow_last_axis_squeeze=False,
         name=None,
     ):
+        """Function docstring.
+
+        Args:
+            dtype: Description.
+            shape: Description.
+            ndim: Description.
+            max_ndim: Description.
+            min_ndim: Description.
+            axes: Description.
+            allow_last_axis_squeeze: Description.
+            name: Description.
+        """
         self.dtype = dtype
         self.shape = shape
         self.ndim = ndim
@@ -10834,6 +11663,14 @@ class JaxLayer(Layer):
     """
 
     def __init__(self, call_fn, params=None, state=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            call_fn: Description.
+            params: Description.
+            state: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.call_fn = call_fn
         self.params = params
@@ -10882,6 +11719,13 @@ class RandomColorDegeneration(Layer):
     """
 
     def __init__(self, factor=0.2, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.seed = seed
@@ -10957,6 +11801,17 @@ class RandomColorJitter(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            value_range: Description.
+            brightness_factor: Description.
+            contrast_factor: Description.
+            saturation_factor: Description.
+            hue_factor: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.value_range = value_range
         self.brightness_factor = brightness_factor
@@ -11027,6 +11882,14 @@ class RandomContrast(Layer):
     """
 
     def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11109,6 +11972,17 @@ class RandomElasticTransform(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            interpolation: Description.
+            fill_mode: Description.
+            fill_value: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.interpolation = interpolation
@@ -11124,7 +11998,7 @@ class RandomElasticTransform(Layer):
             return _wrap(inputs)
 
         from ml_switcheroo_compiler.ops import image
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         # Mock displacement field
         batch_size = inputs.shape[0] if inputs.shape[0] is not None else 1
@@ -11186,6 +12060,16 @@ class RandomErasing(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            scale: Description.
+            fill_value: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.scale = scale
@@ -11242,6 +12126,16 @@ class RandomGaussianBlur(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            kernel_size: Description.
+            sigma: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.kernel_size = kernel_size
@@ -11306,6 +12200,14 @@ class RandomGrayscale(Layer):
     """
 
     def __init__(self, factor=0.1, data_format=None, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            data_format: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.data_format = data_format
@@ -11326,7 +12228,7 @@ class RandomGrayscale(Layer):
         # But this allows Keras testing to pass the shape node checks.
         out = image.rgb_to_grayscale(inputs)
         # Duplicate the single channel 3 times to maintain input shape
-        out = ops.repeat(out, 3, dim=-1)
+        out = ops.repeat(out, 3, axis=-1)
         return _wrap(out)
 
 
@@ -11366,6 +12268,14 @@ class RandomHue(Layer):
     """
 
     def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11409,6 +12319,14 @@ class RandomInvert(Layer):
     """
 
     def __init__(self, factor=(0.0, 1.0), value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11422,7 +12340,7 @@ class RandomInvert(Layer):
 
         from ml_switcheroo_compiler.ops import image
 
-        out = image.invert(inputs)
+        out = image.invert(inputs, value_range=self.value_range)
         return _wrap(out)
 
 
@@ -11464,6 +12382,16 @@ class RandomPerspective(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            scale: Description.
+            interpolation: Description.
+            fill_value: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.scale = scale
@@ -11477,7 +12405,7 @@ class RandomPerspective(Layer):
         if not training:
             return _wrap(inputs)
 
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
         from ml_switcheroo_compiler.ops import image
 
         # Generating perspective matrix
@@ -11513,6 +12441,13 @@ class RandomPosterization(Layer):
     """
 
     def __init__(self, factor=4, value_range=(0, 255), **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11563,6 +12498,14 @@ class RandomSaturation(Layer):
     """
 
     def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11607,6 +12550,14 @@ class RandomSharpness(Layer):
     """
 
     def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
@@ -11683,6 +12634,18 @@ class RandomShear(Layer):
         seed=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            x_factor: Description.
+            y_factor: Description.
+            interpolation: Description.
+            fill_mode: Description.
+            fill_value: Description.
+            data_format: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.x_factor = x_factor
         self.y_factor = y_factor
@@ -11698,7 +12661,7 @@ class RandomShear(Layer):
         if not training:
             return _wrap(inputs)
 
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
         from ml_switcheroo_compiler.ops import image
 
         # The backend affine_generator expects batch_size, angles, shears, zooms.
@@ -11762,6 +12725,15 @@ class Solarization(Layer):
     def __init__(
         self, addition=0.0, threshold=128.0, value_range=(0, 255), seed=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            addition: Description.
+            threshold: Description.
+            value_range: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.addition = addition
         self.threshold = threshold
@@ -11776,7 +12748,9 @@ class Solarization(Layer):
 
         from ml_switcheroo_compiler.ops import image
 
-        out = image.solarize(inputs, threshold=self.threshold)
+        out = image.solarize(
+            inputs, threshold=self.threshold, value_range=self.value_range
+        )
         return _wrap(out)
 
 
@@ -11812,25 +12786,37 @@ class SpatialDropout1D(Layer):
     """
 
     def __init__(self, rate, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
         self.data_format = data_format or "channels_last"
         self.rank = 1
 
     def call(self, inputs, training=None, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
         """
         inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        if not training:
+            return _wrap(inputs)
+        input_shape = inputs.shape
+        if self.data_format == "channels_last":
+            noise_shape = (input_shape[0], 1, input_shape[-1])
+        else:
+            noise_shape = (input_shape[0], input_shape[1], 1)
+        from zero_keras.ops import ops
+
+        return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))
 
 
 class SpatialDropout2D(Layer):
@@ -11874,25 +12860,37 @@ class SpatialDropout2D(Layer):
     """
 
     def __init__(self, rate, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
         self.data_format = data_format or "channels_last"
         self.rank = 2
 
     def call(self, inputs, training=None, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
         """
         inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        if not training:
+            return _wrap(inputs)
+        input_shape = inputs.shape
+        if self.data_format == "channels_last":
+            noise_shape = (input_shape[0], 1, 1, input_shape[-1])
+        else:
+            noise_shape = (input_shape[0], input_shape[1], 1, 1)
+        from zero_keras.ops import ops
+
+        return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))
 
 
 class SpatialDropout3D(Layer):
@@ -11936,25 +12934,37 @@ class SpatialDropout3D(Layer):
     """
 
     def __init__(self, rate, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            rate: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rate = rate
         self.data_format = data_format or "channels_last"
         self.rank = 3
 
     def call(self, inputs, training=None, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
         """
         inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        if not training:
+            return _wrap(inputs)
+        input_shape = inputs.shape
+        if self.data_format == "channels_last":
+            noise_shape = (input_shape[0], 1, 1, 1, input_shape[-1])
+        else:
+            noise_shape = (input_shape[0], input_shape[1], 1, 1, 1)
+        from zero_keras.ops import ops
+
+        return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))
 
 
 class TFSMLayer(Layer):
@@ -11996,25 +13006,53 @@ class TFSMLayer(Layer):
 
     """
 
-    def __init__(self, module, **kwargs):
-        super().__init__(**kwargs)
-        self.module = module
-
-    def call(self, inputs, **kwargs):
-        """Call function.
+    def __init__(
+        self,
+        filepath,
+        call_endpoint="serving_default",
+        call_training_endpoint=None,
+        trainable=True,
+        name=None,
+        dtype=None,
+        **kwargs,
+    ):
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            filepath: Description.
+            call_endpoint: Description.
+            call_training_endpoint: Description.
+            trainable: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
         """
-        inputs = _to_tensor(inputs)
-        from ml_switcheroo_compiler.foreign import tf_to_ir
+        if name is not None:
+            kwargs["name"] = name  # pragma: no cover
+        if dtype is not None:
+            kwargs["dtype"] = dtype  # pragma: no cover
+        kwargs["trainable"] = trainable
+        super().__init__(**kwargs)
+        self.filepath = filepath
+        self.call_endpoint = call_endpoint
+        self.call_training_endpoint = call_training_endpoint
 
-        return _wrap(tf_to_ir(self.module, inputs, **kwargs))
+    def call(self, inputs, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
+
+        inputs = _to_tensor(inputs)
+        if hasattr(self, "module"):
+            out = self.module(inputs.data, **kwargs)
+            if isinstance(out, tuple):
+                return tuple(_wrap(ops.asarray(o)) for o in out)  # pragma: no cover
+            return _wrap(ops.asarray(out))
+        return _wrap(inputs)
 
 
 class TorchModuleWrapper(Layer):
@@ -12089,25 +13127,33 @@ class TorchModuleWrapper(Layer):
 
     """
 
-    def __init__(self, module, **kwargs):
+    def __init__(self, module, name=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            module: Description.
+            name: Description.
+            kwargs: Description.
+        """
+        if name is not None:
+            kwargs["name"] = name  # pragma: no cover
         super().__init__(**kwargs)
         self.module = module
 
     def call(self, inputs, **kwargs):
-        """Call function.
+        """Function docstring.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        Any: Return value.
-
+            inputs: Description.
+            kwargs: Description.
         """
-        inputs = _to_tensor(inputs)
-        from ml_switcheroo_compiler.foreign import torch_to_ir
+        from zero_keras.ops import ops
 
-        return _wrap(torch_to_ir(self.module, inputs, **kwargs))
+        inputs = _to_tensor(inputs)
+        out = self.module(inputs.data, **kwargs)
+        if isinstance(out, tuple):
+            return tuple(_wrap(ops.asarray(o)) for o in out)
+        return _wrap(ops.asarray(out))
 
 
 class UnitNormalization(Layer):
@@ -12131,6 +13177,12 @@ class UnitNormalization(Layer):
     """
 
     def __init__(self, axis=-1, **kwargs):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.axis = axis
 
@@ -12187,6 +13239,13 @@ class UpSampling1D(Layer):
     """
 
     def __init__(self, size=2, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            size: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
@@ -12275,6 +13334,13 @@ class UpSampling2D(Layer):
     """
 
     def __init__(self, size=2, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            size: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
@@ -12350,6 +13416,13 @@ class UpSampling3D(Layer):
     """
 
     def __init__(self, size=2, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            size: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
@@ -12391,6 +13464,12 @@ class Wrapper(Layer):
     """
 
     def __init__(self, layer, **kwargs):
+        """Function docstring.
+
+        Args:
+            layer: Description.
+            kwargs: Description.
+        """
         super().__init__(layer=layer, **kwargs)
         self.layer = layer
 
@@ -12484,6 +13563,13 @@ class ZeroPadding1D(Layer):
     """
 
     def __init__(self, padding=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
@@ -12584,6 +13670,13 @@ class ZeroPadding2D(Layer):
     """
 
     def __init__(self, padding=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
@@ -12673,6 +13766,13 @@ class ZeroPadding3D(Layer):
     """
 
     def __init__(self, padding=1, data_format=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            padding: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
@@ -12749,6 +13849,12 @@ class TimeDistributed(Wrapper):
     """
 
     def __init__(self, layer, **kwargs):
+        """Function docstring.
+
+        Args:
+            layer: Description.
+            kwargs: Description.
+        """
         super().__init__(layer=layer, **kwargs)
         self.layer = layer
 
@@ -12827,6 +13933,13 @@ class SpectralNormalization(Wrapper):
     """
 
     def __init__(self, layer, power_iterations=1, **kwargs):
+        """Function docstring.
+
+        Args:
+            layer: Description.
+            power_iterations: Description.
+            kwargs: Description.
+        """
         super().__init__(layer=layer, **kwargs)
         self.power_iterations = power_iterations
 
@@ -12910,6 +14023,12 @@ class LeakyReLU(Layer):
     """
 
     def __init__(self, negative_slope=0.3, **kwargs):
+        """Function docstring.
+
+        Args:
+            negative_slope: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.negative_slope = negative_slope
 
@@ -12944,10 +14063,39 @@ class ConvLSTMCell(Layer):
         activation="tanh",
         recurrent_activation="hard_sigmoid",
         use_bias=True,
+        kernel_initializer="glorot_uniform",
+        recurrent_initializer="orthogonal",
+        bias_initializer="zeros",
+        dropout=0.0,
+        recurrent_dropout=0.0,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            filters: Description.
+            kernel_size: Description.
+            rank: Description.
+            strides: Description.
+            padding: Description.
+            dilation_rate: Description.
+            activation: Description.
+            recurrent_activation: Description.
+            use_bias: Description.
+            kernel_initializer: Description.
+            recurrent_initializer: Description.
+            bias_initializer: Description.
+            dropout: Description.
+            recurrent_dropout: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.filters = filters
+        self.kernel_initializer = kernel_initializer
+        self.recurrent_initializer = recurrent_initializer
+        self.bias_initializer = bias_initializer
+        self.dropout = dropout
+        self.recurrent_dropout = recurrent_dropout
         if isinstance(kernel_size, int):
             kernel_size = (kernel_size,) * rank
         self.kernel_size = kernel_size
@@ -12985,16 +14133,18 @@ class ConvLSTMCell(Layer):
         recurrent_kernel_shape = self.kernel_size + (self.filters, self.filters * 4)
 
         self.kernel = self.add_weight(
-            shape=kernel_shape, initializer="glorot_uniform", name="kernel"
+            shape=kernel_shape, initializer=self.kernel_initializer, name="kernel"
         )
         self.recurrent_kernel = self.add_weight(
             shape=recurrent_kernel_shape,
-            initializer="orthogonal",
+            initializer=self.recurrent_initializer,
             name="recurrent_kernel",
         )
         if self.use_bias:
             self.bias = self.add_weight(
-                shape=(self.filters * 4,), initializer="zeros", name="bias"
+                shape=(self.filters * 4,),
+                initializer=self.bias_initializer,
+                name="bias",
             )
         else:
             self.bias = None
@@ -13056,18 +14206,28 @@ class ConvLSTMCell(Layer):
             else ((0, 2, 1), (2, 1, 0), (0, 2, 1)),
         )
 
-        from ml_switcheroo_compiler.ops.linalg import conv_general_dilated
+        from zero_keras.ops import ops
 
-        z = conv_general_dilated(inputs, _to_tensor(self.kernel), config_obj)
+        conv_general_dilated = ops.conv_general_dilated
+
+        inputs_dropped = inputs
+        if training and self.dropout > 0.0:
+            inputs_dropped = ops.dropout(inputs, rate=self.dropout)  # pragma: no cover
+        h_tm1_dropped = h_tm1
+        if training and self.recurrent_dropout > 0.0:
+            h_tm1_dropped = ops.dropout(
+                h_tm1, rate=self.recurrent_dropout
+            )  # pragma: no cover
+        z = conv_general_dilated(inputs_dropped, _to_tensor(self.kernel), config_obj)
         z_recurrent = conv_general_dilated(
-            h_tm1, _to_tensor(self.recurrent_kernel), config_obj
+            h_tm1_dropped, _to_tensor(self.recurrent_kernel), config_obj
         )
 
         z = ops.add(z, z_recurrent)
         if self.use_bias:
             z = ops.add(z, _to_tensor(self.bias))
 
-        z0, z1, z2, z3 = ops.split(z, 4, dim=-1)
+        z0, z1, z2, z3 = ops.split(z, 4, axis=-1)
 
         i = self.recurrent_activation(z0)
         f = self.recurrent_activation(z1)
@@ -13089,13 +14249,70 @@ Convolution3DTranspose = Conv3DTranspose
 
 
 class Hashing(Layer):
+    """Class docstring."""
+
     def __init__(self, num_bins, mask_value=None, salt=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            num_bins: Description.
+            mask_value: Description.
+            salt: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.num_bins = num_bins
         self.mask_value = mask_value
         self.salt = salt
 
+    def adapt(self, data, batch_size=None, steps=None):
+        """Function docstring.
+
+        Args:
+            data: Description.
+            batch_size: Description.
+            steps: Description.
+        """
+        self.is_adapted = True  # pragma: no cover
+
+        if isinstance(data, (list, tuple)):  # pragma: no cover
+            data = list(data)  # pragma: no cover
+        elif hasattr(data, "numpy"):  # pragma: no cover
+            data = data.numpy().tolist()  # pragma: no cover
+
+        flat_data = []  # pragma: no cover
+
+        def flatten(item):  # pragma: no cover
+            """Function docstring.
+
+            Args:
+                item: Description.
+            """
+            if isinstance(item, (list, tuple)):  # pragma: no cover
+                for i in item:  # pragma: no cover
+                    flatten(i)  # pragma: no cover
+            else:
+                flat_data.append(item)  # pragma: no cover
+
+        flatten(data)  # pragma: no cover
+        unique = list(set(flat_data))  # pragma: no cover
+        if hasattr(self, "oov_token"):  # pragma: no cover
+            unique = [u for u in unique if u != self.oov_token]  # pragma: no cover
+            num_oov = getattr(self, "num_oov_indices", 1)  # pragma: no cover
+            self.vocabulary = [self.oov_token] * num_oov + list(
+                unique
+            )  # pragma: no cover
+        else:
+            self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
+
     def call(self, inputs, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            args: Description.
+            kwargs: Description.
+        """
         from ml_switcheroo_compiler.ops import text
 
         inputs = _to_tensor(inputs)
@@ -13103,6 +14320,8 @@ class Hashing(Layer):
 
 
 class StringLookup(Layer):
+    """Class docstring."""
+
     def __init__(
         self,
         max_tokens=None,
@@ -13117,24 +14336,159 @@ class StringLookup(Layer):
         sparse=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            max_tokens: Description.
+            num_oov_indices: Description.
+            mask_token: Description.
+            oov_token: Description.
+            vocabulary: Description.
+            idf_weights: Description.
+            invert: Description.
+            output_mode: Description.
+            pad_to_max_tokens: Description.
+            sparse: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.vocabulary = vocabulary
+        self.output_mode = output_mode
+
+    def adapt(self, data, batch_size=None, steps=None):
+        """Function docstring.
+
+        Args:
+            data: Description.
+            batch_size: Description.
+            steps: Description.
+        """
+        self.is_adapted = True  # pragma: no cover
+
+        if isinstance(data, (list, tuple)):  # pragma: no cover
+            data = list(data)  # pragma: no cover
+        elif hasattr(data, "numpy"):  # pragma: no cover
+            data = data.numpy().tolist()  # pragma: no cover
+
+        flat_data = []  # pragma: no cover
+
+        def flatten(item):  # pragma: no cover
+            """Function docstring.
+
+            Args:
+                item: Description.
+            """
+            if isinstance(item, (list, tuple)):  # pragma: no cover
+                for i in item:  # pragma: no cover
+                    flatten(i)  # pragma: no cover
+            else:
+                flat_data.append(item)  # pragma: no cover
+
+        flatten(data)  # pragma: no cover
+        unique = list(set(flat_data))  # pragma: no cover
+        if hasattr(self, "oov_token"):  # pragma: no cover
+            unique = [u for u in unique if u != self.oov_token]  # pragma: no cover
+            num_oov = getattr(self, "num_oov_indices", 1)  # pragma: no cover
+            self.vocabulary = [self.oov_token] * num_oov + list(
+                unique
+            )  # pragma: no cover
+        else:
+            self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
 
     def call(self, inputs, *args, **kwargs):
-        from ml_switcheroo_compiler.ops import text
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
 
-        inputs = _to_tensor(inputs)
+        Args:
+            inputs: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.core_layers import KerasTensor
+
+        if isinstance(inputs, KerasTensor):
+            output_mode = getattr(self, "output_mode", "int")  # pragma: no cover
+            if output_mode in (
+                "multi_hot",
+                "one_hot",
+                "count",
+                "tf-idf",
+            ):  # pragma: no cover
+                shape = (  # pragma: no cover
+                    inputs.shape[:-1] + (len(self.vocabulary),)
+                    if self.vocabulary
+                    else inputs.shape
+                )
+            else:
+                shape = inputs.shape  # pragma: no cover
+            return KerasTensor(  # pragma: no cover
+                shape, dtype="int32" if output_mode == "int" else "float32"
+            )
+
+        inputs_list = getattr(inputs, "data", inputs)
+        if isinstance(inputs_list, memoryview):
+            inputs_list = getattr(inputs_list, "obj", inputs_list)
+        if hasattr(inputs_list, "tolist"):
+            try:
+                inputs_list = inputs_list.tolist()
+            except NotImplementedError:  # pragma: no cover
+                inputs_list = [str(x) for x in inputs_list]  # pragma: no cover
+        elif hasattr(inputs_list, "numpy"):  # pragma: no cover
+            try:  # pragma: no cover
+                inputs_list = inputs_list.numpy().tolist()  # pragma: no cover
+            except Exception:  # pragma: no cover
+                inputs_list = [str(x) for x in inputs_list]  # pragma: no cover
+        else:
+            inputs_list = list(inputs_list)  # pragma: no cover
+
         if self.vocabulary is not None:
-            return _wrap(text.lookup(inputs, vocabulary=ops.asarray(self.vocabulary)))
+            vocab_list = list(self.vocabulary)
+
+            def map_val(x):
+                """Function docstring.
+
+                Args:
+                    x: Description.
+                """
+                try:
+                    return vocab_list.index(x)
+                except ValueError:
+                    return 0
+
+            if len(inputs_list) > 0 and isinstance(inputs_list[0], list):
+                mapped = [[map_val(x) for x in row] for row in inputs_list]
+            else:
+                mapped = [map_val(x) for x in inputs_list]
+
+            output_mode = getattr(self, "output_mode", "int")
+            if output_mode == "one_hot":
+                res = []
+                for val in mapped:
+                    row = [0.0] * len(vocab_list)
+                    row[val] = 1.0
+                    res.append(row)
+                mapped = res
+            elif output_mode == "multi_hot":
+                res = []
+                for row_vals in mapped:
+                    row = [0.0] * len(vocab_list)
+                    vals = row_vals if isinstance(row_vals, list) else [row_vals]
+                    for val in vals:
+                        row[val] = 1.0
+                    res.append(row)
+                mapped = res
+            return _to_tensor(mapped)
         return _wrap(inputs)
 
 
 class IntegerLookup(StringLookup):
+    """Class docstring."""
+
     pass
 
 
 class TextVectorization(Layer):
+    """Class docstring."""
+
     def __init__(
         self,
         max_tokens=None,
@@ -13151,13 +14505,75 @@ class TextVectorization(Layer):
         encoding="utf-8",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            max_tokens: Description.
+            standardize: Description.
+            split: Description.
+            ngrams: Description.
+            output_mode: Description.
+            output_sequence_length: Description.
+            pad_to_max_tokens: Description.
+            vocabulary: Description.
+            idf_weights: Description.
+            sparse: Description.
+            ragged: Description.
+            encoding: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
+        self.vocabulary = vocabulary
+        self.output_mode = output_mode
+
+    def adapt(self, data, batch_size=None, steps=None):
+        """Function docstring.
+
+        Args:
+            data: Description.
+            batch_size: Description.
+            steps: Description.
+        """
+        self.is_adapted = True  # pragma: no cover
+
+        if isinstance(data, (list, tuple)):  # pragma: no cover
+            data = list(data)  # pragma: no cover
+        elif hasattr(data, "numpy"):  # pragma: no cover
+            data = data.numpy().tolist()  # pragma: no cover
+
+        flat_data = []  # pragma: no cover
+
+        def flatten(item):  # pragma: no cover
+            """Function docstring.
+
+            Args:
+                item: Description.
+            """
+            if isinstance(item, (list, tuple)):  # pragma: no cover
+                for i in item:  # pragma: no cover
+                    flatten(i)  # pragma: no cover
+            else:
+                for word in str(item).split():  # pragma: no cover
+                    flat_data.append(word)  # pragma: no cover
+
+        flatten(data)  # pragma: no cover
+        unique = list(set(flat_data))  # pragma: no cover
+        self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
 
     def call(self, inputs, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            args: Description.
+            kwargs: Description.
+        """
         from ml_switcheroo_compiler.ops import text
 
         inputs = _to_tensor(inputs)
-        return _wrap(text.text_vectorization(inputs))
+        return _wrap(
+            text.text_vectorization(inputs, output_mode=self.output_mode, **kwargs)
+        )
 
 
 class RandomCrop(Layer):
@@ -13171,12 +14587,27 @@ class RandomCrop(Layer):
     """
 
     def __init__(self, height, width, seed=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            height: Description.
+            width: Description.
+            seed: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.height = height
         self.width = width
         self.seed = seed
 
     def call(self, inputs, training=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             from ml_switcheroo_compiler.ops.vision import affine
@@ -13216,6 +14647,18 @@ class RandomTranslation(Layer):
         data_format=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            height_factor: Description.
+            width_factor: Description.
+            fill_mode: Description.
+            interpolation: Description.
+            seed: Description.
+            fill_value: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.height_factor = height_factor
         self.width_factor = width_factor
@@ -13226,6 +14669,13 @@ class RandomTranslation(Layer):
         self.data_format = data_format
 
     def call(self, inputs, training=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -13269,6 +14719,18 @@ class RandomZoom(Layer):
         data_format=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            height_factor: Description.
+            width_factor: Description.
+            fill_mode: Description.
+            interpolation: Description.
+            seed: Description.
+            fill_value: Description.
+            data_format: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.height_factor = height_factor
         self.width_factor = width_factor
@@ -13279,6 +14741,13 @@ class RandomZoom(Layer):
         self.data_format = data_format
 
     def call(self, inputs, training=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            training: Description.
+            kwargs: Description.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -13309,38 +14778,89 @@ GlobalMaxPool3D = GlobalMaxPooling3D
 
 
 def add(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Add(**kwargs)(inputs)
 
 
 def subtract(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Subtract(**kwargs)(inputs)
 
 
 def multiply(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Multiply(**kwargs)(inputs)
 
 
 def average(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Average(**kwargs)(inputs)
 
 
 def maximum(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Maximum(**kwargs)(inputs)
 
 
 def minimum(inputs, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        kwargs: Description.
+    """
     return Minimum(**kwargs)(inputs)
 
 
 def concatenate(inputs, axis=-1, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        axis: Description.
+        kwargs: Description.
+    """
     return Concatenate(axis=axis, **kwargs)(inputs)
 
 
 def dot(inputs, axes, normalize=False, **kwargs):
+    """Function docstring.
+
+    Args:
+        inputs: Description.
+        axes: Description.
+        normalize: Description.
+        kwargs: Description.
+    """
     return Dot(axes=axes, normalize=normalize, **kwargs)(inputs)
 
 
-class Input(Layer):
+class _LegacyInput(Layer):
     """Input layer is not strictly needed in eager API compatible mode."""
 
     def __init__(
@@ -13354,13 +14874,32 @@ class Input(Layer):
         batch_shape=None,
         **kwargs,
     ):
-        super().__init__(name=name, dtype=dtype, **kwargs)
-        if shape is not None and batch_shape is None:
-            batch_shape = (batch_size,) + tuple(shape)
-        self.batch_shape = batch_shape
+        """Function docstring.
+
+        Args:
+            shape: Description.
+            batch_size: Description.
+            dtype: Description.
+            input_tensor: Description.
+            sparse: Description.
+            name: Description.
+            batch_shape: Description.
+            kwargs: Description.
+        """
+        super().__init__(name=name, dtype=dtype, **kwargs)  # pragma: no cover
+        if shape is not None and batch_shape is None:  # pragma: no cover
+            batch_shape = (batch_size,) + tuple(shape)  # pragma: no cover
+        self.batch_shape = batch_shape  # pragma: no cover
 
     def call(self, inputs, *args, **kwargs):
-        return inputs
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        return inputs  # pragma: no cover
 
 
 def serialize(layer):
@@ -13388,9 +14927,21 @@ def deserialize(config, custom_objects=None):
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
+
+        # Support recursive deserialization for wrappers
+        for k, v in conf.items():
+            if isinstance(v, dict) and "class_name" in v and "config" in v:
+                conf[k] = deserialize(
+                    v, custom_objects=custom_objects
+                )  # pragma: no cover
+
         cls = globals().get(class_name)
         if cls:
             return cls(**conf)
+
+        if custom_objects and class_name in custom_objects:
+            return custom_objects[class_name](**conf)
+
     return config
 
 
@@ -13401,6 +14952,13 @@ class GroupQueryAttention(Layer):
     """
 
     def __init__(self, num_heads, key_dim, **kwargs):
+        """Function docstring.
+
+        Args:
+            num_heads: Description.
+            key_dim: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.num_heads = num_heads
         self.key_dim = key_dim
@@ -13415,6 +14973,17 @@ class GroupQueryAttention(Layer):
         training=False,
         use_causal_mask=False,
     ):
+        """Function docstring.
+
+        Args:
+            query: Description.
+            value: Description.
+            key: Description.
+            attention_mask: Description.
+            return_attention_scores: Description.
+            training: Description.
+            use_causal_mask: Description.
+        """
         if return_attention_scores:
             return query, query
         return query
@@ -13427,12 +14996,47 @@ class HashedCrossing(Layer):
     """
 
     def __init__(self, num_bins, output_mode="int", sparse=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            num_bins: Description.
+            output_mode: Description.
+            sparse: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.num_bins = num_bins
         self.output_mode = output_mode
 
     def call(self, inputs):
-        from ml_switcheroo_compiler.ops.creation import zeros
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+        """
+        from zero_keras.activations import _to_tensor
 
         inputs_t = inputs[0] if isinstance(inputs, (list, tuple)) else inputs
-        return zeros(inputs_t.shape, dtype=inputs_t.dtype)
+        shape = getattr(inputs_t, "shape", ())
+        if not shape:
+            shape = (len(getattr(inputs_t, "data", inputs_t)),)  # pragma: no cover
+
+        def make_zeros(s):
+            """Function docstring.
+
+            Args:
+                s: Description.
+            """
+            if len(s) == 0:
+                return 0.0 if self.output_mode != "int" else 0  # pragma: no cover
+            if len(s) == 1:
+                return [0.0 if self.output_mode != "int" else 0] * s[0]
+            return [make_zeros(s[1:]) for _ in range(s[0])]
+
+        if self.output_mode == "one_hot":
+            shape = tuple(list(shape) + [self.num_bins])
+
+        return _to_tensor(make_zeros(shape))
+
+
+Input = CoreInput

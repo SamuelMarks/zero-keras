@@ -1,8 +1,11 @@
+"""Module docstring."""
+
 from zero_keras import metrics
 import numpy as np  # type: ignore
 
 
 def test_metrics_io():
+    """Function docstring."""
     metric = metrics.MeanSquaredError()
     config = metrics.serialize(metric)
     assert isinstance(config, dict)
@@ -23,6 +26,7 @@ def test_metrics_io():
 
 
 def test_correlation_metrics():
+    """Function docstring."""
     cc = metrics.ConcordanceCorrelation()
     pc = metrics.PearsonCorrelation()
     fb = metrics.FBetaScore()
@@ -42,6 +46,7 @@ def test_correlation_metrics():
 
 
 def test_metric_functions():
+    """Function docstring."""
     assert callable(metrics.binary_accuracy)
     assert callable(metrics.categorical_accuracy)
     assert callable(metrics.sparse_categorical_accuracy)

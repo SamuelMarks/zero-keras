@@ -61,6 +61,7 @@ class Callback:
     """
 
     def __init__(self):
+        """Function docstring."""
         self.model = None
 
     def set_model(self, model):
@@ -220,6 +221,18 @@ class EarlyStopping(Callback):
         restore_best_weights=False,
         start_from_epoch=0,
     ):
+        """Function docstring.
+
+        Args:
+            monitor: Description.
+            min_delta: Description.
+            patience: Description.
+            verbose: Description.
+            mode: Description.
+            baseline: Description.
+            restore_best_weights: Description.
+            start_from_epoch: Description.
+        """
         super().__init__()
         self.monitor = monitor
         self.min_delta = min_delta
@@ -415,6 +428,18 @@ class ModelCheckpoint(Callback):
         save_freq="epoch",
         initial_value_threshold=None,
     ):
+        """Function docstring.
+
+        Args:
+            filepath: Description.
+            monitor: Description.
+            verbose: Description.
+            save_best_only: Description.
+            save_weights_only: Description.
+            mode: Description.
+            save_freq: Description.
+            initial_value_threshold: Description.
+        """
         super().__init__()
         self.filepath = filepath
         self.monitor = monitor
@@ -476,3 +501,607 @@ class ModelCheckpoint(Callback):
                 os.path.dirname(os.path.abspath(filepath)) or ".", exist_ok=True
             )
             self.model.save(filepath)
+
+
+class History(Callback):
+    """Callback that records events into a `History` object."""
+
+    def __init__(self):
+        """Function docstring."""
+        super().__init__()
+        self.history = {}
+        self.epoch = []
+
+    def on_train_begin(self, logs=None):
+        """Called at the beginning of training."""
+        self.history = {}
+        self.epoch = []
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Called at the end of an epoch."""
+        logs = logs or {}
+        self.epoch.append(epoch)
+        for k, v in logs.items():
+            self.history.setdefault(k, []).append(v)
+
+
+class LambdaCallback(Callback):
+    """Callback for creating simple, custom callbacks on-the-fly."""
+
+    def __init__(
+        self,
+        on_epoch_begin=None,
+        on_epoch_end=None,
+        on_batch_begin=None,
+        on_batch_end=None,
+        on_train_begin=None,
+        on_train_end=None,
+        **kwargs,
+    ):
+        """Function docstring.
+
+        Args:
+            on_epoch_begin: Description.
+            on_epoch_end: Description.
+            on_batch_begin: Description.
+            on_batch_end: Description.
+            on_train_begin: Description.
+            on_train_end: Description.
+            kwargs: Description.
+        """
+        super().__init__()
+        self.__dict__.update(kwargs)
+        self._on_epoch_begin = on_epoch_begin
+        self._on_epoch_end = on_epoch_end
+        self._on_batch_begin = on_batch_begin
+        self._on_batch_end = on_batch_end
+        self._on_train_begin = on_train_begin
+        self._on_train_end = on_train_end
+
+    def on_epoch_begin(self, epoch, logs=None):
+        """Called at the start of an epoch."""
+        if self._on_epoch_begin is not None:
+            self._on_epoch_begin(epoch, logs)
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Called at the end of an epoch."""
+        if self._on_epoch_end is not None:
+            self._on_epoch_end(epoch, logs)
+
+    def on_batch_begin(self, batch, logs=None):
+        """Called at the start of a batch."""
+        if self._on_batch_begin is not None:
+            self._on_batch_begin(batch, logs)
+
+    def on_batch_end(self, batch, logs=None):
+        """Called at the end of a batch."""
+        if self._on_batch_end is not None:
+            self._on_batch_end(batch, logs)
+
+    def on_train_begin(self, logs=None):
+        """Called at the beginning of training."""
+        if self._on_train_begin is not None:
+            self._on_train_begin(logs)
+
+    def on_train_end(self, logs=None):
+        """Called at the end of training."""
+        if self._on_train_end is not None:
+            self._on_train_end(logs)
+
+
+class LearningRateScheduler(Callback):
+    """Learning rate scheduler."""
+
+    def __init__(self, schedule, verbose=0):
+        """Function docstring.
+
+        Args:
+            schedule: Description.
+            verbose: Description.
+        """
+        super().__init__()
+        self.schedule = schedule
+        self.verbose = verbose
+
+    def on_epoch_begin(self, epoch, logs=None):
+        """Called at the start of an epoch."""
+        if not hasattr(self.model, "optimizer"):
+            return
+        if not hasattr(self.model.optimizer, "learning_rate"):
+            return
+        try:
+            lr = float(self.model.optimizer.learning_rate)
+        except TypeError:
+            lr = self.model.optimizer.learning_rate
+        lr = self.schedule(epoch, lr)
+        self.model.optimizer.learning_rate = lr
+
+
+class TerminateOnNaN(Callback):
+    """Callback that terminates training when a NaN loss is encountered."""
+
+    def on_batch_end(self, batch, logs=None):
+        """Called at the end of a batch."""
+        import math
+
+        logs = logs or {}
+        loss = logs.get("loss")
+        if loss is not None:
+            if math.isnan(loss) or math.isinf(loss):
+                self.model.stop_training = True
+
+
+class CSVLogger(Callback):
+    """Callback that streams epoch results to a CSV file."""
+
+    def __init__(self, filename, separator=",", append=False):
+        """Function docstring.
+
+        Args:
+            filename: Description.
+            separator: Description.
+            append: Description.
+        """
+        super().__init__()
+        self.filename = filename
+        self.separator = separator
+        self.append = append
+        self.csv_file = None
+        self.writer = None
+        self.keys = None
+        self.append_header = True
+
+    def on_train_begin(self, logs=None):
+        """Called at the beginning of training."""
+        import os
+
+        if self.append:
+            if os.path.exists(self.filename):
+                with open(self.filename, "r") as f:
+                    self.append_header = not bool(len(f.readline()))
+            else:
+                self.append_header = True
+        else:
+            self.append_header = True
+        self.csv_file = open(self.filename, "a" if self.append else "w", newline="")
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Called at the end of an epoch."""
+        import csv
+
+        logs = logs or {}
+
+        def handle_value(k):
+            """Function docstring.
+
+            Args:
+                k: Description.
+            """
+            is_zero_dim_ndarray = hasattr(k, "ndim") and k.ndim == 0
+            if isinstance(k, str):
+                return k
+            elif hasattr(k, "__iter__") and not is_zero_dim_ndarray:
+                return f'"[{", ".join(map(str, k))}]"'
+            else:
+                return k
+
+        if self.keys is None:
+            self.keys = sorted(logs.keys())
+            if self.writer is None:
+
+                class CustomDialect(csv.excel):
+                    """Class docstring."""
+
+                    delimiter = self.separator
+
+                self.writer = csv.DictWriter(
+                    self.csv_file,
+                    fieldnames=["epoch"] + self.keys,
+                    dialect=CustomDialect,
+                )
+                if self.append_header:
+                    self.writer.writeheader()
+
+        row_dict = {"epoch": epoch}
+        row_dict.update(
+            (key, handle_value(logs[key])) for key in self.keys if key in logs
+        )
+        self.writer.writerow(row_dict)
+        self.csv_file.flush()
+
+    def on_train_end(self, logs=None):
+        """Called at the end of training."""
+        if self.csv_file is not None:
+            self.csv_file.close()
+
+
+class ReduceLROnPlateau(Callback):
+    """Reduce learning rate when a metric has stopped improving."""
+
+    def __init__(
+        self,
+        monitor="val_loss",
+        factor=0.1,
+        patience=10,
+        verbose=0,
+        mode="auto",
+        min_delta=1e-4,
+        cooldown=0,
+        min_lr=0,
+    ):
+        """Function docstring.
+
+        Args:
+            monitor: Description.
+            factor: Description.
+            patience: Description.
+            verbose: Description.
+            mode: Description.
+            min_delta: Description.
+            cooldown: Description.
+            min_lr: Description.
+        """
+        super().__init__()
+        self.monitor = monitor
+        self.factor = factor
+        self.min_lr = min_lr
+        self.patience = patience
+        self.verbose = verbose
+        self.cooldown = cooldown
+        self.cooldown_counter = 0
+        self.wait = 0
+        self.best = 0
+        self.mode = mode
+        self.min_delta = min_delta
+
+        if mode == "min" or (mode == "auto" and "acc" not in monitor):
+            self.monitor_op = lambda a, b: a < (b - self.min_delta)
+            self.best = float("inf")
+        else:
+            self.monitor_op = lambda a, b: a > (b + self.min_delta)
+            self.best = -float("inf")
+
+    def on_train_begin(self, logs=None):
+        """Called at the beginning of training."""
+
+        self.wait = 0
+        self.cooldown_counter = 0
+        self.best = (
+            float("inf")
+            if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor)
+            else -float("inf")
+        )
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Called at the end of an epoch."""
+        logs = logs or {}
+        current = logs.get(self.monitor)
+        if current is None:
+            return
+
+        if self.in_cooldown():
+            self.cooldown_counter -= 1
+            self.wait = 0
+
+        if self.monitor_op(current, self.best):
+            self.best = current
+            self.wait = 0
+        elif not self.in_cooldown():
+            self.wait += 1
+            if self.wait >= self.patience:
+                if hasattr(self.model, "optimizer") and hasattr(
+                    self.model.optimizer, "learning_rate"
+                ):
+                    old_lr = float(self.model.optimizer.learning_rate)
+                    if old_lr > self.min_lr:
+                        new_lr = old_lr * self.factor
+                        new_lr = max(new_lr, self.min_lr)
+                        self.model.optimizer.learning_rate = new_lr
+                        self.cooldown_counter = self.cooldown
+                        self.wait = 0
+
+    def in_cooldown(self):
+        """in_cooldown."""
+        return self.cooldown_counter > 0
+
+
+class BackupAndRestore(Callback):
+    """Callback to back up and restore the training state."""
+
+    def __init__(self, backup_dir, save_freq="epoch", delete_checkpoint=True):
+        """Function docstring.
+
+        Args:
+            backup_dir: Description.
+            save_freq: Description.
+            delete_checkpoint: Description.
+        """
+        super().__init__()
+        self.backup_dir = backup_dir
+        self.save_freq = save_freq
+        self.delete_checkpoint = delete_checkpoint
+
+    def on_train_begin(self, logs=None):
+        """Called at the beginning of training."""
+        import os
+
+        if not os.path.exists(self.backup_dir):
+            os.makedirs(self.backup_dir)
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Called at the end of an epoch."""
+        pass
+
+    def on_train_end(self, logs=None):
+        """Called at the end of training."""
+        if self.delete_checkpoint:
+            import shutil
+
+            shutil.rmtree(self.backup_dir, ignore_errors=True)
+
+
+class RemoteMonitor(Callback):
+    """Callback used to stream events to a server."""
+
+    def __init__(
+        self,
+        root="http://localhost:9000",
+        path="/publish/epoch/end/",
+        field="data",
+        headers=None,
+        send_as_json=False,
+    ):
+        """Function docstring.
+
+        Args:
+            root: Description.
+            path: Description.
+            field: Description.
+            headers: Description.
+            send_as_json: Description.
+        """
+        super().__init__()
+        self.root = root
+        self.path = path
+        self.field = field
+        self.headers = headers
+        self.send_as_json = send_as_json
+
+
+class SwapEMAWeights(Callback):
+    """Swaps model weights with their exponential moving average."""
+
+    def __init__(self, swap_on_epoch=False):
+        """Function docstring.
+
+        Args:
+            swap_on_epoch: Description.
+        """
+        super().__init__()
+        self.swap_on_epoch = swap_on_epoch
+
+
+class TensorBoard(Callback):
+    """Enable visualizations for TensorBoard."""
+
+    def __init__(
+        self,
+        log_dir="logs",
+        histogram_freq=0,
+        write_graph=True,
+        write_images=False,
+        write_steps_per_second=False,
+        update_freq="epoch",
+        profile_batch=0,
+        embeddings_freq=0,
+        embeddings_metadata=None,
+    ):
+        """Function docstring.
+
+        Args:
+            log_dir: Description.
+            histogram_freq: Description.
+            write_graph: Description.
+            write_images: Description.
+            write_steps_per_second: Description.
+            update_freq: Description.
+            profile_batch: Description.
+            embeddings_freq: Description.
+            embeddings_metadata: Description.
+        """
+        super().__init__()
+        self.log_dir = log_dir
+        self.histogram_freq = histogram_freq
+        self.write_graph = write_graph
+        self.write_images = write_images
+        self.write_steps_per_second = write_steps_per_second
+        self.update_freq = update_freq
+        self.profile_batch = profile_batch
+        self.embeddings_freq = embeddings_freq
+        self.embeddings_metadata = embeddings_metadata
+
+
+class CallbackList:
+    """Class docstring."""
+
+    def __init__(self, callbacks=None, model=None):
+        """Function docstring.
+
+        Args:
+            callbacks: Description.
+            model: Description.
+        """
+        self.callbacks = callbacks or []
+        self.model = model
+        for cb in self.callbacks:
+            cb.model = model
+
+    def on_train_begin(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_train_begin(logs)
+
+    def on_epoch_begin(self, epoch, logs=None):
+        """Function docstring.
+
+        Args:
+            epoch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_epoch_begin(epoch, logs)
+
+    def on_train_batch_begin(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_train_batch_begin"):
+                cb.on_train_batch_begin(batch, logs)
+
+    def on_batch_begin(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_batch_begin(batch, logs)
+
+    def on_train_batch_end(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_train_batch_end"):
+                cb.on_train_batch_end(batch, logs)
+
+    def on_batch_end(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_batch_end(batch, logs)
+
+    def on_epoch_end(self, epoch, logs=None):
+        """Function docstring.
+
+        Args:
+            epoch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_epoch_end(epoch, logs)
+
+    def on_train_end(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_train_end(logs)
+
+    def on_test_begin(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_test_begin"):
+                cb.on_test_begin(logs)
+
+    def on_test_batch_begin(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_test_batch_begin"):
+                cb.on_test_batch_begin(batch, logs)
+
+    def on_test_batch_end(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_test_batch_end"):
+                cb.on_test_batch_end(batch, logs)
+
+    def on_test_end(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_test_end"):
+                cb.on_test_end(logs)
+
+    def on_predict_begin(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_predict_begin"):
+                cb.on_predict_begin(logs)
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_predict_batch_begin"):
+                cb.on_predict_batch_begin(batch, logs)
+
+    def on_predict_batch_end(self, batch, logs=None):
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_predict_batch_end"):
+                cb.on_predict_batch_end(batch, logs)
+
+    def on_predict_end(self, logs=None):
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            if hasattr(cb, "on_predict_end"):
+                cb.on_predict_end(logs)
+
+
+class ProgbarLogger:
+    """Class docstring."""
+
+    pass

@@ -1,7 +1,10 @@
+"""Module docstring."""
+
 from zero_keras import losses
 
 
 def test_losses_io():
+    """Function docstring."""
     loss = losses.MeanSquaredError()
     config = losses.serialize(loss)
     assert isinstance(config, dict)
@@ -21,6 +24,7 @@ def test_losses_io():
 
 
 def test_losses_new_functions():
+    """Function docstring."""
     assert callable(losses.dice)
     assert callable(losses.tversky)
     assert callable(losses.ctc)

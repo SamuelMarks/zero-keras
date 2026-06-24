@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import numpy as np
 from zero_keras import models
 from zero_keras import layers
@@ -5,6 +7,7 @@ from zero_keras.core_layers import Input, Functional
 
 
 def test_clone_model_functional():
+    """Function docstring."""
     inp1 = Input(shape=(10,), name="in1")
     inp2 = Input(shape=(10,), name="in2")
 
@@ -29,6 +32,7 @@ def test_clone_model_functional():
 
 
 def test_model_from_json_functional():
+    """Function docstring."""
     json_str = """
     {
         "class_name": "Functional",

@@ -1,20 +1,33 @@
+"""Module docstring."""
+
 from zero_keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
 
 
 class MockModel:
+    """Class docstring."""
+
     def __init__(self):
+        """Function docstring."""
         self.stop_training = False
 
         class W:
+            """Class docstring."""
+
             data = 0
 
         self.weights = [W()]
 
     def save(self, filepath):
+        """Function docstring.
+
+        Args:
+            filepath: Description.
+        """
         pass
 
 
 def test_callbacks():
+    """Function docstring."""
     cb = Callback()
     cb.set_model(MockModel())
     cb.set_params({})

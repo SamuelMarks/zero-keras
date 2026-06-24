@@ -2,7 +2,7 @@
 
 import json
 import zipfile
-from zero_keras.core_layers import Model
+from zero_keras.core_layers import Model, Functional
 
 
 def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kwargs):
@@ -173,6 +173,12 @@ class Sequential(Model):
     """
 
     def __init__(self, layers=None, name=None):
+        """Function docstring.
+
+        Args:
+            layers: Description.
+            name: Description.
+        """
         self.layers = layers or []
         self._name = name
         self.built = False
@@ -421,6 +427,11 @@ def clone_model(model, input_tensors=None, clone_function=None):
     if clone_function is None:
 
         def default_clone_function(layer):
+            """Function docstring.
+
+            Args:
+                layer: Description.
+            """
             if hasattr(layer, "get_config"):
                 return layer.__class__.from_config(layer.get_config())
             return layer
@@ -449,6 +460,12 @@ def save_model(model, filepath, overwrite=True, **kwargs):
 
 
 def model_from_json(json_string, custom_objects=None):
+    """Function docstring.
+
+    Args:
+        json_string: Description.
+        custom_objects: Description.
+    """
     import json
 
     config = json.loads(json_string)
@@ -457,7 +474,7 @@ def model_from_json(json_string, custom_objects=None):
     if class_name == "Sequential":
         return Sequential.from_config(config.get("config", {}))
 
-    from zero_keras.core_layers import Model, Input, Functional
+    from zero_keras.core_layers import Model, Input
     from zero_keras import layers
     import builtins
 

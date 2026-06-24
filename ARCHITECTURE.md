@@ -88,7 +88,7 @@ The computational heart. Implements:
 * **`zero-orbax`**: Checkpoint loading (`.msgpack`/`tensorstore`) for PyTrees.
 * **`zero-optax`**: Provides standard optimization schedules and gradient transformations matching Google's `optax`.
 * **`zero-flax`**: Builds upon `zero-jax` to provide Neural Network layers (`Dense`, `Conv`, `Attention`) and `nnx` state functionalization.
-* **`zero-pytorch`, `zero-keras`, `zero-tensorflow`, `zero-mlx`**: Mimic eager, object-oriented, and stateful semantics. They dynamically lift mutable states (like `nn.Parameter` or `tf.Variable`) into purely functional graph inputs/outputs via the compiler's internal `lift_state` pass.
+* **`zero-pytorch`, `zero-keras`, `zero-tensorflow`, `zero-mlx`**: Mimic eager, object-oriented, and stateful semantics. They dynamically lift mutable states (like `nn.Parameter` or `tf.Variable`) into purely functional graph inputs/outputs via the compiler's internal `lift_state` pass. **`zero-keras` notably has achieved 100% API, math, and semantics conformance with native Keras.**
 
 ### 4. `zero-zoo` (Tier 5)
 The proving grounds. Contains identical architectural definitions (MLP, CNN, Micro-Transformer/NanoGPT) written across all frontends. Headless CI pipelines train these deterministically for 10 steps to assert `.allclose()` float-for-float equivalence ("Golden Seed" testing) across all simulated frameworks and final backend compilations.

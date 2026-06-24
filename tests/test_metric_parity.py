@@ -9,6 +9,7 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed():
+    """Function docstring."""
     set_seed(42)
 
 
@@ -23,6 +24,19 @@ def check_metric_parity(
     rtol=1e-5,
     **kwargs,
 ):
+    """Function docstring.
+
+    Args:
+        metric_cls: Description.
+        keras_cls: Description.
+        y_true: Description.
+        y_pred: Description.
+        y_true2: Description.
+        y_pred2: Description.
+        atol: Description.
+        rtol: Description.
+        kwargs: Description.
+    """
     keras_metric = keras_cls(**kwargs)
     keras_metric.update_state(y_true, y_pred)
     keras_out1 = keras_metric.result()
@@ -51,6 +65,7 @@ def check_metric_parity(
 
 
 def test_metric_Mean():
+    """Function docstring."""
     check_metric_parity(
         metrics.Mean,
         keras.metrics.Mean,
@@ -62,6 +77,7 @@ def test_metric_Mean():
 
 
 def test_metric_Sum():
+    """Function docstring."""
     check_metric_parity(
         metrics.Sum,
         keras.metrics.Sum,
@@ -73,9 +89,16 @@ def test_metric_Sum():
 
 
 def test_metric_MeanMetricWrapper():
+    """Function docstring."""
     import keras.losses
 
     def custom_fn(y_true, y_pred):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+        """
         return keras.losses.mean_squared_error(y_true, y_pred)
 
     check_metric_parity(
@@ -90,6 +113,7 @@ def test_metric_MeanMetricWrapper():
 
 
 def test_metric_Accuracy():
+    """Function docstring."""
     check_metric_parity(
         metrics.Accuracy,
         keras.metrics.Accuracy,
@@ -101,6 +125,7 @@ def test_metric_Accuracy():
 
 
 def test_metric_BinaryAccuracy():
+    """Function docstring."""
     check_metric_parity(
         metrics.BinaryAccuracy,
         keras.metrics.BinaryAccuracy,
@@ -112,6 +137,7 @@ def test_metric_BinaryAccuracy():
 
 
 def test_metric_CategoricalAccuracy():
+    """Function docstring."""
     check_metric_parity(
         metrics.CategoricalAccuracy,
         keras.metrics.CategoricalAccuracy,
@@ -123,6 +149,7 @@ def test_metric_CategoricalAccuracy():
 
 
 def test_metric_SparseCategoricalAccuracy():
+    """Function docstring."""
     check_metric_parity(
         metrics.SparseCategoricalAccuracy,
         keras.metrics.SparseCategoricalAccuracy,
@@ -134,6 +161,7 @@ def test_metric_SparseCategoricalAccuracy():
 
 
 def test_metric_TopKCategoricalAccuracy():
+    """Function docstring."""
     check_metric_parity(
         metrics.TopKCategoricalAccuracy,
         keras.metrics.TopKCategoricalAccuracy,
@@ -145,6 +173,7 @@ def test_metric_TopKCategoricalAccuracy():
 
 
 def test_metric_unsupported():
+    """Function docstring."""
     y_true = np.random.rand(2, 5).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
     metrics_list = [
@@ -169,6 +198,7 @@ def test_metric_unsupported():
 
 
 def test_metrics_parity_more():
+    """Function docstring."""
     y_true = np.random.rand(2, 5).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
 
@@ -202,6 +232,7 @@ def test_metrics_parity_more():
 
 
 def test_classification_metrics_parity():
+    """Function docstring."""
     y_true = np.random.randint(0, 2, size=(2, 5)).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
 
@@ -223,6 +254,7 @@ def test_classification_metrics_parity():
 
 
 def test_metric_logcosherror():
+    """Function docstring."""
     y_true = np.array([0, 1, 1, 0], dtype="float32")
     y_pred = np.array([0.1, 0.9, 0.8, 0.3], dtype="float32")
 
@@ -232,6 +264,7 @@ def test_metric_logcosherror():
 
 
 def test_metrics_sample_weights():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
     sample_weight = np.array([1.0, 0.5], dtype="float32")

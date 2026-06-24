@@ -1,9 +1,12 @@
+"""Module docstring."""
+
 from unittest.mock import patch
 from zero_keras import layers
 from ml_switcheroo_compiler.ops import asarray
 
 
 def test_dense_and_conv_missing_branches():
+    """Function docstring."""
     with (
         patch("zero_keras.layers.ops") as mock_ops,
         patch(
@@ -84,6 +87,7 @@ def test_dense_and_conv_missing_branches():
 
 
 def test_pre_set_weights_with_bias():
+    """Function docstring."""
     for layer_cls in [
         layers.Dense,
         layers.Conv1D,

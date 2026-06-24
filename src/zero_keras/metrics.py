@@ -1,10 +1,45 @@
 """Module docstring."""
 
-import ml_switcheroo_compiler.ops as ops
+# Aliases from losses (exported)
+from zero_keras.losses import CategoricalCrossentropy as CategoricalCrossentropy
+from zero_keras.losses import binary_crossentropy as binary_crossentropy
+from zero_keras.losses import binary_focal_crossentropy as binary_focal_crossentropy
+from zero_keras.losses import categorical_crossentropy as categorical_crossentropy
+from zero_keras.losses import (
+    categorical_focal_crossentropy as categorical_focal_crossentropy,
+)
+from zero_keras.losses import categorical_hinge as categorical_hinge
+from zero_keras.losses import hinge as hinge
+from zero_keras.losses import huber as huber
+from zero_keras.losses import kl_divergence as kl_divergence
+from zero_keras.losses import log_cosh as log_cosh
+from zero_keras.losses import mean_absolute_error as mean_absolute_error
+from zero_keras.losses import (
+    mean_absolute_percentage_error as mean_absolute_percentage_error,
+)
+from zero_keras.losses import mean_squared_error as mean_squared_error
+from zero_keras.losses import (
+    mean_squared_logarithmic_error as mean_squared_logarithmic_error,
+)
+from zero_keras.losses import poisson as poisson
+from zero_keras.losses import (
+    sparse_categorical_crossentropy as sparse_categorical_crossentropy,
+)
+from zero_keras.losses import squared_hinge as squared_hinge
+
+from zero_keras.ops import ops
 
 
 def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
-    import ml_switcheroo_compiler.ops as ops
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        top_k: Description.
+        class_id: Description.
+    """
+    from zero_keras.ops import ops
 
     if top_k is not None:
         top_k_vals, _ = ops.top_k(y_pred, k=top_k)
@@ -103,6 +138,13 @@ class Metric:
     """
 
     def __init__(self, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         self.name = name
         self.dtype = dtype
         self._kwargs = kwargs
@@ -164,6 +206,13 @@ class Mean(Metric):
     """
 
     def __init__(self, name="mean", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -225,6 +274,13 @@ class Sum(Metric):
     """
 
     def __init__(self, name="sum", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
 
@@ -281,6 +337,14 @@ class MeanMetricWrapper(Mean):
     """
 
     def __init__(self, fn, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            fn: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.fn = fn
 
@@ -328,6 +392,13 @@ class Accuracy(MeanMetricWrapper):
     """
 
     def __init__(self, name="accuracy", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         def accuracy_fn(y_true, y_pred):
             """accuracy_fn function.
@@ -387,6 +458,14 @@ class BinaryAccuracy(MeanMetricWrapper):
     """
 
     def __init__(self, name="binary_accuracy", dtype=None, threshold=0.5, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            threshold: Description.
+            kwargs: Description.
+        """
 
         def binary_accuracy_fn(y_true, y_pred):
             """binary_accuracy_fn function.
@@ -453,6 +532,13 @@ class CategoricalAccuracy(MeanMetricWrapper):
     """
 
     def __init__(self, name="categorical_accuracy", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         def categorical_accuracy_fn(y_true, y_pred):
             """categorical_accuracy_fn function.
@@ -520,6 +606,13 @@ class SparseCategoricalAccuracy(MeanMetricWrapper):
     """
 
     def __init__(self, name="sparse_categorical_accuracy", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         def sparse_categorical_accuracy_fn(y_true, y_pred):
             """sparse_categorical_accuracy_fn function.
@@ -582,6 +675,14 @@ class TopKCategoricalAccuracy(MeanMetricWrapper):
     """
 
     def __init__(self, k=5, name="top_k_categorical_accuracy", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            k: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         def top_k_fn(y_true, y_pred):
             """top_k_fn function.
@@ -667,6 +768,14 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
     def __init__(
         self, k=5, name="sparse_top_k_categorical_accuracy", dtype=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            k: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         def sparse_top_k_fn(y_true, y_pred):
             """sparse_top_k_fn function.
@@ -702,15 +811,35 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
 
 
 class _ConfusionMatrixMetric(Metric):
+    """Class docstring."""
+
     def __init__(
         self, thresholds=None, metric_type="FP", name=None, dtype=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            metric_type: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
+        if metric_type not in ("FP", "FN", "TP", "TN"):
+            raise ValueError(f"Unknown metric_type {metric_type}")
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.thresholds = 0.5 if thresholds is None else thresholds
         self.metric_type = metric_type
         self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true = ops.cast(_to_tensor(y_true), "bool")
@@ -718,6 +847,7 @@ class _ConfusionMatrixMetric(Metric):
         if isinstance(self.thresholds, (list, tuple)):
             for i, t in enumerate(self.thresholds):
                 y_pred_i = ops.cast(ops.greater_equal(y_pred, t), "bool")
+                val = None
                 if self.metric_type == "FP":
                     val = ops.logical_and(ops.logical_not(y_true), y_pred_i)
                 elif self.metric_type == "FN":
@@ -728,6 +858,10 @@ class _ConfusionMatrixMetric(Metric):
                     val = ops.logical_and(
                         ops.logical_not(y_true), ops.logical_not(y_pred_i)
                     )
+                else:
+                    raise ValueError(
+                        f"Unknown metric_type {self.metric_type}"
+                    )  # pragma: no cover
 
                 val = ops.cast(val, "float32")
                 if sample_weight is not None:
@@ -738,6 +872,7 @@ class _ConfusionMatrixMetric(Metric):
                     self.accumulator[i] += ops.sum(val)
         else:
             y_pred_bool = ops.cast(ops.greater_equal(y_pred, self.thresholds), "bool")
+            val = None
             if self.metric_type == "FP":
                 val = ops.logical_and(ops.logical_not(y_true), y_pred_bool)
             elif self.metric_type == "FN":
@@ -748,6 +883,10 @@ class _ConfusionMatrixMetric(Metric):
                 val = ops.logical_and(
                     ops.logical_not(y_true), ops.logical_not(y_pred_bool)
                 )
+            else:
+                raise ValueError(
+                    f"Unknown metric_type {self.metric_type}"
+                )  # pragma: no cover
 
             val = ops.cast(val, "float32")
             if sample_weight is not None:
@@ -759,13 +898,15 @@ class _ConfusionMatrixMetric(Metric):
                 self.accumulator += ops.sum(val)
 
     def result(self):
+        """Function docstring."""
         if isinstance(self.accumulator, list):
-            import ml_switcheroo_compiler.ops as ops
+            from zero_keras.ops import ops
 
             return ops.stack(self.accumulator)
         return self.accumulator
 
     def reset_state(self):
+        """Function docstring."""
         if isinstance(self.thresholds, (list, tuple)):
             self.accumulator = [0.0] * len(self.thresholds)
         else:
@@ -807,6 +948,14 @@ class FalsePositives(_ConfusionMatrixMetric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             thresholds=thresholds, metric_type="FP", name=name, dtype=dtype, **kwargs
         )
@@ -847,6 +996,14 @@ class FalseNegatives(_ConfusionMatrixMetric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             thresholds=thresholds, metric_type="FN", name=name, dtype=dtype, **kwargs
         )
@@ -887,6 +1044,14 @@ class TrueNegatives(_ConfusionMatrixMetric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             thresholds=thresholds, metric_type="TN", name=name, dtype=dtype, **kwargs
         )
@@ -927,6 +1092,14 @@ class TruePositives(_ConfusionMatrixMetric):
     """
 
     def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             thresholds=thresholds, metric_type="TP", name=name, dtype=dtype, **kwargs
         )
@@ -1023,6 +1196,16 @@ class Precision(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            top_k: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.thresholds = 0.5 if thresholds is None and top_k is None else thresholds
         self.top_k = top_k
@@ -1032,6 +1215,13 @@ class Precision(Metric):
         self.false_positives = FalsePositives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1041,13 +1231,14 @@ class Precision(Metric):
         self.false_positives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
 
         # tp and fp could be lists or arrays if multiple thresholds.
         # But our confusion matrix result() handles it.
         # Just safely divide.
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         # We need to handle list of thresholds properly if it returns an array
         res = ops.where(
@@ -1056,6 +1247,7 @@ class Precision(Metric):
         return res
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
 
@@ -1135,6 +1327,16 @@ class Recall(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            thresholds: Description.
+            top_k: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.thresholds = 0.5 if thresholds is None and top_k is None else thresholds
         self.top_k = top_k
@@ -1144,6 +1346,13 @@ class Recall(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1153,9 +1362,10 @@ class Recall(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         res = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1163,6 +1373,7 @@ class Recall(Metric):
         return res
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_negatives.reset_state()
 
@@ -1225,6 +1436,16 @@ class PrecisionAtRecall(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            recall: Description.
+            num_thresholds: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.recall = recall
         self.num_thresholds = num_thresholds
@@ -1239,6 +1460,13 @@ class PrecisionAtRecall(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1250,11 +1478,12 @@ class PrecisionAtRecall(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
         self.true_negatives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         recalls = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1270,6 +1499,7 @@ class PrecisionAtRecall(Metric):
         return ops.max(valid_precisions)
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
         self.true_negatives.reset_state()
@@ -1337,6 +1567,16 @@ class RecallAtPrecision(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            precision: Description.
+            num_thresholds: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.precision = precision
         self.num_thresholds = num_thresholds
@@ -1351,6 +1591,13 @@ class RecallAtPrecision(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1362,11 +1609,12 @@ class RecallAtPrecision(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
         self.true_negatives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         recalls = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1380,6 +1628,7 @@ class RecallAtPrecision(Metric):
         return ops.max(valid_recalls)
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
         self.true_negatives.reset_state()
@@ -1453,6 +1702,16 @@ class SensitivityAtSpecificity(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            specificity: Description.
+            num_thresholds: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.specificity = specificity
         self.num_thresholds = num_thresholds
@@ -1467,6 +1726,13 @@ class SensitivityAtSpecificity(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1478,11 +1744,12 @@ class SensitivityAtSpecificity(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         specificities = ops.where(
             ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
@@ -1496,6 +1763,7 @@ class SensitivityAtSpecificity(Metric):
         return ops.max(valid_sensitivities)
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
         self.true_negatives.reset_state()
@@ -1569,6 +1837,16 @@ class SpecificityAtSensitivity(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            sensitivity: Description.
+            num_thresholds: Description.
+            class_id: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.sensitivity = sensitivity
         self.num_thresholds = num_thresholds
@@ -1583,6 +1861,13 @@ class SpecificityAtSensitivity(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
@@ -1594,11 +1879,12 @@ class SpecificityAtSensitivity(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         specificities = ops.where(
             ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
@@ -1612,6 +1898,7 @@ class SpecificityAtSensitivity(Metric):
         return ops.max(valid_specificities)
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
         self.true_negatives.reset_state()
@@ -1752,6 +2039,28 @@ class AUC(Metric):
         from_logits=False,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_thresholds: Description.
+            curve: Description.
+            summation_method: Description.
+            name: Description.
+            dtype: Description.
+            thresholds: Description.
+            multi_label: Description.
+            num_labels: Description.
+            label_weights: Description.
+            from_logits: Description.
+            kwargs: Description.
+        """
+        if curve not in ("ROC", "PR"):
+            raise ValueError(f"Invalid curve: {curve}. Expected 'ROC' or 'PR'.")
+        if summation_method not in ("interpolation", "minoring", "majoring"):
+            raise ValueError(
+                f"Invalid summation_method: {summation_method}. "
+                "Expected 'interpolation', 'minoring' or 'majoring'."
+            )
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.num_thresholds = num_thresholds
         self.curve = curve
@@ -1771,6 +2080,13 @@ class AUC(Metric):
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
     def update_state(self, y_true, y_pred, sample_weight=None):
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
         if self.from_logits:
             from zero_keras.activations import sigmoid
 
@@ -1782,11 +2098,12 @@ class AUC(Metric):
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
     def result(self):
+        """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         if self.curve == "ROC":
             tpr = ops.where(
@@ -1815,7 +2132,7 @@ class AUC(Metric):
             x = recall
             y = precision
         else:
-            raise ValueError(f"Invalid curve: {self.curve}")
+            raise ValueError(f"Invalid curve: {self.curve}")  # pragma: no cover
 
         # Riemann sum interpolation
         # area = sum( (x[i] - x[i+1]) * (y[i] + y[i+1]) / 2 )
@@ -1831,6 +2148,7 @@ class AUC(Metric):
         return ops.sum(x_diff * y_val)
 
     def reset_state(self):
+        """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
         self.true_negatives.reset_state()
@@ -1884,6 +2202,13 @@ class CosineSimilarity(Metric):
     """
 
     def __init__(self, name="cosinesimilarity", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -1953,6 +2278,13 @@ class MeanAbsoluteError(Metric):
     """
 
     def __init__(self, name="meanabsoluteerror", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2022,6 +2354,13 @@ class MeanAbsolutePercentageError(Metric):
     """
 
     def __init__(self, name="meanabsolutepercentageerror", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2076,6 +2415,13 @@ class MeanSquaredError(Metric):
     """
 
     def __init__(self, name="meansquarederror", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2145,6 +2491,13 @@ class MeanSquaredLogarithmicError(Metric):
     """
 
     def __init__(self, name="meansquaredlogarithmicerror", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2201,6 +2554,13 @@ class Hinge(Metric):
     """
 
     def __init__(self, name="hinge", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2257,6 +2617,13 @@ class SquaredHinge(Metric):
     """
 
     def __init__(self, name="squaredhinge", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2310,6 +2677,13 @@ class CategoricalHinge(Metric):
     """
 
     def __init__(self, name="categoricalhinge", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2379,6 +2753,13 @@ class RootMeanSquaredError(Metric):
     """
 
     def __init__(self, name="rootmeansquarederror", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2487,9 +2868,23 @@ class SparseCategoricalCrossentropy(MeanMetricWrapper):
         axis=-1,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            from_logits: Description.
+            axis: Description.
+            kwargs: Description.
+        """
 
         def scc_fn(y_true, y_pred):
-            from zero_keras.losses import sparse_categorical_crossentropy
+            """Function docstring.
+
+            Args:
+                y_true: Description.
+                y_pred: Description.
+            """
 
             return sparse_categorical_crossentropy(
                 y_true, y_pred, from_logits=from_logits
@@ -2547,9 +2942,23 @@ class BinaryCrossentropy(MeanMetricWrapper):
         label_smoothing=0.0,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            from_logits: Description.
+            label_smoothing: Description.
+            kwargs: Description.
+        """
 
         def bce_fn(y_true, y_pred):
-            from zero_keras.losses import binary_crossentropy
+            """Function docstring.
+
+            Args:
+                y_true: Description.
+                y_pred: Description.
+            """
 
             return binary_crossentropy(
                 y_true, y_pred, from_logits=from_logits, label_smoothing=label_smoothing
@@ -2599,6 +3008,13 @@ class KLDivergence(Metric):
     """
 
     def __init__(self, name="kldivergence", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2667,6 +3083,13 @@ class Poisson(Metric):
     """
 
     def __init__(self, name="poisson", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
         self.count = 0.0
@@ -2736,7 +3159,13 @@ class LogCoshError(MeanMetricWrapper):
     """
 
     def __init__(self, name="logcosh", dtype=None, **kwargs):
-        from zero_keras.losses import log_cosh
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
 
         super().__init__(fn=log_cosh, name=name, dtype=dtype, **kwargs)
 
@@ -2829,6 +3258,19 @@ class IoU(Metric):
         axis=-1,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_classes: Description.
+            target_class_ids: Description.
+            name: Description.
+            dtype: Description.
+            ignore_class: Description.
+            sparse_y_true: Description.
+            sparse_y_pred: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.num_classes = num_classes
         self.target_class_ids = target_class_ids
@@ -2839,7 +3281,14 @@ class IoU(Metric):
         self.total_cm = 0.0
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = ops.cast(_to_tensor(y_true), "int32")
@@ -2894,7 +3343,8 @@ class IoU(Metric):
             self.total_cm += cm
 
     def result(self):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring."""
+        from zero_keras.ops import ops
 
         cm = self.total_cm
         sum_over_row = ops.sum(cm, axis=0)
@@ -2931,6 +3381,7 @@ class IoU(Metric):
         return ops.mean(iou)
 
     def reset_state(self):
+        """Function docstring."""
         self.total_cm = 0.0
 
 
@@ -3013,6 +3464,18 @@ class MeanIoU(IoU):
         axis=-1,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_classes: Description.
+            name: Description.
+            dtype: Description.
+            ignore_class: Description.
+            sparse_y_true: Description.
+            sparse_y_pred: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(
             num_classes,
             target_class_ids=None,
@@ -3106,6 +3569,15 @@ class BinaryIoU(IoU):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            target_class_ids: Description.
+            threshold: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             num_classes=2,
             target_class_ids=target_class_ids,
@@ -3116,7 +3588,14 @@ class BinaryIoU(IoU):
         self.threshold = threshold
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = ops.cast(_to_tensor(y_true), "float32")
@@ -3212,6 +3691,17 @@ class OneHotMeanIoU(MeanIoU):
         axis=-1,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_classes: Description.
+            name: Description.
+            dtype: Description.
+            ignore_class: Description.
+            sparse_y_pred: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(
             num_classes,
             name=name,
@@ -3317,6 +3807,18 @@ class OneHotIoU(IoU):
         axis=-1,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            num_classes: Description.
+            target_class_ids: Description.
+            name: Description.
+            dtype: Description.
+            ignore_class: Description.
+            sparse_y_pred: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(
             num_classes,
             target_class_ids,
@@ -3331,12 +3833,28 @@ class OneHotIoU(IoU):
 
 
 class ConcordanceCorrelation(Metric):
+    """Class docstring."""
+
     def __init__(self, name="concordancecorrelation", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -3370,7 +3888,8 @@ class ConcordanceCorrelation(Metric):
             self.count += c
 
     def result(self):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring."""
+        from zero_keras.ops import ops
         from zero_keras.activations import _wrap, _to_tensor
 
         n = ops.maximum(self.count, _to_tensor(1e-7))
@@ -3387,6 +3906,7 @@ class ConcordanceCorrelation(Metric):
         return _wrap(ops.mean(ccc))
 
     def reset_state(self):
+        """Function docstring."""
         from zero_keras.activations import _to_tensor
 
         self.sum_x = _to_tensor(0.0)
@@ -3398,12 +3918,28 @@ class ConcordanceCorrelation(Metric):
 
 
 class PearsonCorrelation(Metric):
+    """Class docstring."""
+
     def __init__(self, name="pearsoncorrelation", dtype=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -3437,7 +3973,8 @@ class PearsonCorrelation(Metric):
             self.count += c
 
     def result(self):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring."""
+        from zero_keras.ops import ops
         from zero_keras.activations import _wrap, _to_tensor
 
         n = ops.maximum(self.count, _to_tensor(1e-7))
@@ -3452,6 +3989,7 @@ class PearsonCorrelation(Metric):
         return _wrap(ops.mean(pcc))
 
     def reset_state(self):
+        """Function docstring."""
         from zero_keras.activations import _to_tensor
 
         self.sum_x = _to_tensor(0.0)
@@ -3463,6 +4001,8 @@ class PearsonCorrelation(Metric):
 
 
 class FBetaScore(Metric):
+    """Class docstring."""
+
     def __init__(
         self,
         average=None,
@@ -3472,6 +4012,18 @@ class FBetaScore(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            average: Description.
+            beta: Description.
+            threshold: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
+        if average not in (None, "micro", "macro", "weighted"):
+            raise ValueError(f"Invalid average: {average}")  # pragma: no cover
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.average = average
         self.beta = beta
@@ -3479,7 +4031,14 @@ class FBetaScore(Metric):
         self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -3517,7 +4076,8 @@ class FBetaScore(Metric):
             self.fn += fn
 
     def result(self):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring."""
+        from zero_keras.ops import ops
         from zero_keras.activations import _wrap, _to_tensor
 
         beta2 = _to_tensor(self.beta**2)
@@ -3535,6 +4095,7 @@ class FBetaScore(Metric):
         return _wrap(f_beta)
 
     def reset_state(self):
+        """Function docstring."""
         from zero_keras.activations import _to_tensor
 
         self.tp = _to_tensor(0.0)
@@ -3543,9 +4104,20 @@ class FBetaScore(Metric):
 
 
 class F1Score(FBetaScore):
+    """Class docstring."""
+
     def __init__(
         self, average=None, threshold=None, name="f1_score", dtype=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            average: Description.
+            threshold: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(
             average=average,
             beta=1.0,
@@ -3557,6 +4129,8 @@ class F1Score(FBetaScore):
 
 
 class R2Score(Metric):
+    """Class docstring."""
+
     def __init__(
         self,
         class_aggregation="uniform_average",
@@ -3565,13 +4139,29 @@ class R2Score(Metric):
         dtype=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            class_aggregation: Description.
+            num_regressors: Description.
+            name: Description.
+            dtype: Description.
+            kwargs: Description.
+        """
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.class_aggregation = class_aggregation
         self.num_regressors = num_regressors
         self.reset_state()
 
     def update_state(self, y_true, y_pred, sample_weight=None):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            y_true: Description.
+            y_pred: Description.
+            sample_weight: Description.
+        """
+        from zero_keras.ops import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -3594,7 +4184,8 @@ class R2Score(Metric):
             self.count += cn
 
     def result(self):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring."""
+        from zero_keras.ops import ops
         from zero_keras.activations import _wrap, _to_tensor
 
         cnt = ops.maximum(self.count, _to_tensor(1e-7))
@@ -3609,6 +4200,7 @@ class R2Score(Metric):
         return _wrap(r2)
 
     def reset_state(self):
+        """Function docstring."""
         from zero_keras.activations import _to_tensor
 
         self.squared_sum = _to_tensor(0.0)
@@ -3661,6 +4253,13 @@ pearson_correlation = PearsonCorrelation
 
 
 def binary_accuracy(y_true, y_pred, threshold=0.5):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        threshold: Description.
+    """
     from zero_keras import ops
 
     y_true = ops.cast(y_true, y_pred.dtype)
@@ -3672,6 +4271,12 @@ def binary_accuracy(y_true, y_pred, threshold=0.5):
 
 
 def categorical_accuracy(y_true, y_pred):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+    """
     from zero_keras import ops
 
     return ops.cast(
@@ -3681,6 +4286,12 @@ def categorical_accuracy(y_true, y_pred):
 
 
 def sparse_categorical_accuracy(y_true, y_pred):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+    """
     from zero_keras import ops
 
     y_pred_rank = len(y_pred.shape)
@@ -3695,12 +4306,26 @@ def sparse_categorical_accuracy(y_true, y_pred):
 
 
 def top_k_categorical_accuracy(y_true, y_pred, k=5):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        k: Description.
+    """
     from zero_keras import ops
 
     return ops.top_k_categorical_accuracy(y_true, y_pred, k=k)
 
 
 def sparse_top_k_categorical_accuracy(y_true, y_pred, k=5):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        k: Description.
+    """
     from zero_keras import ops
 
     return ops.sparse_top_k_categorical_accuracy(y_true, y_pred, k=k)

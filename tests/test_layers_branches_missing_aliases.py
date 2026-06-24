@@ -1,8 +1,11 @@
+"""Module docstring."""
+
 import numpy as np
 import zero_keras.layers as layers
 
 
 def test_conv_aliases_activation_none():
+    """Function docstring."""
     for cls, in_shape in [
         (layers.Convolution1D, (2, 5, 3)),
         (layers.Convolution1DTranspose, (2, 5, 3)),
@@ -16,6 +19,7 @@ def test_conv_aliases_activation_none():
 
 
 def test_conv_aliases_preset_weights():
+    """Function docstring."""
     # 1D
     l = layers.Convolution1D(2, 2)
     l.kernel = 1

@@ -1,8 +1,11 @@
+"""Module docstring."""
+
 import numpy as np
 import zero_keras.layers as layers
 
 
 def test_preset_weights_convs():
+    """Function docstring."""
     # DepthwiseConv1D
     l = layers.DepthwiseConv1D(2)
     l.kernel = 1
@@ -35,6 +38,7 @@ def test_preset_weights_convs():
 
 
 def test_preset_weights_rnn_cells():
+    """Function docstring."""
     # SimpleRNNCell
     c = layers.SimpleRNNCell(4)
     c.kernel = 1
@@ -65,16 +69,19 @@ def test_preset_weights_rnn_cells():
 
 
 def test_simplernn_activation_none():
+    """Function docstring."""
     l = layers.SimpleRNN(4, activation=None)
     l(np.random.rand(2, 3, 2))
 
 
 def test_convlstm_bias_none():
+    """Function docstring."""
     l = layers.ConvLSTM1D(2, 3, use_bias=False)
     l(np.random.rand(2, 3, 5, 2))
 
 
 def test_wrapper_already_built():
+    """Function docstring."""
     # TimeDistributed already built wrapper
     l = layers.Dense(4)
     t = layers.TimeDistributed(l)
@@ -89,12 +96,28 @@ def test_wrapper_already_built():
 
 
 def test_bidirectional_args():
+    """Function docstring."""
+
     class DummyCell:
+        """Class docstring."""
+
         def __init__(self, units):
+            """Function docstring.
+
+            Args:
+                units: Description.
+            """
             self.units = units
 
     class DummyLayer(layers.Layer):
+        """Class docstring."""
+
         def __init__(self, cell):
+            """Function docstring.
+
+            Args:
+                cell: Description.
+            """
             super().__init__()
             self.cell = cell
             self.return_sequences = False

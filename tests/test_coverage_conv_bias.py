@@ -1,9 +1,12 @@
+"""Module docstring."""
+
 from zero_keras.layers import Conv1D, Conv2D, Conv3D
 import numpy as np
 from ml_switcheroo_compiler.ops import asarray
 
 
 def test_layers_conv_channels_first_with_bias():
+    """Function docstring."""
     # 2793->2794
     c1 = Conv1D(2, 2, data_format="channels_first", use_bias=True)
     c1.build((None, 3, 10))

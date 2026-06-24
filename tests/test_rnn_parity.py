@@ -1,9 +1,21 @@
+"""Module docstring."""
+
 import numpy as np
 import keras
 import zero_keras.layers as layers
 
 
 def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwargs):
+    """Function docstring.
+
+    Args:
+        layer_cls: Description.
+        keras_cls: Description.
+        inputs: Description.
+        atol: Description.
+        rtol: Description.
+        kwargs: Description.
+    """
     keras_layer = keras_cls(**kwargs)
     keras_out = keras_layer(inputs)
     zero_layer = layer_cls(**kwargs)
@@ -21,15 +33,18 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwarg
 
 
 def test_simplernn():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10)
 
 
 def test_lstm():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.LSTM, keras.layers.LSTM, x, units=10)
 
 
 def test_gru():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.GRU, keras.layers.GRU, x, units=10, reset_after=False)

@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from zero_keras.distribution import (
     DeviceMesh,
     LayoutMap,
@@ -10,6 +12,7 @@ from zero_keras.distribution import (
 
 
 def test_distribution():
+    """Function docstring."""
     mesh = DeviceMesh((2, 2), ("x", "y"))
     assert mesh.shape == (2, 2)
     assert mesh.axis_names == ("x", "y")
@@ -35,14 +38,20 @@ def test_distribution():
             ) as mock_shard:
 
                 class FakeData:
+                    """Class docstring."""
+
                     id = 1
 
                 class FakeTensor:
+                    """Class docstring."""
+
                     data = FakeData()
                     shape = (2, 2)
                     dtype = "float32"
 
                 class FakeInput:
+                    """Class docstring."""
+
                     _tensor = FakeTensor()
                     shape = (2, 2)
 

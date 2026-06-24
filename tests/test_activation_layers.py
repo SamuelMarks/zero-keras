@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import numpy as np
 import pytest
 import keras
@@ -8,14 +10,17 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed():
+    """Function docstring."""
     set_seed(42)
 
 
 def get_x():
+    """Function docstring."""
     return np.array([[-3.0, -1.0, 0.0], [0.5, 1.0, 3.0]], dtype=np.float32)
 
 
 def test_layer_Activation():
+    """Function docstring."""
     x = get_x()
     keras_layer = keras.layers.Activation("relu")
     zero_layer = layers.Activation("relu")
@@ -27,6 +32,7 @@ def test_layer_Activation():
 
 
 def test_layer_ELU():
+    """Function docstring."""
     x = get_x()
     keras_layer = keras.layers.ELU(alpha=0.5)
     zero_layer = layers.ELU(alpha=0.5)
@@ -34,6 +40,7 @@ def test_layer_ELU():
 
 
 def test_layer_LeakyReLU():
+    """Function docstring."""
     x = get_x()
     keras_layer = keras.layers.LeakyReLU(negative_slope=0.2)
     zero_layer = layers.LeakyReLU(negative_slope=0.2)
@@ -41,6 +48,7 @@ def test_layer_LeakyReLU():
 
 
 def test_layer_PReLU():
+    """Function docstring."""
     x = get_x()
     # PReLU has weights, we need to initialize them and then copy weights from keras to zero.
     # By default, weights are initialized to zeros.
@@ -55,6 +63,7 @@ def test_layer_PReLU():
 
 
 def test_layer_ReLU():
+    """Function docstring."""
     x = get_x()
     keras_layer = keras.layers.ReLU(max_value=1.0, negative_slope=0.1, threshold=0.5)
     zero_layer = layers.ReLU(max_value=1.0, negative_slope=0.1, threshold=0.5)
@@ -62,6 +71,7 @@ def test_layer_ReLU():
 
 
 def test_layer_Softmax():
+    """Function docstring."""
     x = get_x()
     keras_layer = keras.layers.Softmax(axis=-1)
     zero_layer = layers.Softmax(axis=-1)

@@ -1,8 +1,11 @@
+"""Module docstring."""
+
 import numpy as np
 from zero_keras import layers
 
 
 def test_equalization():
+    """Function docstring."""
     layer = layers.Equalization()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -10,6 +13,7 @@ def test_equalization():
 
 
 def test_augmix():
+    """Function docstring."""
     layer = layers.AugMix()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -17,6 +21,7 @@ def test_augmix():
 
 
 def test_auto_contrast():
+    """Function docstring."""
     layer = layers.AutoContrast()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -24,6 +29,7 @@ def test_auto_contrast():
 
 
 def test_center_crop():
+    """Function docstring."""
     layer = layers.CenterCrop(height=5, width=5)
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -31,6 +37,7 @@ def test_center_crop():
 
 
 def test_cutmix():
+    """Function docstring."""
     layer = layers.CutMix()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -38,6 +45,7 @@ def test_cutmix():
 
 
 def test_mixup():
+    """Function docstring."""
     layer = layers.MixUp()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -45,6 +53,7 @@ def test_mixup():
 
 
 def test_random_flip():
+    """Function docstring."""
     layer = layers.RandomFlip()
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -52,6 +61,7 @@ def test_random_flip():
 
 
 def test_random_rotation():
+    """Function docstring."""
     layer = layers.RandomRotation(0.2)
     x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
     layer(x, training=True)
@@ -59,6 +69,7 @@ def test_random_rotation():
 
 
 def test_resizing():
+    """Function docstring."""
     layer = layers.Resizing(10, 10)
     x = np.random.uniform(size=(2, 20, 20, 3)).astype(np.float32)
     layer(x, training=True)
@@ -66,6 +77,7 @@ def test_resizing():
 
 
 def test_category_encoding():
+    """Function docstring."""
     layer = layers.CategoryEncoding(num_tokens=4, output_mode="one_hot")
     x = np.array([1, 2]).astype(np.int32)
     out = layer(x)
@@ -84,6 +96,7 @@ def test_category_encoding():
 
 
 def test_multi_head_attention():
+    """Function docstring."""
     layer = layers.MultiHeadAttention(num_heads=2, key_dim=2)
     q = np.random.uniform(size=(2, 10, 4)).astype(np.float32)
     v = np.random.uniform(size=(2, 5, 4)).astype(np.float32)
@@ -92,5 +105,6 @@ def test_multi_head_attention():
 
 
 def test_alpha_dropout():
+    """Function docstring."""
     layer = layers.AlphaDropout(0.5)
     layer(np.random.uniform(size=(2, 10)).astype(np.float32), training=True)

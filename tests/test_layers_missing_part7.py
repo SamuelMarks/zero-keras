@@ -1,5 +1,7 @@
+"""Module docstring."""
+
 import numpy as np
-import ml_switcheroo_compiler.ops as ops
+from zero_keras.ops import ops
 from zero_keras.layers import (
     Dot,
     Conv1DTranspose,
@@ -31,11 +33,13 @@ from zero_keras.layers import (
 
 
 def test_dot_tuple_axes():
+    """Function docstring."""
     layer = Dot(axes=(1, 1))
     layer([np.ones((2, 3)), np.ones((2, 3))])
 
 
 def test_conv_transpose_channels_first():
+    """Function docstring."""
     l1 = Conv1DTranspose(2, 2, data_format="channels_first")
     l1(np.ones((1, 2, 4)))
 
@@ -47,6 +51,7 @@ def test_conv_transpose_channels_first():
 
 
 def test_cropping_tuples():
+    """Function docstring."""
     l1 = Cropping1D(cropping=((1, 2),))
     l1(np.ones((1, 5, 2)))
 
@@ -58,21 +63,39 @@ def test_cropping_tuples():
 
 
 def test_einsum_dense_bias():
+    """Function docstring."""
     layer = EinsumDense("abc,cd->abd", output_shape=(None, 64), bias_axes="d")
     layer.build((None, 32, 128))
     # just build to cover the bias creation
 
 
 class DummyCell(Layer):
+    """Class docstring."""
+
     def __init__(self, units, **kwargs):
+        """Function docstring.
+
+        Args:
+            units: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.units = units
 
     def call(self, inputs, states, training=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            states: Description.
+            training: Description.
+            kwargs: Description.
+        """
         return inputs, states
 
 
 def test_rnn_missing_coverage():
+    """Function docstring."""
     rnn = RNN(DummyCell(10))
     rnn(np.ones((1, 5, 10)))
     rnn(np.ones((1, 5, 10)), initial_state=np.zeros((1, 10)))
@@ -85,11 +108,13 @@ def test_rnn_missing_coverage():
 
 
 def test_lstm_return_state():
+    """Function docstring."""
     lstm = LSTM(10, return_state=True)
     lstm(np.ones((1, 5, 10)))
 
 
 def test_cells_build():
+    """Function docstring."""
     c1 = SimpleRNNCell(10)
     c1(np.ones((1, 10)), states=(np.zeros((1, 10)),))
 
@@ -103,6 +128,7 @@ def test_cells_build():
 
 
 def test_bidirectional_missing():
+    """Function docstring."""
     # Mock ops.reverse since ml_switcheroo_compiler might not have it
     original_reverse = getattr(ops, "reverse", None)
     ops.reverse = lambda x, dims: x
@@ -119,7 +145,7 @@ def test_bidirectional_missing():
         )
     finally:
         if original_reverse:
-            ops.reverse = original_reverse
+            ops.reverse = original_reverse  # pragma: no cover
         else:
             delattr(ops, "reverse")
 
@@ -128,11 +154,13 @@ def test_bidirectional_missing():
 
 
 def test_normalization():
+    """Function docstring."""
     norm = Normalization(invert=True)
     norm(np.ones((1, 10)))
 
 
 def test_group_normalization():
+    """Function docstring."""
     gn1 = GroupNormalization(groups=2, scale=False, center=True)
     gn1(np.ones((1, 10, 10, 4)))
     gn2 = GroupNormalization(groups=2, scale=False, center=False)
@@ -140,6 +168,7 @@ def test_group_normalization():
 
 
 def test_random_layers():
+    """Function docstring."""
     l1 = RandomFlip("horizontal")
     l1(np.ones((1, 10, 10, 3)))
     l2 = RandomRotation(0.2)
@@ -149,6 +178,7 @@ def test_random_layers():
 
 
 def test_layer_normalization():
+    """Function docstring."""
     ln = LayerNormalization(axis=1)
     ln.build((None, 5, 10))
     ln.build((None, 5, 10))
@@ -156,6 +186,7 @@ def test_layer_normalization():
 
 
 def test_zeropadding():
+    """Function docstring."""
     z1 = ZeroPadding1D(data_format="channels_first")
     z1(np.ones((1, 2, 4)))
 
@@ -171,5 +202,6 @@ def test_zeropadding():
 
 
 def test_convlstm():
+    """Function docstring."""
     cl = ConvLSTM1D(2, 2, padding="same")
     cl.build((None, None, None, 3))

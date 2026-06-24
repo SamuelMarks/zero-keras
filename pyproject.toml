@@ -8,18 +8,16 @@ version = "0.1.0"
 description = "Zero-dependency pure Python implementation of the Keras API surface."
 authors = [{ name = "Samuel Marks" }]
 requires-python = ">=3.9"
-dynamic = ["dependencies"]
+dynamic = ["dependencies", "optional-dependencies"]
 
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
 
-[project.optional-dependencies]
-test = ["pytest", "pytest-cov"]
+[tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
+test = ["requirements-test.txt"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
-
-dependencies = ["ml-switcheroo-compiler"]
 
 [tool.ruff.lint]
 per-file-ignores = {"tests/*" = ["E741", "F841"], "parse_*.py" = ["E741"]}
@@ -31,3 +29,7 @@ testpaths = ["tests"]
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.uv.sources]
+ml-switcheroo-compiler = { path = "../ml-switcheroo-compiler", editable = true }
+ml-switcheroo-ir = { path = "../ml-switcheroo-ir", editable = true }

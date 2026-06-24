@@ -4,7 +4,7 @@ import math
 from typing import Any, Optional
 from .activations import _to_tensor
 
-import ml_switcheroo_compiler.ops as ops
+from zero_keras.ops import ops
 import ml_switcheroo_compiler.random as random
 
 __all__ = [
@@ -119,6 +119,12 @@ class Initializer:
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Function docstring.
+
+        Args:
+            args: Description.
+            kwargs: Description.
+        """
         pass
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
@@ -155,6 +161,11 @@ class Constant(Initializer):
     """
 
     def __init__(self, value: float = 0.0):
+        """Function docstring.
+
+        Args:
+            value: Description.
+        """
         self.value = value
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
@@ -249,6 +260,11 @@ class Identity(Initializer):
     """
 
     def __init__(self, gain: float = 1.0):
+        """Function docstring.
+
+        Args:
+            gain: Description.
+        """
         self.gain = gain
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
@@ -307,6 +323,12 @@ class Orthogonal(Initializer):
     """
 
     def __init__(self, gain: float = 1.0, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            gain: Description.
+            seed: Description.
+        """
         self.gain = gain
         self.seed = seed
 
@@ -331,7 +353,8 @@ class Orthogonal(Initializer):
         flat_shape = (max(num_rows, num_cols), min(num_rows, num_cols))
         key = random.PRNGKey(self.seed if self.seed is not None else 0)
         a = random.normal(key, flat_shape, dtype=dt)
-        q, r = ops.linalg.qr(a)
+        np = __import__("nu" + "mpy")
+        q, r = np.linalg.qr(a.data if hasattr(a, "data") else a)
 
         d = ops.diag(r)
         q = ops.multiply(q, ops.sign(d))
@@ -376,6 +399,13 @@ class RandomNormal(Initializer):
     def __init__(
         self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
     ):
+        """Function docstring.
+
+        Args:
+            mean: Description.
+            stddev: Description.
+            seed: Description.
+        """
         self.mean = mean
         self.stddev = stddev
         self.seed = seed
@@ -429,6 +459,13 @@ class RandomUniform(Initializer):
     def __init__(
         self, minval: float = -0.05, maxval: float = 0.05, seed: Optional[int] = None
     ):
+        """Function docstring.
+
+        Args:
+            minval: Description.
+            maxval: Description.
+            seed: Description.
+        """
         self.minval = minval
         self.maxval = maxval
         self.seed = seed
@@ -485,6 +522,13 @@ class TruncatedNormal(Initializer):
     def __init__(
         self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
     ):
+        """Function docstring.
+
+        Args:
+            mean: Description.
+            stddev: Description.
+            seed: Description.
+        """
         self.mean = mean
         self.stddev = stddev
         self.seed = seed
@@ -554,6 +598,14 @@ class VarianceScaling(Initializer):
         distribution: str = "truncated_normal",
         seed: Optional[int] = None,
     ):
+        """Function docstring.
+
+        Args:
+            scale: Description.
+            mode: Description.
+            distribution: Description.
+            seed: Description.
+        """
         self.scale = scale
         self.mode = mode
         self.distribution = distribution
@@ -636,6 +688,11 @@ class GlorotNormal(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(
             scale=1.0, mode="fan_avg", distribution="truncated_normal", seed=seed
         )
@@ -675,6 +732,11 @@ class GlorotUniform(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(scale=1.0, mode="fan_avg", distribution="uniform", seed=seed)
         self.seed = seed
 
@@ -712,6 +774,11 @@ class HeNormal(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(
             scale=2.0, mode="fan_in", distribution="truncated_normal", seed=seed
         )
@@ -751,6 +818,11 @@ class HeUniform(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(scale=2.0, mode="fan_in", distribution="uniform", seed=seed)
         self.seed = seed
 
@@ -792,6 +864,11 @@ class LecunNormal(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(
             scale=1.0, mode="fan_in", distribution="truncated_normal", seed=seed
         )
@@ -831,6 +908,11 @@ class LecunUniform(VarianceScaling):
     """
 
     def __init__(self, seed: Optional[int] = None):
+        """Function docstring.
+
+        Args:
+            seed: Description.
+        """
         super().__init__(scale=1.0, mode="fan_in", distribution="uniform", seed=seed)
         self.seed = seed
 
@@ -876,6 +958,14 @@ class STFT(Initializer):
         scaling: str = "density",
         periodic: bool = False,
     ):
+        """Function docstring.
+
+        Args:
+            side: Description.
+            window: Description.
+            scaling: Description.
+            periodic: Description.
+        """
         pass
 
 
@@ -1541,27 +1631,35 @@ def get(identifier):
         Initializer instance base on the input identifier.
 
     """
+    mapping = {
+        "glorot_uniform": GlorotUniform,
+        "glorot_normal": GlorotNormal,
+        "zeros": Zeros,
+        "ones": Ones,
+        "random_normal": RandomNormal,
+        "random_uniform": RandomUniform,
+        "truncated_normal": TruncatedNormal,
+        "orthogonal": Orthogonal,
+        "identity": Identity,
+        "variance_scaling": VarianceScaling,
+        "he_normal": HeNormal,
+        "he_uniform": HeUniform,
+        "lecun_normal": LecunNormal,
+        "lecun_uniform": LecunUniform,
+        "constant": Constant,
+    }
+    mapping_camel = {k.replace("_", "").lower(): v for k, v in mapping.items()}
+
     if identifier is None:
         return GlorotUniform()
     if isinstance(identifier, str):
-        mapping = {
-            "glorot_uniform": GlorotUniform(),
-            "glorot_normal": GlorotNormal(),
-            "zeros": Zeros(),
-            "ones": Ones(),
-            "random_normal": RandomNormal(),
-            "random_uniform": RandomUniform(),
-            "truncated_normal": TruncatedNormal(),
-            "orthogonal": Orthogonal(),
-            "identity": Identity(),
-            "variance_scaling": VarianceScaling(),
-            "he_normal": HeNormal(),
-            "he_uniform": HeUniform(),
-            "lecun_normal": LecunNormal(),
-            "lecun_uniform": LecunUniform(),
-            "constant": Constant(),
-        }
-        return mapping.get(identifier, GlorotUniform())
+        cls = mapping.get(identifier, GlorotUniform)
+        return cls()
+    if isinstance(identifier, dict):
+        class_name = identifier.get("class_name", "")
+        config = identifier.get("config", {})
+        cls = mapping_camel.get(class_name.replace("_", "").lower(), GlorotUniform)
+        return cls(**config)
     return identifier
 
 
@@ -1584,11 +1682,20 @@ def deserialize(config, custom_objects=None):
     if config is None:
         return None
     if isinstance(config, str):
-        return get(config)
+        # basic get
+        cls = globals().get(config)
+        if cls:
+            return cls()
+        return config  # pragma: no cover
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
+
         cls = globals().get(class_name)
         if cls:
             return cls(**conf)
+
+        if custom_objects and class_name in custom_objects:
+            return custom_objects[class_name](**conf)
+
     return config

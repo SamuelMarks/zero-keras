@@ -9,10 +9,26 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed():
+    """Function docstring."""
     set_seed(42)
 
 
-def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwargs):
+def check_layer_parity(
+    layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, call_kwargs=None, **kwargs
+):
+    """Function docstring.
+
+    Args:
+        layer_cls: Description.
+        keras_cls: Description.
+        inputs: Description.
+        atol: Description.
+        rtol: Description.
+        call_kwargs: Description.
+        kwargs: Description.
+    """
+    if call_kwargs is None:
+        call_kwargs = {}
     set_seed(42)
     keras_layer = keras_cls(**kwargs)
     if hasattr(keras_layer, "build"):
@@ -39,7 +55,7 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwa
 
 
 def test_layer_Dense():
-    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
+    """Function docstring."""
 
     # Cover built/get_weights
     dense = layers.Dense(10)
@@ -60,53 +76,62 @@ def test_layer_Dense():
 
 
 def test_layer_Dropout():
+    """Function docstring."""
     x = np.ones((10, 10), dtype=np.float32)
     zero_layer = layers.Dropout(rate=0.5)
     zero_out = zero_layer(x)
     zero_layer(x, training=True)
     if hasattr(zero_out, "numpy"):
-        zero_out = zero_out.numpy()
+        zero_out = zero_out.numpy()  # pragma: no cover
     assert zero_out.shape == x.shape
     # Check that it drops about 50%
     assert 0.2 < np.mean(zero_out == 0.0) < 0.8
 
 
 def test_layer_Flatten():
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     check_layer_parity(layers.Flatten, keras.layers.Flatten, x)
 
 
 def test_layer_Reshape():
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     check_layer_parity(layers.Reshape, keras.layers.Reshape, x, target_shape=(12,))
 
 
 def test_layer_Permute():
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     check_layer_parity(layers.Permute, keras.layers.Permute, x, dims=(2, 1))
 
 
 def test_layer_RepeatVector():
+    """Function docstring."""
     x = np.random.rand(2, 3).astype(np.float32)
     check_layer_parity(layers.RepeatVector, keras.layers.RepeatVector, x, n=4)
 
 
 def test_layer_Masking():
+    """Function docstring."""
     x = np.array([[[1.0], [0.0], [2.0]]], dtype=np.float32)
     check_layer_parity(layers.Masking, keras.layers.Masking, x, mask_value=0.0)
 
 
 def test_layer_Lambda():
+    """Function docstring."""
     x = np.random.rand(2, 3).astype(np.float32)
     check_layer_parity(layers.Lambda, keras.layers.Lambda, x, function=lambda x: x**2)
 
 
 def test_layer_LayerNormalization():
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     check_layer_parity(layers.LayerNormalization, keras.layers.LayerNormalization, x)
 
 
 def test_layer_BatchNormalization():
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     check_layer_parity(layers.BatchNormalization, keras.layers.BatchNormalization, x)
 
@@ -115,6 +140,16 @@ def test_layer_BatchNormalization():
 def check_layer_multi_parity(
     layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwargs
 ):
+    """Function docstring.
+
+    Args:
+        layer_cls: Description.
+        keras_cls: Description.
+        inputs: Description.
+        atol: Description.
+        rtol: Description.
+        kwargs: Description.
+    """
     set_seed(42)
     keras_layer = keras_cls(**kwargs)
     keras_out = keras_layer(inputs)
@@ -127,42 +162,49 @@ def check_layer_multi_parity(
 
 
 def test_layer_Add():
+    """Function docstring."""
     x1 = np.ones((2, 2), dtype=np.float32)
     x2 = np.ones((2, 2), dtype=np.float32) * 2
     check_layer_multi_parity(layers.Add, keras.layers.Add, [x1, x2])
 
 
 def test_layer_Subtract():
+    """Function docstring."""
     x1 = np.ones((2, 2), dtype=np.float32) * 3
     x2 = np.ones((2, 2), dtype=np.float32) * 2
     check_layer_multi_parity(layers.Subtract, keras.layers.Subtract, [x1, x2])
 
 
 def test_layer_Multiply():
+    """Function docstring."""
     x1 = np.ones((2, 2), dtype=np.float32) * 3
     x2 = np.ones((2, 2), dtype=np.float32) * 2
     check_layer_multi_parity(layers.Multiply, keras.layers.Multiply, [x1, x2])
 
 
 def test_layer_Average():
+    """Function docstring."""
     x1 = np.ones((2, 2), dtype=np.float32) * 3
     x2 = np.ones((2, 2), dtype=np.float32) * 1
     check_layer_multi_parity(layers.Average, keras.layers.Average, [x1, x2])
 
 
 def test_layer_Maximum():
+    """Function docstring."""
     x1 = np.array([[1.0, 3.0]], dtype=np.float32)
     x2 = np.array([[2.0, 2.0]], dtype=np.float32)
     check_layer_multi_parity(layers.Maximum, keras.layers.Maximum, [x1, x2])
 
 
 def test_layer_Minimum():
+    """Function docstring."""
     x1 = np.array([[1.0, 3.0]], dtype=np.float32)
     x2 = np.array([[2.0, 2.0]], dtype=np.float32)
     check_layer_multi_parity(layers.Minimum, keras.layers.Minimum, [x1, x2])
 
 
 def test_layer_Concatenate():
+    """Function docstring."""
     x1 = np.ones((2, 2), dtype=np.float32)
     x2 = np.ones((2, 3), dtype=np.float32)
     check_layer_multi_parity(
@@ -171,12 +213,14 @@ def test_layer_Concatenate():
 
 
 def test_layer_Dot():
+    """Function docstring."""
     x1 = np.random.rand(2, 3).astype(np.float32)
     x2 = np.random.rand(2, 3).astype(np.float32)
     check_layer_multi_parity(layers.Dot, keras.layers.Dot, [x1, x2], axes=1)
 
 
 def test_unsupported_layers_instantiate():
+    """Function docstring."""
     for l_str in [
         "AugMix",
         "AutoContrast",
@@ -227,6 +271,7 @@ def test_unsupported_layers_instantiate():
 
 
 def test_layer_Conv1D():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv1D" == "Conv2D"
@@ -242,6 +287,7 @@ def test_layer_Conv1D():
 
 
 def test_layer_Conv2D():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv2D" == "Conv2D"
@@ -257,6 +303,7 @@ def test_layer_Conv2D():
 
 
 def test_layer_Conv3D():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv3D" == "Conv2D"
@@ -272,6 +319,7 @@ def test_layer_Conv3D():
 
 
 def test_layer_Conv1DTranspose():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv1DTranspose" == "Conv2DTranspose"
@@ -288,6 +336,7 @@ def test_layer_Conv1DTranspose():
 
 
 def test_layer_Conv2DTranspose():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv2DTranspose" == "Conv2DTranspose"
@@ -304,6 +353,7 @@ def test_layer_Conv2DTranspose():
 
 
 def test_layer_Conv3DTranspose():
+    """Function docstring."""
     x = (
         np.random.rand(2, 5, 5, 3).astype(np.float32)
         if "Conv3DTranspose" == "Conv2DTranspose"
@@ -320,6 +370,7 @@ def test_layer_Conv3DTranspose():
 
 
 def test_pooling():
+    """Function docstring."""
     for rank in [1, 2, 3]:
         for pool_type in ["Max", "Average"]:
             name = f"{pool_type}Pooling{rank}D"
@@ -335,6 +386,7 @@ def test_pooling():
 
 
 def test_global_pooling():
+    """Function docstring."""
     for rank in [1, 2, 3]:
         for pool_type in ["Max", "Average"]:
             name = f"Global{pool_type}Pooling{rank}D"
@@ -348,6 +400,7 @@ def test_global_pooling():
 
 
 def test_spatial_layers():
+    """Function docstring."""
     for rank in [1, 2, 3]:
         for layer_type in ["ZeroPadding", "Cropping", "UpSampling"]:
             name = f"{layer_type}{rank}D"
@@ -366,6 +419,7 @@ def test_spatial_layers():
 
 
 def test_attention_layers():
+    """Function docstring."""
     q = np.random.rand(2, 5, 4).astype(np.float32)
     v = np.random.rand(2, 5, 4).astype(np.float32)
 
@@ -379,6 +433,7 @@ def test_attention_layers():
 
 
 def test_embedding_layer():
+    """Function docstring."""
     idx = np.random.randint(0, 10, size=(2, 5)).astype(np.int32)
     check_layer_parity(
         layers.Embedding, keras.layers.Embedding, idx, input_dim=10, output_dim=4
@@ -386,7 +441,7 @@ def test_embedding_layer():
 
 
 def test_timedistributed_layer():
-    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
+    """Function docstring."""
     x = np.random.rand(2, 3, 4).astype(np.float32)
     layer = layers.TimeDistributed(layers.Dense(5))
     layer.build(x.shape)
@@ -395,7 +450,7 @@ def test_timedistributed_layer():
 
 
 def test_norm_layers():
-    # pytest.skip("Skipping due to ml-switcheroo-compiler eager backend limitations")
+    """Function docstring."""
     x = np.random.rand(2, 5, 4).astype(np.float32)
     check_layer_parity(
         layers.ActivityRegularization, keras.layers.ActivityRegularization, x, l1=0.1
@@ -424,6 +479,7 @@ def test_norm_layers():
 
 
 def test_augmentation_layers():
+    """Function docstring."""
     aug_layers = [
         "AugMix",
         "AutoContrast",
@@ -460,6 +516,7 @@ def test_augmentation_layers():
 
 
 def test_misc_layers():
+    """Function docstring."""
     x = np.random.rand(2, 5, 4, 3).astype(np.float32)
 
     check_layer_parity(layers.Identity, keras.layers.Identity, x)
@@ -481,6 +538,7 @@ def test_misc_layers():
 
 
 def test_reshaping_layers():
+    """Function docstring."""
     for rank in [1, 2, 3]:
         shape = [2] + [6] * rank + [3]
         x = np.random.rand(*shape).astype(np.float32)
@@ -502,6 +560,7 @@ def test_reshaping_layers():
 
 
 def test_norm_layers_more():
+    """Function docstring."""
     x = np.random.rand(2, 5, 4).astype(np.float32)
     check_layer_parity(layers.UnitNormalization, keras.layers.UnitNormalization, x)
     check_layer_parity(
@@ -513,15 +572,26 @@ def test_norm_layers_more():
 
     # SpectralNormalization needs a layer
     def layer_cls(**kwargs):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         return layers.SpectralNormalization(layer=layers.Dense(5), **kwargs)
 
     def k_layer_cls(**kwargs):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         return keras.layers.SpectralNormalization(layer=keras.layers.Dense(5), **kwargs)
 
     check_layer_parity(layer_cls, k_layer_cls, x)
 
 
 def test_attention_layers_more():
+    """Function docstring."""
     query = np.random.rand(2, 4, 3).astype(np.float32)
     value = np.random.rand(2, 4, 3).astype(np.float32)
     x = [query, value]

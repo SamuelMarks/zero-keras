@@ -1,7 +1,7 @@
 """Keras activations."""
 
 from typing import Any, Dict, Optional
-from ml_switcheroo_compiler import ops
+from zero_keras.ops import ops
 
 
 def _to_tensor(x):
@@ -21,7 +21,7 @@ def _to_tensor(x):
     if isinstance(x, ml_switcheroo_compiler.Tensor):
         return x
     if hasattr(x, "data") and "KerasTensor" in type(x).__name__:
-        return _to_tensor(x.data)
+        return x
     from ml_switcheroo_compiler.ops import asarray as convert_to_tensor
 
     return convert_to_tensor(x)

@@ -6,6 +6,7 @@ from zero_keras import regularizers
 
 
 def test_l2_regularizer():
+    """Function docstring."""
     reg = regularizers.L2(l2=0.01)
     base_reg = regularizers.Regularizer()
     x = np.array([1.0, 2.0])
@@ -15,6 +16,7 @@ def test_l2_regularizer():
 
 
 def test_l1_regularizer():
+    """Function docstring."""
     reg = regularizers.L1(l1=0.01)
     x = np.array([1.0, 2.0])
     assert reg(x) is not None
@@ -22,6 +24,7 @@ def test_l1_regularizer():
 
 
 def test_l1_l2_regularizer():
+    """Function docstring."""
     reg = regularizers.L1L2(l1=0.01, l2=0.01)
     x = np.array([1.0, 2.0])
     assert reg(x) is not None
@@ -37,6 +40,7 @@ def test_l1_l2_regularizer():
 
 
 def test_orthogonal_regularizer():
+    """Function docstring."""
     reg = regularizers.OrthogonalRegularizer(factor=0.01, mode="rows")
     x = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
     assert reg(x) is not None
@@ -54,6 +58,7 @@ def test_orthogonal_regularizer():
 
 
 def test_regularizer_get():
+    """Function docstring."""
     assert regularizers.get(None) is None
     reg = regularizers.L2()
     assert regularizers.get(reg) is reg
@@ -68,6 +73,7 @@ def test_regularizer_get():
 
 
 def test_serialize_deserialize():
+    """Function docstring."""
     reg = regularizers.L2(l2=0.01)
     config = regularizers.serialize(reg)
     assert isinstance(config, dict)
@@ -105,6 +111,8 @@ def test_serialize_deserialize():
     )
 
     class Dummy:
+        """Class docstring."""
+
         pass
 
     assert isinstance(regularizers.serialize(Dummy()), dict)

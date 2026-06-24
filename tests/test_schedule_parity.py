@@ -6,6 +6,13 @@ from .utils import assert_allclose_keras_zero
 
 
 def check_schedule_parity(schedule_cls, keras_cls, **kwargs):
+    """Function docstring.
+
+    Args:
+        schedule_cls: Description.
+        keras_cls: Description.
+        kwargs: Description.
+    """
     keras_sched = keras_cls(**kwargs)
     zero_sched = schedule_cls(**kwargs)
 
@@ -17,6 +24,7 @@ def check_schedule_parity(schedule_cls, keras_cls, **kwargs):
 
 
 def test_schedule_CosineDecay():
+    """Function docstring."""
     check_schedule_parity(
         schedules.CosineDecay,
         keras.optimizers.schedules.CosineDecay,
@@ -34,6 +42,7 @@ def test_schedule_CosineDecay():
 
 
 def test_schedule_ExponentialDecay():
+    """Function docstring."""
     check_schedule_parity(
         schedules.ExponentialDecay,
         keras.optimizers.schedules.ExponentialDecay,
@@ -52,6 +61,7 @@ def test_schedule_ExponentialDecay():
 
 
 def test_schedule_CosineDecayRestarts():
+    """Function docstring."""
     schedules.CosineDecayRestarts(0.1, 100, t_mul=1.0)(5)
     check_schedule_parity(
         schedules.CosineDecayRestarts,
@@ -62,6 +72,7 @@ def test_schedule_CosineDecayRestarts():
 
 
 def test_schedule_InverseTimeDecay():
+    """Function docstring."""
     check_schedule_parity(
         schedules.InverseTimeDecay,
         keras.optimizers.schedules.InverseTimeDecay,
@@ -80,6 +91,7 @@ def test_schedule_InverseTimeDecay():
 
 
 def test_schedule_PiecewiseConstantDecay():
+    """Function docstring."""
     check_schedule_parity(
         schedules.PiecewiseConstantDecay,
         keras.optimizers.schedules.PiecewiseConstantDecay,
@@ -89,6 +101,7 @@ def test_schedule_PiecewiseConstantDecay():
 
 
 def test_schedule_PolynomialDecay():
+    """Function docstring."""
     check_schedule_parity(
         schedules.PolynomialDecay,
         keras.optimizers.schedules.PolynomialDecay,
@@ -109,5 +122,6 @@ def test_schedule_PolynomialDecay():
 
 
 def test_schedule_LearningRateSchedule():
+    """Function docstring."""
     s = schedules.LearningRateSchedule()
     assert s(0) == 0.0

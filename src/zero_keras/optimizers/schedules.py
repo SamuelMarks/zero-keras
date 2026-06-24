@@ -48,6 +48,11 @@ class LearningRateSchedule:
     """
 
     def __init__(self, **kwargs):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         pass
 
     def __call__(self, step: Union[int, float]) -> float:
@@ -56,6 +61,11 @@ class LearningRateSchedule:
 
     @classmethod
     def from_config(cls, config):
+        """Function docstring.
+
+        Args:
+            config: Description.
+        """
         return cls(**config)
 
 
@@ -165,6 +175,16 @@ class CosineDecay(LearningRateSchedule):
         warmup_target: Optional[float] = None,
         warmup_steps: int = 0,
     ):
+        """Function docstring.
+
+        Args:
+            initial_learning_rate: Description.
+            decay_steps: Description.
+            alpha: Description.
+            name: Description.
+            warmup_target: Description.
+            warmup_steps: Description.
+        """
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.alpha = alpha
@@ -195,6 +215,7 @@ class CosineDecay(LearningRateSchedule):
         return self.initial_learning_rate * decayed
 
     def get_config(self):
+        """Function docstring."""
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "decay_steps": self.decay_steps,
@@ -275,6 +296,15 @@ class ExponentialDecay(LearningRateSchedule):
         staircase: bool = False,
         name: str = "ExponentialDecay",
     ):
+        """Function docstring.
+
+        Args:
+            initial_learning_rate: Description.
+            decay_steps: Description.
+            decay_rate: Description.
+            staircase: Description.
+            name: Description.
+        """
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.decay_rate = decay_rate
@@ -289,6 +319,7 @@ class ExponentialDecay(LearningRateSchedule):
         return self.initial_learning_rate * math.pow(self.decay_rate, p)
 
     def get_config(self):
+        """Function docstring."""
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "decay_steps": self.decay_steps,
@@ -361,6 +392,16 @@ class CosineDecayRestarts(LearningRateSchedule):
         alpha: float = 0.0,
         name: str = "CosineDecayRestarts",
     ):
+        """Function docstring.
+
+        Args:
+            initial_learning_rate: Description.
+            first_decay_steps: Description.
+            t_mul: Description.
+            m_mul: Description.
+            alpha: Description.
+            name: Description.
+        """
         self.initial_learning_rate = initial_learning_rate
         self.first_decay_steps = first_decay_steps
         self.t_mul = t_mul
@@ -402,6 +443,7 @@ class CosineDecayRestarts(LearningRateSchedule):
         return self.initial_learning_rate * math.pow(m_mul, i_restart) * decayed
 
     def get_config(self):
+        """Function docstring."""
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "first_decay_steps": self.first_decay_steps,
@@ -483,6 +525,15 @@ class InverseTimeDecay(LearningRateSchedule):
         staircase: bool = False,
         name: str = "InverseTimeDecay",
     ):
+        """Function docstring.
+
+        Args:
+            initial_learning_rate: Description.
+            decay_steps: Description.
+            decay_rate: Description.
+            staircase: Description.
+            name: Description.
+        """
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.decay_rate = decay_rate
@@ -497,6 +548,7 @@ class InverseTimeDecay(LearningRateSchedule):
         return self.initial_learning_rate / (1.0 + self.decay_rate * p)
 
     def get_config(self):
+        """Function docstring."""
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "decay_steps": self.decay_steps,
@@ -566,6 +618,13 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         values: List[float],
         name: str = "PiecewiseConstantDecay",
     ):
+        """Function docstring.
+
+        Args:
+            boundaries: Description.
+            values: Description.
+            name: Description.
+        """
         self.boundaries = boundaries
         self.values = values
         self.name = name
@@ -578,6 +637,7 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         return self.values[-1]
 
     def get_config(self):
+        """Function docstring."""
         return {"boundaries": self.boundaries, "values": self.values, "name": self.name}
 
 
@@ -673,6 +733,16 @@ class PolynomialDecay(LearningRateSchedule):
         cycle: bool = False,
         name: str = "PolynomialDecay",
     ):
+        """Function docstring.
+
+        Args:
+            initial_learning_rate: Description.
+            decay_steps: Description.
+            end_learning_rate: Description.
+            power: Description.
+            cycle: Description.
+            name: Description.
+        """
         self.initial_learning_rate = initial_learning_rate
         self.decay_steps = decay_steps
         self.end_learning_rate = end_learning_rate
@@ -697,6 +767,7 @@ class PolynomialDecay(LearningRateSchedule):
         ) + self.end_learning_rate
 
     def get_config(self):
+        """Function docstring."""
         return {
             "initial_learning_rate": self.initial_learning_rate,
             "decay_steps": self.decay_steps,

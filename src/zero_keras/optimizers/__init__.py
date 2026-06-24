@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 from zero_keras.activations import _to_tensor
 
 """Keras optimizers."""
@@ -58,6 +60,11 @@ class Optimizer:
     """
 
     def __init__(self, **kwargs):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         self._kwargs = kwargs
         self.variables = []
         self.built = False
@@ -83,7 +90,7 @@ class Optimizer:
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
         import ml_switcheroo_compiler.core.dtype as dtypes
 
         if isinstance(dtype, str):
@@ -222,12 +229,35 @@ class Adadelta(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            rho: Description.
+            epsilon: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.rho = rho
         self.epsilon = epsilon
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.accumulated_grads = []
@@ -242,7 +272,14 @@ class Adadelta(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -386,12 +423,39 @@ class Adafactor(Optimizer):
         name="adafactor",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            factored: Description.
+            multiply_by_parameter_scale: Description.
+            clipping_threshold: Description.
+            beta_2_decay: Description.
+            epsilon_1: Description.
+            epsilon_2: Description.
+            weight_decay: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.factored = factored
         self.epsilon_2 = epsilon_2
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.v = []
@@ -400,7 +464,14 @@ class Adafactor(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -517,17 +588,40 @@ class Adagrad(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            initial_accumulator_value: Description.
+            epsilon: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.initial_accumulator_value = initial_accumulator_value
         self.epsilon = epsilon
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.accumulator = []
         for var in var_list:
-            import ml_switcheroo_compiler.ops as ops
+            from zero_keras.ops import ops
 
             acc = self.add_variable(shape=var.shape, name="accumulator")
             init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
@@ -539,7 +633,14 @@ class Adagrad(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -653,6 +754,15 @@ class Adam(Optimizer):
     def __init__(
         self, learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            beta_1: Description.
+            beta_2: Description.
+            epsilon: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
@@ -691,7 +801,7 @@ class Adam(Optimizer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -842,6 +952,26 @@ class AdamW(Optimizer):
         name="adamw",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            weight_decay: Description.
+            beta_1: Description.
+            beta_2: Description.
+            epsilon: Description.
+            amsgrad: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.weight_decay = weight_decay
@@ -851,6 +981,11 @@ class AdamW(Optimizer):
         self.amsgrad = amsgrad
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -866,7 +1001,14 @@ class AdamW(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1029,6 +1171,25 @@ class Adamax(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            beta_1: Description.
+            beta_2: Description.
+            epsilon: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
@@ -1036,6 +1197,11 @@ class Adamax(Optimizer):
         self.epsilon = epsilon
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -1047,7 +1213,14 @@ class Adamax(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1221,17 +1394,44 @@ class Ftrl(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            learning_rate_power: Description.
+            initial_accumulator_value: Description.
+            l1_regularization_strength: Description.
+            l2_regularization_strength: Description.
+            l2_shrinkage_regularization_strength: Description.
+            beta: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            ema_momentum: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.initial_accumulator_value = initial_accumulator_value
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.z = []
         self.n = []
         for var in var_list:
-            import ml_switcheroo_compiler.ops as ops
+            from zero_keras.ops import ops
 
             n_var = self.add_variable(shape=var.shape, name="n")
             init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
@@ -1244,7 +1444,14 @@ class Ftrl(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1370,6 +1577,25 @@ class Lamb(Optimizer):
         name="lamb",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            beta_1: Description.
+            beta_2: Description.
+            epsilon: Description.
+            weight_decay: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
@@ -1378,6 +1604,11 @@ class Lamb(Optimizer):
         self.weight_decay = weight_decay if weight_decay is not None else 0.0
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -1388,7 +1619,14 @@ class Lamb(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1527,12 +1765,35 @@ class Lion(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            beta_1: Description.
+            beta_2: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
         self.beta_2 = beta_2
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -1541,7 +1802,14 @@ class Lion(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1656,11 +1924,26 @@ class LossScaleOptimizer(Optimizer):
         name="LossScaleOptimizer",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            inner_optimizer: Description.
+            initial_scale: Description.
+            dynamic: Description.
+            dynamic_growth_steps: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.inner_optimizer = inner_optimizer
         self.initial_scale = initial_scale
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         if hasattr(self.inner_optimizer, "build"):
@@ -1668,6 +1951,13 @@ class LossScaleOptimizer(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
@@ -1751,11 +2041,24 @@ class Muon(Optimizer):
         name="muon",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            momentum: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.momentum = momentum
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -1764,7 +2067,14 @@ class Muon(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1885,6 +2195,25 @@ class Nadam(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            beta_1: Description.
+            beta_2: Description.
+            epsilon: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.beta_1 = beta_1
@@ -1892,6 +2221,11 @@ class Nadam(Optimizer):
         self.epsilon = epsilon
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.m = []
@@ -1903,7 +2237,14 @@ class Nadam(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -2060,6 +2401,26 @@ class RMSprop(Optimizer):
         weight_decay=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            rho: Description.
+            momentum: Description.
+            epsilon: Description.
+            centered: Description.
+            use_ema: Description.
+            ema_overwrite_frequency: Description.
+            loss_scale_factor: Description.
+            global_clipnorm: Description.
+            gradient_accumulation_steps: Description.
+            clipnorm: Description.
+            clipvalue: Description.
+            ema_momentum: Description.
+            name: Description.
+            weight_decay: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.rho = rho
@@ -2068,6 +2429,11 @@ class RMSprop(Optimizer):
         self.centered = centered
 
     def build(self, var_list):
+        """Function docstring.
+
+        Args:
+            var_list: Description.
+        """
         if self.built:
             return
         self.v = []
@@ -2084,7 +2450,14 @@ class RMSprop(Optimizer):
         self.built = True
 
     def apply_gradients(self, grads_and_vars, *args, **kwargs):
-        import ml_switcheroo_compiler.ops as ops
+        """Function docstring.
+
+        Args:
+            grads_and_vars: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        from zero_keras.ops import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -2218,6 +2591,14 @@ class SGD(Optimizer):
     """
 
     def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False, **kwargs):
+        """Function docstring.
+
+        Args:
+            learning_rate: Description.
+            momentum: Description.
+            nesterov: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.learning_rate = learning_rate
         self.momentum = momentum
@@ -2255,7 +2636,7 @@ class SGD(Optimizer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops  # noqa: F401
+        from zero_keras.ops import ops  # noqa: F401
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -2292,6 +2673,8 @@ from . import schedules as schedules
 
 # Legacy namespace support
 class legacy:
+    """Class docstring."""
+
     pass
 
 

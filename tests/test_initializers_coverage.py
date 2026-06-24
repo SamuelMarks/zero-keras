@@ -1,4 +1,8 @@
+"""Module docstring."""
+
+
 def test_initializers_coverage():
+    """Function docstring."""
     from zero_keras.initializers import (
         _get_dtype,
         _wrap,
@@ -16,9 +20,13 @@ def test_initializers_coverage():
 
     # 69
     class DummyData:
+        """Class docstring."""
+
         id = 1
 
     class DummyTensorWithDataId:
+        """Class docstring."""
+
         data = DummyData()
         shape = (1, 2)
         dtype = "float32"
@@ -51,6 +59,8 @@ def test_initializers_coverage():
     assert get(None).__class__.__name__ == "GlorotUniform"
 
     class DummyObj:
+        """Class docstring."""
+
         pass
 
     obj = DummyObj()

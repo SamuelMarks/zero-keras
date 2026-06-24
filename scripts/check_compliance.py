@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import re
 import sys
 import importlib
@@ -5,6 +7,7 @@ import os
 
 
 def main():
+    """Function docstring."""
     if not os.path.exists("SEMANTIC_PLAN.md"):
         print("SEMANTIC_PLAN.md not found, skipping compliance check.")
         sys.exit(0)

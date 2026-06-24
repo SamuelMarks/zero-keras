@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import re
 
 with open("KERAS_TODO.md") as f:
@@ -18,6 +20,11 @@ for line in lines:
 
 
 def split_args(s):
+    """Function docstring.
+
+    Args:
+        s: Description.
+    """
     args = []
     current = []
     depth = 0
@@ -50,6 +57,11 @@ def split_args(s):
 
 
 def clean_sig(sig):
+    """Function docstring.
+
+    Args:
+        sig: Description.
+    """
     sig = sig.replace("`", "")
     sig = sig.replace("\\n", " ").replace("\n", " ")
     sig = re.sub(r"\s+", " ", sig)

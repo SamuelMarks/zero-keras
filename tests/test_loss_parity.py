@@ -9,12 +9,24 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed():
+    """Function docstring."""
     set_seed(42)
 
 
 def check_loss_parity(
     loss_cls, keras_cls, y_true, y_pred, atol=1e-5, rtol=1e-5, **kwargs
 ):
+    """Function docstring.
+
+    Args:
+        loss_cls: Description.
+        keras_cls: Description.
+        y_true: Description.
+        y_pred: Description.
+        atol: Description.
+        rtol: Description.
+        kwargs: Description.
+    """
     keras_loss = keras_cls(**kwargs)
     keras_out = keras_loss(y_true, y_pred)
 
@@ -25,6 +37,7 @@ def check_loss_parity(
 
 
 def test_loss_BinaryCrossentropy():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(
@@ -41,6 +54,7 @@ def test_loss_BinaryCrossentropy():
 
 
 def test_loss_BinaryFocalCrossentropy():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(
@@ -61,6 +75,7 @@ def test_loss_BinaryFocalCrossentropy():
 
 
 def test_loss_CategoricalCrossentropy():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -80,6 +95,7 @@ def test_loss_CategoricalCrossentropy():
 
 
 def test_loss_CategoricalFocalCrossentropy():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -99,6 +115,7 @@ def test_loss_CategoricalFocalCrossentropy():
 
 
 def test_loss_SparseCategoricalCrossentropy():
+    """Function docstring."""
     y_true = np.array([0, 1])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -117,6 +134,7 @@ def test_loss_SparseCategoricalCrossentropy():
 
 
 def test_loss_MeanSquaredError():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -125,6 +143,7 @@ def test_loss_MeanSquaredError():
 
 
 def test_loss_MeanAbsoluteError():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -133,6 +152,7 @@ def test_loss_MeanAbsoluteError():
 
 
 def test_loss_MeanAbsolutePercentageError():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -144,6 +164,7 @@ def test_loss_MeanAbsolutePercentageError():
 
 
 def test_loss_MeanSquaredLogarithmicError():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -155,6 +176,7 @@ def test_loss_MeanSquaredLogarithmicError():
 
 
 def test_loss_Huber():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Huber, keras.losses.Huber, y_true, y_pred)
@@ -162,24 +184,28 @@ def test_loss_Huber():
 
 
 def test_loss_LogCosh():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.LogCosh, keras.losses.LogCosh, y_true, y_pred)
 
 
 def test_loss_Hinge():
+    """Function docstring."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.Hinge, keras.losses.Hinge, y_true, y_pred)
 
 
 def test_loss_SquaredHinge():
+    """Function docstring."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.SquaredHinge, keras.losses.SquaredHinge, y_true, y_pred)
 
 
 def test_loss_CategoricalHinge():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -188,6 +214,7 @@ def test_loss_CategoricalHinge():
 
 
 def test_loss_CosineSimilarity():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(
@@ -199,18 +226,21 @@ def test_loss_CosineSimilarity():
 
 
 def test_loss_KLDivergence():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(losses.KLDivergence, keras.losses.KLDivergence, y_true, y_pred)
 
 
 def test_loss_Poisson():
+    """Function docstring."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Poisson, keras.losses.Poisson, y_true, y_pred)
 
 
 def test_loss_Loss():
+    """Function docstring."""
     # Base class fallback
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
@@ -220,6 +250,7 @@ def test_loss_Loss():
 
 
 def test_loss_unsupported():
+    """Function docstring."""
     # Test losses that might just be stubs in zero_keras
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
@@ -249,6 +280,7 @@ def test_loss_unsupported():
 
 
 def test_loss_complex_parity():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
 

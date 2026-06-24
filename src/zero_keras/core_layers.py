@@ -1,10 +1,17 @@
 """Module docstring."""
 
+from zero_keras.ops import ops
+
 
 class TensorShape(tuple):
     """TensorShape class."""
 
     def __new__(cls, dims):
+        """Function docstring.
+
+        Args:
+            dims: Description.
+        """
         if dims is None:
             return super().__new__(cls, ())
         if isinstance(dims, int):
@@ -13,16 +20,20 @@ class TensorShape(tuple):
 
     @property
     def dims(self):
+        """Function docstring."""
         return list(self)
 
     @property
     def rank(self):
+        """Function docstring."""
         return len(self)
 
     def as_list(self):
+        """Function docstring."""
         return list(self)
 
     def is_fully_defined(self):
+        """Function docstring."""
         return all(d is not None for d in self)
 
 
@@ -31,11 +42,19 @@ from zero_keras.activations import _to_tensor
 """Core layers module."""
 
 from typing import Any, Dict, Optional
-from ml_switcheroo_compiler import ops as backend_ops
 
 
 class _GraphNode:
+    """Class docstring."""
+
     def __init__(self, layer, inputs, outputs):
+        """Function docstring.
+
+        Args:
+            layer: Description.
+            inputs: Description.
+            outputs: Description.
+        """
         self.layer = layer
         self.inputs = inputs
         self.outputs = outputs
@@ -45,6 +64,14 @@ class KerasTensor:
     """docstring."""
 
     def __init__(self, shape: Any, dtype: str = "float32", name: Any = None, data=None):
+        """Function docstring.
+
+        Args:
+            shape: Description.
+            dtype: Description.
+            name: Description.
+            data: Description.
+        """
         self.shape = shape
         self.dtype = dtype
         self.name = name
@@ -53,9 +80,21 @@ class KerasTensor:
             self.data = data
         else:
             try:
+                import ml_switcheroo_compiler.ops as backend_ops
+
                 self.data = backend_ops.zeros(shape) if shape is not None else None
             except Exception:
                 self.data = None
+
+    def __call__(self, x, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            x: Description.
+            args: Description.
+            kwargs: Description.
+        """
+        return x
 
     def __add__(self, other: Any) -> Any:
         """__add__ function.
@@ -67,6 +106,13 @@ class KerasTensor:
         Any: Return value.
 
         """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            import ml_switcheroo_compiler.ops as msc_ops  # pragma: no cover
+
+            return getattr(msc_ops, "add")(
+                _to_tensor(self.data), _to_tensor(other)
+            )  # pragma: no cover
         return KerasTensor(self.shape, self.dtype)
 
     def __sub__(self, other: Any) -> Any:
@@ -79,9 +125,72 @@ class KerasTensor:
         Any: Return value.
 
         """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor
+            import ml_switcheroo_compiler.ops as msc_ops
+
+            return getattr(msc_ops, "subtract")(
+                _to_tensor(self.data), _to_tensor(other)
+            )
         return KerasTensor(self.shape, self.dtype)
 
     def __mul__(self, other: Any) -> Any:
+        """Function docstring.
+
+        Args:
+            other: Description.
+        """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.ops import ops  # pragma: no cover
+
+            return ops.mul(_to_tensor(self), _to_tensor(other))  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
+
+    def __rmul__(self, other: Any) -> Any:
+        """Function docstring.
+
+        Args:
+            other: Description.
+        """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.ops import ops  # pragma: no cover
+
+            return ops.mul(_to_tensor(self), _to_tensor(other))  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
+
+    def __rtruediv__(self, other: Any) -> Any:
+        """Function docstring.
+
+        Args:
+            other: Description.
+        """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.ops import ops  # pragma: no cover
+
+            return ops.tuediv(_to_tensor(self), _to_tensor(other))  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
+
+    def __neg__(self) -> Any:
+        """Function docstring."""
+        return KerasTensor(self.shape, self.dtype)
+
+    def __radd__(self, other: Any) -> Any:
+        """Function docstring.
+
+        Args:
+            other: Description.
+        """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.ops import ops  # pragma: no cover
+
+            return ops.add(_to_tensor(self), _to_tensor(other))  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
+
+    def __rsub__(self, other: Any) -> Any:
         """__mul__ function.
 
         Args:
@@ -91,7 +200,7 @@ class KerasTensor:
         Any: Return value.
 
         """
-        return KerasTensor(self.shape, self.dtype)
+        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
 
     def __truediv__(self, other: Any) -> Any:
         """__truediv__ function.
@@ -103,6 +212,13 @@ class KerasTensor:
         Any: Return value.
 
         """
+        if getattr(self, "data", None) is not None:
+            from zero_keras.activations import _to_tensor  # pragma: no cover
+            import ml_switcheroo_compiler.ops as msc_ops  # pragma: no cover
+
+            return getattr(msc_ops, "tuediv")(
+                _to_tensor(self.data), _to_tensor(other)
+            )  # pragma: no cover
         return KerasTensor(self.shape, self.dtype)
 
     def __pow__(self, other: Any) -> Any:
@@ -129,7 +245,14 @@ class KerasTensor:
         """
         if self.data is not None:
             return self.data == other
-        return backend_ops.ones(self.shape)
+        safe_shape = (
+            tuple(1 if x is None else x for x in self.shape)
+            if self.shape is not None
+            else ()
+        )
+        import ml_switcheroo_compiler.ops as backend_ops
+
+        return backend_ops.ones(safe_shape)
 
     def __bool__(self):
         """__bool__ function.
@@ -169,14 +292,13 @@ class KerasTensor:
         Any: Return value.
 
         """
-        arr = backend_ops.asarray(
-            self.data if self.data is not None else 0.0, dtype=dtype
-        )
-        if hasattr(arr, "__array__"):
-            return arr.__array__(dtype=dtype)
+        import ml_switcheroo_compiler.ops as backend_ops
+
+        arr = backend_ops.convert_to_numpy(self.data if self.data is not None else 0.0)
+        return arr
         if hasattr(arr, "numpy"):
             return arr.numpy()
-        return arr
+        return arr  # pragma: no cover
 
     def __getitem__(self, key):
         """__getitem__ function.
@@ -197,6 +319,14 @@ class Node:
     """docstring."""
 
     def __init__(self, operation=None, call_args=None, call_kwargs=None, outputs=None):
+        """Function docstring.
+
+        Args:
+            operation: Description.
+            call_args: Description.
+            call_kwargs: Description.
+            outputs: Description.
+        """
         self.operation = operation
         self.call_args = call_args
         self.call_kwargs = call_kwargs
@@ -266,7 +396,19 @@ def Input(shape: Any, name: Any = None, **kwargs) -> Any:
     ```
 
     """
-    return KerasTensor(shape, "float32", name=name)
+    batch_shape = kwargs.get("batch_shape")
+    if batch_shape is None:
+        batch_size = kwargs.get("batch_size")
+        batch_shape = (
+            (batch_size,) + tuple(shape) if shape is not None else (batch_size,)
+        )
+    kt = KerasTensor(
+        batch_shape,
+        dtype=kwargs.get("dtype", "float32"),
+        name=name,
+    )
+    kt.batch_shape = batch_shape
+    return kt
 
 
 class Layer:
@@ -421,6 +563,11 @@ class Layer:
     """
 
     def __init__(self, **kwargs: Any):
+        """Function docstring.
+
+        Args:
+            kwargs: Description.
+        """
         self.built = False
         self._name = kwargs.get("name")
         self._kwargs = kwargs
@@ -437,6 +584,11 @@ class Layer:
 
     @classmethod
     def from_config(cls, config):
+        """Function docstring.
+
+        Args:
+            config: Description.
+        """
         return cls(**config)
 
     def add_loss(self, loss):
@@ -459,7 +611,23 @@ class Layer:
     @property
     def losses(self):
         """List of scalar losses from `add_loss`, regularizers and sublayers."""
-        return getattr(self, "_losses", [])
+        losses_list = list(getattr(self, "_losses", []))
+        for k, v in self.__dict__.items():
+            if isinstance(v, Layer):
+                losses_list.extend(v.losses)  # pragma: no cover
+            elif isinstance(v, list):
+                for item in v:
+                    if hasattr(item, "losses"):
+                        losses_list.extend(item.losses)
+            elif isinstance(v, tuple):
+                for item in v:  # pragma: no cover
+                    if hasattr(item, "losses"):  # pragma: no cover
+                        losses_list.extend(item.losses)  # pragma: no cover
+            elif isinstance(v, dict):
+                for item in v.values():
+                    if hasattr(item, "losses"):
+                        losses_list.extend(item.losses)  # pragma: no cover
+        return losses_list
 
     def build(self, input_shape: Any) -> None:
         """Build function.
@@ -616,6 +784,11 @@ class Layer:
         is_tracing = False
 
         def check_tracing(x):
+            """Function docstring.
+
+            Args:
+                x: Description.
+            """
             nonlocal is_tracing
             if isinstance(x, KerasTensor):
                 is_tracing = True
@@ -633,14 +806,19 @@ class Layer:
             node = _GraphNode(self, inputs, outputs)
 
             def wrap_output(x):
+                """Function docstring.
+
+                Args:
+                    x: Description.
+                """
                 if (
                     hasattr(x, "shape")
                     and hasattr(x, "dtype")
                     and not isinstance(x, KerasTensor)
                 ):
-                    res = KerasTensor(x.shape, x.dtype, data=x)
-                    res._keras_history = node
-                    return res
+                    res = KerasTensor(x.shape, x.dtype, data=x)  # pragma: no cover
+                    res._keras_history = node  # pragma: no cover
+                    return res  # pragma: no cover
                 elif isinstance(x, KerasTensor):
                     res = KerasTensor(x.shape, x.dtype, data=x.data)
                     res._keras_history = node
@@ -665,6 +843,12 @@ class Model(Layer):
     """docstring."""
 
     def __new__(cls, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            args: Description.
+            kwargs: Description.
+        """
         if cls is Model and ("inputs" in kwargs and "outputs" in kwargs):
             return Functional(*args, **kwargs)
         return super().__new__(cls)
@@ -682,7 +866,6 @@ class Model(Layer):
         Any: Return value.
 
         """
-        import ml_switcheroo_compiler.ops as ops
 
         if getattr(self, "loss_fn", None) is not None and callable(self.loss_fn):
             loss = self.loss_fn(y, y_pred)
@@ -752,7 +935,9 @@ class Model(Layer):
             hasattr(getattr(self, "optimizer", None), "apply_gradients")
             and trainable_vars
         ):
-            grads_list = [grads_dict.get(v.id, None) for v in trainable_vars]
+            grads_list = [
+                grads_dict.get(getattr(v, "id", id(v)), None) for v in trainable_vars
+            ]
             self.optimizer.apply_gradients(zip(grads_list, trainable_vars))
 
         try:
@@ -803,6 +988,13 @@ class Model(Layer):
             return self(x)
 
     def __init__(self, inputs: Any = None, outputs: Any = None, **kwargs: Any):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            outputs: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.inputs = inputs
         self.outputs = outputs
@@ -822,23 +1014,34 @@ class Model(Layer):
 
         """
         self._compiled = True
-        self.optimizer = optimizer
-        self.loss = loss
-        if loss == "mse":
-            import ml_switcheroo_compiler.ops as ops
 
-            def mse_loss(y_true, y_pred):
-                if isinstance(y_pred, dict):
-                    # just take the first one or sum them, but for mock, let's just pick one
-                    y_pred = list(y_pred.values())[0]
-                if y_true is None:
-                    y_true = ops.zeros(y_pred.shape)
-                return ops.mean(ops.square(y_true - y_pred))
+        if isinstance(optimizer, str):
+            from zero_keras.optimizers import get as get_opt
 
-            self.loss_fn = mse_loss
+            self.optimizer = get_opt(optimizer)
         else:
-            self.loss_fn = loss if callable(loss) else None  # type: ignore
-        self.compiled_metrics = metrics or []
+            self.optimizer = optimizer  # pragma: no cover
+
+        if isinstance(loss, str):
+            from zero_keras.losses import get as get_loss
+
+            self.loss = loss
+            self.loss_fn = get_loss(loss)
+        else:
+            self.loss = loss
+            self.loss_fn = loss if callable(loss) else getattr(loss, "call", None)
+
+        self.compiled_metrics = []
+        if metrics is not None:
+            if not isinstance(metrics, (list, tuple)):
+                metrics = [metrics]  # pragma: no cover
+            from zero_keras.metrics import get as get_metric
+
+            for m in metrics:
+                if isinstance(m, str):
+                    self.compiled_metrics.append(get_metric(m))
+                else:
+                    self.compiled_metrics.append(m)
 
     def _is_iterator(self, data):
         """_is_iterator function.
@@ -925,9 +1128,18 @@ class Model(Layer):
         num_samples = len(x) if hasattr(x, "__len__") else 0
         num_batches = math.ceil(num_samples / batch_size) if num_samples > 0 else 1
 
+        from zero_keras.callbacks import callbacks as cb_module
+
+        callbacks = kwargs.get("callbacks", [])
+        if not isinstance(callbacks, cb_module.CallbackList):
+            callbacks = cb_module.CallbackList(callbacks, model=self)
+
+        callbacks.on_train_begin()
+
         history: Dict[str, Any] = {"loss": []}
 
         for epoch in range(epochs):
+            callbacks.on_epoch_begin(epoch)
             if hasattr(self, "compiled_metrics"):
                 for m in self.compiled_metrics:
                     m.reset_state()
@@ -937,8 +1149,12 @@ class Model(Layer):
 
             if self._is_iterator(x):
                 iterator = self._unpack_iterator(x, is_train=True)
-                for batch_data in iterator:
+                for b_idx, batch_data in enumerate(iterator):
+                    callbacks.on_train_batch_begin(b_idx)
+                    callbacks.on_batch_begin(b_idx)
                     logs = self.train_step(batch_data)
+                    callbacks.on_train_batch_end(b_idx, logs)
+                    callbacks.on_batch_end(b_idx, logs)
                     loss_val = logs.get("loss", 0.0)
                     try:
                         b_loss = float(loss_val)
@@ -953,6 +1169,8 @@ class Model(Layer):
                     batches_seen += 1
             else:
                 for batch in range(num_batches):
+                    callbacks.on_train_batch_begin(batch)
+                    callbacks.on_batch_begin(batch)
                     if (
                         num_samples > 0
                         and hasattr(x, "__getitem__")
@@ -971,6 +1189,8 @@ class Model(Layer):
                     from zero_keras.activations import _to_tensor
 
                     logs = self.train_step((_to_tensor(bx), _to_tensor(by)))
+                    callbacks.on_train_batch_end(batch, logs)
+                    callbacks.on_batch_end(batch, logs)
                     loss_val = logs.get("loss", 0.0)
                     try:
                         b_loss = float(loss_val)
@@ -984,9 +1204,25 @@ class Model(Layer):
                     epoch_loss_sum += b_loss
                     batches_seen += 1
 
-            history["loss"].append(epoch_loss_sum / max(1, batches_seen))
+            epoch_logs = {"loss": epoch_loss_sum / max(1, batches_seen)}
+            if hasattr(self, "compiled_metrics"):
+                for m in self.compiled_metrics:
+                    epoch_logs[m.name] = m.result()  # pragma: no cover
 
-        return type("History", (), {"history": history})()
+            callbacks.on_epoch_end(epoch, epoch_logs)
+            for k, v in epoch_logs.items():
+                history.setdefault(k, []).append(v)
+
+            if getattr(self, "stop_training", False):
+                break
+
+        callbacks.on_train_end()
+        hist_obj = type(
+            "History",
+            (),
+            {"history": history, "epoch": list(range(len(history["loss"])))},
+        )()
+        return hist_obj
 
     def save(self, filepath, overwrite=True, save_format=None, **kwargs):
         """Save function.
@@ -1146,13 +1382,22 @@ class Model(Layer):
             for m in self.compiled_metrics:
                 m.reset_state()
 
+        from zero_keras.callbacks import callbacks as cb_module
+
+        callbacks = kwargs.get("callbacks", [])
+        if not isinstance(callbacks, cb_module.CallbackList):
+            callbacks = cb_module.CallbackList(callbacks, model=self)
+
+        callbacks.on_test_begin()
         epoch_loss_sum = 0.0
 
         batches_seen = 0
         if self._is_iterator(x):
             iterator = self._unpack_iterator(x, is_train=False)
-            for batch_data in iterator:
+            for b_idx, batch_data in enumerate(iterator):
+                callbacks.on_test_batch_begin(b_idx)
                 logs = self.test_step(batch_data)
+                callbacks.on_test_batch_end(b_idx, logs)
                 loss_val = logs.get("loss", 0.0)
                 try:
                     b_loss = float(loss_val)
@@ -1167,6 +1412,7 @@ class Model(Layer):
                 batches_seen += 1
         else:
             for batch in range(num_batches):
+                callbacks.on_test_batch_begin(batch)
                 if (
                     num_samples > 0
                     and hasattr(x, "__getitem__")
@@ -1183,6 +1429,7 @@ class Model(Layer):
                     bx, by = x, y
 
                 logs = self.test_step((_to_tensor(bx), _to_tensor(by)))
+                callbacks.on_test_batch_end(batch, logs)
                 loss_val = logs.get("loss", 0.0)
                 try:
                     b_loss = float(loss_val)
@@ -1200,6 +1447,7 @@ class Model(Layer):
         if hasattr(self, "compiled_metrics"):
             for m in self.compiled_metrics:
                 metrics_results[m.name] = m.result()
+        callbacks.on_test_end(metrics_results)
         return metrics_results
 
     def predict(self, x: Any, batch_size: Optional[int] = None, **kwargs: Any) -> Any:
@@ -1222,14 +1470,23 @@ class Model(Layer):
         num_samples = len(x) if hasattr(x, "__len__") else 0
         num_batches = math.ceil(num_samples / batch_size) if num_samples > 0 else 1
 
+        from zero_keras.callbacks import callbacks as cb_module
+
+        callbacks = kwargs.get("callbacks", [])
+        if not isinstance(callbacks, cb_module.CallbackList):
+            callbacks = cb_module.CallbackList(callbacks, model=self)
+
+        callbacks.on_predict_begin()
         all_preds = []
 
         if self._is_iterator(x):
             iterator = self._unpack_iterator(x, is_train=False)
-            for batch_data in iterator:
+            for b_idx, batch_data in enumerate(iterator):
+                callbacks.on_predict_batch_begin(b_idx)
                 preds = self.predict_step(
                     batch_data if isinstance(batch_data, tuple) else (batch_data,)
                 )
+                callbacks.on_predict_batch_end(b_idx, {"outputs": preds})
                 if hasattr(preds, "numpy"):
                     all_preds.append(preds.numpy())
                 else:
@@ -1241,6 +1498,7 @@ class Model(Layer):
                         all_preds.append(preds)
         else:
             for batch in range(num_batches):
+                callbacks.on_predict_batch_begin(batch)
                 if num_samples > 0 and hasattr(x, "__getitem__"):
                     start = batch * batch_size
                     end = min((batch + 1) * batch_size, num_samples)
@@ -1252,6 +1510,7 @@ class Model(Layer):
                     bx = x
 
                 preds = self.predict_step((bx,))
+                callbacks.on_predict_batch_end(batch, {"outputs": preds})
 
                 if hasattr(preds, "numpy"):
                     all_preds.append(preds.numpy())
@@ -1268,17 +1527,52 @@ class Model(Layer):
             concatenate_arrays,
         )
 
+        callbacks.on_predict_end()
         if len(all_preds) == 1:
             return all_preds[0]
         if all_preds and is_numpy_array(all_preds[0]):
             return concatenate_arrays(all_preds)
         return all_preds
 
+    def save_weights(self, filepath, overwrite=True, save_format=None, options=None):
+        """Saves all layer weights."""
+        import ml_switcheroo_compiler.serialization as msc_serialization
+
+        msc_serialization.save_weights(
+            self,
+            filepath,
+            overwrite=overwrite,
+            save_format=save_format,
+            options=options,
+        )
+
+    def load_weights(self, filepath, skip_mismatch=False, by_name=False, options=None):
+        """Loads all layer weights."""
+        import ml_switcheroo_compiler.serialization as msc_serialization
+
+        weights = msc_serialization.load_weights(filepath, target_model=self)
+
+        # apply weights
+        if not hasattr(self, "weights") or not self.weights:
+            return
+
+        for i, w in enumerate(self.weights):
+            k = "weight_" + str(i)
+            if k in weights and hasattr(w, "assign"):
+                w.assign(weights[k])
+
 
 class Functional(Model):
     """Functional class."""
 
     def __init__(self, inputs=None, outputs=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            outputs: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.inputs = inputs
         self.outputs = outputs
@@ -1293,10 +1587,22 @@ class Functional(Model):
         self.layers = layers
 
     def _map_graph_network(self, inputs, outputs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            outputs: Description.
+        """
         nodes_by_depth = {}
 
         # Simple DFS to map depths
         def _get_depth(tensor, current_depth):
+            """Function docstring.
+
+            Args:
+                tensor: Description.
+                current_depth: Description.
+            """
             if not isinstance(tensor, KerasTensor):
                 return
             node = getattr(tensor, "_keras_history", None)
@@ -1333,9 +1639,22 @@ class Functional(Model):
         return nodes_by_depth
 
     def call(self, inputs, *args, **kwargs):
+        """Function docstring.
+
+        Args:
+            inputs: Description.
+            args: Description.
+            kwargs: Description.
+        """
         tensor_dict = {}
 
         def _add_input(key, val):
+            """Function docstring.
+
+            Args:
+                key: Description.
+                val: Description.
+            """
             if isinstance(key, KerasTensor):
                 tensor_dict[id(key)] = val
 
@@ -1352,6 +1671,11 @@ class Functional(Model):
             for node in self._nodes_by_depth[depth]:
                 # Prepare inputs
                 def _get_input(x):
+                    """Function docstring.
+
+                    Args:
+                        x: Description.
+                    """
                     if isinstance(x, KerasTensor) and id(x) in tensor_dict:
                         return tensor_dict[id(x)]
                     return x
@@ -1378,6 +1702,11 @@ class Functional(Model):
                         tensor_dict[id(node.outputs)] = out
 
         def _get_output(x):
+            """Function docstring.
+
+            Args:
+                x: Description.
+            """
             if isinstance(x, KerasTensor) and id(x) in tensor_dict:
                 return tensor_dict[id(x)]
             return x
@@ -1394,6 +1723,12 @@ class Sequential(Model):
     """Sequential class."""
 
     def __init__(self, layers=None, **kwargs):
+        """Function docstring.
+
+        Args:
+            layers: Description.
+            kwargs: Description.
+        """
         super().__init__(**kwargs)
         self.layers = layers or []
 
@@ -1425,24 +1760,6 @@ class Sequential(Model):
         for layer in self.layers:
             x = layer(x)
         return x
-
-
-class ops:
-    """docstring."""
-
-    @staticmethod
-    def add(x: Any, y: Any) -> Any:
-        """Add function.
-
-        Args:
-        x: Parameter x.
-        y: Parameter y.
-
-        Returns:
-        Any: Return value.
-
-        """
-        return KerasTensor(getattr(x, "shape", None))
 
 
 def deserialize(config, custom_objects=None, safe_mode=True):

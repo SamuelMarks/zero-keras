@@ -1,9 +1,12 @@
+"""Module docstring."""
+
 import pytest
 from zero_keras import optimizers, models
 import json
 
 
 def test_optimizers_deserialize_fallback():
+    """Function docstring."""
     # If the identifier is a float or unhandled dict
     assert optimizers.deserialize(123) == 123
     assert optimizers.deserialize({"class_name": "UnknownOpt"}) == {
@@ -12,8 +15,12 @@ def test_optimizers_deserialize_fallback():
 
 
 def test_models_clone_function_fallback():
+    """Function docstring."""
+
     # Model cloning where a layer has no get_config
     class MockLayer:
+        """Class docstring."""
+
         pass
 
     mock_layer = MockLayer()
@@ -24,7 +31,11 @@ def test_models_clone_function_fallback():
 
 
 def test_models_save_model_fallback():
+    """Function docstring."""
+
     class MockModel:
+        """Class docstring."""
+
         pass
 
     mock_model = MockModel()
@@ -33,6 +44,7 @@ def test_models_save_model_fallback():
 
 
 def test_models_model_from_json_builtins():
+    """Function docstring."""
     # test falling back to builtins
     config = {
         "class_name": "Functional",
@@ -56,6 +68,7 @@ def test_models_model_from_json_builtins():
 
 
 def test_models_model_from_json_multiple_connections():
+    """Function docstring."""
     config = {
         "class_name": "Functional",
         "config": {
@@ -91,6 +104,7 @@ def test_models_model_from_json_multiple_connections():
 
 
 def test_models_model_from_json_fallback():
+    """Function docstring."""
     json_str = '{"class_name": "UnknownModel", "config": {}}'
     m = models.model_from_json(json_str)
     assert type(m).__name__ == "Model"

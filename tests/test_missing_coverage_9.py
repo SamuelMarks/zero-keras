@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import numpy as np
 from zero_keras import metrics
 from zero_keras.activations import _to_tensor
@@ -5,11 +7,19 @@ from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
 
 
 class AssignableTensor(Tensor):
+    """Class docstring."""
+
     def assign(self, value):
+        """Function docstring.
+
+        Args:
+            value: Description.
+        """
         pass
 
 
 def test_pearson_correlation_assign():
+    """Function docstring."""
     m = metrics.PearsonCorrelation()
     config = TensorConfig((), "float32", "cpu")
     m.sum_x = AssignableTensor(np.array(0.0), config)
@@ -23,7 +33,15 @@ def test_pearson_correlation_assign():
 
 
 def test_accuracy_metrics_assign():
+    """Function docstring."""
+
     def test_acc(cls, y_t, y_p):
+        """Function docstring.
+
+        Args:
+            y_t: Description.
+            y_p: Description.
+        """
         m = cls()
         config = TensorConfig((), "float32", "cpu")
         m.total = AssignableTensor(np.array(0.0), config)

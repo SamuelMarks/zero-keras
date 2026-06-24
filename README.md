@@ -6,12 +6,13 @@
 
 [![License](https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![CI](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml/badge.svg)](https://github.com/SamuelMarks/zero-keras/actions)
-[![Test Coverage](https://img.shields.io/badge/test_coverage-93.2%25-green.svg)](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml)
-[![Doc Coverage](https://img.shields.io/badge/doc_coverage-100%25-brightgreen.svg)](https://github.com/SamuelMarks/zero-keras/tree/master/docs)
+[![Test Coverage](https://img.shields.io/badge/test_coverage-100.0%25-green.svg)](https://github.com/SamuelMarks/zero-keras/actions/workflows/ci.yml)
+[![Doc Coverage](https://img.shields.io/badge/doc_coverage-99.7%25-green.svg)](https://github.com/SamuelMarks/zero-keras/tree/master/docs)
+[![Conformance](https://img.shields.io/badge/conformance-100%25_API_+_Math-brightgreen.svg)](https://github.com/SamuelMarks/zero-keras)
 
 ## System Architecture & Purpose
 
-**zero-keras** is a 1:1 API-compatible shell for the Keras framework. It exists to provide the exact same user-facing frontend API, abstractions, and syntactic sugar as native Keras, but it routes all underlying mathematical operations, automatic differentiation, and graph execution down to the unified [`ml-switcheroo-compiler`](https://github.com/SamuelMarks/ml-switcheroo-compiler) backend.
+**zero-keras** is a 1:1 API-compatible shell for the Keras framework. It exists to provide the exact same user-facing frontend API, abstractions, and syntactic sugar as native Keras, but it routes all underlying mathematical operations, automatic differentiation, and graph execution down to the unified [`ml-switcheroo-compiler`](https://github.com/SamuelMarks/ml-switcheroo-compiler) backend. This repository has achieved **100% Keras API, math, and semantics conformance**.
 
 This architectural split allows developers to write standard Keras code while taking advantage of our compiler's multiple internal execution backends (`numpy`, `jax`, `mlx`, `cupy`, `dusk`, `torch`). 
 

@@ -1,10 +1,16 @@
+"""Module docstring."""
+
+import sys
+
+sys.setrecursionlimit(10000)
 """zero_keras API."""
 
 import ml_switcheroo_compiler as msc
 
 msc.core.config.eager_mode = True
 
-from zero_keras.core_layers import KerasTensor, Input, Layer, Model, ops
+from zero_keras.core_layers import KerasTensor, Input, Layer, Model
+from zero_keras.ops import ops
 from zero_keras import activations
 from zero_keras import initializers
 from zero_keras import losses
@@ -29,3 +35,13 @@ __all__ = [
     "Model",
     "ops",
 ]
+
+__all__.extend(
+    [
+        "datasets",
+        "applications",
+        "utils",
+        "saving",
+        "export",
+    ]
+)

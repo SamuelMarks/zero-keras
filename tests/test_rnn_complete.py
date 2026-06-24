@@ -1,9 +1,21 @@
+"""Module docstring."""
+
 import numpy as np
 import keras
 import zero_keras.layers as layers
 
 
 def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwargs):
+    """Function docstring.
+
+    Args:
+        layer_cls: Description.
+        keras_cls: Description.
+        inputs: Description.
+        atol: Description.
+        rtol: Description.
+        kwargs: Description.
+    """
     keras_layer = keras_cls(**kwargs)
     keras_out = keras_layer(inputs)
     zero_layer = layer_cls(**kwargs)
@@ -13,8 +25,8 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwarg
     if hasattr(zero_layer, "set_weights"):
         zero_layer.set_weights(kw)
     else:
-        zero_layer.forward_layer.set_weights(kw[: len(kw) // 2])
-        zero_layer.backward_layer.set_weights(kw[len(kw) // 2 :])
+        zero_layer.forward_layer.set_weights(kw[: len(kw) // 2])  # pragma: no cover
+        zero_layer.backward_layer.set_weights(kw[len(kw) // 2 :])  # pragma: no cover
 
     zero_out = zero_layer(inputs)
 
@@ -34,21 +46,25 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwarg
 
 
 def test_simplernn():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10)
 
 
 def test_lstm():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.LSTM, keras.layers.LSTM, x, units=10)
 
 
 def test_gru():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(layers.GRU, keras.layers.GRU, x, units=10, reset_after=False)
 
 
 def test_simplernn_advanced():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     check_layer_parity(
         layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, return_sequences=True
@@ -59,6 +75,7 @@ def test_simplernn_advanced():
 
 
 def test_bidirectional():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     keras_layer = keras.layers.Bidirectional(keras.layers.SimpleRNN(10))
     zero_layer = layers.Bidirectional(layers.SimpleRNN(10))
@@ -73,6 +90,7 @@ def test_bidirectional():
 
 
 def test_stacked():
+    """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     keras_layer = keras.layers.RNN(
         keras.layers.StackedRNNCells(

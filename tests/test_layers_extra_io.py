@@ -1,7 +1,10 @@
+"""Module docstring."""
+
 from zero_keras import layers
 
 
 def test_layers_io():
+    """Function docstring."""
     layer = layers.Dense(10)
     config = layers.serialize(layer)
     assert isinstance(config, dict)
@@ -16,6 +19,7 @@ def test_layers_io():
 
 
 def test_new_layers():
+    """Function docstring."""
     gqa = layers.GroupQueryAttention(num_heads=2, key_dim=2)
     res = gqa(None, None)
     assert res is None

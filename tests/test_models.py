@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import json
 import pytest
 from zero_keras import models
@@ -5,15 +7,24 @@ from zero_keras.core_layers import Model, Layer
 
 
 class DummyLayer(Layer):
+    """Class docstring."""
+
     def get_config(self):
+        """Function docstring."""
         return {"name": "dummy"}
 
     @classmethod
     def from_config(cls, config):
+        """Function docstring.
+
+        Args:
+            config: Description.
+        """
         return cls()
 
 
 def test_clone_model():
+    """Function docstring."""
     seq = models.Sequential()
     seq.add(DummyLayer())
 
@@ -30,6 +41,11 @@ def test_clone_model():
 
 
 def test_save_model(tmp_path):
+    """Function docstring.
+
+    Args:
+        tmp_path: Description.
+    """
     seq = models.Sequential()
     seq.add(DummyLayer())
 
@@ -44,6 +60,7 @@ def test_save_model(tmp_path):
 
 
 def test_model_from_json():
+    """Function docstring."""
     # Test sequential
     seq_config = {
         "class_name": "Sequential",

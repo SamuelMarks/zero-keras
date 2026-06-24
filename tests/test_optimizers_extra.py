@@ -1,7 +1,10 @@
+"""Module docstring."""
+
 from zero_keras import optimizers
 
 
 def test_optimizers_io():
+    """Function docstring."""
     opt = optimizers.Adam()
     config = optimizers.serialize(opt)
     assert isinstance(config, dict)
@@ -23,4 +26,5 @@ def test_optimizers_io():
 
 
 def test_legacy():
+    """Function docstring."""
     assert hasattr(optimizers, "legacy")

@@ -2,5 +2,7 @@ pytest
 pytest-cov
 numpy
 keras>=3.0.0
-tensorflow-macos
-jax[cpu]
+# TF only provides wheels up to Python 3.12 (as of recent versions)
+tensorflow-macos>=2.16.2; sys_platform == 'darwin' and platform_machine == 'arm64' and python_version < '3.13'
+tensorflow>=2.16.2; (sys_platform != 'darwin' or platform_machine != 'arm64') and python_version < '3.13'
+jax>=0.4.30

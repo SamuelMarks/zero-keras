@@ -100,7 +100,7 @@ def test_bidirectional_rnn_cell_units():
 
         def call(self, inputs):
             """Call function."""
-            return inputs
+            return inputs  # pragma: no cover
 
     layer2 = DummyBidirectionalLayer()
     layer2.args = ()

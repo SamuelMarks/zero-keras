@@ -5,6 +5,7 @@ from zero_keras import losses
 
 
 def test_losses():
+    """Function docstring."""
     y_true_binary = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred_binary = np.array([[0.9, 0.1], [0.1, 0.9]])
 
@@ -170,6 +171,7 @@ def test_losses():
 
 
 def test_reductions():
+    """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
 
@@ -198,6 +200,7 @@ def test_reductions():
 
 
 def test_base_loss():
+    """Function docstring."""
     loss = losses.Loss()
     res = loss(np.array([1.0]), np.array([1.0]))
     from ml_switcheroo_compiler.core.tensor import Tensor

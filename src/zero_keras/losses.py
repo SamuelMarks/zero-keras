@@ -1,6 +1,6 @@
 """Keras losses."""
 
-import ml_switcheroo_compiler.ops as ops
+from zero_keras.ops import ops
 from .activations import _to_tensor, _wrap
 from typing import Any, Optional
 
@@ -738,6 +738,13 @@ class Loss:
         name: Optional[str] = None,
         dtype: Optional[str] = None,
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            dtype: Description.
+        """
         self.reduction = reduction
         self.name = name
         self.dtype = dtype
@@ -849,6 +856,20 @@ class BinaryCrossentropy(Loss):
         name="binary_crossentropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            from_logits: Description.
+            label_smoothing: Description.
+            axis: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
+        if not 0 <= label_smoothing <= 1:
+            raise ValueError(  # pragma: no cover
+                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
+            )
         super().__init__(reduction=reduction, name=name)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -895,6 +916,13 @@ class MeanSquaredError(Loss):
     def __init__(
         self, reduction="sum_over_batch_size", name="mean_squared_error", **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1056,6 +1084,23 @@ class BinaryFocalCrossentropy(Loss):
         name="binary_focal_crossentropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            apply_class_balancing: Description.
+            alpha: Description.
+            gamma: Description.
+            from_logits: Description.
+            label_smoothing: Description.
+            axis: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
+        if not 0 <= label_smoothing <= 1:
+            raise ValueError(  # pragma: no cover
+                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
+            )
         super().__init__(reduction=reduction, name=name)
         self.apply_class_balancing = apply_class_balancing
         self.alpha = alpha
@@ -1184,6 +1229,20 @@ class CategoricalCrossentropy(Loss):
         name="categorical_crossentropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            from_logits: Description.
+            label_smoothing: Description.
+            axis: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
+        if not 0 <= label_smoothing <= 1:
+            raise ValueError(  # pragma: no cover
+                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
+            )
         super().__init__(reduction=reduction, name=name)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
@@ -1321,6 +1380,22 @@ class CategoricalFocalCrossentropy(Loss):
         name="categorical_focal_crossentropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            alpha: Description.
+            gamma: Description.
+            from_logits: Description.
+            label_smoothing: Description.
+            axis: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
+        if not 0 <= label_smoothing <= 1:
+            raise ValueError(  # pragma: no cover
+                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
+            )
         super().__init__(reduction=reduction, name=name)
         self.alpha = alpha
         self.gamma = gamma
@@ -1400,6 +1475,14 @@ class CategoricalGeneralizedCrossEntropy(Loss):
         name="categorical_generalized_cross_entropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            q: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.q = q
 
@@ -1452,6 +1535,13 @@ class CategoricalHinge(Loss):
     def __init__(
         self, reduction="sum_over_batch_size", name="categorical_hinge", **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1525,6 +1615,16 @@ class Circle(Loss):
         name="circle",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            gamma: Description.
+            margin: Description.
+            reduction: Description.
+            remove_diagonal: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.gamma = gamma
         self.margin = margin
@@ -1582,6 +1682,14 @@ class CosineSimilarity(Loss):
         name="cosine_similarity",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            axis: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.axis = axis
 
@@ -1648,6 +1756,14 @@ class Dice(Loss):
     def __init__(
         self, reduction="sum_over_batch_size", name="dice", axis=None, **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.axis = axis if axis is not None else -1
 
@@ -1696,6 +1812,13 @@ class Hinge(Loss):
     """
 
     def __init__(self, reduction="sum_over_batch_size", name="hinge", **kwargs):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1743,6 +1866,14 @@ class Huber(Loss):
     def __init__(
         self, delta=1.0, reduction="sum_over_batch_size", name="huber_loss", **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            delta: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.delta = delta
 
@@ -1786,6 +1917,13 @@ class KLDivergence(Loss):
     def __init__(
         self, reduction="sum_over_batch_size", name="k_l_divergence", **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1824,6 +1962,13 @@ class LogCosh(Loss):
     """
 
     def __init__(self, reduction="sum_over_batch_size", name="log_cosh", **kwargs):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1862,6 +2007,13 @@ class MeanAbsoluteError(Loss):
     def __init__(
         self, reduction="sum_over_batch_size", name="mean_absolute_error", **kwargs
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1903,6 +2055,13 @@ class MeanAbsolutePercentageError(Loss):
         name="mean_absolute_percentage_error",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1944,6 +2103,13 @@ class MeanSquaredLogarithmicError(Loss):
         name="mean_squared_logarithmic_error",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -1980,6 +2146,13 @@ class Poisson(Loss):
     """
 
     def __init__(self, reduction="sum_over_batch_size", name="poisson", **kwargs):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -2064,6 +2237,15 @@ class SparseCategoricalCrossentropy(Loss):
         name="sparse_categorical_crossentropy",
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            from_logits: Description.
+            ignore_class: Description.
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.from_logits = from_logits
         self.ignore_class = ignore_class
@@ -2107,6 +2289,13 @@ class SquaredHinge(Loss):
     """
 
     def __init__(self, reduction="sum_over_batch_size", name="squared_hinge", **kwargs):
+        """Function docstring.
+
+        Args:
+            reduction: Description.
+            name: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
 
     def __call__(self, y_true, y_pred, sample_weight=None):
@@ -2162,6 +2351,16 @@ class Tversky(Loss):
         axis=None,
         **kwargs,
     ):
+        """Function docstring.
+
+        Args:
+            alpha: Description.
+            beta: Description.
+            reduction: Description.
+            name: Description.
+            axis: Description.
+            kwargs: Description.
+        """
         super().__init__(reduction=reduction, name=name)
         self.alpha = alpha
         self.beta = beta
@@ -2235,18 +2434,39 @@ def get(identifier):
 
 
 def dice(y_true, y_pred, axis=None):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        axis: Description.
+    """
     from ml_switcheroo_compiler.ops.nn.loss import dice_loss
 
     return dice_loss(y_true, y_pred, axis=axis)
 
 
 def tversky(y_true, y_pred, alpha=0.5, beta=0.5):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        alpha: Description.
+        beta: Description.
+    """
     from ml_switcheroo_compiler.ops.nn.loss import tversky_loss
 
     return tversky_loss(y_true, y_pred, alpha=alpha, beta=beta)
 
 
 def ctc(y_true, y_pred):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+    """
     from ml_switcheroo_compiler.ops import ctc_loss
     from ml_switcheroo_compiler.ops.creation import ones
 
@@ -2257,12 +2477,26 @@ def ctc(y_true, y_pred):
 
 
 def circle(y_true, y_pred, margin=0.25, gamma=256):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+        margin: Description.
+        gamma: Description.
+    """
     from ml_switcheroo_compiler.ops import circle_loss
 
     return circle_loss(y_true, y_pred, margin=margin, gamma=gamma)
 
 
 def categorical_generalized_cross_entropy(y_true, y_pred):
+    """Function docstring.
+
+    Args:
+        y_true: Description.
+        y_pred: Description.
+    """
     from ml_switcheroo_compiler.ops import categorical_generalized_cross_entropy as gce
 
     return gce(y_true, y_pred)

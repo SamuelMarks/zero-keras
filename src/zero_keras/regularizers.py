@@ -1,7 +1,7 @@
 """Keras regularizers."""
 
 from typing import Any
-import ml_switcheroo_compiler.ops as ops
+from zero_keras.ops import ops
 from zero_keras.activations import _to_tensor, _wrap
 
 
@@ -142,6 +142,12 @@ class L2(Regularizer):
     """
 
     def __init__(self, l2=0.01, **kwargs):
+        """Function docstring.
+
+        Args:
+            l2: Description.
+            kwargs: Description.
+        """
         self.l2 = l2
 
     def __call__(self, x: Any) -> Any:
@@ -150,6 +156,7 @@ class L2(Regularizer):
         return _wrap(ops.sum(self.l2 * ops.square(x)))
 
     def get_config(self):
+        """Function docstring."""
         return {"l2": float(self.l2)}
 
 
@@ -189,6 +196,12 @@ class L1(Regularizer):
     """
 
     def __init__(self, l1=0.01, **kwargs):
+        """Function docstring.
+
+        Args:
+            l1: Description.
+            kwargs: Description.
+        """
         self.l1 = l1
 
     def __call__(self, x: Any) -> Any:
@@ -197,6 +210,7 @@ class L1(Regularizer):
         return _wrap(ops.sum(self.l1 * ops.abs(x)))
 
     def get_config(self):
+        """Function docstring."""
         return {"l1": float(self.l1)}
 
 
@@ -221,6 +235,13 @@ class L1L2(Regularizer):
     """
 
     def __init__(self, l1=0.0, l2=0.0, **kwargs):
+        """Function docstring.
+
+        Args:
+            l1: Description.
+            l2: Description.
+            kwargs: Description.
+        """
         self.l1 = l1
         self.l2 = l2
 
@@ -235,6 +256,7 @@ class L1L2(Regularizer):
         return _wrap(regularization)
 
     def get_config(self):
+        """Function docstring."""
         return {"l1": float(self.l1), "l2": float(self.l2)}
 
 
@@ -257,6 +279,13 @@ class OrthogonalRegularizer(Regularizer):
     """
 
     def __init__(self, factor=0.01, mode="rows", **kwargs):
+        """Function docstring.
+
+        Args:
+            factor: Description.
+            mode: Description.
+            kwargs: Description.
+        """
         self.factor = factor
         self.mode = mode
 
@@ -296,6 +325,7 @@ class OrthogonalRegularizer(Regularizer):
         return _wrap(self.factor * ops.sum(ops.abs(diff)))
 
     def get_config(self):
+        """Function docstring."""
         return {"factor": float(self.factor), "mode": self.mode}
 
 

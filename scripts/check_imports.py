@@ -1,3 +1,5 @@
+"""Module docstring."""
+
 import ast
 import sys
 import sysconfig
@@ -6,6 +8,11 @@ from pathlib import Path
 
 
 def is_stdlib(base_name):
+    """Function docstring.
+
+    Args:
+        base_name: Description.
+    """
     if base_name in sys.builtin_module_names:
         return True
     try:
@@ -40,6 +47,11 @@ ALLOWED_LOCAL = {"zero_keras"}
 
 
 def check_file(filepath):
+    """Function docstring.
+
+    Args:
+        filepath: Description.
+    """
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=str(filepath))
@@ -73,6 +85,11 @@ def check_file(filepath):
 
 
 def check_module(base_module):
+    """Function docstring.
+
+    Args:
+        base_module: Description.
+    """
     if base_module in ALLOWED_3RD_PARTY:
         return True
     if base_module in ALLOWED_LOCAL:
@@ -83,6 +100,7 @@ def check_module(base_module):
 
 
 def main():
+    """Function docstring."""
     src_dir = Path("src")
     if not src_dir.exists():
         print("src/ directory not found.")
