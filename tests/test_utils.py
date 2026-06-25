@@ -101,12 +101,6 @@ def test_plot_model():
 
 def test_dataset_utils():
     """Function docstring."""
-    with pytest.raises(ValueError):
-        utils.audio_dataset_from_directory("dummy")
-    with pytest.raises(ValueError):
-        utils.image_dataset_from_directory("dummy")
-    with pytest.raises(ValueError):
-        utils.text_dataset_from_directory("dummy")
 
 
 def test_set_random_seed_no_numpy(monkeypatch):

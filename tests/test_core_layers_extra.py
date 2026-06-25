@@ -381,3 +381,256 @@ def test_keras_tensor_array_numpy_attr(mock_asarray):
     tensor = KerasTensor(shape=(2,), data=[5, 6])
     res = tensor.__array__(copy=True)
     np.testing.assert_array_equal(res, np.array([5, 6]))
+
+
+def test_function_methods():
+    from zero_keras.core_layers import Function
+
+    fn = Function()
+    assert fn.call(1) is None
+    assert fn.compute_output_shape((1, 2)) == (1, 2)
+    assert fn.compute_output_spec(1) is None
+    new_fn = Function.from_config({})
+    assert new_fn.get_config() == {}
+    assert fn.input is None
+    assert fn.inputs == []
+    assert fn.operations == []
+    assert fn.output is None
+    assert fn.outputs == []
+    assert fn.quantized_call(1) is None
+    assert fn.symbolic_call(1) is None
+
+
+def test_input_spec_methods():
+    from zero_keras.core_layers import InputSpec
+
+    spec = InputSpec(name="test")
+    config = spec.get_config()
+    assert config["name"] == "test"
+    new_spec = InputSpec.from_config(config)
+    assert new_spec.name == "test"
+
+
+def test_keras_tensor_methods():
+    from zero_keras.core_layers import KerasTensor
+    import pytest
+
+    t = KerasTensor(shape=(1, 2, 1), dtype="float32")
+    with pytest.raises(TypeError):
+        iter(t)
+    assert t.ndim == 3
+    assert not t.ragged
+    assert not t.sparse
+    t2 = t.reshape((2, 1))
+    assert t2.shape == (2, 1)
+    t3 = t.squeeze()
+    assert t3.shape == (2,)
+    t4 = KerasTensor(shape=None)
+    t5 = t4.squeeze()
+    assert t5.shape is None
+
+
+def test_layer_methods_extra():
+    from zero_keras.core_layers import Layer
+
+    layer = Layer(name="test_layer")
+    layer.add_metric(1.0, name="metric")
+    var = layer.add_variable(shape=(1,), initializer="zeros")
+    assert var.shape == (1,)
+    layer.build_from_config({"input_shape": (1,)})
+    assert layer.compute_dtype is None
+    assert layer.compute_mask(None, mask=True) is True
+    assert layer.compute_output_shape((1,)) == (1,)
+    assert layer.compute_output_spec(1) is None
+    assert layer.count_params() == 0
+    assert layer.dtype is None
+    assert layer.dtype_policy is None
+    assert layer.get_build_config() == {}
+    assert layer.get_config()["name"] == "test_layer"
+    assert layer.input is None
+    assert layer.input_dtype is None
+    assert layer.input_spec is None
+    layer.load_own_variables({})
+    assert layer.metrics == []
+    assert layer.metrics_variables == []
+    assert layer.non_trainable_variables == []
+    assert layer.output is None
+    assert layer.path == "test_layer"
+    assert layer.quantization_mode is None
+    layer.quantize("int8")
+    layer.quantized_build((1,))
+    assert layer.quantized_call(1) == 1
+    assert layer.rematerialized_call(1) == 1
+    layer.save_own_variables({})
+    assert layer.stateless_call([], [], 1) == 1
+    assert not layer.supports_masking
+    layer.supports_masking = True
+    assert layer.supports_masking
+
+    assert layer.symbolic_call(1) == 1
+
+    assert layer.trainable is True
+    layer.trainable = False
+    assert layer.trainable is False
+    assert layer.trainable_variables == []
+    assert layer.variable_dtype is None
+    assert layer.variables == []
+
+
+def test_model_methods_extra():
+    from zero_keras.core_layers import Model
+
+    model = Model()
+    model.compile_from_config({})
+    assert model.compiled_loss is None
+    assert model.compiled_metrics is None
+    assert model.distribute_reduction_method is None
+    assert model.distribute_strategy is None
+    model.export("test")
+    assert model.get_compile_config() == {}
+    assert model.get_layer() is None
+    assert model.get_metrics_result() == {}
+    assert model.get_state_tree() == {}
+    model.jit_compile()
+    assert model.layers == []
+    assert model.loss is None
+    assert model.make_predict_function() is None
+    assert model.make_test_function() is None
+    assert model.make_train_function() is None
+    assert model.metrics_names == []
+    assert model.predict_on_batch(1) == 1
+    model.reset_metrics()
+    assert not model.run_eagerly
+    model.run_eagerly = True
+    assert model.run_eagerly
+    model.set_state_tree({})
+    assert model.stateless_compute_loss() is None
+    model.summary()
+    assert model.test_on_batch() is None
+    assert isinstance(model.to_json(), str)
+    assert model.train_on_batch() is None
+
+
+def test_operation_methods_extra():
+    from zero_keras.core_layers import Operation
+
+    op = Operation()
+    assert op.call() is None
+    assert op.compute_output_spec() is None
+    new_op = Operation.from_config({})
+    assert new_op.get_config() == {}
+    assert op.input is None
+    assert op.output is None
+    assert op.quantized_call() is None
+    assert op.symbolic_call() is None
+
+
+def test_quantizer_regularizer_methods():
+    from zero_keras.core_layers import Quantizer
+    from zero_keras.regularizers import Regularizer
+
+    q = Quantizer()
+    assert q.get_config() == {}
+    q2 = Quantizer.from_config({})
+    assert isinstance(q2, Quantizer)
+
+    r = Regularizer()
+    assert r.get_config() == {}
+    r2 = Regularizer.from_config({})
+    assert isinstance(r2, Regularizer)
+
+
+def test_stateless_variable_methods():
+    from zero_keras.core_layers import StatelessScope, Variable
+
+    with StatelessScope() as scope:
+        scope.add_loss(0.1)
+        scope.add_update(1)
+
+    var = Variable("zeros")
+    assert scope.get_current_value(var) is None
+
+    assert var[0] is None
+    var.aggregation = "mean"
+    assert var.aggregation == "mean"
+    var.assign(1)
+    assert var.value == 1
+    var.assign_add(1)
+    var.assign_sub(1)
+    var.constraint = "none"
+    assert var.constraint == "none"
+    var.handle = 1
+    assert var.handle == 1
+    assert var.ndim == 0
+    assert var.numpy() == 1
+    var.overwrite_with_gradient(1)
+    assert var.path == var.name
+    var.regularizer = "l2"
+    assert var.regularizer == "l2"
+    var.synchronization = "auto"
+    assert var.synchronization == "auto"
+
+
+def test_sequential_methods_extra():
+    from zero_keras.core_layers import Sequential
+
+    seq = Sequential()
+    seq.add_metric(1)
+    seq.add_variable((1,), "zeros")
+    seq.build_from_config({"input_shape": (1,)})
+    seq.compile_from_config({})
+    assert seq.compiled_loss is None
+    assert seq.compiled_metrics is None
+    assert seq.compute_dtype is None
+    assert seq.compute_mask(1, mask=1) == 1
+    assert seq.compute_output_shape((1,)) == (1,)
+    assert seq.compute_output_spec(1) is None
+    assert seq.count_params() == 0
+    assert seq.distribute_reduction_method is None
+    assert seq.distribute_strategy is None
+    assert seq.dtype is None
+    assert seq.dtype_policy is None
+    seq.export("path")
+    assert seq.get_build_config() == {}
+    assert seq.get_compile_config() == {}
+    assert seq.get_layer() is None
+    assert seq.get_metrics_result() == {}
+    assert seq.get_state_tree() == {}
+    assert seq.input is None
+    assert seq.input_dtype is None
+    assert seq.input_spec is None
+    seq.jit_compile()
+    assert seq.layers == []
+    seq.load_own_variables({})
+    assert seq.loss is None
+    assert seq.make_predict_function() is None
+    assert seq.make_test_function() is None
+    assert seq.make_train_function() is None
+    assert seq.metrics == []
+    assert seq.metrics_names == []
+    assert seq.metrics_variables == []
+    assert seq.non_trainable_variables == []
+    assert seq.output is None
+    assert seq.path == seq.name
+    assert seq.predict_on_batch(1) == 1
+    assert seq.quantization_mode is None
+    seq.quantize("int8")
+    seq.quantized_build((1,))
+    assert seq.quantized_call(1) == 1
+    assert seq.rematerialized_call(1) == 1
+    seq.reset_metrics()
+    assert not seq.run_eagerly
+    seq.save_own_variables({})
+    seq.set_state_tree({})
+    assert seq.stateless_call([], [], 1) == 1
+    assert seq.stateless_compute_loss(1) is None
+    seq.summary()
+    assert not seq.supports_masking
+    assert seq.symbolic_call(1) == 1
+    assert seq.test_on_batch() is None
+    assert isinstance(seq.to_json(), str)
+    assert seq.train_on_batch() is None
+    assert seq.trainable
+    assert seq.trainable_variables == []
+    assert seq.variable_dtype is None
+    assert seq.variables == []

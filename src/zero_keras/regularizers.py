@@ -119,6 +119,19 @@ class Regularizer:
     also defined and registered your custom regularizer.
     """
 
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {}
+
     def __call__(self, x: Any) -> Any:
         """Compute a regularization penalty from an input tensor."""
         return 0.0

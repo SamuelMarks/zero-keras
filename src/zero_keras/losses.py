@@ -732,6 +732,28 @@ class Loss:
 
     """
 
+    def call(self, y_true, y_pred):
+        """call docstring.
+
+        Args:
+            y_true: y_true.
+            y_pred: y_pred.
+        """
+        return y_pred
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {"name": getattr(self, "name", None)}
+
     def __init__(
         self,
         reduction: str = "sum_over_batch_size",

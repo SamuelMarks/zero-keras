@@ -85,3 +85,8 @@ def Progbar(
 
 
 __all__ += ["get_file", "Progbar"]
+
+
+def get_uid(prefix):
+    """get_uid docstring."""
+    return 1

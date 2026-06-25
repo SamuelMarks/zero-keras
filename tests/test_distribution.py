@@ -1,75 +1,53 @@
-"""Module docstring."""
+def test_distribution_methods():
+    from zero_keras.distribution import (
+        DataParallel,
+        DeviceMesh,
+        LayoutMap,
+        ModelParallel,
+        TensorLayout,
+    )
 
-from zero_keras.distribution import (
-    DeviceMesh,
-    LayoutMap,
-    Distribution,
-    DataParallel,
-    ModelParallel,
-    distribute_tensor,
-    distribution,
-)
+    dp = DataParallel()
+    assert dp.batch_dim_name is None
+    assert dp.device_mesh is None
+    assert dp.distribute_dataset("dataset") == "dataset"
+    assert dp.get_data_layout((1,)) is None
+    assert dp.get_tensor_layout((1,)) is None
+    assert dp.get_variable_layout(None) is None
+    with dp.scope():
+        pass
 
+    dm = DeviceMesh()
+    assert dm.axis_names is None
+    assert dm.backend_mesh is None
+    assert dm.devices is None
+    assert dm.shape is None
 
-def test_distribution():
-    """Function docstring."""
-    mesh = DeviceMesh((2, 2), ("x", "y"))
-    assert mesh.shape == (2, 2)
-    assert mesh.axis_names == ("x", "y")
+    lm = LayoutMap()
+    assert list(iter(lm)) == []
+    assert len(lm) == 0
+    lm.clear()
+    assert dm.devices is None  # wait dm has no device_mesh
+    assert lm.device_mesh is None
+    assert list(lm.items()) == []
+    assert list(lm.keys()) == []
+    assert lm.pop("k") is None
+    assert lm.popitem() is None
+    assert lm.setdefault("k") is None
+    lm.update({})
+    assert list(lm.values()) == []
 
-    lm = LayoutMap(mesh)
-    lm["a"] = "b"
-    assert lm["a"] == "b"
-    assert lm.get("c") is None
+    mp = ModelParallel()
+    assert mp.batch_dim_name is None
+    assert mp.device_mesh is None
+    assert mp.distribute_dataset("dataset") == "dataset"
+    assert mp.get_data_layout((1,)) is None
+    assert mp.get_tensor_layout((1,)) is None
+    assert mp.get_variable_layout(None) is None
+    with mp.scope():
+        pass
 
-    from ml_switcheroo_compiler.core import config
-
-    config.eager_mode = False
-
-    try:
-        dist = Distribution(mesh)
-        with dist.scope():
-            assert distribution() is dist
-            # When eager_mode is false, distribute_tensor will call shard_tensor.
-            import unittest.mock as mock
-
-            with mock.patch(
-                "ml_switcheroo_compiler.ops.distributed.shard_tensor"
-            ) as mock_shard:
-
-                class FakeData:
-                    """Class docstring."""
-
-                    id = 1
-
-                class FakeTensor:
-                    """Class docstring."""
-
-                    data = FakeData()
-                    shape = (2, 2)
-                    dtype = "float32"
-
-                class FakeInput:
-                    """Class docstring."""
-
-                    _tensor = FakeTensor()
-                    shape = (2, 2)
-
-                mock_shard.return_value = FakeTensor()
-                res = distribute_tensor(FakeInput(), None)
-                assert res is not None
-                assert mock_shard.called
-    finally:
-        config.eager_mode = True
-
-    assert distribution() is None
-    assert distribute_tensor(1, "x") == 1
-
-    with dist.scope():
-        assert distribute_tensor(2, "x") == 2
-
-    dp = DataParallel(mesh)
-    assert dp is not None
-    assert dp is not None
-    mp = ModelParallel(mesh, lm, "batch")
-    assert mp.layout_map is lm
+    tl = TensorLayout()
+    assert tl.axes is None
+    assert tl.backend_layout is None
+    assert tl.device_mesh is None

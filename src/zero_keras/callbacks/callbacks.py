@@ -62,7 +62,105 @@ class Callback:
 
     def __init__(self):
         """Function docstring."""
-        self.model = None
+
+    @property
+    def model(self):
+        """model docstring."""
+        return getattr(self, "_model", None)
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        """on_predict_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_batch_end(self, batch, logs=None):
+        """on_predict_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_begin(self, logs=None):
+        """on_predict_begin docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_end(self, logs=None):
+        """on_predict_end docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_test_batch_begin(self, batch, logs=None):
+        """on_test_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_test_batch_end(self, batch, logs=None):
+        """on_test_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_test_begin(self, logs=None):
+        """on_test_begin docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_test_end(self, logs=None):
+        """on_test_end docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_train_batch_begin(self, batch, logs=None):
+        """on_train_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_train_batch_end(self, batch, logs=None):
+        """on_train_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    @model.setter
+    def model(self, value):
+        self._model = value
 
     def set_model(self, model):
         """set_model function.
@@ -209,6 +307,14 @@ class EarlyStopping(Callback):
     4
 
     """
+
+    def get_monitor_value(self, logs):
+        """get_monitor_value docstring.
+
+        Args:
+            logs: Logs.
+        """
+        return logs.get(self.monitor)
 
     def __init__(
         self,
@@ -508,6 +614,101 @@ class History(Callback):
 
     def __init__(self):
         """Function docstring."""
+
+    @property
+    def model(self):
+        """model docstring."""
+        return getattr(self, "_model", None)
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    def on_predict_batch_begin(self, batch, logs=None):
+        """on_predict_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_batch_end(self, batch, logs=None):
+        """on_predict_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_begin(self, logs=None):
+        """on_predict_begin docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_predict_end(self, logs=None):
+        """on_predict_end docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_test_batch_begin(self, batch, logs=None):
+        """on_test_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_test_batch_end(self, batch, logs=None):
+        """on_test_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_test_begin(self, logs=None):
+        """on_test_begin docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_test_end(self, logs=None):
+        """on_test_end docstring.
+
+        Args:
+            logs: Logs.
+        """
+        pass
+
+    def on_train_batch_begin(self, batch, logs=None):
+        """on_train_batch_begin docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
+
+    def on_train_batch_end(self, batch, logs=None):
+        """on_train_batch_end docstring.
+
+        Args:
+            batch: Batch.
+            logs: Logs.
+        """
+        pass
         super().__init__()
         self.history = {}
         self.epoch = []
@@ -718,6 +919,14 @@ class CSVLogger(Callback):
 class ReduceLROnPlateau(Callback):
     """Reduce learning rate when a metric has stopped improving."""
 
+    def get_monitor_value(self, logs):
+        """get_monitor_value docstring.
+
+        Args:
+            logs: Logs.
+        """
+        return logs.get(self.monitor)
+
     def __init__(
         self,
         monitor="val_loss",
@@ -923,6 +1132,31 @@ class TensorBoard(Callback):
 
 class CallbackList:
     """Class docstring."""
+
+    @property
+    def model(self):
+        """model docstring."""
+        return getattr(self, "_model", None)
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    def set_model(self, model):
+        """set_model docstring.
+
+        Args:
+            model: Model.
+        """
+        self.model = model
+
+    def set_params(self, params):
+        """set_params docstring.
+
+        Args:
+            params: Params.
+        """
+        self.params = params
 
     def __init__(self, callbacks=None, model=None):
         """Function docstring.

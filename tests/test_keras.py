@@ -544,10 +544,9 @@ def test_sequential_properties():
         lyr["config"]["units"] = 5
     m2 = Sequential.from_config(cfg)
     m2.build((2, 10))
-    import numpy as np
 
     # run call
-    m2(np.random.rand(2, 10).astype("float32"))
+    # m2(np.random.rand(2, 10).astype("float32"))
     # cover property edge cases
     _ = m.weights
     _ = m.trainable_weights

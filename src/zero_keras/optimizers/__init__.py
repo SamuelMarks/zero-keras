@@ -59,6 +59,159 @@ class Optimizer:
 
     """
 
+    def add_optimizer_variables(self, variables):
+        """add_optimizer_variables docstring.
+
+        Args:
+            variables: Variables.
+        """
+        pass
+
+    def add_variable_from_reference(self, reference_variable, name=""):
+        """add_variable_from_reference docstring.
+
+        Args:
+            reference_variable: Reference variable.
+            name: Name.
+        """
+        return None
+
+    def apply(self, grads, variables):
+        """apply docstring.
+
+        Args:
+            grads: Grads.
+            variables: Variables.
+        """
+        pass
+
+    def assign(self, variable, value):
+        """assign docstring.
+
+        Args:
+            variable: Variable.
+            value: Value.
+        """
+        pass
+
+    def assign_add(self, variable, value):
+        """assign_add docstring.
+
+        Args:
+            variable: Variable.
+            value: Value.
+        """
+        pass
+
+    def assign_sub(self, variable, value):
+        """assign_sub docstring.
+
+        Args:
+            variable: Variable.
+            value: Value.
+        """
+        pass
+
+    def exclude_from_weight_decay(self, var_list=None, var_names=None):
+        """exclude_from_weight_decay docstring.
+
+        Args:
+            var_list: Var list.
+            var_names: Var names.
+        """
+        pass
+
+    def finalize_variable_values(self, var_list):
+        """finalize_variable_values docstring.
+
+        Args:
+            var_list: Var list.
+        """
+        pass
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return getattr(self, "_config", {})
+
+    @property
+    def iterations(self):
+        """iterations docstring."""
+        return getattr(self, "_iterations", 0)
+
+    @iterations.setter
+    def iterations(self, value):
+        self._iterations = value
+
+    @property
+    def learning_rate(self):
+        """learning_rate docstring."""
+        return getattr(self, "_learning_rate", 0.001)
+
+    @learning_rate.setter
+    def learning_rate(self, value):
+        self._learning_rate = value
+
+    def load_own_variables(self, store):
+        """load_own_variables docstring.
+
+        Args:
+            store: Store.
+        """
+        pass
+
+    def save_own_variables(self, store):
+        """save_own_variables docstring.
+
+        Args:
+            store: Store.
+        """
+        pass
+
+    def scale_loss(self, loss):
+        """scale_loss docstring.
+
+        Args:
+            loss: Loss.
+        """
+        return loss
+
+    def set_weights(self, weights):
+        """set_weights docstring.
+
+        Args:
+            weights: Weights.
+        """
+        pass
+
+    def stateless_apply(self, optimizer_variables, grads, trainable_variables):
+        """stateless_apply docstring.
+
+        Args:
+            optimizer_variables: Optimizer variables.
+            grads: Grads.
+            trainable_variables: Trainable variables.
+        """
+        pass
+
+    def update_step(self, gradient, variable, learning_rate):
+        """update_step docstring.
+
+        Args:
+            gradient: Gradient.
+            variable: Variable.
+            learning_rate: Learning rate.
+        """
+        pass
+
     def __init__(self, **kwargs):
         """Function docstring.
 

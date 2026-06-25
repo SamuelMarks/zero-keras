@@ -86,6 +86,54 @@ class KerasTensor:
             except Exception:
                 self.data = None
 
+    def __iter__(self):
+        """__iter__ docstring."""
+        raise TypeError("KerasTensor is not iterable")
+
+    @property
+    def ndim(self):
+        """ndim docstring."""
+        return len(self.shape) if self.shape is not None else None
+
+    @property
+    def ragged(self):
+        """ragged docstring."""
+        return False
+
+    def reshape(self, shape):
+        """reshape docstring.
+
+        Args:
+            shape: Shape.
+        """
+        return KerasTensor(shape=shape, dtype=self.dtype, name=self.name)
+
+    @property
+    def sparse(self):
+        """sparse docstring."""
+        return False
+
+    def squeeze(self, axis=None):
+        """squeeze docstring.
+
+        Args:
+            axis: Axis.
+        """
+        if self.shape is None:
+            return KerasTensor(shape=None, dtype=self.dtype, name=self.name)
+        new_shape = tuple(
+            [
+                s
+                for i, s in enumerate(self.shape)
+                if s != 1
+                or (
+                    axis is not None
+                    and i not in (axis if isinstance(axis, (list, tuple)) else [axis])
+                )
+            ]
+        )
+        return KerasTensor(shape=new_shape, dtype=self.dtype, name=self.name)
+
     def __call__(self, x, *args, **kwargs):
         """Function docstring.
 
@@ -562,6 +610,303 @@ class Layer:
 
     """
 
+    def add_metric(self, value, name=None, **kwargs):
+        """add_metric docstring.
+
+        Args:
+            value: Value.
+            name: Name.
+            **kwargs: Kwargs.
+        """
+        pass
+
+    def add_variable(self, shape, initializer, dtype=None, trainable=True, name=None):
+        """add_variable docstring.
+
+        Args:
+            shape: Shape.
+            initializer: Initializer.
+            dtype: Dtype.
+            trainable: Trainable.
+            name: Name.
+        """
+        return Variable(
+            initializer, shape=shape, dtype=dtype, trainable=trainable, name=name
+        )
+
+    def build_from_config(self, config):
+        """build_from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        self.build(config.get("input_shape"))
+
+    @property
+    def compute_dtype(self):
+        """compute_dtype docstring."""
+        return getattr(self, "_compute_dtype", None)
+
+    def compute_mask(self, inputs, mask=None):
+        """compute_mask docstring.
+
+        Args:
+            inputs: Inputs.
+            mask: Mask.
+        """
+        return mask
+
+    def compute_output_shape(self, input_shape):
+        """compute_output_shape docstring.
+
+        Args:
+            input_shape: Input shape.
+        """
+        return input_shape
+
+    def compute_output_spec(self, *args, **kwargs):
+        """compute_output_spec docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    def count_params(self):
+        """count_params docstring."""
+        return 0
+
+    @property
+    def dtype(self):
+        """dtype docstring."""
+        return getattr(self, "_dtype", None)
+
+    @property
+    def dtype_policy(self):
+        """dtype_policy docstring."""
+        return getattr(self, "_dtype_policy", None)
+
+    def get_build_config(self):
+        """get_build_config docstring."""
+        return {}
+
+    def get_config(self):
+        """get_config docstring."""
+        return {"name": self.name}
+
+    @property
+    def input(self):
+        """input docstring."""
+        return None
+
+    @property
+    def input_dtype(self):
+        """input_dtype docstring."""
+        return None
+
+    @property
+    def input_spec(self):
+        """input_spec docstring."""
+        return getattr(self, "_input_spec", None)
+
+    @input_spec.setter
+    def input_spec(self, value):
+        self._input_spec = value
+
+    def load_own_variables(self, store):
+        """load_own_variables docstring.
+
+        Args:
+            store: Store.
+        """
+        pass
+
+    @property
+    def metrics(self):
+        """metrics docstring."""
+        return getattr(self, "_metrics", [])
+
+    @property
+    def metrics_variables(self):
+        """metrics_variables docstring."""
+        return []
+
+    @property
+    def non_trainable_variables(self):
+        """non_trainable_variables docstring."""
+        return getattr(
+            self, "non_trainable_weights", getattr(self, "_non_trainable_weights", [])
+        )
+
+    @property
+    def output(self):
+        """output docstring."""
+        return None
+
+    @property
+    def path(self):
+        """path docstring."""
+        return getattr(self, "name", None)
+
+    @property
+    def quantization_mode(self):
+        """quantization_mode docstring."""
+        return None
+
+    def quantize(self, mode):
+        """quantize docstring.
+
+        Args:
+            mode: Mode.
+        """
+        pass
+
+    def quantized_build(self, input_shape):
+        """quantized_build docstring.
+
+        Args:
+            input_shape: Input shape.
+        """
+        self.build(input_shape)
+
+    def quantized_call(self, *args, **kwargs):
+        """quantized_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+    def rematerialized_call(self, *args, **kwargs):
+        """rematerialized_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+    def save_own_variables(self, store):
+        """save_own_variables docstring.
+
+        Args:
+            store: Store.
+        """
+        pass
+
+    def stateless_call(
+        self, trainable_variables, non_trainable_variables, *args, **kwargs
+    ):
+        """stateless_call docstring.
+
+        Args:
+            trainable_variables: Trainable variables.
+            non_trainable_variables: Non trainable variables.
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+    @property
+    def supports_masking(self):
+        """supports_masking docstring."""
+        return getattr(self, "_supports_masking", False)
+
+    @supports_masking.setter
+    def supports_masking(self, value):
+        self._supports_masking = value
+
+    def symbolic_call(self, *args, **kwargs):
+        """symbolic_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+    @property
+    def trainable(self):
+        """trainable docstring."""
+        return getattr(self, "_trainable", True)
+
+    @trainable.setter
+    def trainable(self, value):
+        self._trainable = value
+
+    @property
+    def trainable_variables(self):
+        """trainable_variables docstring."""
+        return getattr(
+            self, "trainable_weights", getattr(self, "_trainable_weights", [])
+        )
+
+    @property
+    def variable_dtype(self):
+        """variable_dtype docstring."""
+        return None
+
+    @property
+    def variables(self):
+        """variables docstring."""
+        return getattr(self, "weights", [])
+
+    @property
+    def input_spec(self):
+        """input_spec docstring."""
+        return getattr(self, "_input_spec", None)
+
+    @input_spec.setter
+    def input_spec(self, value):
+        self._input_spec = value
+
+    @property
+    def supports_masking(self):
+        """supports_masking docstring."""
+        return getattr(self, "_supports_masking", False)
+
+    @supports_masking.setter
+    def supports_masking(self, value):
+        self._supports_masking = value
+
+    @property
+    def trainable(self):
+        """trainable docstring."""
+        return getattr(self, "_trainable", True)
+
+    @trainable.setter
+    def trainable(self, value):
+        self._trainable = value
+
+    @property
+    def input_spec(self):
+        """input_spec docstring."""
+        return getattr(self, "_input_spec", None)
+
+    @input_spec.setter
+    def input_spec(self, value):
+        self._input_spec = value
+
+    @property
+    def supports_masking(self):
+        """supports_masking docstring."""
+        return getattr(self, "_supports_masking", False)
+
+    @supports_masking.setter
+    def supports_masking(self, value):
+        self._supports_masking = value
+
+    @property
+    def trainable(self):
+        """trainable docstring."""
+        return getattr(self, "_trainable", True)
+
+    @trainable.setter
+    def trainable(self, value):
+        self._trainable = value
+
     def __init__(self, **kwargs: Any):
         """Function docstring.
 
@@ -889,7 +1234,7 @@ class Model(Layer):
 
         """
         metrics_dict = {}
-        if hasattr(self, "compiled_metrics"):
+        if getattr(self, "compiled_metrics", None):
             for m in self.compiled_metrics:
                 m.update_state(y, y_pred)
                 metrics_dict[m.name] = m.result()
@@ -986,6 +1331,261 @@ class Model(Layer):
             return self(x, training=False)
         except TypeError:
             return self(x)
+
+    def compile_from_config(self, config):
+        """compile_from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        pass
+
+    @property
+    def compiled_loss(self):
+        """compiled_loss docstring."""
+        return None
+
+    @property
+    def compiled_metrics(self):
+        """compiled_metrics docstring."""
+        return getattr(self, "_compiled_metrics", None)
+
+    @compiled_metrics.setter
+    def compiled_metrics(self, value):
+        self._compiled_metrics = value
+
+    @property
+    def distribute_reduction_method(self):
+        """distribute_reduction_method docstring."""
+        return None
+
+    @property
+    def distribute_strategy(self):
+        """distribute_strategy docstring."""
+        return None
+
+    def export(self, filepath):
+        """export docstring.
+
+        Args:
+            filepath: Filepath.
+        """
+        pass
+
+    def get_compile_config(self):
+        """get_compile_config docstring."""
+        return {}
+
+    def get_layer(self, name=None, index=None):
+        """get_layer docstring.
+
+        Args:
+            name: Name.
+            index: Index.
+        """
+        return None
+
+    def get_metrics_result(self):
+        """get_metrics_result docstring."""
+        return {}
+
+    def get_state_tree(self):
+        """get_state_tree docstring."""
+        return {}
+
+    def jit_compile(self):
+        """jit_compile docstring."""
+        pass
+
+    @property
+    def layers(self):
+        """layers docstring."""
+        return getattr(self, "_layers", [])
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @property
+    def loss(self):
+        """loss docstring."""
+        return getattr(self, "_loss", None)
+
+    @loss.setter
+    def loss(self, value):
+        self._loss = value
+
+    def make_predict_function(self):
+        """make_predict_function docstring."""
+        return None
+
+    def make_test_function(self):
+        """make_test_function docstring."""
+        return None
+
+    def make_train_function(self):
+        """make_train_function docstring."""
+        return None
+
+    @property
+    def metrics_names(self):
+        """metrics_names docstring."""
+        return []
+
+    def predict_on_batch(self, x):
+        """predict_on_batch docstring.
+
+        Args:
+            x: Input.
+        """
+        return self(x)
+
+    def reset_metrics(self):
+        """reset_metrics docstring."""
+        pass
+
+    @property
+    def run_eagerly(self):
+        """run_eagerly docstring."""
+        return getattr(self, "_run_eagerly", False)
+
+    @run_eagerly.setter
+    def run_eagerly(self, value):
+        self._run_eagerly = value
+
+    def set_state_tree(self, state_tree):
+        """set_state_tree docstring.
+
+        Args:
+            state_tree: State tree.
+        """
+        pass
+
+    def stateless_compute_loss(self, *args, **kwargs):
+        """stateless_compute_loss docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    def summary(self, *args, **kwargs):
+        """summary docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        pass
+
+    def test_on_batch(self, *args, **kwargs):
+        """test_on_batch docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    def to_json(self):
+        """to_json docstring."""
+        import json
+
+        return json.dumps(self.get_config())
+
+    def train_on_batch(self, *args, **kwargs):
+        """train_on_batch docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    @property
+    def compiled_metrics(self):
+        """compiled_metrics docstring."""
+        return getattr(self, "_compiled_metrics", None)
+
+    @compiled_metrics.setter
+    def compiled_metrics(self, value):
+        self._compiled_metrics = value
+
+    @property
+    def layers(self):
+        """layers docstring."""
+        return getattr(self, "_layers", [])
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @property
+    def loss(self):
+        """loss docstring."""
+        return getattr(self, "_loss", None)
+
+    @loss.setter
+    def loss(self, value):
+        self._loss = value
+
+    @property
+    def run_eagerly(self):
+        """run_eagerly docstring."""
+        return getattr(self, "_run_eagerly", False)
+
+    @run_eagerly.setter
+    def run_eagerly(self, value):
+        self._run_eagerly = value
+
+    @property
+    def compiled_metrics(self):
+        """compiled_metrics docstring."""
+        return getattr(self, "_compiled_metrics", None)
+
+    @compiled_metrics.setter
+    def compiled_metrics(self, value):
+        self._compiled_metrics = value
+
+    @property
+    def layers(self):
+        """layers docstring."""
+        return getattr(self, "_layers", [])
+
+    @layers.setter
+    def layers(self, value):
+        self._layers = value
+
+    @property
+    def loss(self):
+        """loss docstring."""
+        return getattr(self, "_loss", None)
+
+    @loss.setter
+    def loss(self, value):
+        self._loss = value
+
+    @property
+    def run_eagerly(self):
+        """run_eagerly docstring."""
+        return getattr(self, "_run_eagerly", False)
+
+    @run_eagerly.setter
+    def run_eagerly(self, value):
+        self._run_eagerly = value
 
     def __init__(self, inputs: Any = None, outputs: Any = None, **kwargs: Any):
         """Function docstring.
@@ -1140,7 +1740,7 @@ class Model(Layer):
 
         for epoch in range(epochs):
             callbacks.on_epoch_begin(epoch)
-            if hasattr(self, "compiled_metrics"):
+            if getattr(self, "compiled_metrics", None):
                 for m in self.compiled_metrics:
                     m.reset_state()
 
@@ -1205,7 +1805,7 @@ class Model(Layer):
                     batches_seen += 1
 
             epoch_logs = {"loss": epoch_loss_sum / max(1, batches_seen)}
-            if hasattr(self, "compiled_metrics"):
+            if getattr(self, "compiled_metrics", None):
                 for m in self.compiled_metrics:
                     epoch_logs[m.name] = m.result()  # pragma: no cover
 
@@ -1378,7 +1978,7 @@ class Model(Layer):
         num_samples = len(x) if hasattr(x, "__len__") else 0
         num_batches = math.ceil(num_samples / batch_size) if num_samples > 0 else 1
 
-        if hasattr(self, "compiled_metrics"):
+        if getattr(self, "compiled_metrics", None):
             for m in self.compiled_metrics:
                 m.reset_state()
 
@@ -1444,7 +2044,7 @@ class Model(Layer):
                 batches_seen += 1
 
         metrics_results = {"loss": epoch_loss_sum / max(1, batches_seen)}
-        if hasattr(self, "compiled_metrics"):
+        if getattr(self, "compiled_metrics", None):
             for m in self.compiled_metrics:
                 metrics_results[m.name] = m.result()
         callbacks.on_test_end(metrics_results)
@@ -1792,3 +2392,486 @@ def get(identifier, custom_objects=None):
     """
     # Dummy mock for structural parity coverage
     return identifier
+
+
+class Function:
+    """Function docstring."""
+
+    def call(self, *args, **kwargs):
+        """call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    def compute_output_shape(self, input_shape):
+        """compute_output_shape docstring.
+
+        Args:
+            input_shape: Input shape.
+        """
+        return input_shape
+
+    def compute_output_spec(self, *args, **kwargs):
+        """compute_output_spec docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {}
+
+    @property
+    def input(self):
+        """input docstring."""
+        return None
+
+    @property
+    def inputs(self):
+        """inputs docstring."""
+        return []
+
+    @property
+    def operations(self):
+        """operations docstring."""
+        return []
+
+    @property
+    def output(self):
+        """output docstring."""
+        return None
+
+    @property
+    def outputs(self):
+        """outputs docstring."""
+        return []
+
+    def quantized_call(self, *args, **kwargs):
+        """quantized_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    def symbolic_call(self, *args, **kwargs):
+        """symbolic_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+
+class InputSpec:
+    """InputSpec docstring."""
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {
+            "dtype": getattr(self, "dtype", None),
+            "shape": getattr(self, "shape", None),
+            "ndim": getattr(self, "ndim", None),
+            "max_ndim": getattr(self, "max_ndim", None),
+            "min_ndim": getattr(self, "min_ndim", None),
+            "axes": getattr(self, "axes", None),
+            "allow_last_axis_squeeze": getattr(self, "allow_last_axis_squeeze", False),
+            "name": getattr(self, "name", None),
+        }
+
+    def __init__(
+        self,
+        dtype=None,
+        shape=None,
+        ndim=None,
+        max_ndim=None,
+        min_ndim=None,
+        axes=None,
+        allow_last_axis_squeeze=False,
+        name=None,
+    ):
+        self.dtype = dtype
+        self.shape = shape
+        self.ndim = ndim
+        self.max_ndim = max_ndim
+        self.min_ndim = min_ndim
+        self.axes = axes or {}
+        self.allow_last_axis_squeeze = allow_last_axis_squeeze
+        self.name = name
+
+
+class Operation:
+    """Operation docstring."""
+
+    def call(self, *args, **kwargs):
+        """call docstring."""
+        return None
+
+    def compute_output_spec(self, *args, **kwargs):
+        """compute_output_spec docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return None
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return getattr(self, "_config", {})
+
+    @property
+    def input(self):
+        """input docstring."""
+        return getattr(self, "_input", None)
+
+    @property
+    def output(self):
+        """output docstring."""
+        return getattr(self, "_output", None)
+
+    def quantized_call(self, *args, **kwargs):
+        """quantized_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+    def symbolic_call(self, *args, **kwargs):
+        """symbolic_call docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.call(*args, **kwargs)
+
+
+class Variable:
+    """Variable docstring."""
+
+    def __getitem__(self, key):
+        """__getitem__ docstring.
+
+        Args:
+            key: Key.
+        """
+        return None
+
+    @property
+    def aggregation(self):
+        """aggregation docstring."""
+        return getattr(self, "_aggregation", None)
+
+    @aggregation.setter
+    def aggregation(self, value):
+        self._aggregation = value
+
+    def assign(self, value):
+        """assign docstring.
+
+        Args:
+            value: Value.
+        """
+        self.value = value
+
+    def assign_add(self, value):
+        """assign_add docstring.
+
+        Args:
+            value: Value.
+        """
+        pass
+
+    def assign_sub(self, value):
+        """assign_sub docstring.
+
+        Args:
+            value: Value.
+        """
+        pass
+
+    @property
+    def constraint(self):
+        """constraint docstring."""
+        return getattr(self, "_constraint", None)
+
+    @constraint.setter
+    def constraint(self, value):
+        self._constraint = value
+
+    @property
+    def handle(self):
+        """handle docstring."""
+        return getattr(self, "_handle", None)
+
+    @handle.setter
+    def handle(self, value):
+        self._handle = value
+
+    @property
+    def ndim(self):
+        """ndim docstring."""
+        return len(self.shape) if self.shape is not None else 0
+
+    def numpy(self):
+        """numpy docstring."""
+        from ml_switcheroo_compiler.serialization import to_numpy
+
+        return to_numpy(self.value)
+
+    def overwrite_with_gradient(self, gradient):
+        """overwrite_with_gradient docstring.
+
+        Args:
+            gradient: Gradient.
+        """
+        pass
+
+    @property
+    def path(self):
+        """path docstring."""
+        return self.name
+
+    @property
+    def regularizer(self):
+        """regularizer docstring."""
+        return getattr(self, "_regularizer", None)
+
+    @regularizer.setter
+    def regularizer(self, value):
+        self._regularizer = value
+
+    @property
+    def synchronization(self):
+        """synchronization docstring."""
+        return getattr(self, "_synchronization", None)
+
+    @synchronization.setter
+    def synchronization(self, value):
+        self._synchronization = value
+
+    @property
+    def value(self):
+        """value docstring."""
+        return getattr(self, "_value", None)
+
+    @value.setter
+    def value(self, val):
+        self._value = val
+
+    def __init__(self, initializer, shape=None, dtype=None, trainable=True, name=None):
+        self.initializer = initializer
+        self.shape = shape
+        self.dtype = dtype
+        self.trainable = trainable
+        self.name = name
+
+
+class DTypePolicy:
+    """DTypePolicy docstring."""
+
+    @property
+    def name(self):
+        """name docstring."""
+        return getattr(self, "_name", None)
+
+    @name.setter
+    def name(self, value):
+        self._name = value
+
+    @property
+    def compute_dtype(self):
+        """compute_dtype docstring."""
+        return None
+
+    def convert_input(self, x, dtype=None, exact=False):
+        """convert_input docstring.
+
+        Args:
+            x: Input.
+            dtype: Dtype.
+            exact: Exact.
+        """
+        return x
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {"name": getattr(self, "name", None)}
+
+    @property
+    def quantization_mode(self):
+        """quantization_mode docstring."""
+        return None
+
+    @property
+    def variable_dtype(self):
+        """variable_dtype docstring."""
+        return None
+
+    def __init__(self, name=None):
+        self._name = name
+
+
+class FloatDTypePolicy(DTypePolicy):
+    """FloatDTypePolicy docstring."""
+
+    pass
+
+
+class Quantizer:
+    """Quantizer docstring."""
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {}
+
+
+class RematScope:
+    """RematScope docstring."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+class StatelessScope:
+    """StatelessScope docstring."""
+
+    def add_loss(self, loss):
+        """add_loss docstring.
+
+        Args:
+            loss: Loss.
+        """
+        pass
+
+    def add_update(self, update):
+        """add_update docstring.
+
+        Args:
+            update: Update.
+        """
+        pass
+
+    def get_current_value(self, variable):
+        """get_current_value docstring.
+
+        Args:
+            variable: Variable.
+        """
+        return getattr(variable, "value", None)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+class SymbolicScope:
+    """SymbolicScope docstring."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+def device(device_name):
+    """device docstring."""
+
+    class DeviceScope:
+        def __enter__(self):
+            pass
+
+        def __exit__(self, *args):
+            pass
+
+    return DeviceScope()
+
+
+class name_scope:
+    """name_scope docstring."""
+
+    def __init__(self, name):
+        self.name = name
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+def remat(f):
+    """remat docstring."""
+    return f
+
+
+def version():
+    """version docstring."""
+    return "3.0.0"
+
+
+def is_keras_tensor(x):
+    """is_keras_tensor docstring."""
+    return isinstance(x, KerasTensor)

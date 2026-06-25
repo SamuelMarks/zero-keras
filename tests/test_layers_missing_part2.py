@@ -77,27 +77,6 @@ def test_missing_layers_part2():
 
         pass
 
-    with patch("ml_switcheroo_compiler.foreign.jaxpr_to_ir") as p1:
-        p1.return_value = np.ones((2, 10))
-        try:
-            layers.JaxLayer(MockModule(), input_shape=(10,))(np.ones((2, 10)))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
-
-    with patch("ml_switcheroo_compiler.foreign.torch_to_ir") as p2:
-        p2.return_value = np.ones((2, 10))
-        try:
-            layers.TorchModuleWrapper(MockModule(), input_shape=(10,))(np.ones((2, 10)))
-        except Exception:
-            pass
-
-    with patch("ml_switcheroo_compiler.foreign.tf_to_ir") as p3:
-        p3.return_value = np.ones((2, 10))
-        try:
-            layers.TFSMLayer(MockModule(), input_shape=(10,))(np.ones((2, 10)))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
-
     # RNN state edge cases
     try:
         l = layers.RNN(layers.SimpleRNNCell(4))

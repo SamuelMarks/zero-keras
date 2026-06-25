@@ -105,3 +105,13 @@ def test_layer_weights():
     ) as mock_load:
         model.load_weights("test.weights.h5")
         mock_load.assert_called_once()
+
+
+def test_export_archive_methods():
+    from zero_keras.export.export_api import ExportArchive
+
+    archive = ExportArchive()
+    assert archive.non_trainable_variables == []
+    archive.track_and_add_endpoint()
+    assert archive.trainable_variables == []
+    assert archive.variables == []

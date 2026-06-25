@@ -137,6 +137,84 @@ class Metric:
 
     """
 
+    def add_variable(
+        self, shape, initializer, dtype=None, aggregation="sum", name=None
+    ):
+        """add_variable docstring.
+
+        Args:
+            shape: Shape.
+            initializer: Initializer.
+            dtype: Dtype.
+            aggregation: Aggregation.
+            name: Name.
+        """
+        from zero_keras.core_layers import Variable
+
+        return Variable(initializer, shape=shape, dtype=dtype, name=name)
+
+    def add_weight(self, shape=(), initializer="zeros", dtype=None, name=None):
+        """add_weight docstring.
+
+        Args:
+            shape: Shape.
+            initializer: Initializer.
+            dtype: Dtype.
+            name: Name.
+        """
+        from zero_keras.core_layers import Variable
+
+        return Variable(initializer, shape=shape, dtype=dtype, name=name)
+
+    @property
+    def dtype(self):
+        """dtype docstring."""
+        return getattr(self, "_dtype", None)
+
+    @dtype.setter
+    def dtype(self, value):
+        self._dtype = value
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {"name": getattr(self, "name", None)}
+
+    def stateless_reset_state(self):
+        """stateless_reset_state docstring."""
+        pass
+
+    def stateless_result(self, *args, **kwargs):
+        """stateless_result docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.result()
+
+    def stateless_update_state(self, *args, **kwargs):
+        """stateless_update_state docstring.
+
+        Args:
+            *args: Args.
+            **kwargs: Kwargs.
+        """
+        return self.update_state(*args, **kwargs)
+
+    @property
+    def variables(self):
+        """variables docstring."""
+        return getattr(self, "weights", [])
+
     def __init__(self, name=None, dtype=None, **kwargs):
         """Function docstring.
 

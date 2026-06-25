@@ -138,6 +138,23 @@ class Initializer:
         dt = _get_dtype(dtype)
         return _wrap(ops.zeros(shape, dtype=dt))
 
+    def clone(self):
+        """clone docstring."""
+        return self.__class__.from_config(self.get_config())
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {}
+
 
 class Constant(Initializer):
     """Initializer that generates tensors with constant values.
@@ -207,6 +224,23 @@ class Zeros(Initializer):
         """
         dt = _get_dtype(dtype)
         return _wrap(ops.zeros(shape, dtype=dt))
+
+    def clone(self):
+        """clone docstring."""
+        return self.__class__.from_config(self.get_config())
+
+    @classmethod
+    def from_config(cls, config):
+        """from_config docstring.
+
+        Args:
+            config: Config.
+        """
+        return cls(**config)
+
+    def get_config(self):
+        """get_config docstring."""
+        return {}
 
 
 class Ones(Initializer):

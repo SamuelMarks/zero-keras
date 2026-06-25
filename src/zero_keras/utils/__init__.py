@@ -1,3 +1,6 @@
+from zero_keras.utils import bounding_boxes
+from zero_keras.utils import legacy
+
 """Keras utils API."""
 
 from zero_keras.utils.np_utils import to_categorical, normalize
@@ -48,8 +51,6 @@ from zero_keras.utils.generic_utils import (
     register_keras_serializable,
     serialize_keras_object,
     standardize_dtype,
-    legacy,
-    bounding_boxes,
 )
 from zero_keras.utils.vis_utils import (
     array_to_img,

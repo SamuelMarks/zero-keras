@@ -349,3 +349,14 @@ def test_serialize_deserialize():
     assert initializers.deserialize(None) is None
     assert initializers.deserialize("constant") is not None
     assert initializers.deserialize(init) is init
+
+
+def test_initializer_methods():
+    from zero_keras.initializers import Initializer
+
+    init = Initializer()
+    assert init.get_config() == {}
+    init2 = Initializer.from_config({})
+    assert isinstance(init2, Initializer)
+    init3 = init.clone()
+    assert isinstance(init3, Initializer)

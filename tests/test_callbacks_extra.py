@@ -360,3 +360,34 @@ def test_backup_and_restore_create_dir():
         cb.on_train_begin()
         assert os.path.exists(target_dir)
         cb.on_train_end()
+
+
+def test_callback_methods_extra():
+    from zero_keras.callbacks.callbacks import (
+        Callback,
+        CallbackList,
+        EarlyStopping,
+    )
+
+    c = Callback()
+    c.model = None
+    assert c.model is None
+    c.on_predict_batch_begin(0)
+    c.on_predict_batch_end(0)
+    c.on_predict_begin()
+    c.on_predict_end()
+    c.on_test_batch_begin(0)
+    c.on_test_batch_end(0)
+    c.on_test_begin()
+    c.on_test_end()
+    c.on_train_batch_begin(0)
+    c.on_train_batch_end(0)
+
+    cl = CallbackList()
+    cl.set_model("model")
+    assert cl.model == "model"
+    cl.set_params({})
+    assert hasattr(cl, "params")
+
+    es = EarlyStopping(monitor="val_loss")
+    assert es.get_monitor_value({"val_loss": 0.5}) == 0.5

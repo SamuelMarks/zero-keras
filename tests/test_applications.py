@@ -49,3 +49,11 @@ def test_applications():
     ]
     for fn in funcs:
         fn(weights=None)
+
+
+def test_resnet50_extra():
+    from zero_keras.applications import resnet50
+
+    assert resnet50.ResNet50() is not None
+    assert resnet50.decode_predictions() == []
+    assert resnet50.preprocess_input(1) == 1
