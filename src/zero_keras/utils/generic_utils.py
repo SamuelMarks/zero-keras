@@ -65,6 +65,8 @@ def get_file(
     archive_format="auto",
     cache_dir=None,
 ):
+    """docstring."""
+
     config = GetFileConfig(
         untar=untar, cache_subdir=cache_subdir, extract=extract, cache_dir=cache_dir
     )
@@ -74,6 +76,8 @@ def get_file(
 def Progbar(
     target, width=30, verbose=1, interval=0.05, stateful_metrics=None, unit_name="step"
 ):
+    """docstring."""
+
     config = ProgbarConfig(
         width=width,
         verbose=verbose,

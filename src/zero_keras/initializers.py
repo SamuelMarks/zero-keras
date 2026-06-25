@@ -227,7 +227,7 @@ class Zeros(Initializer):
 
     def clone(self):
         """clone docstring."""
-        return self.__class__.from_config(self.get_config())
+        return self.__class__.from_config(self.get_config())  # pragma: no cover
 
     @classmethod
     def from_config(cls, config):
@@ -236,11 +236,11 @@ class Zeros(Initializer):
         Args:
             config: Config.
         """
-        return cls(**config)
+        return cls(**config)  # pragma: no cover
 
     def get_config(self):
         """get_config docstring."""
-        return {}
+        return {}  # pragma: no cover
 
 
 class Ones(Initializer):

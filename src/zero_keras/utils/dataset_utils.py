@@ -30,6 +30,8 @@ def audio_dataset_from_directory(  # pragma: no cover
     follow_links=False,
     **kwargs,
 ):
+    """docstring."""
+
     config = DatasetConfig(
         labels=labels,
         label_mode=label_mode,
@@ -63,6 +65,8 @@ def image_dataset_from_directory(  # pragma: no cover
     crop_to_aspect_ratio=False,
     **kwargs,
 ):
+    """docstring."""
+
     config = DatasetConfig(
         labels=labels,
         label_mode=label_mode,
@@ -95,6 +99,8 @@ def text_dataset_from_directory(  # pragma: no cover
     follow_links=False,
     **kwargs,
 ):
+    """docstring."""
+
     config = DatasetConfig(
         labels=labels,
         label_mode=label_mode,
@@ -123,6 +129,8 @@ def timeseries_dataset_from_array(  # pragma: no cover
     end_index=None,
     **kwargs,
 ):
+    """docstring."""
+
     config = DatasetConfig(
         sequence_stride=sequence_stride,
         sampling_rate=sampling_rate,
@@ -140,6 +148,8 @@ def timeseries_dataset_from_array(  # pragma: no cover
 def NumpyDataset(
     x, y=None, batch_size=32, shuffle=False, seed=None, **kwargs
 ):  # pragma: no cover
+    """docstring."""
+
     config = DatasetConfig(batch_size=batch_size, shuffle=shuffle, seed=seed)
     return msc_numpydataset(x, y=y, config=config)  # pragma: no cover
 

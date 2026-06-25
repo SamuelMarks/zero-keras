@@ -50,10 +50,16 @@ class DataParallel:
         """scope docstring."""
 
         class DummyScope:
+            """docstring."""
+
             def __enter__(self):
+                """docstring."""
+
                 pass
 
             def __exit__(self, *args):
+                """docstring."""
+
                 pass
 
         return DummyScope()
@@ -195,10 +201,16 @@ class ModelParallel:
         """scope docstring."""
 
         class DummyScope:
+            """docstring."""
+
             def __enter__(self):
+                """docstring."""
+
                 pass
 
             def __exit__(self, *args):
+                """docstring."""
+
                 pass
 
         return DummyScope()

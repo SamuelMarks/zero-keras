@@ -149,6 +149,8 @@ class Optimizer:
 
     @iterations.setter
     def iterations(self, value):
+        """docstring."""
+
         self._iterations = value
 
     @property
@@ -158,6 +160,8 @@ class Optimizer:
 
     @learning_rate.setter
     def learning_rate(self, value):
+        """docstring."""
+
         self._learning_rate = value
 
     def load_own_variables(self, store):

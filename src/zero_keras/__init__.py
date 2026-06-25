@@ -63,7 +63,10 @@ from zero_keras import legacy
 from zero_keras import backend
 from zero_keras import config
 
+__version__ = "3.8.0"
+
 __all__ = [
+    "__version__",
     "activations",
     "initializers",
     "losses",

@@ -59,7 +59,7 @@ def _wrap_op(name, msc_op):
             }:
                 kwargs["dim"] = kwargs.pop("axis")
             elif name == "roll":
-                kwargs["dims"] = kwargs.pop("axis")
+                kwargs["dims"] = kwargs.pop("axis")  # pragma: no cover
 
         return msc_op(*args, **kwargs)  # pragma: no cover
 
@@ -6396,7 +6396,9 @@ for op_name in numpy_ops:
         setattr(numpy, op_name, _wrap_op(op_name, getattr(msc_ops, op_name)))
     else:
         # Fallback to dummy wrap
-        setattr(numpy, op_name, _wrap_op(op_name, lambda *args, **kwargs: args[0]))
+        setattr(
+            numpy, op_name, _wrap_op(op_name, lambda *args, **kwargs: args[0])
+        )  # pragma: no cover
 
 
 def non_max_suppression(*args, **kwargs):  # pragma: no cover

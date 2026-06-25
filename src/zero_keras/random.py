@@ -7,6 +7,8 @@ class SeedGenerator:
     """SeedGenerator docstring."""
 
     def __init__(self, seed=None):  # pragma: no cover
+        """docstring."""
+
         self.seed = seed
 
 

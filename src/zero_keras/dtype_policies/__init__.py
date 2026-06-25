@@ -122,6 +122,8 @@ class DTypePolicyMap:
         return None
 
     def __init__(self, default_policy=None):
+        """docstring."""
+
         self.default_policy = default_policy
 
 

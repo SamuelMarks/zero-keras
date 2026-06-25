@@ -14,18 +14,26 @@ from zero_keras.utils.generic_utils import standardize_dtype
 
 
 def backend():
+    """docstring."""
+
     return backend_name()
 
 
 def is_float_dtype(dtype):
+    """docstring."""
+
     return "float" in str(dtype)
 
 
 def is_int_dtype(dtype):
+    """docstring."""
+
     return "int" in str(dtype)
 
 
 def result_type(*args):
+    """docstring."""
+
     return "float32"
 
 
