@@ -1,26 +1,29 @@
 """Module docstring."""
 
 from unittest.mock import patch
-from zero_keras import layers
+
 from ml_switcheroo_compiler.ops import asarray
+
+from zero_keras import layers
 
 
 def test_dense_and_conv_missing_branches():
     """Function docstring."""
     with (
-        patch("zero_keras.layers.ops") as mock_ops,
+        patch("zero_keras.layers.core.ops") as mock_ops,
+        patch("zero_keras.layers.convolution.ops") as mock_conv_ops,
         patch(
             "ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated"
         ) as mock_cgd,
     ):
         mock_ops.matmul.return_value = asarray([[1.0]])
         mock_ops.add.return_value = asarray([[1.0]])
-        mock_ops.conv1d.return_value = asarray([[1.0]])
-        mock_ops.conv2d.return_value = asarray([[1.0]])
-        mock_ops.conv3d.return_value = asarray([[1.0]])
-        mock_ops.conv1d_transpose.return_value = asarray([[1.0]])
-        mock_ops.conv2d_transpose.return_value = asarray([[1.0]])
-        mock_ops.conv3d_transpose.return_value = asarray([[1.0]])
+        mock_conv_ops.conv1d.return_value = asarray([[1.0]])
+        mock_conv_ops.conv2d.return_value = asarray([[1.0]])
+        mock_conv_ops.conv3d.return_value = asarray([[1.0]])
+        mock_conv_ops.conv1d_transpose.return_value = asarray([[1.0]])
+        mock_conv_ops.conv2d_transpose.return_value = asarray([[1.0]])
+        mock_conv_ops.conv3d_transpose.return_value = asarray([[1.0]])
         mock_cgd.return_value = asarray([[1.0]])
 
         for layer_cls in [

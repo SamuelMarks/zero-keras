@@ -1,12 +1,11 @@
 """Module docstring."""
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/densenet/"
@@ -474,9 +473,9 @@ Returns:
     A Keras model instance.
 """
 
-if DenseNet121.__doc__ is not None:
-    setattr(DenseNet121, "__doc__", DenseNet121.__doc__ + DOC)
-if DenseNet169.__doc__ is not None:
-    setattr(DenseNet169, "__doc__", DenseNet169.__doc__ + DOC)
-if DenseNet201.__doc__ is not None:
-    setattr(DenseNet201, "__doc__", DenseNet201.__doc__ + DOC)
+if DenseNet121.__doc__ is not None:  # pragma: no branch
+    DenseNet121.__doc__ = DenseNet121.__doc__ + DOC
+if DenseNet169.__doc__ is not None:  # pragma: no branch
+    DenseNet169.__doc__ = DenseNet169.__doc__ + DOC
+if DenseNet201.__doc__ is not None:  # pragma: no branch
+    DenseNet201.__doc__ = DenseNet201.__doc__ + DOC

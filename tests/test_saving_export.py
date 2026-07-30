@@ -1,9 +1,10 @@
 """Module docstring."""
 
-from zero_keras.saving import saving_api
-from zero_keras.export import export_api
-from zero_keras.core_layers import Model
 from unittest import mock
+
+from zero_keras.core_layers import Model
+from zero_keras.export import export_api
+from zero_keras.saving import saving_api
 
 
 def test_saving_model():
@@ -37,8 +38,6 @@ def test_decorators_and_scopes():
     class A:
         """Class docstring."""
 
-        pass
-
     assert A.__name__ == "A"
 
     with saving_api.custom_object_scope():
@@ -51,8 +50,6 @@ def test_export_archive():
 
     class Res:
         """Class docstring."""
-
-        pass
 
     res = Res()
     archive.track(res)
@@ -112,6 +109,6 @@ def test_export_archive_methods():
 
     archive = ExportArchive()
     assert archive.non_trainable_variables == []
-    archive.track_and_add_endpoint()
+    archive.track_and_add_endpoint("test", lambda: None)
     assert archive.trainable_variables == []
     assert archive.variables == []

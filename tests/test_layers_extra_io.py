@@ -23,7 +23,7 @@ def test_new_layers():
     gqa = layers.GroupQueryAttention(num_heads=2, key_dim=2)
     res = gqa(None, None)
     assert res is None
-    res1, res2 = gqa(None, None, return_attention_scores=True)
+    res1, _res2 = gqa(None, None, return_attention_scores=True)
     assert res1 is None
 
     hc = layers.HashedCrossing(num_bins=10)

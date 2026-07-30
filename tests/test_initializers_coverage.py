@@ -3,15 +3,16 @@
 
 def test_initializers_coverage():
     """Function docstring."""
+    from ml_switcheroo_compiler.core.dtype import DType
+
+    from zero_keras.core_layers import KerasTensor
     from zero_keras.initializers import (
-        _get_dtype,
-        _wrap,
         Orthogonal,
         VarianceScaling,
+        _get_dtype,
+        _wrap,
         get,
     )
-    from ml_switcheroo_compiler.core.dtype import DType
-    from zero_keras.core_layers import KerasTensor
 
     # 54, 61
     assert _get_dtype(DType.Float32) == DType.Float32
@@ -60,8 +61,6 @@ def test_initializers_coverage():
 
     class DummyObj:
         """Class docstring."""
-
-        pass
 
     obj = DummyObj()
     assert get(obj) is obj

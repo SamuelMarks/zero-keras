@@ -1,9 +1,10 @@
 """Module docstring."""
 
 import numpy as np
+from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
+
 from zero_keras import metrics
 from zero_keras.activations import _to_tensor
-from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
 
 
 class AssignableTensor(Tensor):
@@ -15,7 +16,6 @@ class AssignableTensor(Tensor):
         Args:
             value: Description.
         """
-        pass
 
 
 def test_pearson_correlation_assign():

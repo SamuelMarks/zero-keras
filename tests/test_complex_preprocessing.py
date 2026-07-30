@@ -1,13 +1,14 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras.layers import (
-    TextVectorization,
-    StringLookup,
-    IntegerLookup,
+    CategoryEncoding,
     HashedCrossing,
     Hashing,
-    CategoryEncoding,
+    IntegerLookup,
+    StringLookup,
+    TextVectorization,
 )
 
 

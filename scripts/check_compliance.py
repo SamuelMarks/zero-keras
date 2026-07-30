@@ -1,9 +1,9 @@
 """Module docstring."""
 
-import re
-import sys
 import importlib
 import os
+import re
+import sys
 
 
 def main():
@@ -94,7 +94,7 @@ def main():
     for mod_name, funcs in modules.items():
         if not funcs:
             continue
-        prefix = "KERAS_TODO.md".split("_")[0].lower()
+        prefix = ["KERAS", "TODO.md"][0].lower()
         orig_mod_name = mod_name.replace("zero_keras", prefix)
         mod_implemented = sum(
             1 for f_name in funcs if f"{mod_name}.{f_name}" not in missing

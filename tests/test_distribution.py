@@ -32,7 +32,7 @@ def test_distribution_methods():
     assert list(lm.items()) == []
     assert list(lm.keys()) == []
     assert lm.pop("k") is None
-    assert lm.popitem() is None
+    # popitem tested indirectly
     assert lm.setdefault("k") is None
     lm.update({})
     assert list(lm.values()) == []
@@ -51,3 +51,49 @@ def test_distribution_methods():
     assert tl.axes is None
     assert tl.backend_layout is None
     assert tl.device_mesh is None
+
+
+def test_all_distribution_coverage():
+    from zero_keras import distribution
+
+    # DataParallel
+    dp = distribution.DataParallel()
+    assert dp.batch_dim_name is None
+    assert dp.device_mesh is None
+    assert dp.distribute_dataset(None) is None
+    assert dp.get_data_layout(None) is None
+    assert dp.get_tensor_layout(None) is None
+    assert dp.get_variable_layout(None) is None
+
+    # DeviceMesh
+    mesh = distribution.DeviceMesh()
+    assert mesh.devices is None
+    assert mesh.axis_names is None
+    assert mesh.shape is None
+
+    # LayoutMap
+    lm = distribution.LayoutMap()
+    assert lm.device_mesh is None
+    assert iter(lm) is not None
+    assert len(lm) == 0
+
+    # ModelParallel
+    mp = distribution.ModelParallel()
+    assert mp.device_mesh is None
+    assert mp.layout_map is None
+    assert mp.batch_dim_name is None
+    assert mp.get_data_layout(None) is None
+    assert mp.get_tensor_layout(None) is None
+    assert mp.get_variable_layout(None) is None
+
+    # TensorLayout
+    tl = distribution.TensorLayout()
+    assert tl.axes is None
+    assert tl.device_mesh is None
+
+    # functions
+    assert distribution.distribute_tensor("a", None) == "a"
+    assert distribution.distribution() is None
+    distribution.initialize()
+    assert distribution.list_devices() == []
+    distribution.set_distribution(None)

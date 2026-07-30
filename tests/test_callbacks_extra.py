@@ -1,9 +1,11 @@
 """Module docstring."""
 
-import os
 import csv
+import os
 import tempfile
+
 import numpy as np
+
 from zero_keras.callbacks import callbacks
 
 
@@ -258,8 +260,6 @@ def test_learning_rate_scheduler_missing_lr():
     class DummyOptimizerMissingLR:
         """Class docstring."""
 
-        pass
-
     class DummyModelMissingLR:
         """Class docstring."""
 
@@ -391,3 +391,116 @@ def test_callback_methods_extra():
 
     es = EarlyStopping(monitor="val_loss")
     assert es.get_monitor_value({"val_loss": 0.5}) == 0.5
+
+
+def test_lambda_callback_more():
+    from zero_keras.callbacks import LambdaCallback
+
+    cb = LambdaCallback(
+        on_epoch_begin=lambda epoch, logs: None,
+        on_epoch_end=lambda epoch, logs: None,
+        on_batch_begin=lambda batch, logs: None,
+        on_batch_end=lambda batch, logs: None,
+        on_train_begin=lambda logs: None,
+        on_train_end=lambda logs: None,
+    )
+    cb.on_epoch_begin(0, {})
+    cb.on_epoch_end(0, {})
+    cb.on_batch_begin(0, {})
+    cb.on_batch_end(0, {})
+    cb.on_train_begin({})
+    cb.on_train_end({})
+
+    cb_none = LambdaCallback()
+    cb_none.on_epoch_begin(0, {})
+    cb_none.on_epoch_end(0, {})
+    cb_none.on_batch_begin(0, {})
+    cb_none.on_batch_end(0, {})
+    cb_none.on_train_begin({})
+    cb_none.on_train_end({})
+
+
+def test_callback_list_coverage():
+    from zero_keras.callbacks import Callback, CallbackList
+
+    class MyCB(Callback):
+        def on_train_batch_begin(self, batch, logs=None):
+            pass
+
+        def on_train_batch_end(self, batch, logs=None):
+            pass
+
+        def on_test_batch_begin(self, batch, logs=None):
+            pass
+
+        def on_test_batch_end(self, batch, logs=None):
+            pass
+
+        def on_predict_batch_begin(self, batch, logs=None):
+            pass
+
+        def on_predict_batch_end(self, batch, logs=None):
+            pass
+
+        def on_epoch_end(self, epoch, logs=None):
+            pass
+
+        def on_train_end(self, logs=None):
+            pass
+
+        def on_test_begin(self, logs=None):
+            pass
+
+        def on_test_end(self, logs=None):
+            pass
+
+        def on_predict_begin(self, logs=None):
+            pass
+
+        def on_predict_end(self, logs=None):
+            pass
+
+        def on_batch_begin(self, batch, logs=None):
+            pass
+
+        def on_batch_end(self, batch, logs=None):
+            pass
+
+    cbl = CallbackList([MyCB()], model=None)
+    cbl.on_train_begin()
+    cbl.on_epoch_begin(0)
+    cbl.on_train_batch_begin(0)
+    cbl.on_train_batch_end(0)
+    cbl.on_test_batch_begin(0)
+    cbl.on_test_batch_end(0)
+    cbl.on_predict_batch_begin(0)
+    cbl.on_predict_batch_end(0)
+    cbl.on_epoch_end(0)
+    cbl.on_train_end()
+    cbl.on_test_begin()
+    cbl.on_test_end()
+    cbl.on_predict_begin()
+    cbl.on_predict_end()
+
+    # also cover the missing fallback batch calls
+    cbl.on_batch_begin(0)
+    cbl.on_batch_end(0)
+
+
+def test_callback_list_coverage_more():
+    from zero_keras.callbacks import Callback, CallbackList
+
+    class MyEmptyCB(Callback):
+        pass
+
+    cbl = CallbackList([MyEmptyCB()], model=None)
+    cbl.on_train_batch_begin(0)
+    cbl.on_train_batch_end(0)
+    cbl.on_test_batch_begin(0)
+    cbl.on_test_batch_end(0)
+    cbl.on_predict_batch_begin(0)
+    cbl.on_predict_batch_end(0)
+    cbl.on_test_begin()
+    cbl.on_test_end()
+    cbl.on_predict_begin()
+    cbl.on_predict_end()

@@ -1,8 +1,10 @@
 """Module docstring."""
 
-import pytest
 from unittest import mock
+
 import numpy as np
+import pytest
+
 from zero_keras import datasets
 
 
@@ -31,17 +33,19 @@ def test_cifar10():
 
     with mock.patch("zero_keras.datasets.cifar10.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
-        with mock.patch("os.path.exists", return_value=False):
-            with mock.patch(
+        with (
+            mock.patch("os.path.exists", return_value=False),
+            mock.patch(
                 "zero_keras.datasets.cifar10.load_batch",
                 return_value=(x_dummy, y_dummy),
-            ):
-                (x_train, y_train), (x_test, y_test) = datasets.cifar10.load_data()
+            ),
+        ):
+            (x_train, y_train), (x_test, y_test) = datasets.cifar10.load_data()
 
-                assert x_train.shape == (50000, 32, 32, 3)
-                assert y_train.shape == (50000, 1)
-                assert x_test.shape == (10000, 32, 32, 3)
-                assert y_test.shape == (10000, 1)
+            assert x_train.shape == (50000, 32, 32, 3)
+            assert y_train.shape == (50000, 1)
+            assert x_test.shape == (10000, 32, 32, 3)
+            assert y_test.shape == (10000, 1)
 
 
 def test_cifar100():
@@ -51,20 +55,22 @@ def test_cifar100():
 
     with mock.patch("zero_keras.datasets.cifar100.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
-        with mock.patch("os.path.exists", return_value=False):
-            with mock.patch(
+        with (
+            mock.patch("os.path.exists", return_value=False),
+            mock.patch(
                 "zero_keras.datasets.cifar100.load_batch",
                 return_value=(x_dummy, y_dummy),
-            ):
-                (x_train, y_train), (x_test, y_test) = datasets.cifar100.load_data()
+            ),
+        ):
+            (x_train, y_train), (_x_test, _y_test) = datasets.cifar100.load_data()
 
-                assert x_train.shape == (
-                    10000,
-                    32,
-                    32,
-                    3,
-                )  # Wait, cifar100 load_batch should return 50k for train
-                assert y_train.shape == (10000, 1)
+            assert x_train.shape == (
+                10000,
+                32,
+                32,
+                3,
+            )  # Wait, cifar100 load_batch should return 50k for train
+            assert y_train.shape == (10000, 1)
 
 
 def test_cifar100_coarse():
@@ -74,17 +80,19 @@ def test_cifar100_coarse():
 
     with mock.patch("zero_keras.datasets.cifar100.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
-        with mock.patch("os.path.exists", return_value=False):
-            with mock.patch(
+        with (
+            mock.patch("os.path.exists", return_value=False),
+            mock.patch(
                 "zero_keras.datasets.cifar100.load_batch",
                 return_value=(x_dummy, y_dummy),
-            ):
-                (x_train, y_train), (x_test, y_test) = datasets.cifar100.load_data(
-                    label_mode="coarse"
-                )
+            ),
+        ):
+            (x_train, y_train), (_x_test, _y_test) = datasets.cifar100.load_data(
+                label_mode="coarse"
+            )
 
-                assert x_train.shape == (10000, 32, 32, 3)
-                assert y_train.shape == (10000, 1)
+            assert x_train.shape == (10000, 32, 32, 3)
+            assert y_train.shape == (10000, 1)
 
     with pytest.raises(ValueError):
         datasets.cifar100.load_data(label_mode="invalid")
@@ -115,8 +123,8 @@ def test_mnist():
 
 def test_cifar_load_batch():
     """Function docstring."""
-    import pickle
     import os
+    import pickle
 
     # Create dummy data
     dummy_data = np.zeros((10, 3072), dtype="uint8")
@@ -137,8 +145,8 @@ def test_cifar_load_batch():
 
 def test_cifar100_load_batch():
     """Function docstring."""
-    import pickle
     import os
+    import pickle
 
     # Create dummy data
     dummy_data = np.zeros((10, 3072), dtype="uint8")
@@ -222,7 +230,7 @@ def test_imdb():
             assert len(x_test) == 2
 
             # test no index_from
-            (x_train, y_train), (x_test, y_test) = datasets.imdb.load_data(
+            (x_train, _y_train), (x_test, _y_test) = datasets.imdb.load_data(
                 start_char=None, index_from=None, maxlen=10, oov_char=None
             )
             assert len(x_train) == 2
@@ -257,7 +265,7 @@ def test_reuters():
             assert len(x_test) == 1
 
             # test no index_from
-            (x_train, y_train), (x_test, y_test) = datasets.reuters.load_data(
+            (x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data(
                 start_char=None, index_from=None, maxlen=10, oov_char=None
             )
             assert len(x_train) == 2
@@ -289,7 +297,7 @@ def test_imdb_edge_cases():
             }
 
             # test start_char=None but index_from > 0
-            (x_train, y_train), (x_test, y_test) = datasets.imdb.load_data(
+            (x_train, _y_train), (_x_test, _y_test) = datasets.imdb.load_data(
                 start_char=None, index_from=3
             )
             assert list(x_train[0]) == [4, 5, 2]
@@ -310,8 +318,31 @@ def test_reuters_edge_cases():
             mock_load.return_value.__enter__.return_value = {"x": x_d, "y": y_d}
 
             # test start_char=None but index_from > 0
-            (x_train, y_train), (x_test, y_test) = datasets.reuters.load_data(
+            (_x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data(
                 start_char=None, index_from=3
             )
             # test_split=0.2 so 1 sample -> 1 * 0.8 = 0 for train, 1 for test
             assert list(x_test[0]) == [4, 5, 2]
+
+
+def test_california_housing():
+    """Function docstring."""
+    x_dummy = np.random.rand(100, 8)
+    y_dummy = np.random.rand(100)
+
+    with mock.patch("zero_keras.datasets.california_housing.get_file") as mock_get_file:
+        mock_get_file.return_value = "dummy.npz"
+        with mock.patch("numpy.load") as mock_load:
+            mock_load.return_value.__enter__.return_value = {"x": x_dummy, "y": y_dummy}
+
+            (x_train, y_train), (x_test, y_test) = (
+                datasets.california_housing.load_data()
+            )
+
+            assert x_train.shape == (80, 8)
+            assert y_train.shape == (80,)
+            assert x_test.shape == (20, 8)
+            assert y_test.shape == (20,)
+
+            # Test passing version='small' to increase coverage of branch logic
+            datasets.california_housing.load_data(version="small")

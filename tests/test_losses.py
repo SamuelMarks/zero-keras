@@ -1,6 +1,7 @@
 """Tests for zero_keras losses."""
 
 import numpy as np
+
 from zero_keras import losses
 
 
@@ -208,3 +209,44 @@ def test_base_loss():
     assert hasattr(res, "numpy") or isinstance(
         res, (float, np.float32, np.float64, np.ndarray, Tensor)
     )
+
+
+def test_loss_functions():
+    y_true_binary = np.array([[1.0, 0.0], [0.0, 1.0]])
+    y_pred_binary = np.array([[0.9, 0.1], [0.1, 0.9]])
+
+    losses.dice(y_true_binary, y_pred_binary)
+    losses.tversky(y_true_binary, y_pred_binary)
+    losses.ctc(y_true_binary, y_pred_binary)
+    losses.circle(y_true_binary, y_pred_binary)
+    losses.categorical_generalized_cross_entropy(y_true_binary, y_pred_binary)
+
+
+def test_loss_get_deserialize():
+    assert isinstance(losses.get("mse"), losses.MeanSquaredError)
+    assert losses.get("unknown") == "unknown"
+    assert losses.get(None) is None
+
+    assert (
+        losses.deserialize({"class_name": "MeanSquaredError", "config": {}}) is not None
+    )
+    assert losses.deserialize("mse") is not None
+    assert losses.deserialize(None) is None
+
+    assert losses.serialize("mse") == "mse"
+
+
+def test_loss_base_methods():
+    loss = losses.Loss(name="my_loss")
+    assert loss.call("y_true", "y_pred") == "y_pred"
+    config = loss.get_config()
+    assert config["name"] == "my_loss"
+
+    loss2 = losses.Loss.from_config(config)
+    assert loss2.name == "my_loss"
+
+    class MockObj:
+        pass
+
+    obj = MockObj()
+    assert losses.deserialize(obj) is obj

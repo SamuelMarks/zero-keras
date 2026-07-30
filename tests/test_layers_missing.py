@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras import layers
 
 
@@ -304,8 +305,6 @@ def test_missing_layers():
 
         class MockModule:
             """Class docstring."""
-
-            pass
 
         layers.JaxLayer(MockModule(), input_shape=(10,))(np.ones((2, 10)))
         layers.TorchModuleWrapper(MockModule(), input_shape=(10,))(

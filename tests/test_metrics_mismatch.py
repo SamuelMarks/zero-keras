@@ -1,7 +1,8 @@
 """Module docstring."""
 
-import pytest
 import numpy as np
+import pytest
+
 from zero_keras import metrics
 
 

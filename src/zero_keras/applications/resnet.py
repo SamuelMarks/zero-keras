@@ -1,12 +1,11 @@
 """Module docstring."""
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/resnet/"
@@ -367,7 +366,7 @@ def stack_residual_blocks_v2(x, filters, blocks, stride1=2, name=None):
     x = residual_block_v2(x, filters, conv_shortcut=True, name=f"{name}_block1")
     for i in range(2, blocks):
         x = residual_block_v2(x, filters, name=f"{name}_block{i}")
-    x = residual_block_v2(x, filters, stride=stride1, name=f"{name}_block{str(blocks)}")
+    x = residual_block_v2(x, filters, stride=stride1, name=f"{name}_block{blocks!s}")
     return x
 
 
@@ -572,9 +571,9 @@ Returns:
     A Model instance.
 """
 
-if ResNet50.__doc__ is not None:
-    setattr(ResNet50, "__doc__", ResNet50.__doc__ + DOC)
-if ResNet101.__doc__ is not None:
-    setattr(ResNet101, "__doc__", ResNet101.__doc__ + DOC)
-if ResNet152.__doc__ is not None:
-    setattr(ResNet152, "__doc__", ResNet152.__doc__ + DOC)
+if ResNet50.__doc__ is not None:  # pragma: no branch
+    ResNet50.__doc__ = ResNet50.__doc__ + DOC
+if ResNet101.__doc__ is not None:  # pragma: no branch
+    ResNet101.__doc__ = ResNet101.__doc__ + DOC
+if ResNet152.__doc__ is not None:  # pragma: no branch
+    ResNet152.__doc__ = ResNet152.__doc__ + DOC

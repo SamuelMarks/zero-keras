@@ -1,3 +1,5 @@
+path/saved_model.pb
+test/saved_model.pb
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

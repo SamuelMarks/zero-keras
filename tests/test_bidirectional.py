@@ -1,8 +1,9 @@
 """Module docstring."""
 
-import numpy as np
 import keras
-import zero_keras.layers as layers
+import numpy as np
+
+from zero_keras import layers
 
 
 def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwargs):

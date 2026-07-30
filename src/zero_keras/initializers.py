@@ -1,49 +1,53 @@
 """Keras initializers module."""
 
+from __future__ import annotations
+
 import math
-from typing import Any, Optional
+from typing import Any
+
+from ml_switcheroo_compiler import random
+
+from zero_keras import ops
+
 from .activations import _to_tensor
 
-from zero_keras.ops import ops
-import ml_switcheroo_compiler.random as random
-
 __all__ = [
-    "Initializer",
+    "STFT",
     "Constant",
-    "Zeros",
-    "Ones",
-    "Identity",
-    "IdentityInitializer",
-    "Orthogonal",
-    "OrthogonalInitializer",
-    "RandomNormal",
-    "RandomUniform",
-    "TruncatedNormal",
-    "VarianceScaling",
     "GlorotNormal",
     "GlorotUniform",
     "HeNormal",
     "HeUniform",
+    "Identity",
+    "IdentityInitializer",
+    "Initializer",
     "LecunNormal",
     "LecunUniform",
-    "STFT",
+    "Ones",
+    "Orthogonal",
+    "OrthogonalInitializer",
+    "RandomNormal",
+    "RandomUniform",
     "STFTInitializer",
+    "TruncatedNormal",
+    "VarianceScaling",
+    "Zeros",
     "constant",
-    "zeros",
-    "ones",
-    "identity",
-    "orthogonal",
-    "random_normal",
-    "random_uniform",
-    "truncated_normal",
-    "variance_scaling",
     "glorot_normal",
     "glorot_uniform",
     "he_normal",
     "he_uniform",
+    "identity",
     "lecun_normal",
     "lecun_uniform",
+    "ones",
+    "orthogonal",
+    "random_normal",
+    "random_uniform",
     "stft",
+    "truncated_normal",
+    "variance_scaling",
+    "zeros",
 ]
 
 
@@ -125,7 +129,6 @@ class Initializer:
             args: Description.
             kwargs: Description.
         """
-        pass
 
     def __call__(self, shape: Any, dtype: Any = None, **kwargs: Any) -> Any:
         """Returns a tensor object initialized as specified by the initializer.
@@ -356,7 +359,7 @@ class Orthogonal(Initializer):
 
     """
 
-    def __init__(self, gain: float = 1.0, seed: Optional[int] = None):
+    def __init__(self, gain: float = 1.0, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -387,14 +390,13 @@ class Orthogonal(Initializer):
         flat_shape = (max(num_rows, num_cols), min(num_rows, num_cols))
         key = random.PRNGKey(self.seed if self.seed is not None else 0)
         a = random.normal(key, flat_shape, dtype=dt)
-        np = __import__("nu" + "mpy")
-        q, r = np.linalg.qr(a.data if hasattr(a, "data") else a)
+        q, r = ops.qr(a)
 
         d = ops.diag(r)
         q = ops.multiply(q, ops.sign(d))
 
         if num_rows < num_cols:
-            q = ops.transpose(q, 0, 1)
+            q = ops.transpose(q, axes=(0, 1))
 
         q = ops.reshape(q, shape)
         return _wrap(ops.multiply(q, _to_tensor(self.gain)))
@@ -431,7 +433,7 @@ class RandomNormal(Initializer):
     """
 
     def __init__(
-        self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
+        self, mean: float = 0.0, stddev: float = 0.05, seed: int | None = None
     ):
         """Function docstring.
 
@@ -491,7 +493,7 @@ class RandomUniform(Initializer):
     """
 
     def __init__(
-        self, minval: float = -0.05, maxval: float = 0.05, seed: Optional[int] = None
+        self, minval: float = -0.05, maxval: float = 0.05, seed: int | None = None
     ):
         """Function docstring.
 
@@ -554,7 +556,7 @@ class TruncatedNormal(Initializer):
     """
 
     def __init__(
-        self, mean: float = 0.0, stddev: float = 0.05, seed: Optional[int] = None
+        self, mean: float = 0.0, stddev: float = 0.05, seed: int | None = None
     ):
         """Function docstring.
 
@@ -630,7 +632,7 @@ class VarianceScaling(Initializer):
         scale: float = 1.0,
         mode: str = "fan_in",
         distribution: str = "truncated_normal",
-        seed: Optional[int] = None,
+        seed: int | None = None,
     ):
         """Function docstring.
 
@@ -656,13 +658,15 @@ class VarianceScaling(Initializer):
         dt = _get_dtype(dtype)
         receptive_field_size = 1
         for dim in shape[:-2]:
-            receptive_field_size *= dim
+            receptive_field_size *= dim if dim is not None else 1
 
         if len(shape) < 2:
-            fan_in = fan_out = shape[0] if len(shape) == 1 else 1
+            fan_in = fan_out = (
+                (shape[0] if shape[0] is not None else 1) if len(shape) == 1 else 1
+            )
         else:
-            fan_in = shape[-2] * receptive_field_size
-            fan_out = shape[-1] * receptive_field_size
+            fan_in = (shape[-2] if shape[-2] is not None else 1) * receptive_field_size
+            fan_out = (shape[-1] if shape[-1] is not None else 1) * receptive_field_size
 
         if self.mode == "fan_in":
             scale = self.scale / max(1.0, fan_in)
@@ -673,17 +677,21 @@ class VarianceScaling(Initializer):
 
         key = random.PRNGKey(self.seed if self.seed is not None else 0)
 
+        resolved_shape = tuple(1 if dim is None else dim for dim in shape)
+
         if self.distribution == "truncated_normal":
             stddev = math.sqrt(scale) / 0.87962566103423978
-            res = random.truncated_normal(key, -2.0, 2.0, shape, dtype=dt)
+            res = random.truncated_normal(key, -2.0, 2.0, resolved_shape, dtype=dt)
             res = ops.multiply(res, _to_tensor(stddev))
         elif self.distribution == "untruncated_normal":
             stddev = math.sqrt(scale)
-            res = random.normal(key, shape, dtype=dt)
+            res = random.normal(key, resolved_shape, dtype=dt)
             res = ops.multiply(res, _to_tensor(stddev))
         else:
             limit = math.sqrt(3.0 * scale)
-            res = random.uniform(key, shape, dtype=dt, minval=-limit, maxval=limit)
+            res = random.uniform(
+                key, resolved_shape, dtype=dt, minval=-limit, maxval=limit
+            )
 
         return _wrap(res)
 
@@ -721,7 +729,7 @@ class GlorotNormal(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -765,7 +773,7 @@ class GlorotUniform(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -807,7 +815,7 @@ class HeNormal(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -851,7 +859,7 @@ class HeUniform(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -897,7 +905,7 @@ class LecunNormal(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -941,7 +949,7 @@ class LecunUniform(VarianceScaling):
 
     """
 
-    def __init__(self, seed: Optional[int] = None):
+    def __init__(self, seed: int | None = None):
         """Function docstring.
 
         Args:
@@ -1000,7 +1008,10 @@ class STFT(Initializer):
             scaling: Description.
             periodic: Description.
         """
-        pass
+        self.side = side
+        self.window = window
+        self.scaling = scaling
+        self.periodic = periodic
 
 
 class IdentityInitializer(Identity):
@@ -1021,8 +1032,6 @@ class IdentityInitializer(Identity):
         gain: Multiplicative factor to apply to the identity matrix.
 
     """
-
-    pass
 
 
 class OrthogonalInitializer(Orthogonal):
@@ -1059,8 +1068,6 @@ class OrthogonalInitializer(Orthogonal):
 
     """
 
-    pass
-
 
 class STFTInitializer(STFT):
     """Initializer of Conv kernels for Short-term Fourier Transformation (STFT).
@@ -1096,8 +1103,6 @@ class STFTInitializer(STFT):
 
     """
 
-    pass
-
 
 class constant(Constant):
     """Initializer that generates tensors with constant values.
@@ -1120,8 +1125,6 @@ class constant(Constant):
 
     """
 
-    pass
-
 
 class zeros(Zeros):
     """Initializer that generates tensors initialized to 0.
@@ -1136,8 +1139,6 @@ class zeros(Zeros):
     >>> layer = Dense(units=3, kernel_initializer=initializer)
 
     """
-
-    pass
 
 
 class ones(Ones):
@@ -1155,8 +1156,6 @@ class ones(Ones):
     >>> layer = Dense(3, kernel_initializer=initializer)
 
     """
-
-    pass
 
 
 class identity(Identity):
@@ -1177,8 +1176,6 @@ class identity(Identity):
         gain: Multiplicative factor to apply to the identity matrix.
 
     """
-
-    pass
 
 
 class orthogonal(Orthogonal):
@@ -1215,8 +1212,6 @@ class orthogonal(Orthogonal):
 
     """
 
-    pass
-
 
 class random_normal(RandomNormal):
     """Random normal initializer.
@@ -1248,8 +1243,6 @@ class random_normal(RandomNormal):
 
     """
 
-    pass
-
 
 class random_uniform(RandomUniform):
     """Random uniform initializer.
@@ -1280,8 +1273,6 @@ class random_uniform(RandomUniform):
             of `keras.backend.SeedGenerator`.
 
     """
-
-    pass
 
 
 class truncated_normal(TruncatedNormal):
@@ -1316,8 +1307,6 @@ class truncated_normal(TruncatedNormal):
             of `keras.backend.SeedGenerator`.
 
     """
-
-    pass
 
 
 class variance_scaling(VarianceScaling):
@@ -1362,8 +1351,6 @@ class variance_scaling(VarianceScaling):
 
     """
 
-    pass
-
 
 class glorot_normal(GlorotNormal):
     """The Glorot normal initializer, also called Xavier normal initializer.
@@ -1398,8 +1385,6 @@ class glorot_normal(GlorotNormal):
 
     """
 
-    pass
-
 
 class glorot_uniform(GlorotUniform):
     """The Glorot uniform initializer, also called Xavier uniform initializer.
@@ -1432,8 +1417,6 @@ class glorot_uniform(GlorotUniform):
     - [Glorot et al., 2010](http://proceedings.mlr.press/v9/glorot10a.html)
 
     """
-
-    pass
 
 
 class he_normal(HeNormal):
@@ -1468,8 +1451,6 @@ class he_normal(HeNormal):
 
     """
 
-    pass
-
 
 class he_uniform(HeUniform):
     """He uniform variance scaling initializer.
@@ -1502,8 +1483,6 @@ class he_uniform(HeUniform):
     - [He et al., 2015](https://arxiv.org/abs/1502.01852)
 
     """
-
-    pass
 
 
 class lecun_normal(LecunNormal):
@@ -1542,8 +1521,6 @@ class lecun_normal(LecunNormal):
 
     """
 
-    pass
-
 
 class lecun_uniform(LecunUniform):
     """Lecun uniform initializer.
@@ -1576,8 +1553,6 @@ class lecun_uniform(LecunUniform):
     - [Klambauer et al., 2017](https://arxiv.org/abs/1706.02515)
 
     """
-
-    pass
 
 
 class stft(STFT):
@@ -1613,8 +1588,6 @@ class stft(STFT):
             periodic. Defaults to `False`.
 
     """
-
-    pass
 
 
 def get(identifier):

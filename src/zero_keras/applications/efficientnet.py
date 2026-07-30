@@ -4,12 +4,11 @@ import copy
 import math
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = "https://storage.googleapis.com/keras-applications/"
 
@@ -320,7 +319,7 @@ def EfficientNet(
 
     def round_repeats(repeats):
         """Round number of repeats based on depth multiplier."""
-        return int(math.ceil(depth_coefficient * repeats))
+        return math.ceil(depth_coefficient * repeats)
 
     # Build stem
     x = img_input

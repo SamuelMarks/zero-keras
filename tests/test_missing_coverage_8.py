@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras import metrics
 
 
@@ -83,7 +84,6 @@ def test_assign_metrics_direct():
             Args:
                 value: Description.
             """
-            pass
 
     def make_dummy(*args, **kwargs):
         """Function docstring.
@@ -104,14 +104,14 @@ def test_assign_metrics_direct():
     old_argmax = getattr(cops, "argmax", None)
     old_round = getattr(cops, "round", None)
 
-    setattr(cops, "add", make_dummy)
-    setattr(cops, "multiply", make_dummy)
-    setattr(cops, "equal", make_dummy)
-    setattr(cops, "sum", make_dummy)
-    setattr(cops, "any", make_dummy)
-    setattr(cops, "cast", make_dummy)
-    setattr(cops, "argmax", make_dummy)
-    setattr(cops, "round", make_dummy)
+    cops.add = make_dummy
+    cops.multiply = make_dummy
+    cops.equal = make_dummy
+    cops.sum = make_dummy
+    cops.any = make_dummy
+    cops.cast = make_dummy
+    cops.argmax = make_dummy
+    cops.round = make_dummy
 
     try:
         # Pearson

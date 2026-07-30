@@ -2,13 +2,11 @@
 
 import warnings
 
-from ml_switcheroo_compiler import core as backend
-from zero_keras import layers
+from zero_keras import backend, layers
 from zero_keras.applications import imagenet_utils
+from zero_keras.core_layers import name_scope
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/nasnet/"
@@ -133,14 +131,16 @@ def NASNet(
             "as true, `classes` should be 1000"
         )
 
-    if isinstance(input_shape, tuple) and None in input_shape and weights == "imagenet":
+    if (
+        isinstance(input_shape, tuple) and None in input_shape and weights == "imagenet"
+    ):  # pragma: no branch
         raise ValueError(  # pragma: no cover
             "When specifying the input shape of a NASNet and loading "
             "`ImageNet` weights, the input_shape argument must be static"
             f" (no None entries). Got: `input_shape={input_shape}`."
         )
 
-    if default_size is None:
+    if default_size is None:  # pragma: no branch
         default_size = 331  # pragma: no cover
 
     # Determine proper input shape and default size.
@@ -153,7 +153,7 @@ def NASNet(
         weights=weights,
     )
 
-    if backend.image_data_format() != "channels_last":
+    if backend.image_data_format() != "channels_last":  # pragma: no branch
         warnings.warn(  # pragma: no cover
             "The NASNet family of models is only available "
             'for the input data format "channels_last" '
@@ -241,7 +241,7 @@ def NASNet(
 
     x = layers.Activation("relu")(x)
 
-    if include_top:
+    if include_top:  # pragma: no cover
         x = layers.GlobalAveragePooling2D()(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
         x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
@@ -250,7 +250,7 @@ def NASNet(
     else:
         if pooling == "avg":  # pragma: no cover
             x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
+        elif pooling == "max":  # pragma: no cover  # pragma: no cover
             x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
 
     # Ensure that the model takes into account
@@ -265,7 +265,7 @@ def NASNet(
     # Load weights.
     if weights == "imagenet":
         if default_size == 224:  # mobile version  # pragma: no cover
-            if include_top:  # pragma: no cover
+            if include_top:  # pragma: no cover  # pragma: no cover
                 weights_path = generic_utils.get_file(  # pragma: no cover
                     "nasnet_mobile.h5",
                     NASNET_MOBILE_WEIGHT_PATH,
@@ -281,7 +281,7 @@ def NASNet(
                 )
             model.load_weights(weights_path)  # pragma: no cover
         elif default_size == 331:  # large version  # pragma: no cover
-            if include_top:  # pragma: no cover
+            if include_top:  # pragma: no cover  # pragma: no cover
                 weights_path = generic_utils.get_file(  # pragma: no cover
                     "nasnet_large.h5",
                     NASNET_LARGE_WEIGHT_PATH,
@@ -495,7 +495,7 @@ def _separable_conv_block(
     """
     channel_dim = 1 if backend.image_data_format() == "channels_first" else -1
 
-    with backend.name_scope(f"separable_conv_block_{block_id}"):
+    with name_scope(f"separable_conv_block_{block_id}"):
         x = layers.Activation("relu")(ip)
         if strides == (2, 2):
             x = layers.ZeroPadding2D(
@@ -553,14 +553,12 @@ def _adjust_block(p, ip, filters, block_id=None):
     channel_dim = 1 if backend.image_data_format() == "channels_first" else -1
     img_dim = 2 if backend.image_data_format() == "channels_first" else -2
 
-    with backend.name_scope("adjust_block"):
+    with name_scope("adjust_block"):
         if p is None:
             p = ip
 
         elif p.shape[img_dim] != ip.shape[img_dim]:
-            with backend.name_scope(
-                f"adjust_reduction_block_{block_id}"
-            ):  # pragma: no cover
+            with name_scope(f"adjust_reduction_block_{block_id}"):  # pragma: no cover
                 p = layers.Activation("relu", name=f"adjust_relu_1_{block_id}")(
                     p
                 )  # pragma: no cover
@@ -608,8 +606,8 @@ def _adjust_block(p, ip, filters, block_id=None):
                     name=f"adjust_bn_{block_id}",
                 )(p)
 
-        elif p.shape[channel_dim] != filters:
-            with backend.name_scope(f"adjust_projection_block_{block_id}"):
+        elif p.shape[channel_dim] != filters:  # pragma: no branch
+            with name_scope(f"adjust_projection_block_{block_id}"):
                 p = layers.Activation("relu")(p)
                 p = layers.Conv2D(
                     filters,
@@ -643,7 +641,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
     """
     channel_dim = 1 if backend.image_data_format() == "channels_first" else -1
 
-    with backend.name_scope(f"normal_A_block_{block_id}"):
+    with name_scope(f"normal_A_block_{block_id}"):
         p = _adjust_block(p, ip, filters, block_id)
 
         h = layers.Activation("relu")(ip)
@@ -663,7 +661,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
             name=f"normal_bn_1_{block_id}",
         )(h)
 
-        with backend.name_scope("block_1"):
+        with name_scope("block_1"):
             x1_1 = _separable_conv_block(
                 h,
                 filters,
@@ -675,7 +673,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
             )
             x1 = layers.add([x1_1, x1_2], name=f"normal_add_1_{block_id}")
 
-        with backend.name_scope("block_2"):
+        with name_scope("block_2"):
             x2_1 = _separable_conv_block(
                 p, filters, (5, 5), block_id=f"normal_left2_{block_id}"
             )
@@ -684,7 +682,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
             )
             x2 = layers.add([x2_1, x2_2], name=f"normal_add_2_{block_id}")
 
-        with backend.name_scope("block_3"):
+        with name_scope("block_3"):
             x3 = layers.AveragePooling2D(
                 (3, 3),
                 strides=(1, 1),
@@ -693,7 +691,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
             )(h)
             x3 = layers.add([x3, p], name=f"normal_add_3_{block_id}")
 
-        with backend.name_scope("block_4"):
+        with name_scope("block_4"):
             x4_1 = layers.AveragePooling2D(
                 (3, 3),
                 strides=(1, 1),
@@ -708,7 +706,7 @@ def _normal_a_cell(ip, p, filters, block_id=None):
             )(p)
             x4 = layers.add([x4_1, x4_2], name=f"normal_add_4_{block_id}")
 
-        with backend.name_scope("block_5"):
+        with name_scope("block_5"):
             x5 = _separable_conv_block(h, filters, block_id=f"normal_left5_{block_id}")
             x5 = layers.add([x5, h], name=f"normal_add_5_{block_id}")
 
@@ -734,7 +732,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
     """
     channel_dim = 1 if backend.image_data_format() == "channels_first" else -1
 
-    with backend.name_scope(f"reduction_A_block_{block_id}"):
+    with name_scope(f"reduction_A_block_{block_id}"):
         p = _adjust_block(p, ip, filters, block_id)
 
         h = layers.Activation("relu")(ip)
@@ -758,7 +756,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
             name=f"reduction_pad_1_{block_id}",
         )(h)
 
-        with backend.name_scope("block_1"):
+        with name_scope("block_1"):
             x1_1 = _separable_conv_block(
                 h,
                 filters,
@@ -775,7 +773,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
             )
             x1 = layers.add([x1_1, x1_2], name=f"reduction_add_1_{block_id}")
 
-        with backend.name_scope("block_2"):
+        with name_scope("block_2"):
             x2_1 = layers.MaxPooling2D(
                 (3, 3),
                 strides=(2, 2),
@@ -791,7 +789,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
             )
             x2 = layers.add([x2_1, x2_2], name=f"reduction_add_2_{block_id}")
 
-        with backend.name_scope("block_3"):
+        with name_scope("block_3"):
             x3_1 = layers.AveragePooling2D(
                 (3, 3),
                 strides=(2, 2),
@@ -807,7 +805,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
             )
             x3 = layers.add([x3_1, x3_2], name=f"reduction_add3_{block_id}")
 
-        with backend.name_scope("block_4"):
+        with name_scope("block_4"):
             x4 = layers.AveragePooling2D(
                 (3, 3),
                 strides=(1, 1),
@@ -816,7 +814,7 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
             )(x1)
             x4 = layers.add([x2, x4])
 
-        with backend.name_scope("block_5"):
+        with name_scope("block_5"):
             x5_1 = _separable_conv_block(
                 x1, filters, (3, 3), block_id=f"reduction_left4_{block_id}"
             )

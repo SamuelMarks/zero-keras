@@ -5,12 +5,10 @@ MAP_TO_NONE = object()
 
 def assert_same_paths(a, b):
     """assert_same_paths docstring."""
-    pass
 
 
 def assert_same_structure(a, b, check_types=True):
     """assert_same_structure docstring."""
-    pass
 
 
 def flatten(structure):
@@ -55,7 +53,6 @@ def pack_sequence_as(structure, flat_sequence):
 
 def traverse(func, structure, **kwargs):
     """traverse docstring."""
-    pass
 
 
 __all__ = [

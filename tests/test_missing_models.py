@@ -1,9 +1,9 @@
 """Module docstring."""
 
 import numpy as np
-from zero_keras import models
-from zero_keras import layers
-from zero_keras.core_layers import Input, Functional
+
+from zero_keras import layers, models
+from zero_keras.core_layers import Functional, Input
 
 
 def test_clone_model_functional():
@@ -19,6 +19,7 @@ def test_clone_model_functional():
 
     model = Functional(inputs=[inp1, inp2], outputs=out, name="test_func")
 
+    print(model.get_config()["layers"])
     cloned = models.clone_model(model)
     assert cloned.name == "test_func"
     assert len(cloned.inputs) == 2

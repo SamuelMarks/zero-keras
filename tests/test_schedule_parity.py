@@ -1,7 +1,9 @@
 """Tests for zero_keras learning rate schedules parity with Keras."""
 
 import keras
+
 from zero_keras.optimizers import schedules
+
 from .utils import assert_allclose_keras_zero
 
 

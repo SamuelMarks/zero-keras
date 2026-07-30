@@ -1,7 +1,6 @@
 """Boston housing dataset."""
 
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops, random
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -18,7 +17,7 @@ def load_data(path="boston_housing.npz", test_split=0.2, seed=113):
         seed: Random seed for shuffling the data before computing the test split.
 
     Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        Tuple of backend-native tensors: `(x_train, y_train), (x_test, y_test)`.
     """
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
     path = get_file(
@@ -26,18 +25,26 @@ def load_data(path="boston_housing.npz", test_split=0.2, seed=113):
         origin=origin_folder + "boston_housing.npz",
         file_hash="f553887a1f8d56fa1e12b623d081491e",
     )
-    with np.load(path, allow_pickle=True) as f:
-        x = f["x"]
-        y = f["y"]
+    with ops.load(path, allow_pickle=True) as f:
+        x = ops.convert_to_tensor(f["x"])
+        y = ops.convert_to_tensor(f["y"])
 
-    rng = np.random.RandomState(seed)
-    indices = np.arange(len(x))
+    rng = random.RandomState(seed)
+
+    x_len = x.shape[0]
+    indices = list(range(x_len))
     rng.shuffle(indices)
-    x = x[indices]
-    y = y[indices]
 
-    x_train = np.array(x[: int(len(x) * (1 - test_split))])
-    y_train = np.array(y[: int(len(x) * (1 - test_split))])
-    x_test = np.array(x[int(len(x) * (1 - test_split)) :])
-    y_test = np.array(y[int(len(x) * (1 - test_split)) :])
+    indices_tensor = ops.convert_to_tensor(indices)
+    x = ops.take(x, indices_tensor, axis=0)
+    y = ops.take(y, indices_tensor, axis=0)
+
+    split_idx = int(x_len * (1 - test_split))
+
+    x_train = x[:split_idx]
+    y_train = y[:split_idx]
+
+    x_test = x[split_idx:]
+    y_test = y[split_idx:]
+
     return (x_train, y_train), (x_test, y_test)

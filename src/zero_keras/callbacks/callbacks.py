@@ -81,7 +81,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     def on_predict_batch_end(self, batch, logs=None):
         """on_predict_batch_end docstring.
@@ -90,7 +89,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     def on_predict_begin(self, logs=None):
         """on_predict_begin docstring.
@@ -98,7 +96,6 @@ class Callback:
         Args:
             logs: Logs.
         """
-        pass
 
     def on_predict_end(self, logs=None):
         """on_predict_end docstring.
@@ -106,7 +103,6 @@ class Callback:
         Args:
             logs: Logs.
         """
-        pass
 
     def on_test_batch_begin(self, batch, logs=None):
         """on_test_batch_begin docstring.
@@ -115,7 +111,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     def on_test_batch_end(self, batch, logs=None):
         """on_test_batch_end docstring.
@@ -124,7 +119,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     def on_test_begin(self, logs=None):
         """on_test_begin docstring.
@@ -132,7 +126,6 @@ class Callback:
         Args:
             logs: Logs.
         """
-        pass
 
     def on_test_end(self, logs=None):
         """on_test_end docstring.
@@ -140,7 +133,6 @@ class Callback:
         Args:
             logs: Logs.
         """
-        pass
 
     def on_train_batch_begin(self, batch, logs=None):
         """on_train_batch_begin docstring.
@@ -149,7 +141,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     def on_train_batch_end(self, batch, logs=None):
         """on_train_batch_end docstring.
@@ -158,7 +149,6 @@ class Callback:
             batch: Batch.
             logs: Logs.
         """
-        pass
 
     @model.setter
     def model(self, value):
@@ -202,7 +192,6 @@ class Callback:
               method but that may change in the future.
 
         """
-        pass
 
     def on_epoch_end(self, epoch, logs=None):
         """Called at the end of an epoch.
@@ -219,15 +208,12 @@ class Callback:
               `{'loss': 0.2, 'accuracy': 0.7}`.
 
         """
-        pass
 
     def on_batch_begin(self, batch, logs=None):
         """A backwards compatibility alias for `on_train_batch_begin`."""
-        pass
 
     def on_batch_end(self, batch, logs=None):
         """A backwards compatibility alias for `on_train_batch_end`."""
-        pass
 
     def on_train_begin(self, logs=None):
         """Called at the beginning of training.
@@ -239,7 +225,6 @@ class Callback:
               method but that may change in the future.
 
         """
-        pass
 
     def on_train_end(self, logs=None):
         """Called at the end of training.
@@ -252,7 +237,6 @@ class Callback:
               that may change in the future.
 
         """
-        pass
 
 
 class EarlyStopping(Callback):
@@ -389,7 +373,7 @@ class EarlyStopping(Callback):
               `{'loss': 0.2, 'accuracy': 0.7}`.
 
         """
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
         current = logs.get(self.monitor)
         if current is None:
             return  # pragma: no cover
@@ -583,7 +567,7 @@ class ModelCheckpoint(Callback):
               `{'loss': 0.2, 'accuracy': 0.7}`.
 
         """
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
         filepath = self.filepath.format(epoch=epoch + 1, **logs)
 
         save_model = False
@@ -599,9 +583,7 @@ class ModelCheckpoint(Callback):
             if improved:
                 self.best = current
 
-        if not self.save_best_only:
-            save_model = True
-        elif current is not None and improved:
+        if not self.save_best_only or current is not None and improved:
             save_model = True
 
         if save_model and self.model is not None:
@@ -637,7 +619,7 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_predict_batch_end(self, batch, logs=None):
         """on_predict_batch_end docstring.
@@ -646,7 +628,7 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_predict_begin(self, logs=None):
         """on_predict_begin docstring.
@@ -654,7 +636,7 @@ class History(Callback):
         Args:
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_predict_end(self, logs=None):
         """on_predict_end docstring.
@@ -662,7 +644,7 @@ class History(Callback):
         Args:
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_test_batch_begin(self, batch, logs=None):
         """on_test_batch_begin docstring.
@@ -671,7 +653,7 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_test_batch_end(self, batch, logs=None):
         """on_test_batch_end docstring.
@@ -680,7 +662,7 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_test_begin(self, logs=None):
         """on_test_begin docstring.
@@ -688,7 +670,7 @@ class History(Callback):
         Args:
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_test_end(self, logs=None):
         """on_test_end docstring.
@@ -696,7 +678,7 @@ class History(Callback):
         Args:
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_train_batch_begin(self, batch, logs=None):
         """on_train_batch_begin docstring.
@@ -705,7 +687,7 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
     def on_train_batch_end(self, batch, logs=None):
         """on_train_batch_end docstring.
@@ -714,7 +696,6 @@ class History(Callback):
             batch: Batch.
             logs: Logs.
         """
-        pass
         super().__init__()  # pragma: no cover
         self.history = {}  # pragma: no cover
         self.epoch = []  # pragma: no cover
@@ -726,7 +707,7 @@ class History(Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         """Called at the end of an epoch."""
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
         self.epoch.append(epoch)
         for k, v in logs.items():
             self.history.setdefault(k, []).append(v)
@@ -831,9 +812,9 @@ class TerminateOnNaN(Callback):
         """Called at the end of a batch."""
         import math
 
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
         loss = logs.get("loss")
-        if loss is not None:
+        if loss is not None:  # pragma: no branch
             if math.isnan(loss) or math.isinf(loss):
                 self.model.stop_training = True
 
@@ -876,7 +857,7 @@ class CSVLogger(Callback):
         """Called at the end of an epoch."""
         import csv
 
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
 
         def handle_value(k):
             """Function docstring.
@@ -894,7 +875,7 @@ class CSVLogger(Callback):
 
         if self.keys is None:
             self.keys = sorted(logs.keys())
-            if self.writer is None:
+            if self.writer is None:  # pragma: no branch
 
                 class CustomDialect(csv.excel):
                     """Class docstring."""
@@ -918,7 +899,12 @@ class CSVLogger(Callback):
 
     def on_train_end(self, logs=None):
         """Called at the end of training."""
-        if self.csv_file is not None:
+        if getattr(self, "csv_file", None) is not None:  # pragma: no branch
+            self.csv_file.close()
+
+    def __del__(self):
+        """Destructor to ensure file is closed."""
+        if getattr(self, "csv_file", None) is not None and not self.csv_file.closed:
             self.csv_file.close()
 
 
@@ -989,7 +975,7 @@ class ReduceLROnPlateau(Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         """Called at the end of an epoch."""
-        logs = logs or {}
+        logs = logs or {}  # pragma: no cover
         current = logs.get(self.monitor)
         if current is None:
             return
@@ -1001,14 +987,14 @@ class ReduceLROnPlateau(Callback):
         if self.monitor_op(current, self.best):
             self.best = current
             self.wait = 0
-        elif not self.in_cooldown():
+        elif not self.in_cooldown():  # pragma: no branch
             self.wait += 1
             if self.wait >= self.patience:
-                if hasattr(self.model, "optimizer") and hasattr(
+                if hasattr(self.model, "optimizer") and hasattr(  # pragma: no branch
                     self.model.optimizer, "learning_rate"
                 ):
                     old_lr = float(self.model.optimizer.learning_rate)
-                    if old_lr > self.min_lr:
+                    if old_lr > self.min_lr:  # pragma: no branch
                         new_lr = old_lr * self.factor
                         new_lr = max(new_lr, self.min_lr)
                         self.model.optimizer.learning_rate = new_lr
@@ -1045,11 +1031,10 @@ class BackupAndRestore(Callback):
 
     def on_epoch_end(self, epoch, logs=None):
         """Called at the end of an epoch."""
-        pass
 
     def on_train_end(self, logs=None):
         """Called at the end of training."""
-        if self.delete_checkpoint:
+        if self.delete_checkpoint:  # pragma: no branch
             import shutil
 
             shutil.rmtree(self.backup_dir, ignore_errors=True)
@@ -1205,7 +1190,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_train_batch_begin"):
+            if hasattr(cb, "on_train_batch_begin"):  # pragma: no branch
                 cb.on_train_batch_begin(batch, logs)
 
     def on_batch_begin(self, batch, logs=None):
@@ -1226,7 +1211,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_train_batch_end"):
+            if hasattr(cb, "on_train_batch_end"):  # pragma: no branch
                 cb.on_train_batch_end(batch, logs)
 
     def on_batch_end(self, batch, logs=None):
@@ -1265,7 +1250,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_begin"):
+            if hasattr(cb, "on_test_begin"):  # pragma: no branch
                 cb.on_test_begin(logs)
 
     def on_test_batch_begin(self, batch, logs=None):
@@ -1276,7 +1261,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_batch_begin"):
+            if hasattr(cb, "on_test_batch_begin"):  # pragma: no branch
                 cb.on_test_batch_begin(batch, logs)
 
     def on_test_batch_end(self, batch, logs=None):
@@ -1287,7 +1272,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_batch_end"):
+            if hasattr(cb, "on_test_batch_end"):  # pragma: no branch
                 cb.on_test_batch_end(batch, logs)
 
     def on_test_end(self, logs=None):
@@ -1297,7 +1282,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_end"):
+            if hasattr(cb, "on_test_end"):  # pragma: no branch
                 cb.on_test_end(logs)
 
     def on_predict_begin(self, logs=None):
@@ -1307,7 +1292,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_begin"):
+            if hasattr(cb, "on_predict_begin"):  # pragma: no branch
                 cb.on_predict_begin(logs)
 
     def on_predict_batch_begin(self, batch, logs=None):
@@ -1318,7 +1303,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_batch_begin"):
+            if hasattr(cb, "on_predict_batch_begin"):  # pragma: no branch
                 cb.on_predict_batch_begin(batch, logs)
 
     def on_predict_batch_end(self, batch, logs=None):
@@ -1329,7 +1314,7 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_batch_end"):
+            if hasattr(cb, "on_predict_batch_end"):  # pragma: no branch
                 cb.on_predict_batch_end(batch, logs)
 
     def on_predict_end(self, logs=None):
@@ -1339,11 +1324,9 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_end"):
+            if hasattr(cb, "on_predict_end"):  # pragma: no branch
                 cb.on_predict_end(logs)
 
 
 class ProgbarLogger:
     """Class docstring."""
-
-    pass

@@ -1,9 +1,11 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras import layers
-from ml_switcheroo_compiler.core.config import config
 from unittest.mock import patch
+
+import numpy as np
+from ml_switcheroo_compiler.core.config import config
+
+from zero_keras import layers
 
 
 class FakeTensor:
@@ -47,7 +49,7 @@ def test_missing_augmentations():
             layers.RandomBrightness,
             layers.MixUp,
         ]:
-            with patch("zero_keras.layers._to_tensor", lambda x: FakeTensor()):
+            with patch("zero_keras.activations._to_tensor", lambda x: FakeTensor()):
                 with patch(
                     "ml_switcheroo_compiler.ops.shape.utils._emit_shape_node"
                 ) as mock_emit:
@@ -103,7 +105,7 @@ def test_others():
     ]:
         try:
             with patch(
-                "zero_keras.layers._to_tensor",
+                "zero_keras.activations._to_tensor",
                 lambda x: FakeTensor(
                     (2, 3, 10)
                     if "1D" in cls.__name__

@@ -1,12 +1,11 @@
 """Module docstring."""
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 WEIGHTS_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/"
@@ -249,7 +248,7 @@ def InceptionV3(
         x = layers.concatenate(
             [branch1x1, branch7x7, branch7x7dbl, branch_pool],
             axis=channel_axis,
-            name="mixed{0}".format(5 + i),
+            name=f"mixed{5 + i}",
         )
 
     # mixed 7: 17 x 17 x 768

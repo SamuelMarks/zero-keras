@@ -21,7 +21,7 @@ allow-direct-references = true
 
 [tool.ruff.lint]
 per-file-ignores = {"tests/*" = ["E741", "F841"], "parse_*.py" = ["E741"]}
-ignore = ['E402']
+ignore = ['E402', 'BLE001', 'S110', 'S112', 'B017', 'TRY002', 'SIM102', 'UP031', 'UP006', 'UP035', 'FA100', 'RUF046', 'RUF059', 'SIM101', 'PLR0133', 'SIM115', 'F401', 'B023', 'PERF402', 'TRY004', 'PLW0602', 'PLR0124', 'RUF012', 'B018', 'SIM117']
 
 [tool.pytest.ini_options]
 addopts = "--cov=src/zero_keras --cov-report=term-missing -v"

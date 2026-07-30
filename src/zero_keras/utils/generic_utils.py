@@ -1,13 +1,12 @@
 """Generic utilities shim."""
 
 from ml_switcheroo_compiler.utils.generic_utils import (
-    set_random_seed,
-    FeatureSpace,
     Config,
     CustomObjectScope,
+    FeatureSpace,
     PyDataset,
     Sequence,
-    clear_session,
+    bounding_boxes,
     custom_object_scope,
     deserialize_keras_object,
     disable_interactive_logging,
@@ -19,18 +18,20 @@ from ml_switcheroo_compiler.utils.generic_utils import (
     is_keras_tensor,
     register_keras_serializable,
     serialize_keras_object,
+    set_random_seed,
     standardize_dtype,
-    legacy,
-    bounding_boxes,
+)
+from ml_switcheroo_compiler.utils.generic_utils import (
+    clear_session as msc_clear_session,
 )
 
 __all__ = [
-    "set_random_seed",
-    "FeatureSpace",
     "Config",
     "CustomObjectScope",
+    "FeatureSpace",
     "PyDataset",
     "Sequence",
+    "bounding_boxes",
     "clear_session",
     "custom_object_scope",
     "deserialize_keras_object",
@@ -43,14 +44,19 @@ __all__ = [
     "is_keras_tensor",
     "register_keras_serializable",
     "serialize_keras_object",
+    "set_random_seed",
     "standardize_dtype",
-    "legacy",
-    "bounding_boxes",
 ]
 
-from ml_switcheroo_compiler.utils.generic_utils import GetFileConfig, ProgbarConfig
-from ml_switcheroo_compiler.utils.generic_utils import get_file as msc_get_file
+from ml_switcheroo_compiler.utils.generic_utils import (
+    ArchiveConfig,
+    CacheConfig,
+    GetFileConfig,
+    HashConfig,
+    ProgbarConfig,
+)
 from ml_switcheroo_compiler.utils.generic_utils import Progbar as msc_Progbar
+from ml_switcheroo_compiler.utils.generic_utils import get_file as msc_get_file
 
 
 def get_file(
@@ -68,7 +74,13 @@ def get_file(
     """docstring."""
 
     config = GetFileConfig(
-        untar=untar, cache_subdir=cache_subdir, extract=extract, cache_dir=cache_dir
+        hash_config=HashConfig(
+            md5_hash=md5_hash, file_hash=file_hash, hash_algorithm=hash_algorithm
+        ),
+        archive_config=ArchiveConfig(
+            untar=untar, extract=extract, archive_format=archive_format
+        ),
+        cache_config=CacheConfig(cache_subdir=cache_subdir, cache_dir=cache_dir),
     )
     return msc_get_file(fname, origin, config=config)
 
@@ -88,9 +100,24 @@ def Progbar(
     return msc_Progbar(target, config=config)
 
 
-__all__ += ["get_file", "Progbar"]
+__all__ += ["Progbar", "get_file"]
+
+
+_UID_PREFIXES = {}
+
+
+def clear_session():
+    """Clears any global state and resets unique identifiers."""
+    global _UID_PREFIXES
+    _UID_PREFIXES.clear()
+    msc_clear_session()
 
 
 def get_uid(prefix):
     """get_uid docstring."""
-    return 1
+    global _UID_PREFIXES
+    if prefix not in _UID_PREFIXES:
+        _UID_PREFIXES[prefix] = 1
+    else:
+        _UID_PREFIXES[prefix] += 1
+    return _UID_PREFIXES[prefix]

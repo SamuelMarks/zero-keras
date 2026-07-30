@@ -48,8 +48,6 @@ class MinMaxNorm(Constraint):
 class NonNeg(Constraint):
     """NonNeg docstring."""
 
-    pass
-
 
 class UnitNorm(Constraint):
     """UnitNorm docstring."""

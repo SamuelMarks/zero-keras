@@ -1,8 +1,9 @@
 """Module docstring."""
 
-import numpy as np
 import keras
-import zero_keras.layers as layers
+import numpy as np
+
+from zero_keras import layers
 
 
 def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwargs):
@@ -30,7 +31,7 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwarg
 
     zero_out = zero_layer(inputs)
 
-    if isinstance(keras_out, list) or isinstance(keras_out, tuple):
+    if isinstance(keras_out, (list, tuple)):
         for ko, zo in zip(keras_out, zero_out):
             ko_np = ko.numpy() if hasattr(ko, "numpy") else np.array(ko)
             zo_np = zo.numpy() if hasattr(zo, "numpy") else np.array(zo)

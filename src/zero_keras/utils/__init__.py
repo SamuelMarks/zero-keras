@@ -1,31 +1,30 @@
 """module docstring."""
 
-from zero_keras.utils import bounding_boxes
-from zero_keras.utils import legacy
+from zero_keras.utils import bounding_boxes, legacy
 
 """Keras utils API."""
 
-from zero_keras.utils.np_utils import to_categorical, normalize
-from zero_keras.utils.generic_utils import Progbar, get_file, set_random_seed
-from zero_keras.utils.vis_utils import plot_model
 from zero_keras.utils.dataset_utils import (
     audio_dataset_from_directory,
     image_dataset_from_directory,
     text_dataset_from_directory,
     timeseries_dataset_from_array,
 )
+from zero_keras.utils.generic_utils import Progbar, get_file, set_random_seed
+from zero_keras.utils.np_utils import normalize, to_categorical
+from zero_keras.utils.vis_utils import plot_model
 
 __all__ = [
-    "to_categorical",
-    "normalize",
     "Progbar",
-    "get_file",
-    "set_random_seed",
-    "plot_model",
     "audio_dataset_from_directory",
+    "get_file",
     "image_dataset_from_directory",
+    "normalize",
+    "plot_model",
+    "set_random_seed",
     "text_dataset_from_directory",
     "timeseries_dataset_from_array",
+    "to_categorical",
 ]
 
 from zero_keras.utils.dataset_utils import (
@@ -35,9 +34,9 @@ from zero_keras.utils.dataset_utils import (
     unpack_x_y_sample_weight,
 )
 from zero_keras.utils.generic_utils import (
-    FeatureSpace,
     Config,
     CustomObjectScope,
+    FeatureSpace,
     PyDataset,
     Sequence,
     clear_session,
@@ -54,6 +53,7 @@ from zero_keras.utils.generic_utils import (
     serialize_keras_object,
     standardize_dtype,
 )
+from zero_keras.utils.operation_utils import get_source_inputs
 from zero_keras.utils.vis_utils import (
     array_to_img,
     img_to_array,
@@ -61,18 +61,15 @@ from zero_keras.utils.vis_utils import (
     model_to_dot,
     save_img,
 )
-from zero_keras.utils.operation_utils import get_source_inputs
 
 __all__ += [
-    "pack_x_y_sample_weight",
-    "pad_sequences",
-    "split_dataset",
-    "unpack_x_y_sample_weight",
-    "FeatureSpace",
     "Config",
     "CustomObjectScope",
+    "FeatureSpace",
     "PyDataset",
     "Sequence",
+    "array_to_img",
+    "bounding_boxes",
     "clear_session",
     "custom_object_scope",
     "deserialize_keras_object",
@@ -81,17 +78,19 @@ __all__ += [
     "get_custom_objects",
     "get_registered_name",
     "get_registered_object",
+    "get_source_inputs",
+    "img_to_array",
     "is_interactive_logging_enabled",
     "is_keras_tensor",
-    "register_keras_serializable",
-    "serialize_keras_object",
-    "standardize_dtype",
     "legacy",
-    "bounding_boxes",
-    "array_to_img",
-    "img_to_array",
     "load_img",
     "model_to_dot",
+    "pack_x_y_sample_weight",
+    "pad_sequences",
+    "register_keras_serializable",
     "save_img",
-    "get_source_inputs",
+    "serialize_keras_object",
+    "split_dataset",
+    "standardize_dtype",
+    "unpack_x_y_sample_weight",
 ]

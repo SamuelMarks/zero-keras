@@ -1,35 +1,36 @@
 """Module docstring."""
 
 import numpy as np
-from zero_keras.ops import ops
+
 from zero_keras.layers import (
-    Dot,
+    LSTM,
+    RNN,
+    Bidirectional,
     Conv1DTranspose,
     Conv2DTranspose,
     Conv3DTranspose,
+    ConvLSTM1D,
     Cropping1D,
     Cropping2D,
     Cropping3D,
+    Dot,
     EinsumDense,
-    RNN,
-    SimpleRNNCell,
-    LSTM,
-    GRUCell,
-    LSTMCell,
-    Bidirectional,
-    Normalization,
     GroupNormalization,
+    GRUCell,
+    Layer,
+    LayerNormalization,
+    LSTMCell,
+    Normalization,
+    RandAugment,
     RandomFlip,
     RandomRotation,
-    RandAugment,
-    LayerNormalization,
+    SimpleRNN,
+    SimpleRNNCell,
     ZeroPadding1D,
     ZeroPadding2D,
     ZeroPadding3D,
-    ConvLSTM1D,
-    Layer,
-    SimpleRNN,
 )
+from zero_keras.ops import ops
 
 
 def test_dot_tuple_axes():

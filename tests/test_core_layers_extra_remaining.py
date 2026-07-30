@@ -1,8 +1,9 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras.core_layers import Model, KerasTensor
 import ml_switcheroo_compiler.ops
+import numpy as np
+
+from zero_keras.core_layers import KerasTensor, Model
 
 
 def test_model_train_step_apply_gradients():
@@ -33,7 +34,6 @@ def test_model_train_step_apply_gradients():
             Args:
                 grads: Description.
             """
-            pass
 
     model.optimizer = Opt()
 

@@ -2,6 +2,7 @@
 
 import inspect
 from unittest.mock import MagicMock
+
 from zero_keras import layers
 
 

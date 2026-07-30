@@ -1,7 +1,6 @@
 """MNIST handwritten digits dataset."""
 
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -26,7 +25,7 @@ def load_data(path="mnist.npz"):
         origin=origin_folder + "mnist.npz",
         file_hash="731c5ac602752760c8e48fbffcf8c3b8",
     )
-    with np.load(path, allow_pickle=True) as f:
+    with ops.load(path, allow_pickle=True) as f:
         x_train, y_train = f["x_train"], f["y_train"]
         x_test, y_test = f["x_test"], f["y_test"]
 

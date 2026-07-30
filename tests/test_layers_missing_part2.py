@@ -1,8 +1,10 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras import layers
 from unittest.mock import patch
+
+import numpy as np
+
+from zero_keras import layers
 
 
 def test_missing_layers_part2():
@@ -74,8 +76,6 @@ def test_missing_layers_part2():
     # Foreign models
     class MockModule:
         """Class docstring."""
-
-        pass
 
     # RNN state edge cases
     try:

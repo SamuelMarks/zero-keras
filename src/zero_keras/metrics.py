@@ -1,33 +1,12 @@
 """Module docstring."""
 
 # Aliases from losses (exported)
-from zero_keras.losses import CategoricalCrossentropy as CategoricalCrossentropy
-from zero_keras.losses import binary_crossentropy as binary_crossentropy
-from zero_keras.losses import binary_focal_crossentropy as binary_focal_crossentropy
-from zero_keras.losses import categorical_crossentropy as categorical_crossentropy
+from zero_keras import ops
 from zero_keras.losses import (
-    categorical_focal_crossentropy as categorical_focal_crossentropy,
+    binary_crossentropy,
+    log_cosh,
+    sparse_categorical_crossentropy,
 )
-from zero_keras.losses import categorical_hinge as categorical_hinge
-from zero_keras.losses import hinge as hinge
-from zero_keras.losses import huber as huber
-from zero_keras.losses import kl_divergence as kl_divergence
-from zero_keras.losses import log_cosh as log_cosh
-from zero_keras.losses import mean_absolute_error as mean_absolute_error
-from zero_keras.losses import (
-    mean_absolute_percentage_error as mean_absolute_percentage_error,
-)
-from zero_keras.losses import mean_squared_error as mean_squared_error
-from zero_keras.losses import (
-    mean_squared_logarithmic_error as mean_squared_logarithmic_error,
-)
-from zero_keras.losses import poisson as poisson
-from zero_keras.losses import (
-    sparse_categorical_crossentropy as sparse_categorical_crossentropy,
-)
-from zero_keras.losses import squared_hinge as squared_hinge
-
-from zero_keras.ops import ops
 
 
 def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
@@ -39,7 +18,7 @@ def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
         top_k: Description.
         class_id: Description.
     """
-    from zero_keras.ops import ops
+    from zero_keras import ops
 
     if top_k is not None:
         top_k_vals, _ = ops.top_k(y_pred, k=top_k)
@@ -51,7 +30,6 @@ def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
     return y_true, y_pred
 
 
-import ml_switcheroo_compiler.nn as nn
 from zero_keras.activations import _to_tensor, _wrap
 
 """Keras metrics."""
@@ -192,7 +170,6 @@ class Metric:
 
     def stateless_reset_state(self):
         """stateless_reset_state docstring."""
-        pass
 
     def stateless_result(self, *args, **kwargs):
         """stateless_result docstring.
@@ -231,7 +208,7 @@ class Metric:
 
     def update_state(self, *args, **kwargs):
         """Accumulate statistics for the metric."""
-        pass
+        raise NotImplementedError
 
     def result(self):
         """Compute the current metric value.
@@ -980,7 +957,7 @@ class _ConfusionMatrixMetric(Metric):
     def result(self):
         """Function docstring."""
         if isinstance(self.accumulator, list):
-            from zero_keras.ops import ops
+            from zero_keras import ops
 
             return ops.stack(self.accumulator)
         return self.accumulator
@@ -1318,7 +1295,7 @@ class Precision(Metric):
         # tp and fp could be lists or arrays if multiple thresholds.
         # But our confusion matrix result() handles it.
         # Just safely divide.
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         # We need to handle list of thresholds properly if it returns an array
         res = ops.where(
@@ -1445,7 +1422,7 @@ class Recall(Metric):
         """Function docstring."""
         tp = self.true_positives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         res = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1563,7 +1540,7 @@ class PrecisionAtRecall(Metric):
         fp = self.false_positives.result()
         self.true_negatives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         recalls = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1694,7 +1671,7 @@ class RecallAtPrecision(Metric):
         fp = self.false_positives.result()
         self.true_negatives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         recalls = ops.where(
             ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
@@ -1829,7 +1806,7 @@ class SensitivityAtSpecificity(Metric):
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         specificities = ops.where(
             ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
@@ -1964,7 +1941,7 @@ class SpecificityAtSensitivity(Metric):
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         specificities = ops.where(
             ops.greater(tn + fp, 0.0), ops.divide(tn, tn + fp + 1e-7), _to_tensor(0.0)
@@ -2183,7 +2160,7 @@ class AUC(Metric):
         fp = self.false_positives.result()
         tn = self.true_negatives.result()
         fn = self.false_negatives.result()
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         if self.curve == "ROC":
             tpr = ops.where(
@@ -3368,12 +3345,10 @@ class IoU(Metric):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = ops.cast(_to_tensor(y_true), "int32")
-        print("y_true init shape", y_true.shape)
-        print("sparse_y_true", self.sparse_y_true)
         y_pred = ops.cast(_to_tensor(y_pred), "int32")
 
         if not self.sparse_y_true:
@@ -3398,20 +3373,13 @@ class IoU(Metric):
             )
             valid_mask = valid_mask * sample_weight
 
-        print("y_true before one_hot", y_true.shape)
-        y_true_one_hot = nn.one_hot(y_true, self.num_classes)
-        y_pred_one_hot = nn.one_hot(y_pred, self.num_classes)
+        y_true_one_hot = ops.one_hot(y_true, self.num_classes)
+        y_pred_one_hot = ops.one_hot(y_pred, self.num_classes)
 
         # apply weights and mask
         y_true_one_hot = y_true_one_hot * ops.expand_dims(valid_mask, -1)
 
         # Transpose and matmul
-        print(
-            "y_true_one_hot",
-            y_true_one_hot.shape,
-            "y_pred_one_hot",
-            y_pred_one_hot.shape,
-        )
         cm = ops.sum(
             ops.expand_dims(y_true_one_hot, -1) * ops.expand_dims(y_pred_one_hot, 1),
             axis=0,
@@ -3424,7 +3392,7 @@ class IoU(Metric):
 
     def result(self):
         """Function docstring."""
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         cm = self.total_cm
         sum_over_row = ops.sum(cm, axis=0)
@@ -3451,7 +3419,8 @@ class IoU(Metric):
             # gather the specific indices
             # we can use one-hot mask
             mask = ops.sum(
-                nn.one_hot(ops.asarray(self.target_class_ids), self.num_classes), axis=0
+                ops.one_hot(ops.asarray(self.target_class_ids), self.num_classes),
+                axis=0,
             )
             iou = iou * mask
             num_valid = ops.cast(len(self.target_class_ids), "float32")
@@ -3675,7 +3644,7 @@ class BinaryIoU(IoU):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = ops.cast(_to_tensor(y_true), "float32")
@@ -3934,7 +3903,7 @@ class ConcordanceCorrelation(Metric):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -3969,8 +3938,8 @@ class ConcordanceCorrelation(Metric):
 
     def result(self):
         """Function docstring."""
-        from zero_keras.ops import ops
-        from zero_keras.activations import _wrap, _to_tensor
+        from zero_keras import ops
+        from zero_keras.activations import _to_tensor, _wrap
 
         n = ops.maximum(self.count, _to_tensor(1e-7))
         mean_x = self.sum_x / n
@@ -4019,7 +3988,7 @@ class PearsonCorrelation(Metric):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -4054,8 +4023,8 @@ class PearsonCorrelation(Metric):
 
     def result(self):
         """Function docstring."""
-        from zero_keras.ops import ops
-        from zero_keras.activations import _wrap, _to_tensor
+        from zero_keras import ops
+        from zero_keras.activations import _to_tensor, _wrap
 
         n = ops.maximum(self.count, _to_tensor(1e-7))
         mean_x = self.sum_x / n
@@ -4118,7 +4087,7 @@ class FBetaScore(Metric):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -4157,8 +4126,8 @@ class FBetaScore(Metric):
 
     def result(self):
         """Function docstring."""
-        from zero_keras.ops import ops
-        from zero_keras.activations import _wrap, _to_tensor
+        from zero_keras import ops
+        from zero_keras.activations import _to_tensor, _wrap
 
         beta2 = _to_tensor(self.beta**2)
         p = self.tp / ops.maximum(self.tp + self.fp, _to_tensor(1e-7))
@@ -4241,7 +4210,7 @@ class R2Score(Metric):
             y_pred: Description.
             sample_weight: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
         y_true = _to_tensor(y_true)
@@ -4265,8 +4234,8 @@ class R2Score(Metric):
 
     def result(self):
         """Function docstring."""
-        from zero_keras.ops import ops
-        from zero_keras.activations import _wrap, _to_tensor
+        from zero_keras import ops
+        from zero_keras.activations import _to_tensor, _wrap
 
         cnt = ops.maximum(self.count, _to_tensor(1e-7))
         self.sum / cnt

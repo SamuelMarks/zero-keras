@@ -1,9 +1,11 @@
 """Tests for zero_keras metrics parity with Keras."""
 
+import keras
 import numpy as np
 import pytest
-import keras
+
 from zero_keras import metrics
+
 from .utils import assert_allclose_keras_zero, set_seed
 
 
@@ -165,10 +167,14 @@ def test_metric_TopKCategoricalAccuracy():
     check_metric_parity(
         metrics.TopKCategoricalAccuracy,
         keras.metrics.TopKCategoricalAccuracy,
-        np.array([[0, 1, 0], [1, 0, 0]], dtype=np.int32),
-        np.array([[0.1, 0.8, 0.1], [0.1, 0.8, 0.1]], dtype=np.float32),
-        np.array([[0, 0, 1], [0, 1, 0]], dtype=np.int32),
-        np.array([[0.1, 0.1, 0.8], [0.1, 0.8, 0.1]], dtype=np.float32),
+        np.array([[0, 1, 0, 0, 0], [1, 0, 0, 0, 0]], dtype=np.int32),
+        np.array(
+            [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32
+        ),
+        np.array([[0, 0, 1, 0, 0], [0, 1, 0, 0, 0]], dtype=np.int32),
+        np.array(
+            [[0.1, 0.1, 0.6, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32
+        ),
     )
 
 

@@ -1,9 +1,11 @@
 """Module docstring."""
 
 import json
+
 import pytest
+
 from zero_keras import models
-from zero_keras.core_layers import Model, Layer
+from zero_keras.core_layers import Layer, Model
 
 
 class DummyLayer(Layer):

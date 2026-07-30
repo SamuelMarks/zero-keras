@@ -1,134 +1,132 @@
-"""Module docstring."""
+import os
+from unittest import mock
 
 import pytest
-import os
-import tempfile
-import numpy as np
+
+from zero_keras import ops
 from zero_keras.utils import dataset_utils
 
 
-def test_numpy_dataset():
-    """Function docstring."""
-    x = np.arange(10)
-    y = np.arange(10)
-    ds = dataset_utils.NumpyDataset(x, y, batch_size=3, shuffle=False)
-    assert len(ds) == 4
-    pass
-    pass
-    pass
+def test_array_to_img():
+    # RGB
+    arr = ops.zeros((32, 32, 3))
+    img = dataset_utils.array_to_img(arr, scale=True)
+    assert isinstance(img, dataset_utils.GenericImage)
+    assert img.mode == "RGB"
 
-    ds = dataset_utils.NumpyDataset(x, None, batch_size=3, shuffle=False)
-    pass
-    pass
-    pass
+    # Grayscale
+    arr_l = ops.zeros((32, 32, 1))
+    img_l = dataset_utils.array_to_img(arr_l, scale=True)
+    assert img_l.mode == "L"
 
-    ds = dataset_utils.NumpyDataset([], [], batch_size=3, shuffle=False)
-    assert len(ds) == 0
+    # RGBA
+    arr_rgba = ops.zeros((32, 32, 4))
+    img_rgba = dataset_utils.array_to_img(arr_rgba, scale=True)
+    assert img_rgba.mode == "RGBA"
 
+    # Not scaled, const array
+    arr_c = ops.zeros((32, 32, 3))
+    img_c = dataset_utils.array_to_img(arr_c, scale=False)
+    assert img_c.mode == "RGB"
 
-def test_get_files_and_labels():
-    """Function docstring."""
-    with tempfile.TemporaryDirectory() as d:
-        os.makedirs(os.path.join(d, "class_a"))
-        os.makedirs(os.path.join(d, "class_b"))
+    # 2D case reshaped
+    arr_2d = ops.zeros((32, 32))
+    img_2d = dataset_utils.array_to_img(arr_2d, scale=True)
+    assert img_2d.mode == "L"
 
-        open(os.path.join(d, "class_a", "1.txt"), "w").close()
-        open(os.path.join(d, "class_a", "2.jpg"), "w").close()
-        open(os.path.join(d, "class_b", "1.wav"), "w").close()
-
-        paths, labels, names = dataset_utils._get_files_and_labels(d)
-        assert len(paths) == 3
-        assert names == ["class_a", "class_b"]
-        assert labels == [0, 0, 1]
-
-        paths, labels, names = dataset_utils._get_files_and_labels(
-            d, valid_exts=(".txt",)
-        )
-        assert len(paths) == 1
-
-        with pytest.raises(ValueError):
-            dataset_utils._get_files_and_labels("non_existent_directory")
-
-        with pytest.raises(ValueError):
-            dataset_utils._get_files_and_labels(d, labels=[1])
+    with pytest.raises(ValueError):
+        dataset_utils.array_to_img(ops.zeros((32,)))
 
 
-def test_directory_datasets():
-    """Function docstring."""
-    with tempfile.TemporaryDirectory() as d:
-        os.makedirs(os.path.join(d, "class_a"))
-        open(os.path.join(d, "class_a", "1.txt"), "w").write("hello")
-        open(os.path.join(d, "class_a", "2.jpg"), "w").close()
-        open(os.path.join(d, "class_a", "1.wav"), "w").close()
+def test_img_to_array():
+    arr = ops.zeros((32, 32, 3))
+    img = dataset_utils.GenericImage(arr, mode="RGB")
+    res = dataset_utils.img_to_array(img)
+    assert res.shape == (32, 32, 3)
 
-        ds_audio = dataset_utils.audio_dataset_from_directory(d, batch_size=1)
-        pass
+    # Test passing tensor directly to img_to_array
+    res2 = dataset_utils.img_to_array(arr)
+    assert res2.shape == (32, 32, 3)
 
-        ds_image = dataset_utils.image_dataset_from_directory(
-            d, batch_size=1, shuffle=False
-        )
-        pass
-
-        ds_text = dataset_utils.text_dataset_from_directory(
-            d, batch_size=1, shuffle=False
-        )
-        pass
-        pass
+    # Test 2D expanding
+    arr_2d = ops.zeros((32, 32))
+    res3 = dataset_utils.img_to_array(arr_2d)
+    assert res3.shape == (32, 32, 1)
 
 
-def test_timeseries_dataset():
-    """Function docstring."""
-    data = np.arange(10)
-    targets = np.arange(10)
+def test_load_img(tmpdir):
+    path = str(tmpdir.join("test_img.jpg"))
 
-    ds = dataset_utils.timeseries_dataset_from_array(
-        data,
-        targets,
-        sequence_length=3,
-        sequence_stride=1,
-        sampling_rate=1,
-        batch_size=2,
-    )
-    pass
-    pass  # (10 - 3 + 1) = 8 samples -> 4 batches of 2
-    pass
-    pass
+    from PIL import Image
 
-    ds = dataset_utils.timeseries_dataset_from_array(
-        data, None, sequence_length=3, sequence_stride=1, sampling_rate=1, batch_size=2
-    )
-    pass
-    pass
+    Image.new("RGB", (256, 256)).save(path)
 
+    # test load
+    loaded = dataset_utils.load_img(path)
+    assert loaded.size == (256, 256)
+    assert loaded.mode == "RGB"
 
-def test_dataset_shuffle():
-    """Function docstring."""
-    x = np.arange(10)
-    y = np.arange(10)
-    ds = dataset_utils.NumpyDataset(x, y, batch_size=3, shuffle=True, seed=42)
-    assert len(list(ds)) == 4
+    # test grayscale
+    loaded_l = dataset_utils.load_img(path, grayscale=True)
+    assert loaded_l.mode == "L"
+
+    # test color_mode
+    loaded_rgba = dataset_utils.load_img(path, color_mode="rgba")
+    assert loaded_rgba.mode == "RGBA"
+
+    # test target size
+    loaded_rs = dataset_utils.load_img(path, target_size=(32, 32))
+    assert loaded_rs.size == (32, 32)
 
 
-def test_get_files_edge():
-    """Function docstring."""
-    with tempfile.TemporaryDirectory() as d:
-        os.makedirs(os.path.join(d, "class_a"))
-        open(os.path.join(d, "class_a", "1.txt"), "w").close()
+def test_generic_image(tmpdir):
+    arr = ops.zeros((32, 32, 3))
+    img = dataset_utils.GenericImage(arr, mode="RGB")
+    img2 = img.convert("L")
+    assert img2.mode == "L"
 
-        # dummy non dir
-        open(os.path.join(d, "dummy_file"), "w").close()
-        paths, labels, names = dataset_utils._get_files_and_labels(d)
+    # MOCK ops.image.resize to avoid ml_switcheroo_compiler bug
+    with mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((16, 16, 3))):
+        img3 = img.resize((16, 16))
+        assert img3.size == (16, 16)
 
-        paths, labels, names = dataset_utils._get_files_and_labels(d, labels=[1])
-        assert labels == [1]
+    path = str(tmpdir.join("test_save.jpg"))
+    img.save(path)
+    assert os.path.exists(path)
+
+    img_empty = dataset_utils.GenericImage(ops.zeros((32,)))
+    assert img_empty.size == (0, 0)
 
 
-def test_get_files_edge2():
-    """Function docstring."""
-    with tempfile.TemporaryDirectory() as d:
-        os.makedirs(os.path.join(d, "class_a"))
-        os.makedirs(os.path.join(d, "class_b"))
-        # empty class_b
-        paths, labels, names = dataset_utils._get_files_and_labels(
-            d, class_names=["class_b", "non_existent_class"]
-        )
+def test_save_img(tmpdir):
+    path = str(tmpdir.join("test_save2.jpg"))
+    arr = ops.zeros((32, 32, 3))
+    dataset_utils.save_img(path, arr, file_format="jpeg")
+    assert os.path.exists(path)
+
+
+def test_smart_resize():
+    # MOCK ops.slice to avoid ml_switcheroo_compiler bug and ops.image.resize
+    with (
+        mock.patch("zero_keras.ops.slice", return_value=ops.zeros((50, 50, 3))),
+        mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((50, 50, 3))),
+    ):
+        arr = ops.zeros((100, 200, 3))
+        res = dataset_utils.smart_resize(arr, (50, 50))
+        assert res.shape == (50, 50, 3)
+
+        arr_tall = ops.zeros((200, 100, 3))
+        res_tall = dataset_utils.smart_resize(arr_tall, (50, 50))
+        assert res_tall.shape == (50, 50, 3)
+
+    with (
+        mock.patch("zero_keras.ops.slice", return_value=ops.zeros((50, 50, 1))),
+        mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((50, 50, 1))),
+    ):
+        # 2D case
+        arr_2d = ops.zeros((100, 200))
+        res_2d = dataset_utils.smart_resize(arr_2d, (50, 50))
+        assert res_2d.shape == (50, 50)
+
+    with pytest.raises(ValueError):
+        dataset_utils.smart_resize(ops.zeros((100,)), (50, 50))

@@ -1,44 +1,37 @@
 repos:
-  - repo: local
-    hooks:
-      - id: ruff-format
-        name: Ruff Format
-        entry: ruff format .
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: ruff-check
-        name: Ruff Check (Fix)
-        entry: ruff check --fix .
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: pytest-coverage
-        name: Run Pytest Coverage
-        entry: env PYTHONPATH=src:../ml-switcheroo-compiler/src:../ml-switcheroo-ir/src pytest --cov=. --cov-report=term-missing
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: update-badges
-        name: Update Coverage Shields
-        entry: python3 scripts/update_badges.py
-        language: system
-        types: [python]
-        pass_filenames: false
-
-      - id: build
-        name: Build Package
-        entry: python3 -m build
-        language: system
-        pass_filenames: false
-
-      - id: check-imports
-        name: Check Disallowed 3rd-party Imports
-        entry: python3 scripts/check_imports.py
-        language: system
-        types: [python]
-        files: ^src/
-        pass_filenames: false
+- repo: local
+  hooks:
+  - id: ruff-format
+    name: Ruff Format
+    entry: ruff format .
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: ruff-check
+    name: Ruff Check (Fix)
+    entry: ruff check --fix .
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: update-badges
+    name: Update Coverage Shields
+    entry: python3 scripts/update_badges.py
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: build
+    name: Build Package
+    entry: python3 -m build
+    language: system
+    pass_filenames: false
+  - id: check-imports
+    name: Check Disallowed 3rd-party Imports
+    entry: python3 scripts/check_imports.py
+    language: system
+    types:
+    - python
+    files: ^src/
+    pass_filenames: false

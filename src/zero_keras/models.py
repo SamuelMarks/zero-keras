@@ -2,7 +2,8 @@
 
 import json
 import zipfile
-from zero_keras.core_layers import Model, Functional
+
+from zero_keras.core_layers import Functional, Model
 
 
 def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kwargs):
@@ -41,24 +42,22 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
     access specific variables, e.g. `model.get_layer("dense_1").kernel`.
 
     """
-    from zero_keras import layers
-    from zero_keras.models import Sequential
 
     if str(filepath).endswith(".keras") or zipfile.is_zipfile(filepath):
         with zipfile.ZipFile(filepath, "r") as z:
             config_str = z.read("config.json").decode("utf-8")
-            config = json.loads(config_str)
 
-            # Very basic reconstruction stub
-            if config.get("class_name") == "Sequential":
-                model = Sequential()
-                for layer_config in config.get("config", {}).get("layers", []):
-                    class_name = layer_config.get("class_name")
-                    layer_cls = getattr(layers, class_name, None)
-                    if layer_cls:
-                        model.add(layer_cls(**layer_config.get("config", {})))
-            else:
-                model = Model()  # stub
+            import json
+
+            from zero_keras.models import model_from_json
+
+            config_dict = json.loads(config_str)
+            if safe_mode and config_dict.get("class_name") == "Lambda":
+                raise ValueError("safe_mode is True, cannot deserialize Lambda")
+
+            model = model_from_json(
+                config_str, custom_objects=custom_objects, safe_mode=safe_mode
+            )
 
             def _load_safetensors(data):
                 """_load_safetensors function.
@@ -70,9 +69,10 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
                 Any: Return value.
 
                 """
-                import struct
-                import json
                 import array
+                import json
+                import struct
+
                 from ml_switcheroo_compiler.core.dtype import DType
 
                 header_size = struct.unpack("<Q", data[:8])[0]
@@ -107,7 +107,8 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
 
             if "model.safetensors" in z.namelist():
                 from ml_switcheroo_compiler.ops import asarray
-                from ml_switcheroo_compiler.ops.shape import reshape
+
+                from zero_keras.ops import reshape
 
                 with z.open("model.safetensors") as w:
                     data = w.read()
@@ -123,7 +124,12 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
                         except Exception:
                             pass
             return model
-    return Model()
+    elif str(filepath).endswith((".h5", ".hdf5")):
+        raise ValueError(
+            "Legacy HDF5 format is not supported in zero_keras. Please use .keras format."
+        )
+    else:
+        raise ValueError(f"File format not supported for {filepath}")
 
 
 class Sequential(Model):
@@ -312,13 +318,7 @@ class Sequential(Model):
             if hasattr(layer, "compute_output_shape"):
                 current_shape = layer.compute_output_shape(current_shape)
             else:
-                # heuristic fallback
-                units = getattr(layer, "units", None)
-                if units is not None:
-                    if isinstance(current_shape, tuple):
-                        current_shape = current_shape[:-1] + (units,)
-                    else:
-                        current_shape = (units,)
+                raise NotImplementedError("Missing compute_output_shape")
         self.built = True
 
     def call(self, inputs, training=None, mask=None, **kwargs):
@@ -444,43 +444,15 @@ def clone_model(model, input_tensors=None, clone_function=None):
             cloned_model.add(clone_function(layer))
         return cloned_model
 
-    # We only have Sequential implemented cleanly right now in the API shell.
-    # For a generic model, we will just return it unmodified as a stub for this compiler wrapper.
-    return model
+    from zero_keras.core_layers import Input
 
+    if isinstance(model, Model):
+        # Full functional model cloning
+        config = model.get_config()
+        layer_configs = config.get("layers", [])
 
-def save_model(model, filepath, overwrite=True, **kwargs):
-    """Saves a model as a `.keras` file."""
-    if hasattr(model, "save"):
-        model.save(filepath, overwrite=overwrite, **kwargs)
-    else:
-        from zero_keras.core_layers import Model
-
-        Model.save(model, filepath, overwrite=overwrite, **kwargs)
-
-
-def model_from_json(json_string, custom_objects=None):
-    """Function docstring.
-
-    Args:
-        json_string: Description.
-        custom_objects: Description.
-    """
-    import json
-
-    config = json.loads(json_string)
-    class_name = config.get("class_name")
-
-    if class_name == "Sequential":
-        return Sequential.from_config(config.get("config", {}))
-
-    from zero_keras.core_layers import Model, Input
-    from zero_keras import layers
-    import builtins
-
-    if class_name in ("Functional", "Model"):
-        conf = config.get("config", {})
-        layer_configs = conf.get("layers", [])
+        if not layer_configs:
+            return model
 
         created_layers = {}
         tensor_map = {}
@@ -498,11 +470,15 @@ def model_from_json(json_string, custom_objects=None):
                 created_layers[lname] = layer
                 tensor_map[lname] = layer
             else:
-                cls = getattr(layers, cname, None)
-                if cls is None:
-                    cls = getattr(builtins, cname, None)
-                if cls:
-                    created_layers[lname] = cls.from_config(cconfig)
+                # Find original layer
+                orig_layer = None
+                for lyr in model.layers:
+                    if lyr.name == lname:
+                        orig_layer = lyr
+                        break
+                if orig_layer:
+                    cloned_layer = clone_function(orig_layer)
+                    created_layers[lname] = cloned_layer
 
         for lc in layer_configs:
             lname = lc.get("name")
@@ -514,7 +490,95 @@ def model_from_json(json_string, custom_objects=None):
 
             for connection_group in inbound:
                 if len(connection_group) == 1:
-                    src_layer, node_idx, tensor_idx, kwargs = connection_group[0]
+                    src_layer, _node_idx, _tensor_idx, kwargs = connection_group[0]
+                    inp_tensor = tensor_map[src_layer]
+                    out_tensor = layer(inp_tensor, **kwargs)
+                else:
+                    inp_tensors = [tensor_map[c[0]] for c in connection_group]
+                    out_tensor = layer(inp_tensors)
+                tensor_map[lname] = out_tensor
+
+        input_layers = config.get("input_layers", [])
+        output_layers = config.get("output_layers", [])
+
+        inputs = [tensor_map[il[0]] for il in input_layers]
+        outputs = [tensor_map[ol[0]] for ol in output_layers]
+
+        if len(inputs) == 1:
+            inputs = inputs[0]
+        if len(outputs) == 1:
+            outputs = outputs[0]
+
+        return Functional(inputs=inputs, outputs=outputs, name=config.get("name"))
+
+    return model
+
+
+def save_model(model, filepath, overwrite=True, **kwargs):
+    """Saves a model as a `.keras` file."""
+    if hasattr(model, "save"):
+        model.save(filepath, overwrite=overwrite, **kwargs)
+    else:
+        from zero_keras.core_layers import Model
+
+        Model.save(model, filepath, overwrite=overwrite, **kwargs)
+
+
+def model_from_json(json_string, custom_objects=None, safe_mode=True):
+    """Function docstring.
+
+    Args:
+        json_string: Description.
+        custom_objects: Description.
+        safe_mode: Description.
+    """
+
+    config = json.loads(json_string)
+    class_name = config.get("class_name")
+
+    if class_name == "Sequential":
+        return Sequential.from_config(config.get("config", {}))
+
+    from zero_keras.core_layers import Input, Model, deserialize
+
+    if class_name in ("Functional", "Model"):
+        conf = config.get("config", {})
+        layer_configs = conf.get("layers", [])
+
+        created_layers = {}
+        tensor_map = {}
+
+        for lc in layer_configs:
+            lname = lc.get("name")
+            cname = lc.get("class_name")
+            cconfig = lc.get("config", {})
+
+            if safe_mode and cname == "Lambda":
+                raise ValueError("safe_mode is True, cannot deserialize Lambda")
+
+            if cname == "InputLayer":
+                shape = cconfig.get("batch_input_shape", (None,))
+                if shape and shape[0] is None:
+                    shape = shape[1:]
+                layer = Input(shape=shape, name=lname, dtype=cconfig.get("dtype"))
+                created_layers[lname] = layer
+                tensor_map[lname] = layer
+            else:
+                created_layers[lname] = deserialize(
+                    lc, custom_objects=custom_objects, safe_mode=safe_mode
+                )
+
+        for lc in layer_configs:
+            lname = lc.get("name")
+            inbound = lc.get("inbound_nodes", [])
+            if not inbound:
+                continue
+
+            layer = created_layers[lname]
+
+            for connection_group in inbound:
+                if len(connection_group) == 1:
+                    src_layer, _node_idx, _tensor_idx, kwargs = connection_group[0]
                     inp_tensor = tensor_map[src_layer]
                     out_tensor = layer(inp_tensor, **kwargs)
                 else:

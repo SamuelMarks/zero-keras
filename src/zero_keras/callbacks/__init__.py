@@ -1,9 +1,9 @@
 """callbacks API."""
 
 from zero_keras.callbacks.callbacks import BackupAndRestore as BackupAndRestore
-from zero_keras.callbacks.callbacks import CSVLogger as CSVLogger
 from zero_keras.callbacks.callbacks import Callback as Callback
 from zero_keras.callbacks.callbacks import CallbackList as CallbackList
+from zero_keras.callbacks.callbacks import CSVLogger as CSVLogger
 from zero_keras.callbacks.callbacks import EarlyStopping as EarlyStopping
 from zero_keras.callbacks.callbacks import History as History
 from zero_keras.callbacks.callbacks import LambdaCallback as LambdaCallback

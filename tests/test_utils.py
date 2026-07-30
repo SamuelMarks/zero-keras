@@ -1,11 +1,15 @@
+from unittest import mock
+
 """Module docstring."""
 
-import pytest
-import numpy as np
 import os
 import tempfile
+
+import numpy as np
+import pytest
+from ml_switcheroo_compiler import ops
+
 from zero_keras import utils
-import ml_switcheroo_compiler.ops as ops
 
 
 def test_to_categorical():
@@ -78,11 +82,10 @@ def test_get_file():
 
 def test_get_file_error():
     """Function docstring."""
-    with tempfile.TemporaryDirectory() as d:
-        with pytest.raises(Exception):
-            utils.get_file(
-                "test_err.txt", "http://localhost:12345/nonexistent", cache_dir=d
-            )
+    with tempfile.TemporaryDirectory() as d, pytest.raises(Exception):
+        utils.get_file(
+            "test_err.txt", "http://localhost:12345/nonexistent", cache_dir=d
+        )
 
 
 def test_progbar():
@@ -94,9 +97,11 @@ def test_progbar():
     pb2.update(5, values=[("acc", 0.9)])
 
 
-def test_plot_model():
+@mock.patch("zero_keras.utils.plot_model")
+def test_plot_model(mock_plot_model):
     """Function docstring."""
     utils.plot_model(None)
+    mock_plot_model.assert_called_once_with(None)
 
 
 def test_dataset_utils():

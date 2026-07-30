@@ -1,9 +1,11 @@
 """Tests for zero_keras losses parity with Keras."""
 
+import keras
 import numpy as np
 import pytest
-import keras
+
 from zero_keras import losses
+
 from .utils import assert_allclose_keras_zero, set_seed
 
 
@@ -251,7 +253,7 @@ def test_loss_Loss():
 
 def test_loss_unsupported():
     """Function docstring."""
-    # Test losses that might just be stubs in zero_keras
+    # Test losses with actual numeric output
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
 
@@ -288,5 +290,4 @@ def test_loss_complex_parity():
     # Parity logic tested and confirmed equivalent when input shapes match
     # Keras treats CategoricalGeneralizedCrossEntropy ambiguously depending on input dtype
     # which makes assert_allclose_keras_zero difficult to unify without special casing.
-    pass
     check_loss_parity(losses.Tversky, keras.losses.Tversky, y_true, y_pred)

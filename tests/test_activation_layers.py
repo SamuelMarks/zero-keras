@@ -1,10 +1,11 @@
 """Module docstring."""
 
+import keras
 import numpy as np
 import pytest
-import keras
 
 from zero_keras import layers
+
 from .utils import assert_allclose_keras_zero, set_seed
 
 

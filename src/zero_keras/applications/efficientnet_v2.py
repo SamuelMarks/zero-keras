@@ -4,16 +4,14 @@ import copy
 import math
 
 from ml_switcheroo_compiler import core as backend
-from zero_keras import initializers
-from zero_keras import layers
+
+from zero_keras import initializers, layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/efficientnet_v2/"  # noqa: E501
+    "https://storage.googleapis.com/tensorflow/keras-applications/efficientnet_v2/"
 )
 
 WEIGHTS_HASHES = {
@@ -603,7 +601,7 @@ def round_filters(filters, width_coefficient, min_depth, depth_divisor):
 
 def round_repeats(repeats, depth_coefficient):
     """Round number of repeats based on depth multiplier."""
-    return int(math.ceil(depth_coefficient * repeats))
+    return math.ceil(depth_coefficient * repeats)
 
 
 def MBConvBlock(

@@ -14,6 +14,17 @@ def test_activation_coverage_extra():
 
     assert _to_tensor(DummyTensorWithTensor()) == "dummy_tensor"
 
+    # Cover 19 and 25
+    import ml_switcheroo_compiler as msc
+
+    t = msc.core.tensor.Tensor(
+        None, msc.core.tensor.TensorConfig((), msc.core.dtype.DType.Float32, None)
+    )
+    assert _to_tensor(t) is t
+
+    kt = KerasTensor((1,), data=[1])
+    assert _to_tensor(kt) is kt
+
     # test 23
     class DummyData:
         """Class docstring."""
@@ -40,22 +51,20 @@ def test_activation_coverage_extra():
     class DummyActivationObj:
         """Class docstring."""
 
-        pass
-
     assert serialize(DummyActivationObj()) == "DummyActivationObj"
 
 
 def test_activation_coverage_holes():
     """Function docstring."""
-    from zero_keras.activations import get, serialize, deserialize, _to_tensor, linear
     import ml_switcheroo_compiler
+
+    from zero_keras.activations import _to_tensor, deserialize, get, linear, serialize
 
     class MockTensor(ml_switcheroo_compiler.Tensor):
         """Class docstring."""
 
         def __init__(self):
             """Function docstring."""
-            pass
 
     try:
         t = MockTensor()
@@ -84,8 +93,6 @@ def test_activation_coverage_holes():
     class CustomObj:
         """Class docstring."""
 
-        pass
-
     assert serialize(CustomObj()) == "CustomObj"
 
     assert deserialize({"config": "test"}) == {"config": "test"}
@@ -94,6 +101,7 @@ def test_activation_coverage_holes():
 def test_coverage_for_all_callables():
     """Function docstring."""
     import numpy as np
+
     from zero_keras import activations
 
     x = np.array([0.5, 0.5])
@@ -130,3 +138,56 @@ def test_coverage_for_all_callables():
     activations.hard_shrink(x)
     activations.soft_shrink(x)
     activations.threshold(x, 0.5, 0.0)
+
+
+def test_get_extra():
+    from zero_keras import activations
+
+    # dict
+    config = {"class_name": "relu", "config": {}}
+    assert isinstance(activations.get(config), dict)
+
+    # callable
+    def my_act(x):
+        return x
+
+    assert activations.get(my_act) == my_act
+
+    # invalid string
+    assert activations.get("invalid_act") == activations.linear
+
+
+def test_relu_params():
+    import numpy as np
+
+    from zero_keras import activations
+
+    x = np.array([-2.0, 0.0, 2.0, 5.0])
+
+    # threshold != 0.0
+    out = activations.relu(x, threshold=1.0)
+    out = activations.relu(x, threshold=1.0, negative_slope=0.1)
+
+    # negative_slope != 0.0
+    out = activations.relu(x, negative_slope=0.1)
+
+    # max_value != None
+    out = activations.relu(x, max_value=3.0)
+
+    # max_value is not None
+    out = activations.relu(x, max_value=3.0)
+
+
+def test_activations_missing():
+    import numpy as np
+
+    from zero_keras import activations
+    from zero_keras.core_layers import KerasTensor
+
+    # KerasTensor
+    t = KerasTensor((2, 3), data=np.array([1.0]))
+    activations._to_tensor(t)
+
+    # GELU approximate
+    x = np.array([-2.0, 0.0, 2.0])
+    activations.gelu(x, approximate=True)

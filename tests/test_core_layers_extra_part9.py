@@ -1,10 +1,12 @@
 """Module docstring."""
 
-import pytest
-from zero_keras.core_layers import KerasTensor, Model
-import ml_switcheroo_compiler.core.config as config
 from unittest.mock import patch
+
+import pytest
+from ml_switcheroo_compiler.core import config
 from ml_switcheroo_compiler.ops import asarray
+
+from zero_keras.core_layers import KerasTensor, Model
 
 
 def test_kerastensor_bool_exception():
@@ -50,17 +52,26 @@ def test_kerastensor_bool_success():
 
 def test_kerastensor_array_fallback():
     """Function docstring."""
+    import sys
+
     t = KerasTensor((2,))
 
-    # Test array when data produces something without __array__ or numpy
-    class DummyObj:
-        """Class docstring."""
+    import numpy as np
 
-        pass
+    with patch(
+        "ml_switcheroo_compiler.core.tensor.Tensor.numpy", return_value=np.array([1.0])
+    ):
+        arr = t.__array__(dtype="float32", copy=True)
+        assert arr is not None
 
-    with patch("ml_switcheroo_compiler.ops.convert_to_numpy", return_value=DummyObj()):
-        arr = t.__array__()
-        assert isinstance(arr, DummyObj)
+        # Test without numpy
+        old_numpy = sys.modules.pop("numpy", None)
+        try:
+            arr2 = t.__array__()
+            assert arr2.tolist() == [1.0]
+        finally:
+            if old_numpy is not None:
+                sys.modules["numpy"] = old_numpy
 
 
 def test_model_save_no_weights(tmp_path):

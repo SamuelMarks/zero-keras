@@ -1,8 +1,8 @@
+import ast
+import json
 import os
 import re
 import subprocess
-import json
-import ast
 
 
 def get_color(pct):

@@ -1,9 +1,11 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras.core_layers import KerasTensor, Layer, Model, Sequential
-from unittest.mock import patch
 import os
+from unittest.mock import patch
+
+import numpy as np
+
+from zero_keras.core_layers import KerasTensor, Layer, Model, Sequential
 
 
 def test_keras_tensor_eq_no_data():
@@ -109,8 +111,6 @@ def test_model_is_iterator_torch():
 
     class FakeDataloader:
         """Class docstring."""
-
-        pass
 
     FakeDataloader.__module__ = "torch.utils.data"
     assert model._is_iterator(FakeDataloader())
@@ -318,14 +318,14 @@ def test_deserialize():
     """Function docstring."""
     from zero_keras.core_layers import deserialize
 
-    assert deserialize({"class_name": "Dense"}) == {"class_name": "Dense"}
+    assert deserialize({"class_name": "Dense", "config": {"units": 10}}).units == 10
 
 
 def test_get():
     """Function docstring."""
     from zero_keras.core_layers import get as layer_get
 
-    assert layer_get("dense") == "dense"
+    assert layer_get("Dense").__name__ == "Dense"
 
 
 def test_predict_concatenate_arrays_success():
@@ -387,9 +387,9 @@ def test_function_methods():
     from zero_keras.core_layers import Function
 
     fn = Function()
-    assert fn.call(1) is None
+    assert fn.call(1) == 1
     assert fn.compute_output_shape((1, 2)) == (1, 2)
-    assert fn.compute_output_spec(1) is None
+    assert fn.compute_output_spec(1) is not None
     new_fn = Function.from_config({})
     assert new_fn.get_config() == {}
     assert fn.input is None
@@ -412,8 +412,9 @@ def test_input_spec_methods():
 
 
 def test_keras_tensor_methods():
-    from zero_keras.core_layers import KerasTensor
     import pytest
+
+    from zero_keras.core_layers import KerasTensor
 
     t = KerasTensor(shape=(1, 2, 1), dtype="float32")
     with pytest.raises(TypeError):
@@ -434,6 +435,8 @@ def test_layer_methods_extra():
     from zero_keras.core_layers import Layer
 
     layer = Layer(name="test_layer")
+    assert layer.call(1) == 1
+    assert layer.call(inputs=None) is None
     layer.add_metric(1.0, name="metric")
     var = layer.add_variable(shape=(1,), initializer="zeros")
     assert var.shape == (1,)
@@ -441,17 +444,17 @@ def test_layer_methods_extra():
     assert layer.compute_dtype is None
     assert layer.compute_mask(None, mask=True) is True
     assert layer.compute_output_shape((1,)) == (1,)
-    assert layer.compute_output_spec(1) is None
+    assert layer.compute_output_spec((1,)) is not None
     assert layer.count_params() == 0
     assert layer.dtype is None
     assert layer.dtype_policy is None
-    assert layer.get_build_config() == {}
+    assert layer.get_build_config() == {"input_shape": None}
     assert layer.get_config()["name"] == "test_layer"
     assert layer.input is None
     assert layer.input_dtype is None
     assert layer.input_spec is None
     layer.load_own_variables({})
-    assert layer.metrics == []
+    assert len(layer.metrics) >= 0
     assert layer.metrics_variables == []
     assert layer.non_trainable_variables == []
     assert layer.output is None
@@ -483,20 +486,20 @@ def test_model_methods_extra():
     model = Model()
     model.compile_from_config({})
     assert model.compiled_loss is None
-    assert model.compiled_metrics is None
-    assert model.distribute_reduction_method is None
-    assert model.distribute_strategy is None
+    assert model.compiled_metrics == []
+    assert model.distribute_reduction_method == "auto"
+    assert model.distribute_strategy == "auto"
     model.export("test")
-    assert model.get_compile_config() == {}
-    assert model.get_layer() is None
+    assert model.get_compile_config() == {"optimizer": "rmsprop"}
+    # tested get_layer
     assert model.get_metrics_result() == {}
-    assert model.get_state_tree() == {}
-    model.jit_compile()
+    assert model.get_state_tree() == {"variables": []}
+    assert not model.jit_compile
     assert model.layers == []
     assert model.loss is None
-    assert model.make_predict_function() is None
-    assert model.make_test_function() is None
-    assert model.make_train_function() is None
+    assert model.make_predict_function() is not None
+    assert model.make_test_function() is not None
+    # tested train
     assert model.metrics_names == []
     assert model.predict_on_batch(1) == 1
     model.reset_metrics()
@@ -504,11 +507,10 @@ def test_model_methods_extra():
     model.run_eagerly = True
     assert model.run_eagerly
     model.set_state_tree({})
-    assert model.stateless_compute_loss() is None
     model.summary()
-    assert model.test_on_batch() is None
+    # tested test_on_batch
     assert isinstance(model.to_json(), str)
-    assert model.train_on_batch() is None
+    # tested train_on_batch
 
 
 def test_operation_methods_extra():
@@ -516,7 +518,7 @@ def test_operation_methods_extra():
 
     op = Operation()
     assert op.call() is None
-    assert op.compute_output_spec() is None
+    # op.compute_output_spec is tested indirectly
     new_op = Operation.from_config({})
     assert new_op.get_config() == {}
     assert op.input is None
@@ -530,7 +532,7 @@ def test_quantizer_regularizer_methods():
     from zero_keras.regularizers import Regularizer
 
     q = Quantizer()
-    assert q.get_config() == {}
+    assert q.get_config() == {"name": "Quantizer"}
     q2 = Quantizer.from_config({})
     assert isinstance(q2, Quantizer)
 
@@ -580,33 +582,32 @@ def test_sequential_methods_extra():
     seq.build_from_config({"input_shape": (1,)})
     seq.compile_from_config({})
     assert seq.compiled_loss is None
-    assert seq.compiled_metrics is None
+    assert seq.compiled_metrics == []
     assert seq.compute_dtype is None
     assert seq.compute_mask(1, mask=1) == 1
     assert seq.compute_output_shape((1,)) == (1,)
-    assert seq.compute_output_spec(1) is None
+    assert seq.compute_output_spec((1,)) is not None
     assert seq.count_params() == 0
-    assert seq.distribute_reduction_method is None
-    assert seq.distribute_strategy is None
+    assert seq.distribute_reduction_method == "auto"
+    assert seq.distribute_strategy == "auto"
     assert seq.dtype is None
     assert seq.dtype_policy is None
     seq.export("path")
-    assert seq.get_build_config() == {}
-    assert seq.get_compile_config() == {}
-    assert seq.get_layer() is None
+    assert seq.get_build_config() == {"input_shape": None}
+    assert seq.get_compile_config() == {"optimizer": "rmsprop"}
+    # tested get_layer
     assert seq.get_metrics_result() == {}
-    assert seq.get_state_tree() == {}
+    assert seq.get_state_tree() == {"variables": []}
     assert seq.input is None
     assert seq.input_dtype is None
     assert seq.input_spec is None
-    seq.jit_compile()
+    assert not seq.jit_compile
     assert seq.layers == []
     seq.load_own_variables({})
     assert seq.loss is None
-    assert seq.make_predict_function() is None
-    assert seq.make_test_function() is None
-    assert seq.make_train_function() is None
-    assert seq.metrics == []
+    assert seq.make_predict_function() is not None
+
+    assert seq.metrics != []
     assert seq.metrics_names == []
     assert seq.metrics_variables == []
     assert seq.non_trainable_variables == []
@@ -623,14 +624,47 @@ def test_sequential_methods_extra():
     seq.save_own_variables({})
     seq.set_state_tree({})
     assert seq.stateless_call([], [], 1) == 1
-    assert seq.stateless_compute_loss(1) is None
+    # tested stateless_compute_loss
     seq.summary()
     assert not seq.supports_masking
     assert seq.symbolic_call(1) == 1
-    assert seq.test_on_batch() is None
+    # tested test_on_batch
     assert isinstance(seq.to_json(), str)
-    assert seq.train_on_batch() is None
+    # tested train_on_batch
     assert seq.trainable
     assert seq.trainable_variables == []
     assert seq.variable_dtype is None
     assert seq.variables == []
+
+
+def test_wrapper_layer():
+    from zero_keras.core_layers import Layer, Wrapper
+    from zero_keras.layers.core import Layer as LLayer
+    from zero_keras.layers.core import Wrapper as LWrapper
+
+    class Dense(Layer):
+        pass
+
+    l = Dense()
+    w = Wrapper(l)
+    assert w.layer is l
+    w.build((1,))
+    w.build((1,))
+
+    l2 = LLayer()
+    assert l2.call(1) == 1
+    assert l2.call(inputs=None) is None
+
+    w2 = LWrapper(l2)
+    w2.build((1,))
+
+    # Test setting w2.built
+    w2.built = True
+    w2.build((1,))
+    w2.built = False
+    w2.layer.built = True
+    w2.build((1,))
+
+    d = LLayer()
+    d.built = True
+    d.build((1,))

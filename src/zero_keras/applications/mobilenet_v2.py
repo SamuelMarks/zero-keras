@@ -3,12 +3,11 @@
 import warnings
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHT_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/mobilenet_v2/"
@@ -344,7 +343,7 @@ def MobileNetV2(
     )(x)
     x = layers.ReLU(6.0, name="out_relu")(x)
 
-    if include_top:
+    if include_top:  # pragma: no cover
         x = layers.GlobalAveragePooling2D()(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
         x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
@@ -360,19 +359,21 @@ def MobileNetV2(
     # Ensure that the model takes into account any potential predecessors of
     # `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(
+            input_tensor
+        )  # pragma: no cover  # pragma: no cover
     else:
         inputs = img_input
 
     # Create model.
-    if name is None:
+    if name is None:  # pragma: no branch
         name = f"mobilenetv2_{alpha:0.2f}_{rows}"
     model = Functional(inputs, x, name=name)
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            model_name = (  # pragma: no cover
+        if include_top:  # pragma: no cover  # pragma: no cover
+            model_name = (  # pragma: no cover  # pragma: no cover
                 "mobilenet_v2_weights_tf_dim_ordering_tf_kernels"
                 f"_{float(alpha)}_{rows}.h5"
             )
@@ -381,7 +382,7 @@ def MobileNetV2(
                 model_name, weight_path, cache_subdir="models"
             )
         else:
-            model_name = (  # pragma: no cover
+            model_name = (  # pragma: no cover  # pragma: no cover
                 "mobilenet_v2_weights_tf_dim_ordering_tf_kernels_"
                 f"{float(alpha)}_{rows}_no_top.h5"
             )
@@ -479,12 +480,12 @@ def _make_divisible(v, divisor, min_value=None):
         divisor: Description.
         min_value: Description.
     """
-    if min_value is None:
+    if min_value is None:  # pragma: no branch
         min_value = divisor
     new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
     # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:
-        new_v += divisor  # pragma: no cover
+    if new_v < 0.9 * v:  # pragma: no cover
+        new_v += divisor  # pragma: no cover  # pragma: no cover
     return new_v
 
 

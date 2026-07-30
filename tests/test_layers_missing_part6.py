@@ -1,8 +1,10 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras import layers
 from unittest.mock import patch
+
+import numpy as np
+
+from zero_keras import layers
 
 
 def test_remaining():
@@ -24,7 +26,7 @@ def test_remaining():
     l.build([10, 10])
 
     # 2612: Conv1D out
-    with patch("ml_switcheroo_compiler.ops.transpose") as mock_transpose:
+    with patch("zero_keras.ops.transpose") as mock_transpose:
         mock_transpose.return_value = np.ones((2, 3, 10))
         try:
             layers.Conv1D(4, 3, data_format="channels_first").call(np.ones((2, 3, 10)))

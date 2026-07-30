@@ -1,7 +1,7 @@
 """Module docstring."""
 
-import numpy as np
 import keras
+import numpy as np
 
 
 def assert_allclose_keras_zero(keras_out, zero_out, rtol=1e-5, atol=1e-5):

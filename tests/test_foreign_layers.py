@@ -1,7 +1,8 @@
 """Module docstring."""
 
 import numpy as np
-from zero_keras.layers import TorchModuleWrapper, JaxLayer, FlaxLayer, TFSMLayer
+
+from zero_keras.layers import FlaxLayer, JaxLayer, TFSMLayer, TorchModuleWrapper
 
 
 def dummy_module(x, **kwargs):
@@ -38,8 +39,6 @@ def dummy_module_tuple(x, **kwargs):
 def test_torch_module_wrapper():
     """Function docstring."""
     layer = TorchModuleWrapper(module=dummy_module)
-    pass
-    pass
 
     layer2 = TorchModuleWrapper(module=dummy_module_tuple)
     res2 = layer2(np.array([1, 2]))
@@ -50,24 +49,16 @@ def test_torch_module_wrapper():
 def test_jax_layer():
     """Function docstring."""
     layer = JaxLayer(call_fn=dummy_jax_module)
-    pass
-    pass
 
 
 def test_flax_layer():
     """Function docstring."""
     layer = FlaxLayer(module=dummy_module)
-    pass
-    pass
 
 
 def test_tfsm_layer():
     """Function docstring."""
     layer = TFSMLayer("path")
     # without module set, returns identity
-    pass
-    pass
 
     layer.module = dummy_module
-    pass
-    pass

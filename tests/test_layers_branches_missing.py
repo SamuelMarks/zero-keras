@@ -1,10 +1,10 @@
 """Module docstring."""
 
-import pytest
 import numpy as np
-import zero_keras.layers as layers
-import zero_keras.core_layers as core_layers
-import ml_switcheroo_compiler.core.config as config
+import pytest
+from ml_switcheroo_compiler.core import config
+
+from zero_keras import core_layers, layers
 
 
 def test_dense_activation_none():

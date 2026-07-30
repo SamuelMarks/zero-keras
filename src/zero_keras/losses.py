@@ -1,11 +1,15 @@
 """Keras losses."""
 
-from zero_keras.ops import ops
+from __future__ import annotations
+
+from typing import Any
+
+from zero_keras import ops
+
 from .activations import _to_tensor, _wrap
-from typing import Any, Optional
 
 
-def _reduce(loss: Any, reduction: str, sample_weight: Optional[Any] = None) -> Any:
+def _reduce(loss: Any, reduction: str, sample_weight: Any | None = None) -> Any:
     """_reduce function.
 
     Args:
@@ -757,8 +761,8 @@ class Loss:
     def __init__(
         self,
         reduction: str = "sum_over_batch_size",
-        name: Optional[str] = None,
-        dtype: Optional[str] = None,
+        name: str | None = None,
+        dtype: str | None = None,
     ):
         """Function docstring.
 
@@ -772,7 +776,7 @@ class Loss:
         self.dtype = dtype
 
     def __call__(
-        self, y_true: Any, y_pred: Any, sample_weight: Optional[Any] = None
+        self, y_true: Any, y_pred: Any, sample_weight: Any | None = None
     ) -> Any:
         """Call self as a function."""
         return _reduce(_to_tensor(0.0), self.reduction, sample_weight)
@@ -2445,17 +2449,46 @@ def get(identifier):
         return None  # pragma: no cover
     if isinstance(identifier, str):
         identifier = identifier.lower()
-        if identifier in ["mse", "mean_squared_error"]:
-            return MeanSquaredError()
-        # simplified stub
+        mapping = {
+            "mse": MeanSquaredError,
+            "mean_squared_error": MeanSquaredError,
+            "mae": MeanAbsoluteError,
+            "mean_absolute_error": MeanAbsoluteError,
+            "mape": MeanAbsolutePercentageError,
+            "mean_absolute_percentage_error": MeanAbsolutePercentageError,
+            "msle": MeanSquaredLogarithmicError,
+            "mean_squared_logarithmic_error": MeanSquaredLogarithmicError,
+            "categorical_crossentropy": CategoricalCrossentropy,
+            "sparse_categorical_crossentropy": SparseCategoricalCrossentropy,
+            "binary_crossentropy": BinaryCrossentropy,
+            "binary_focal_crossentropy": BinaryFocalCrossentropy,
+            "categorical_focal_crossentropy": CategoricalFocalCrossentropy,
+            "hinge": Hinge,
+            "squared_hinge": SquaredHinge,
+            "categorical_hinge": CategoricalHinge,
+            "huber": Huber,
+            "kl_divergence": KLDivergence,
+            "kullback_leibler_divergence": KLDivergence,
+            "poisson": Poisson,
+            "log_cosh": LogCosh,
+            "logcosh": LogCosh,
+            "cosine_similarity": CosineSimilarity,
+            "dice": Dice,
+            "tversky": Tversky,
+            "ctc": CTC,
+            "circle": Circle,
+            "categorical_generalized_cross_entropy": CategoricalGeneralizedCrossEntropy,
+        }
+        if identifier in mapping:
+            return mapping[identifier]()
         return identifier
-    return identifier  # pragma: no cover
+    return identifier
 
 
 # Additional esoteric Keras losses
 
 
-def dice(y_true, y_pred, axis=None):
+def dice(y_true, y_pred, axis=-1):
     """Function docstring.
 
     Args:
@@ -2463,6 +2496,7 @@ def dice(y_true, y_pred, axis=None):
         y_pred: Description.
         axis: Description.
     """
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.nn.loss import dice_loss
 
     return dice_loss(y_true, y_pred, axis=axis)
@@ -2477,6 +2511,7 @@ def tversky(y_true, y_pred, alpha=0.5, beta=0.5):
         alpha: Description.
         beta: Description.
     """
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.nn.loss import tversky_loss
 
     return tversky_loss(y_true, y_pred, alpha=alpha, beta=beta)
@@ -2489,8 +2524,9 @@ def ctc(y_true, y_pred):
         y_true: Description.
         y_pred: Description.
     """
-    from ml_switcheroo_compiler.ops import ctc_loss
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.creation import ones
+    from ml_switcheroo_compiler.ops.loss import ctc_loss
 
     # Keras backend signature fallback for CTC
     y_true_len = ones((y_true.shape[0], 1)) if hasattr(y_true, "shape") else ones((1,))
@@ -2507,7 +2543,8 @@ def circle(y_true, y_pred, margin=0.25, gamma=256):
         margin: Description.
         gamma: Description.
     """
-    from ml_switcheroo_compiler.ops import circle_loss
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    from ml_switcheroo_compiler.ops.loss import circle_loss
 
     return circle_loss(y_true, y_pred, margin=margin, gamma=gamma)
 
@@ -2519,6 +2556,9 @@ def categorical_generalized_cross_entropy(y_true, y_pred):
         y_true: Description.
         y_pred: Description.
     """
-    from ml_switcheroo_compiler.ops import categorical_generalized_cross_entropy as gce
+    y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
+    from ml_switcheroo_compiler.ops.loss import (
+        categorical_generalized_cross_entropy as gce,
+    )
 
     return gce(y_true, y_pred)

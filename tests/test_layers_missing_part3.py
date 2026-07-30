@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras import layers
 
 

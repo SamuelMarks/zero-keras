@@ -1,9 +1,11 @@
 """Tests for zero_keras model parity with Keras."""
 
+import keras
 import numpy as np
 import pytest
-import keras
+
 from zero_keras import core_layers
+
 from .utils import set_seed
 
 
@@ -70,15 +72,37 @@ def test_model_Model_API():
 
 def test_get_and_deserialize():
     """Function docstring."""
-    # Basic structural mock
-    assert core_layers.get("test") == "test"
-    assert core_layers.deserialize({"class_name": "Test"}) == {"class_name": "Test"}
+    import pytest
+
+    from zero_keras.core_layers import deserialize
+    from zero_keras.layers import Dense
+
+    # Test valid class name
+    assert core_layers.get("Dense") == Dense
+
+    # Test deserialize dict
+    cfg = {"class_name": "Dense", "config": {"units": 10}}
+    obj = core_layers.get(cfg)
+    assert isinstance(obj, Dense)
+    assert obj.units == 10
+
+    # Test safe mode failure
+    with pytest.raises(ValueError, match="safe_mode is True"):
+        deserialize({"class_name": "Lambda", "config": {}}, safe_mode=True)
+
+    # Test unknown
+    with pytest.raises(ValueError):
+        core_layers.get("unknown_layer_test")
 
 
 def test_load_model_safe_stub():
     """Function docstring."""
-    # just cover the fallback stub
+    import pytest
+
     from zero_keras.models import load_model
 
-    m = load_model("nonexistent.h5")
-    assert m is not None
+    with pytest.raises(ValueError, match="Legacy HDF5 format is not supported"):
+        load_model("nonexistent.h5")
+
+    with pytest.raises(ValueError, match="File format not supported"):
+        load_model("nonexistent.unknown")

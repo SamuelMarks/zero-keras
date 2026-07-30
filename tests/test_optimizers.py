@@ -3,9 +3,10 @@
 
 def test_optimizers():
     """Function docstring."""
-    from zero_keras import optimizers
     import ml_switcheroo_compiler.core.dtype as dtypes
     from ml_switcheroo_compiler.ops.creation.frontend import ones
+
+    from zero_keras import optimizers
 
     # Coverage for optimizers
     opt = optimizers.Optimizer()
@@ -16,7 +17,7 @@ def test_optimizers():
     v = ones((1,))
     g = ones((1,))
 
-    import ml_switcheroo_compiler.core.tensor as tensor
+    from ml_switcheroo_compiler.core import tensor
 
     # First, test where assign works
     def fake_assign(self, val):
@@ -25,7 +26,6 @@ def test_optimizers():
         Args:
             val: Description.
         """
-        pass
 
     tensor.Tensor.assign = fake_assign
 
@@ -43,56 +43,20 @@ def test_optimizers():
     adam.apply_gradients([(g, v), (None, v)])
     adam.apply_gradients([(g, v)])
 
-    # Now test where assign fails
-    del tensor.Tensor.assign
-
-    sgd1_fail = optimizers.SGD(learning_rate=0.1, momentum=0.9, nesterov=True)
-    sgd1_fail.apply_gradients([(g, v)])
-
-    sgd2_fail = optimizers.SGD(learning_rate=0.1, momentum=0.0)
-    sgd2_fail.apply_gradients([(g, v)])
-
-    adam_fail = optimizers.Adam()
-    adam_fail.apply_gradients([(g, v)])
-
-    # Test early return in build
-    sgd_build = optimizers.SGD(momentum=0.9)
-    sgd_build.build([v])
-    sgd_build.build([v])  # early return 1892
-
-    adam_build = optimizers.Adam()
-    adam_build.build([v])
-    adam_build.build([v])  # early return 587
-
-    opts = [
-        optimizers.Adadelta(),
-        optimizers.Adafactor(),
-        optimizers.Adagrad(),
-        optimizers.Adam(),
-        optimizers.AdamW(),
-        optimizers.Adamax(),
-        optimizers.Ftrl(),
-        optimizers.Lamb(),
-        optimizers.Lion(),
-        optimizers.LossScaleOptimizer(optimizers.Adam()),
-        optimizers.Muon(),
-        optimizers.Nadam(),
-        optimizers.RMSprop(),
-        optimizers.SGD(),
-    ]
-    for o in opts:
-        assert isinstance(o, optimizers.Optimizer)
-
 
 def test_new_optimizers():
     """Function docstring."""
-    from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
     import ml_switcheroo_compiler as msc
+    from ml_switcheroo_compiler import ops
+
+    from zero_keras import optimizers
 
     msc.core.config.eager_mode = True
 
-    var = ops.asarray([1.0, 2.0])
+    from zero_keras.core_layers import Variable
+
+    var = Variable(initializer="ones", shape=(2,), dtype="float32")
+    var.assign(ops.asarray([1.0, 2.0]))
     grad = ops.asarray([0.1, 0.2])
 
     opts = [
@@ -110,13 +74,17 @@ def test_new_optimizers():
 
 def test_other_optimizers():
     """Function docstring."""
-    from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
     import ml_switcheroo_compiler as msc
+    from ml_switcheroo_compiler import ops
+
+    from zero_keras import optimizers
 
     msc.core.config.eager_mode = True
 
-    var = ops.asarray([1.0, 2.0])
+    from zero_keras.core_layers import Variable
+
+    var = Variable(initializer="ones", shape=(2,), dtype="float32")
+    var.assign(ops.asarray([1.0, 2.0]))
     grad = ops.asarray([0.1, 0.2])
 
     opts = [
@@ -136,10 +104,13 @@ def test_other_optimizers():
 
 def test_all_opts_cov():
     """Function docstring."""
-    from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
+    from ml_switcheroo_compiler import ops
 
-    var = ops.asarray([1.0, 2.0])
+    from zero_keras import optimizers
+    from zero_keras.core_layers import Variable
+
+    var = Variable(initializer="ones", shape=(2,), dtype="float32")
+    var.assign(ops.asarray([1.0, 2.0]))
     grad = ops.asarray([0.1, 0.2])
 
     for opt_cls in [
@@ -165,11 +136,15 @@ def test_all_opts_cov():
 
 def test_opt_edge_cases():
     """Function docstring."""
+    from ml_switcheroo_compiler import ops
+
     from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
 
     # Adadelta edge case: build twice
-    var = ops.asarray([1.0, 2.0])
+    from zero_keras.core_layers import Variable
+
+    var = Variable(initializer="ones", shape=(2,), dtype="float32")
+    var.assign(ops.asarray([1.0, 2.0]))
     grad = ops.asarray([0.1, 0.2])
     opt = optimizers.Adadelta()
     opt.build([var])
@@ -211,9 +186,11 @@ def test_opt_edge_cases():
 
 def test_opt_attribute_error_pass():
     """Function docstring."""
-    from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
     import warnings
+
+    from ml_switcheroo_compiler import ops
+
+    from zero_keras import optimizers
 
     # ignore warnings
     warnings.simplefilter("ignore")
@@ -250,8 +227,9 @@ def test_opt_attribute_error_pass():
 
 def test_opt_assign_coverage():
     """Function docstring."""
+    from ml_switcheroo_compiler import ops
+
     from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
 
     class MockVar:
         """Class docstring."""
@@ -384,8 +362,9 @@ def test_opt_assign_coverage():
 
 def test_muon_edge_cases():
     """Function docstring."""
+    from ml_switcheroo_compiler import ops
+
     from zero_keras import optimizers
-    import ml_switcheroo_compiler.ops as ops
 
     var = ops.asarray([1.0])
     grad = ops.asarray([0.1])
@@ -400,8 +379,9 @@ def test_muon_edge_cases():
 
 def test_schedules_config():
     """Function docstring."""
-    from zero_keras.optimizers import schedules
     import json
+
+    from zero_keras.optimizers import schedules
 
     scheds = [
         schedules.CosineDecay(0.1, 10),

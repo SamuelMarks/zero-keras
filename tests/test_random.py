@@ -1,5 +1,4 @@
-from zero_keras import random
-from zero_keras import ops
+from zero_keras import ops, random
 
 
 def test_random():

@@ -1,6 +1,7 @@
-from zero_keras.callbacks import Callback, History, CallbackList
-from zero_keras.constraints import MaxNorm, MinMaxNorm, UnitNorm, Constraint
 import numpy as np
+
+from zero_keras.callbacks import Callback, CallbackList, History
+from zero_keras.constraints import Constraint, MaxNorm, MinMaxNorm, UnitNorm
 
 
 def test_callback_model_setter():

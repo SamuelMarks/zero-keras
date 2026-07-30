@@ -5,7 +5,9 @@ import pytest
 """Tests for zero_keras optimizers parity with Keras."""
 
 import keras
+
 from zero_keras import optimizers
+
 from .utils import set_seed
 
 

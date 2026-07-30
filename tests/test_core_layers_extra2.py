@@ -1,6 +1,5 @@
 def test_keras_tensor_eq_no_data2():
     """Dummy test to cover previous fail."""
-    pass
 
 
 def test_root_symbols():

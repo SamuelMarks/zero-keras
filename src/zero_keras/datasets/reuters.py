@@ -2,9 +2,7 @@
 
 import json
 
-
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops, random
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -59,7 +57,7 @@ def load_data(
         index_from: int. Index actual words with this index and higher.
 
     Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        Tuple of arrays/lists: `(x_train, y_train), (x_test, y_test)`.
     """
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
     path = get_file(
@@ -67,14 +65,14 @@ def load_data(
         origin=f"{origin_folder}reuters.npz",
         file_hash="d6586e694ee56d7a4e65172e12b3e987c03096cb01eab99753921ef915959916",
     )
-    with np.load(path, allow_pickle=True) as f:
-        xs, labels = f["x"], f["y"]
+    with ops.load(path, allow_pickle=True) as f:
+        xs, labels = list(f["x"]), list(f["y"])
 
-    rng = np.random.RandomState(seed)
-    indices = np.arange(len(xs))
+    rng = random.RandomState(seed)
+    indices = list(range(len(xs)))
     rng.shuffle(indices)
-    xs = xs[indices]
-    labels = labels[indices]
+    xs = [xs[i] for i in indices]
+    labels = [labels[i] for i in indices]
 
     if start_char is not None:
         xs = [[start_char] + [w + index_from for w in x] for x in xs]
@@ -95,11 +93,8 @@ def load_data(
         xs = [[w for w in x if skip_top <= w < num_words] for x in xs]
 
     idx = int(len(xs) * (1 - test_split))
-    x_train, y_train = (
-        np.array(xs[:idx], dtype="object"),
-        np.array(labels[:idx]),
-    )
-    x_test, y_test = np.array(xs[idx:], dtype="object"), np.array(labels[idx:])
+    x_train, y_train = xs[:idx], labels[:idx]
+    x_test, y_test = xs[idx:], labels[idx:]
 
     return (x_train, y_train), (x_test, y_test)
 

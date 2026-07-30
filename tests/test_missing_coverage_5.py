@@ -1,7 +1,8 @@
 """Module docstring."""
 
-from zero_keras import core_layers, models
 import numpy as np
+
+from zero_keras import core_layers, models
 
 
 def test_model_list_outputs():

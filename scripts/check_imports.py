@@ -1,9 +1,9 @@
 """Module docstring."""
 
 import ast
+import importlib.util
 import sys
 import sysconfig
-import importlib.util
 from pathlib import Path
 
 
@@ -32,7 +32,7 @@ def is_stdlib(base_name):
             ):
                 return True
         return False
-    except Exception:
+    except ImportError:
         return False
 
 
@@ -55,17 +55,25 @@ def check_file(filepath):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=str(filepath))
-    except Exception as e:
+    except SyntaxError as e:
         print(f"Error parsing {filepath}: {e}")
         return False
 
     disallowed_imports = []
 
+    try:
+        with open(filepath, "r", encoding="utf-8") as f:
+            content = f.read()
+            if '"nu" + "mpy"' in content or "'nu' + 'mpy'" in content:
+                disallowed_imports.append(("Obfuscated numpy import", 0))
+    except ImportError:
+        pass
+
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
                 base_module = alias.name.split(".")[0]
-                if not check_module(base_module):
+                if base_module == "importlib" or not check_module(base_module):
                     disallowed_imports.append((alias.name, node.lineno))
         elif isinstance(node, ast.ImportFrom):
             if node.module:
@@ -73,8 +81,16 @@ def check_file(filepath):
                 if node.level > 0:
                     continue
                 base_module = node.module.split(".")[0]
-                if not check_module(base_module):
+                if base_module == "importlib" or not check_module(base_module):
                     disallowed_imports.append((node.module, node.lineno))
+        elif isinstance(node, ast.Name):
+            pass
+        elif (
+            isinstance(node, ast.Attribute)
+            and node.attr == "modules"
+            and getattr(node.value, "id", None) == "sys"
+        ):
+            disallowed_imports.append(("sys.modules", node.lineno))
 
     if disallowed_imports:
         print(f"\n{filepath}: Disallowed imports found:")
@@ -94,9 +110,7 @@ def check_module(base_module):
         return True
     if base_module in ALLOWED_LOCAL:
         return True
-    if is_stdlib(base_module):
-        return True
-    return False
+    return bool(is_stdlib(base_module))
 
 
 def main():

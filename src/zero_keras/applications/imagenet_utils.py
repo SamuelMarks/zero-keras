@@ -3,12 +3,7 @@
 import json
 import warnings
 
-
-np = __import__("nu" + "mpy")
-
-from zero_keras import activations
-from ml_switcheroo_compiler import core as backend
-from zero_keras.ops import ops
+from zero_keras import activations, backend, ops
 from zero_keras.utils import generic_utils
 
 CLASS_INDEX = None
@@ -19,7 +14,7 @@ CLASS_INDEX_PATH = (
 
 
 PREPROCESS_INPUT_DOC = """
-  Preprocesses a tensor or Numpy array encoding a batch of images.
+  Preprocesses a tensor encoding a batch of images.
 
   Usage example with `applications.MobileNet`:
 
@@ -34,19 +29,16 @@ PREPROCESS_INPUT_DOC = """
   ```
 
   Args:
-        x: A floating point `numpy.array` or a backend-native tensor,
+        x: A backend-native tensor,
             3D or 4D with 3 color
             channels, with values in the range [0, 255].
-            The preprocessed data are written over the input data
-        if the data types are compatible. To avoid this
-        behaviour, `numpy.copy(x)` can be used.
-        data_format: Optional data format of the image tensor/array. None, means
+        data_format: Optional data format of the image tensor. None, means
         the global setting `keras.backend.image_data_format()` is used
         (unless you changed it, it uses "channels_last").{mode}
         Defaults to `None`.
 
   Returns:
-      Preprocessed array with type `float32`.
+      Preprocessed tensor with type `float32`.
       {ret}
 
   Raises:
@@ -86,7 +78,7 @@ PREPROCESS_INPUT_RET_DOC_CAFFE = """
 
 
 def preprocess_input(x, data_format=None, mode="caffe"):
-    """Preprocesses a tensor or Numpy array encoding a batch of images."""
+    """Preprocesses a tensor encoding a batch of images."""
     if mode not in {"caffe", "tf", "torch"}:  # pragma: no cover
         raise ValueError(  # pragma: no cover
             "Expected mode to be one of `caffe`, `tf` or `torch`. "
@@ -101,14 +93,9 @@ def preprocess_input(x, data_format=None, mode="caffe"):
             f"`channels_last`. Received: data_format={data_format}"
         )
 
-    if isinstance(x, np.ndarray):  # pragma: no cover
-        return _preprocess_numpy_input(
-            x, data_format=data_format, mode=mode
-        )  # pragma: no cover
-    else:
-        return _preprocess_tensor_input(
-            x, data_format=data_format, mode=mode
-        )  # pragma: no cover
+    return _preprocess_tensor_input(
+        x, data_format=data_format, mode=mode
+    )  # pragma: no cover
 
 
 preprocess_input.__doc__ = PREPROCESS_INPUT_DOC.format(
@@ -164,79 +151,6 @@ def decode_predictions(preds, top=5):
     return results  # pragma: no cover
 
 
-def _preprocess_numpy_input(x, data_format, mode):
-    """Preprocesses a NumPy array encoding a batch of images.
-
-    Args:
-      x: Input array, 3D or 4D.
-      data_format: Data format of the image array.
-      mode: One of "caffe", "tf" or "torch".
-        - caffe: will convert the images from RGB to BGR,
-            then will zero-center each color channel with
-            respect to the ImageNet dataset,
-            without scaling.
-        - tf: will scale pixels between -1 and 1,
-            sample-wise.
-        - torch: will scale pixels between 0 and 1 and then
-            will normalize each channel with respect to the
-            ImageNet dataset.
-
-    Returns:
-        Preprocessed Numpy array.
-    """
-    if not issubclass(x.dtype.type, np.floating):  # pragma: no cover
-        x = x.astype(backend.floatx(), copy=False)  # pragma: no cover
-
-    if mode == "tf":  # pragma: no cover
-        x /= 127.5  # pragma: no cover
-        x -= 1.0  # pragma: no cover
-        return x  # pragma: no cover
-    elif mode == "torch":  # pragma: no cover
-        x /= 255.0  # pragma: no cover
-        mean = [0.485, 0.456, 0.406]  # pragma: no cover
-        std = [0.229, 0.224, 0.225]  # pragma: no cover
-    else:
-        if data_format == "channels_first":  # pragma: no cover
-            # 'RGB'->'BGR'
-            if len(x.shape) == 3:  # pragma: no cover
-                x = x[::-1, ...]  # pragma: no cover
-            else:
-                x = x[:, ::-1, ...]  # pragma: no cover
-        else:
-            # 'RGB'->'BGR'
-            x = x[..., ::-1]  # pragma: no cover
-        mean = [103.939, 116.779, 123.68]  # pragma: no cover
-        std = None  # pragma: no cover
-
-    # Zero-center by mean pixel
-    if data_format == "channels_first":  # pragma: no cover
-        if len(x.shape) == 3:  # pragma: no cover
-            x[0, :, :] -= mean[0]  # pragma: no cover
-            x[1, :, :] -= mean[1]  # pragma: no cover
-            x[2, :, :] -= mean[2]  # pragma: no cover
-            if std is not None:  # pragma: no cover
-                x[0, :, :] /= std[0]  # pragma: no cover
-                x[1, :, :] /= std[1]  # pragma: no cover
-                x[2, :, :] /= std[2]  # pragma: no cover
-        else:
-            x[:, 0, :, :] -= mean[0]  # pragma: no cover
-            x[:, 1, :, :] -= mean[1]  # pragma: no cover
-            x[:, 2, :, :] -= mean[2]  # pragma: no cover
-            if std is not None:  # pragma: no cover
-                x[:, 0, :, :] /= std[0]  # pragma: no cover
-                x[:, 1, :, :] /= std[1]  # pragma: no cover
-                x[:, 2, :, :] /= std[2]  # pragma: no cover
-    else:
-        x[..., 0] -= mean[0]  # pragma: no cover
-        x[..., 1] -= mean[1]  # pragma: no cover
-        x[..., 2] -= mean[2]  # pragma: no cover
-        if std is not None:  # pragma: no cover
-            x[..., 0] /= std[0]  # pragma: no cover
-            x[..., 1] /= std[1]  # pragma: no cover
-            x[..., 2] /= std[2]  # pragma: no cover
-    return x  # pragma: no cover
-
-
 def _preprocess_tensor_input(x, data_format, mode):
     """Preprocesses a tensor encoding a batch of images.
 
@@ -257,6 +171,7 @@ def _preprocess_tensor_input(x, data_format, mode):
     Returns:
         Preprocessed tensor.
     """
+    x = ops.cast(x, backend.floatx())  # pragma: no cover
     ndim = len(x.shape)  # pragma: no cover
 
     if mode == "tf":  # pragma: no cover
@@ -285,7 +200,7 @@ def _preprocess_tensor_input(x, data_format, mode):
         std = None  # pragma: no cover
 
     mean_tensor = ops.convert_to_tensor(
-        -np.array(mean), dtype=x.dtype
+        [-m for m in mean], dtype=x.dtype
     )  # pragma: no cover
 
     # Zero-center by mean pixel
@@ -302,9 +217,7 @@ def _preprocess_tensor_input(x, data_format, mode):
         )  # pragma: no cover
     x += mean_tensor  # pragma: no cover
     if std is not None:  # pragma: no cover
-        std_tensor = ops.convert_to_tensor(
-            np.array(std), dtype=x.dtype
-        )  # pragma: no cover
+        std_tensor = ops.convert_to_tensor(std, dtype=x.dtype)  # pragma: no cover
         if data_format == "channels_first":  # pragma: no cover
             std_tensor = ops.reshape(std_tensor, (-1, 1, 1))  # pragma: no cover
         x /= std_tensor  # pragma: no cover
@@ -433,13 +346,12 @@ def obtain_input_shape(
                 input_shape = (3, None, None)  # pragma: no cover
             else:
                 input_shape = (None, None, 3)  # pragma: no cover
-    if require_flatten:
-        if None in input_shape:
-            raise ValueError(  # pragma: no cover
-                "If `include_top` is True, "
-                "you should specify a static `input_shape`. "
-                f"Received: input_shape={input_shape}"
-            )
+    if require_flatten and None in input_shape:
+        raise ValueError(  # pragma: no cover
+            "If `include_top` is True, "
+            "you should specify a static `input_shape`. "
+            f"Received: input_shape={input_shape}"
+        )
     return input_shape
 
 

@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras import layers
 
 
@@ -100,7 +101,7 @@ def test_mha_coverage():
     v = np.random.uniform(size=(2, 5, 4)).astype(np.float32)
     # test build branch
     layer.build((q.shape, v.shape))
-    out, scores = layer(
+    _out, _scores = layer(
         q,
         v,
         key=v,

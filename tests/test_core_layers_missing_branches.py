@@ -1,6 +1,6 @@
 """Module docstring."""
 
-from zero_keras.core_layers import TensorShape, Node, Functional, Input
+from zero_keras.core_layers import Functional, Input, Node, TensorShape
 from zero_keras.layers import Dense, Layer
 
 

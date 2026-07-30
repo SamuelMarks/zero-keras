@@ -1,6 +1,7 @@
 """Module docstring."""
 
 import numpy as np
+
 from zero_keras import losses
 
 
@@ -39,7 +40,6 @@ def test_ctc_loss(monkeypatch):
     Args:
         monkeypatch: Description.
     """
-    import ml_switcheroo_compiler.ops as compiler_ops
 
     def mock_ctc_loss(log_probs, targets, input_lengths, target_lengths):
         """Function docstring.
@@ -52,7 +52,9 @@ def test_ctc_loss(monkeypatch):
         """
         return "ctc_success"
 
-    monkeypatch.setattr(compiler_ops, "ctc_loss", mock_ctc_loss)
+    import ml_switcheroo_compiler.ops.loss as msc_loss
+
+    monkeypatch.setattr(msc_loss, "ctc_loss", mock_ctc_loss)
 
     y_true = np.array([[1, 2, 0]], dtype="int32")
     y_pred = np.random.uniform(size=(1, 5, 3)).astype("float32")

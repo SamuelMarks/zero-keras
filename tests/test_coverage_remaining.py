@@ -1,13 +1,14 @@
 """Module docstring."""
 
+import numpy as np
+from ml_switcheroo_compiler.ops import asarray
+
 from zero_keras.initializers import deserialize as deserialize_initializer
 from zero_keras.layers import Conv1DTranspose, Conv2DTranspose, Conv3DTranspose
 from zero_keras.layers import Input as LayersInput
 from zero_keras.models import Sequential, clone_model, model_from_json
 from zero_keras.optimizers import LossScaleOptimizer
 from zero_keras.regularizers import deserialize as deserialize_regularizer
-import numpy as np
-from ml_switcheroo_compiler.ops import asarray
 
 
 def test_initializers_deserialize_invalid():
@@ -81,8 +82,6 @@ def test_models_from_json_edges():
 
 class DummyOptWithoutMethods:
     """Class docstring."""
-
-    pass
 
 
 def test_optimizers_lossscale_no_inner_methods():

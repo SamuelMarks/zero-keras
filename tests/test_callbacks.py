@@ -23,7 +23,6 @@ class MockModel:
         Args:
             filepath: Description.
         """
-        pass
 
 
 def test_callbacks():

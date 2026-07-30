@@ -1,8 +1,9 @@
 """Module docstring."""
 
-from zero_keras.layers import Conv1D, Conv2D, Conv3D
 import numpy as np
 from ml_switcheroo_compiler.ops import asarray
+
+from zero_keras.layers import Conv1D, Conv2D, Conv3D
 
 
 def test_layers_conv_channels_first_with_bias():

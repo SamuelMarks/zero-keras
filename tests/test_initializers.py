@@ -1,9 +1,11 @@
 """Tests for zero_keras initializers."""
 
+import keras
 import numpy as np
 import pytest
-import keras
+
 from zero_keras import initializers
+
 from .utils import assert_allclose_keras_zero, set_seed
 
 

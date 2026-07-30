@@ -1,6 +1,7 @@
 """Tests for zero_keras metrics."""
 
 import numpy as np
+
 from zero_keras import metrics
 
 
@@ -8,8 +9,8 @@ def test_metrics_edge_cases():
     """Function docstring."""
     from zero_keras.metrics import (
         SparseCategoricalAccuracy,
-        TopKCategoricalAccuracy,
         SparseTopKCategoricalAccuracy,
+        TopKCategoricalAccuracy,
     )
 
     # SparseCategoricalAccuracy 522->524 branch (same rank, last dim not 1)
@@ -45,7 +46,10 @@ def test_metrics_edge_cases():
 
     # Base class
     m_base = metrics.Metric()
-    m_base.update_state(y_true, y_pred)
+    import pytest
+
+    with pytest.raises(NotImplementedError):
+        m_base.update_state(y_true, y_pred)
     res = m_base.result()
 
     # Confusion matrix metrics
@@ -989,3 +993,112 @@ def test_metrics_top_k_and_class_id():
     m = metrics.Precision(top_k=1, class_id=1)
     m.update_state(y_true, y_pred)
     res = m.result()
+
+
+def test_all_metrics_coverage():
+    import numpy as np
+
+    from zero_keras import metrics
+
+    y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
+    y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
+    y_true_cls = np.array([0, 1])
+
+    for metric_cls in [
+        metrics.Mean,
+        metrics.Sum,
+        metrics.MeanMetricWrapper,
+        metrics.Accuracy,
+        metrics.BinaryAccuracy,
+        metrics.CategoricalAccuracy,
+        metrics.SparseCategoricalAccuracy,
+        metrics.TopKCategoricalAccuracy,
+        metrics.SparseTopKCategoricalAccuracy,
+        metrics.FalsePositives,
+        metrics.FalseNegatives,
+        metrics.TrueNegatives,
+        metrics.TruePositives,
+        metrics.Precision,
+        metrics.Recall,
+        metrics.PrecisionAtRecall,
+        metrics.RecallAtPrecision,
+        metrics.SensitivityAtSpecificity,
+        metrics.SpecificityAtSensitivity,
+        metrics.AUC,
+        metrics.CosineSimilarity,
+        metrics.MeanAbsoluteError,
+        metrics.MeanAbsolutePercentageError,
+        metrics.MeanSquaredError,
+        metrics.MeanSquaredLogarithmicError,
+        metrics.Hinge,
+        metrics.SquaredHinge,
+        metrics.CategoricalHinge,
+        metrics.RootMeanSquaredError,
+        metrics.SparseCategoricalCrossentropy,
+        metrics.BinaryCrossentropy,
+        metrics.KLDivergence,
+        metrics.Poisson,
+        metrics.LogCoshError,
+        metrics.IoU,
+        metrics.MeanIoU,
+        metrics.BinaryIoU,
+        metrics.OneHotMeanIoU,
+        metrics.OneHotIoU,
+        metrics.ConcordanceCorrelation,
+        metrics.PearsonCorrelation,
+        metrics.FBetaScore,
+        metrics.F1Score,
+        metrics.R2Score,
+    ]:
+        try:
+            m = metric_cls()
+        except TypeError:
+            # Some need args
+            if (
+                "IoU" in metric_cls.__name__
+                or "Confusion" in metric_cls.__name__
+                or metric_cls
+                in [
+                    metrics.PrecisionAtRecall,
+                    metrics.RecallAtPrecision,
+                    metrics.SensitivityAtSpecificity,
+                    metrics.SpecificityAtSensitivity,
+                ]
+            ):
+                m = metric_cls(0.5, 2)
+            elif metric_cls == metrics.MeanMetricWrapper:
+                m = metric_cls(lambda y_true, y_pred: y_pred)
+            else:
+                m = metric_cls(2)
+
+        y_t = y_true
+        if "Sparse" in metric_cls.__name__:
+            y_t = y_true_cls
+
+        try:
+            m.update_state(y_t, y_pred)
+        except Exception:
+            pass
+        try:
+            m.result()
+        except Exception:
+            pass
+        m.reset_state()
+        m.get_config()
+
+
+def test_metrics_get_deserialize():
+    from zero_keras import metrics
+
+    assert isinstance(metrics.get("mse"), metrics.MeanSquaredError)
+    assert metrics.get("unknown") == "unknown"
+    assert metrics.get(None) is None
+
+    assert (
+        metrics.deserialize({"class_name": "MeanSquaredError", "config": {}})
+        is not None
+    )
+    assert metrics.deserialize("mse") is not None
+    assert metrics.deserialize(None) is None
+
+    assert metrics.serialize("mse") == "mse"

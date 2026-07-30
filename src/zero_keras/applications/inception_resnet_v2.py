@@ -1,13 +1,12 @@
 """Module docstring."""
 
 from ml_switcheroo_compiler import core as backend
+
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.layers import Layer
 from zero_keras.models import Functional
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHT_URL = (
     "https://storage.googleapis.com/tensorflow/keras-applications/inception_resnet_v2/"

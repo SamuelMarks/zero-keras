@@ -1,7 +1,8 @@
 """Tests for zero_keras regularizers."""
 
-import pytest
 import numpy as np  # type: ignore
+import pytest
+
 from zero_keras import regularizers
 
 
@@ -112,7 +113,5 @@ def test_serialize_deserialize():
 
     class Dummy:
         """Class docstring."""
-
-        pass
 
     assert isinstance(regularizers.serialize(Dummy()), dict)

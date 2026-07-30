@@ -1,11 +1,13 @@
 """Module docstring."""
 
-import numpy as np
-import tempfile
 import os
-from zero_keras.models import Sequential
-from zero_keras.layers import Dense
+import tempfile
+
+import numpy as np
+
 from zero_keras.callbacks.callbacks import Callback
+from zero_keras.layers import Dense
+from zero_keras.models import Sequential
 
 
 def mock_dense_call(self, inputs, *args, **kwargs):
@@ -354,7 +356,7 @@ def test_save_and_load_weights():
 
         # Modify weights
         w = model.weights[0]
-        pass  # skip assign in tests if w is raw np
+        # skip assign in tests if w is raw np
 
         model.load_weights(path)
         w_new = model.weights[0]

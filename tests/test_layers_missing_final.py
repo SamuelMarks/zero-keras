@@ -1,22 +1,23 @@
 """Tests for missing coverage in layers."""
 
-from zero_keras.layers import (
-    Dense,
-    Conv1D,
-    Conv2D,
-    Conv3D,
-    Conv1DTranspose,
-    Conv2DTranspose,
-    Conv3DTranspose,
-    SimpleRNNCell,
-    GRUCell,
-    LSTMCell,
-    SpectralNormalization,
-    Bidirectional,
-    RNN,
-    Layer,
-)
 import numpy as np
+
+from zero_keras.layers import (
+    RNN,
+    Bidirectional,
+    Conv1D,
+    Conv1DTranspose,
+    Conv2D,
+    Conv2DTranspose,
+    Conv3D,
+    Conv3DTranspose,
+    Dense,
+    GRUCell,
+    Layer,
+    LSTMCell,
+    SimpleRNNCell,
+    SpectralNormalization,
+)
 
 
 def test_activation_none_branches():

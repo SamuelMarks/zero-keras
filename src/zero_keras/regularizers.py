@@ -1,7 +1,8 @@
 """Keras regularizers."""
 
 from typing import Any
-from zero_keras.ops import ops
+
+from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 
 

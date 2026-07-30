@@ -1,7 +1,6 @@
 """Module docstring."""
 
-from zero_keras.applications import imagenet_utils
-from zero_keras.applications import resnet
+from zero_keras.applications import imagenet_utils, resnet
 
 
 def ResNet50V2(
@@ -205,9 +204,9 @@ Returns:
     A Model instance.
 """
 
-if ResNet50V2.__doc__ is not None:
-    setattr(ResNet50V2, "__doc__", ResNet50V2.__doc__ + DOC)
-if ResNet101V2.__doc__ is not None:
-    setattr(ResNet101V2, "__doc__", ResNet101V2.__doc__ + DOC)
-if ResNet152V2.__doc__ is not None:
-    setattr(ResNet152V2, "__doc__", ResNet152V2.__doc__ + DOC)
+if ResNet50V2.__doc__ is not None:  # pragma: no branch
+    ResNet50V2.__doc__ = ResNet50V2.__doc__ + DOC
+if ResNet101V2.__doc__ is not None:  # pragma: no branch
+    ResNet101V2.__doc__ = ResNet101V2.__doc__ + DOC
+if ResNet152V2.__doc__ is not None:  # pragma: no branch
+    ResNet152V2.__doc__ = ResNet152V2.__doc__ + DOC

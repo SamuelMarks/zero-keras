@@ -2,9 +2,7 @@
 
 import json
 
-
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops, random
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -59,7 +57,7 @@ def load_data(
         **kwargs: Optional keyword arguments.
 
     Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        Tuple of arrays/lists: `(x_train, y_train), (x_test, y_test)`.
     """
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
     path = get_file(
@@ -67,20 +65,21 @@ def load_data(
         origin=f"{origin_folder}imdb.npz",
         file_hash="69664113be75683a8fe16e3ed0ab59fda8886cb3cd7ada244f7d9544e4676b9f",
     )
-    with np.load(path, allow_pickle=True) as f:
-        x_train, labels_train = f["x_train"], f["y_train"]
-        x_test, labels_test = f["x_test"], f["y_test"]
+    with ops.load(path, allow_pickle=True) as f:
+        x_train, labels_train = list(f["x_train"]), list(f["y_train"])
+        x_test, labels_test = list(f["x_test"]), list(f["y_test"])
 
-    rng = np.random.RandomState(seed)
-    indices = np.arange(len(x_train))
-    rng.shuffle(indices)
-    x_train = x_train[indices]
-    labels_train = labels_train[indices]
+    rng = random.RandomState(seed)
 
-    indices = np.arange(len(x_test))
+    indices = list(range(len(x_train)))
     rng.shuffle(indices)
-    x_test = x_test[indices]
-    labels_test = labels_test[indices]
+    x_train = [x_train[i] for i in indices]
+    labels_train = [labels_train[i] for i in indices]
+
+    indices = list(range(len(x_test)))
+    rng.shuffle(indices)
+    x_test = [x_test[i] for i in indices]
+    labels_test = [labels_test[i] for i in indices]
 
     if start_char is not None:
         x_train = [[start_char] + [w + index_from for w in x] for x in x_train]
@@ -98,11 +97,11 @@ def load_data(
         if not x_train or not x_test:
             raise ValueError(
                 "After filtering for sequences shorter than maxlen="
-                f"{str(maxlen)}, no sequence was kept. Increase maxlen."
+                f"{maxlen!s}, no sequence was kept. Increase maxlen."
             )
 
     xs = x_train + x_test
-    labels = np.concatenate([labels_train, labels_test])
+    labels = labels_train + labels_test
 
     if not num_words:
         num_words = max(max(x) for x in xs)
@@ -113,8 +112,9 @@ def load_data(
         xs = [[w for w in x if skip_top <= w < num_words] for x in xs]
 
     idx = len(x_train)
-    x_train, y_train = np.array(xs[:idx], dtype="object"), labels[:idx]
-    x_test, y_test = np.array(xs[idx:], dtype="object"), labels[idx:]
+
+    x_train, y_train = xs[:idx], labels[:idx]
+    x_test, y_test = xs[idx:], labels[idx:]
     return (x_train, y_train), (x_test, y_test)
 
 

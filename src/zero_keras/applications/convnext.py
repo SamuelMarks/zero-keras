@@ -1,19 +1,13 @@
 """Module docstring."""
 
-np = __import__("nu" + "mpy")
-
 from ml_switcheroo_compiler import core as backend
-from zero_keras import initializers
-from zero_keras import layers
-from zero_keras.ops import ops
-import ml_switcheroo_compiler.random as random
+from ml_switcheroo_compiler import random
+
+from zero_keras import initializers, layers, ops
 from zero_keras.applications import imagenet_utils
 from zero_keras.layers import Layer
-from zero_keras.models import Functional
-from zero_keras.models import Sequential
-from zero_keras.utils import generic_utils
-from zero_keras.utils import file_utils
-from zero_keras.utils import operation_utils
+from zero_keras.models import Functional, Sequential
+from zero_keras.utils import file_utils, generic_utils, operation_utils
 
 BASE_WEIGHTS_PATH = (
     "https://storage.googleapis.com/tensorflow/keras-applications/convnext/"
@@ -279,7 +273,7 @@ def ConvNeXtBlock(
         A function representing a ConvNeXtBlock block.
     """
     if name is None:
-        name = f"prestem{str(backend.get_uid('prestem'))}"  # pragma: no cover
+        name = f"prestem{backend.get_uid('prestem')!s}"  # pragma: no cover
 
     def apply(inputs):
         """Function docstring.
@@ -322,7 +316,7 @@ def ConvNeXtBlock(
 def PreStem(name=None):
     """Normalizes inputs with ImageNet-1k mean and std."""
     if name is None:
-        name = "prestem{0}".format(str(backend.get_uid("prestem")))  # pragma: no cover
+        name = "prestem{}".format(str(backend.get_uid("prestem")))  # pragma: no cover
 
     def apply(x):
         """Function docstring.
@@ -330,9 +324,6 @@ def PreStem(name=None):
         Args:
             x: Description.
         """
-        print(
-            f"x in PreStem is {x}, type {type(x)}, hasattr shape {hasattr(x, 'shape')} {getattr(x, 'shape', None)}"
-        )
         x = layers.Normalization(
             mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
             variance=[
@@ -367,9 +358,6 @@ def Head(num_classes=1000, classifier_activation=None, name=None):
         Args:
             x: Description.
         """
-        print(
-            f"x in PreStem is {x}, type {type(x)}, hasattr shape {hasattr(x, 'shape')} {getattr(x, 'shape', None)}"
-        )
         x = layers.GlobalAveragePooling2D(name=f"{name}_head_gap")(x)
         x = layers.LayerNormalization(epsilon=1e-6, name=f"{name}_head_layernorm")(x)
         x = layers.Dense(
@@ -539,7 +527,14 @@ def ConvNeXt(
     # Stochastic depth schedule.
     # This is referred from the original ConvNeXt codebase:
     # https://github.com/facebookresearch/ConvNeXt/blob/main/models/convnext.py#L86
-    depth_drop_rates = [float(x) for x in np.linspace(0.0, drop_path_rate, sum(depths))]
+    total_depths = sum(depths)
+    if total_depths <= 1:
+        depth_drop_rates = [0.0] * total_depths
+    else:
+        depth_drop_rates = [
+            float(0.0 + (drop_path_rate - 0.0) * i / (total_depths - 1))
+            for i in range(total_depths)
+        ]
 
     # First apply downsampling blocks and then apply ConvNeXt stages.
     cur = 0

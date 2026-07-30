@@ -1,7 +1,11 @@
 """Keras activations."""
 
-from typing import Any, Dict, Optional
-from zero_keras.ops import ops
+from __future__ import annotations
+
+import math
+from typing import Any
+
+from zero_keras import ops
 
 
 def _to_tensor(x):
@@ -14,11 +18,15 @@ def _to_tensor(x):
     Any: Return value.
 
     """
+    if x is None:
+        raise ValueError(
+            "Attempt to convert a value (None) with an unsupported type (<class 'NoneType'>) to a Tensor."
+        )
     if hasattr(x, "_tensor"):
         return x._tensor
     import ml_switcheroo_compiler
 
-    if isinstance(x, ml_switcheroo_compiler.Tensor):
+    if isinstance(x, ml_switcheroo_compiler.core.Tensor):
         return x
     if hasattr(x, "data") and "KerasTensor" in type(x).__name__:
         return x
@@ -44,7 +52,7 @@ def _wrap(x):
     return x
 
 
-_ACTIVATIONS: Dict[str, Any] = {}
+_ACTIVATIONS: dict[str, Any] = {}
 
 
 def get(identifier: Any) -> Any:
@@ -72,7 +80,7 @@ def serialize(activation: Any) -> Any:
     return activation.__class__.__name__
 
 
-def deserialize(config: Any, custom_objects: Optional[Dict[str, Any]] = None) -> Any:
+def deserialize(config: Any, custom_objects: dict[str, Any] | None = None) -> Any:
     """Return a Keras activation function via its config."""
     if isinstance(config, dict):
         return config
@@ -95,7 +103,7 @@ def linear(x: Any) -> Any:
 def relu(
     x: Any,
     negative_slope: float = 0.0,
-    max_value: Optional[float] = None,
+    max_value: float | None = None,
     threshold: float = 0.0,
 ) -> Any:
     """Applies the rectified linear unit activation function.
@@ -540,7 +548,7 @@ def gelu(x: Any, approximate: bool = False) -> Any:
             * x
             * (
                 1.0
-                + ops.tanh(ops.sqrt(2.0 / ops.pi) * (x + 0.044715 * ops.power(x, 3.0)))
+                + ops.tanh(ops.sqrt(2.0 / math.pi) * (x + 0.044715 * ops.power(x, 3.0)))
             )
         )
     else:

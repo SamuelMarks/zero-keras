@@ -1,8 +1,9 @@
 """Module docstring."""
 
 import pytest
+from ml_switcheroo_compiler.core import config
+
 from zero_keras.core_layers import KerasTensor
-import ml_switcheroo_compiler.core.config as config
 
 
 def test_kerastensor_bool_eager_no_data():

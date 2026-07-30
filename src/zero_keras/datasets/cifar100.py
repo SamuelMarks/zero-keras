@@ -3,9 +3,7 @@
 import os
 import pickle
 
-
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -20,7 +18,7 @@ def load_batch(fpath, label_key="fine_labels"):
     data = d["data"]
     labels = d[label_key]
 
-    data = data.reshape(data.shape[0], 3, 32, 32)
+    data = ops.reshape(data, (data.shape[0], 3, 32, 32))
     return data, labels
 
 
@@ -38,7 +36,7 @@ def load_data(label_mode="fine"):
             the coarse-grained superclasses.
 
     Returns:
-        Tuple of NumPy arrays: `(x_train, y_train), (x_test, y_test)`.
+        Tuple of backend-native tensors: `(x_train, y_train), (x_test, y_test)`.
     """
     if label_mode not in ["fine", "coarse"]:
         raise ValueError(
@@ -67,11 +65,11 @@ def load_data(label_mode="fine"):
     fpath = os.path.join(path, "test")
     x_test, y_test = load_batch(fpath, label_key=label_mode + "_labels")
 
-    y_train = np.reshape(y_train, (len(y_train), 1))
-    y_test = np.reshape(y_test, (len(y_test), 1))
+    y_train = ops.reshape(y_train, (y_train.shape[0], 1))
+    y_test = ops.reshape(y_test, (y_test.shape[0], 1))
 
     # Always return channels_last for zero-keras as default
-    x_train = x_train.transpose(0, 2, 3, 1)
-    x_test = x_test.transpose(0, 2, 3, 1)
+    x_train = ops.moveaxis(x_train, (0, 1, 2, 3), (0, 3, 1, 2))
+    x_test = ops.moveaxis(x_test, (0, 1, 2, 3), (0, 3, 1, 2))
 
     return (x_train, y_train), (x_test, y_test)

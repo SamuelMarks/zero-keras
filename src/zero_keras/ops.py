@@ -5,20 +5,7 @@ from ml_switcheroo_compiler.utils.operation_utils import compute_shape_propagati
 
 
 def _wrap_op(name, msc_op):
-    """Function docstring.
-
-    Args:
-        name: Description.
-        msc_op: Description.
-    """
-
     def wrapper(*args, **kwargs):
-        """Function docstring.
-
-        Args:
-            args: Description.
-            kwargs: Description.
-        """
         from zero_keras.core_layers import KerasTensor
 
         flat_args = []
@@ -43,2681 +30,1153 @@ def _wrap_op(name, msc_op):
             kt = next(x for x in flat_args if isinstance(x, KerasTensor))
             shape_or_shapes = compute_shape_propagation(name, kt.shape, args, kwargs)
             if isinstance(shape_or_shapes, list):
-                return [  # pragma: no cover
-                    KerasTensor(s, dtype=kt.dtype) for s in shape_or_shapes
-                ]  # pragma: no cover
-            return KerasTensor(shape_or_shapes, dtype=kt.dtype)  # pragma: no cover
+                return [KerasTensor(s, dtype=kt.dtype) for s in shape_or_shapes]
+            return KerasTensor(shape_or_shapes, dtype=kt.dtype)
+        return msc_op(*args, **kwargs)
 
-        if "axis" in kwargs:
-            if name in {
-                "concatenate",
-                "split",
-                "squeeze",
-                "repeat",
-                "stack",
-                "unstack",
-            }:
-                kwargs["dim"] = kwargs.pop("axis")
-            elif name == "roll":
-                kwargs["dims"] = kwargs.pop("axis")  # pragma: no cover
-
-        return msc_op(*args, **kwargs)  # pragma: no cover
-
-    return wrapper  # pragma: no cover
+    return wrapper
 
 
-def AllGatherOp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("AllGatherOp", getattr(msc_ops, "AllGatherOp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AdjustBrightness(*args, **kwargs):
+    return _wrap_op("AdjustBrightness", msc_ops.AdjustBrightness)(*args, **kwargs)
 
 
-def AllReduceOp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("AllReduceOp", getattr(msc_ops, "AllReduceOp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AdjustContrast(*args, **kwargs):
+    return _wrap_op("AdjustContrast", msc_ops.AdjustContrast)(*args, **kwargs)
 
 
-def Arange(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Arange", getattr(msc_ops, "Arange"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AdjustHue(*args, **kwargs):
+    return _wrap_op("AdjustHue", msc_ops.AdjustHue)(*args, **kwargs)
 
 
-def ArgSort(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ArgSort", getattr(msc_ops, "ArgSort"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AdjustSaturation(*args, **kwargs):
+    return _wrap_op("AdjustSaturation", msc_ops.AdjustSaturation)(*args, **kwargs)
 
 
-def Assign(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Assign", getattr(msc_ops, "Assign"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AffineConfig(*args, **kwargs):
+    return _wrap_op("AffineConfig", msc_ops.AffineConfig)(*args, **kwargs)
 
 
-def AssignAdd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("AssignAdd", getattr(msc_ops, "AssignAdd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AffineGenerator(*args, **kwargs):
+    return _wrap_op("AffineGenerator", msc_ops.AffineGenerator)(*args, **kwargs)
 
 
-def AssignSub(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("AssignSub", getattr(msc_ops, "AssignSub"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def AffineGrid(*args, **kwargs):
+    return _wrap_op("AffineGrid", msc_ops.AffineGrid)(*args, **kwargs)
 
 
-def AssignVariable(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def AffineTransform(*args, **kwargs):
+    return _wrap_op("AffineTransform", msc_ops.AffineTransform)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "AssignVariable", getattr(msc_ops, "AssignVariable")
-    )(  # pragma: no cover
+
+def Any(*args, **kwargs):
+    return _wrap_op("Any", msc_ops.Any)(*args, **kwargs)
+
+
+def Append(*args, **kwargs):
+    return _wrap_op("Append", msc_ops.Append)(*args, **kwargs)
+
+
+def AsStringConfig(*args, **kwargs):
+    return _wrap_op("AsStringConfig", msc_ops.AsStringConfig)(*args, **kwargs)
+
+
+def AssertOp(*args, **kwargs):
+    return _wrap_op("AssertOp", msc_ops.AssertOp)(*args, **kwargs)
+
+
+def AssignVariable(*args, **kwargs):
+    return _wrap_op("AssignVariable", msc_ops.AssignVariable)(*args, **kwargs)
+
+
+def AssociativeScan(*args, **kwargs):
+    return _wrap_op("AssociativeScan", msc_ops.AssociativeScan)(*args, **kwargs)
+
+
+def Atleast1d(*args, **kwargs):
+    return _wrap_op("Atleast1d", msc_ops.Atleast1d)(*args, **kwargs)
+
+
+def Atleast2d(*args, **kwargs):
+    return _wrap_op("Atleast2d", msc_ops.Atleast2d)(*args, **kwargs)
+
+
+def Atleast3d(*args, **kwargs):
+    return _wrap_op("Atleast3d", msc_ops.Atleast3d)(*args, **kwargs)
+
+
+def AugMix(*args, **kwargs):
+    return _wrap_op("AugMix", msc_ops.AugMix)(*args, **kwargs)
+
+
+def AutoContrast(*args, **kwargs):
+    return _wrap_op("AutoContrast", msc_ops.AutoContrast)(*args, **kwargs)
+
+
+def Block(*args, **kwargs):
+    return _wrap_op("Block", msc_ops.Block)(*args, **kwargs)
+
+
+def BlurConfig(*args, **kwargs):
+    return _wrap_op("BlurConfig", msc_ops.BlurConfig)(*args, **kwargs)
+
+
+def BooleanMask(*args, **kwargs):
+    return _wrap_op("BooleanMask", msc_ops.BooleanMask)(*args, **kwargs)
+
+
+def Callable(*args, **kwargs):
+    return _wrap_op("Callable", msc_ops.Callable)(*args, **kwargs)
+
+
+def ColumnStack(*args, **kwargs):
+    return _wrap_op("ColumnStack", msc_ops.ColumnStack)(*args, **kwargs)
+
+
+def ConvGeneralDilated(*args, **kwargs):
+    return _wrap_op("ConvGeneralDilated", msc_ops.ConvGeneralDilated)(*args, **kwargs)
+
+
+def ConvGeneralDilatedLocal(*args, **kwargs):
+    return _wrap_op("ConvGeneralDilatedLocal", msc_ops.ConvGeneralDilatedLocal)(
         *args, **kwargs
     )
 
 
-def AttentionConfig(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "AttentionConfig", getattr(msc_ops, "AttentionConfig")
-    )(  # pragma: no cover
+def ConvGeneralDilatedPatches(*args, **kwargs):
+    return _wrap_op("ConvGeneralDilatedPatches", msc_ops.ConvGeneralDilatedPatches)(
         *args, **kwargs
     )
 
 
-def AttentionInputs(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def ConvTranspose(*args, **kwargs):
+    return _wrap_op("ConvTranspose", msc_ops.ConvTranspose)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "AttentionInputs", getattr(msc_ops, "AttentionInputs")
-    )(  # pragma: no cover
+
+def ConvWithGeneralPadding(*args, **kwargs):
+    return _wrap_op("ConvWithGeneralPadding", msc_ops.ConvWithGeneralPadding)(
         *args, **kwargs
     )
 
 
-def BroadcastInDim(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def CustomLinearSolve(*args, **kwargs):
+    return _wrap_op("CustomLinearSolve", msc_ops.CustomLinearSolve)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "BroadcastInDim", getattr(msc_ops, "BroadcastInDim")
-    )(  # pragma: no cover
+
+def CustomRoot(*args, **kwargs):
+    return _wrap_op("CustomRoot", msc_ops.CustomRoot)(*args, **kwargs)
+
+
+def DType(*args, **kwargs):
+    return _wrap_op("DType", msc_ops.DType)(*args, **kwargs)
+
+
+def DebugInfs(*args, **kwargs):
+    return _wrap_op("DebugInfs", msc_ops.DebugInfs)(*args, **kwargs)
+
+
+def DebugNans(*args, **kwargs):
+    return _wrap_op("DebugNans", msc_ops.DebugNans)(*args, **kwargs)
+
+
+def Delete(*args, **kwargs):
+    return _wrap_op("Delete", msc_ops.Delete)(*args, **kwargs)
+
+
+def DiagIndices(*args, **kwargs):
+    return _wrap_op("DiagIndices", msc_ops.DiagIndices)(*args, **kwargs)
+
+
+def DiagIndicesFrom(*args, **kwargs):
+    return _wrap_op("DiagIndicesFrom", msc_ops.DiagIndicesFrom)(*args, **kwargs)
+
+
+def Diagflat(*args, **kwargs):
+    return _wrap_op("Diagflat", msc_ops.Diagflat)(*args, **kwargs)
+
+
+def Dot(*args, **kwargs):
+    return _wrap_op("Dot", msc_ops.Dot)(*args, **kwargs)
+
+
+def DotGeneral(*args, **kwargs):
+    return _wrap_op("DotGeneral", msc_ops.DotGeneral)(*args, **kwargs)
+
+
+def Dsplit(*args, **kwargs):
+    return _wrap_op("Dsplit", msc_ops.Dsplit)(*args, **kwargs)
+
+
+def Dstack(*args, **kwargs):
+    return _wrap_op("Dstack", msc_ops.Dstack)(*args, **kwargs)
+
+
+def Einsum(*args, **kwargs):
+    return _wrap_op("Einsum", msc_ops.Einsum)(*args, **kwargs)
+
+
+def ElasticConfig(*args, **kwargs):
+    return _wrap_op("ElasticConfig", msc_ops.ElasticConfig)(*args, **kwargs)
+
+
+def ElasticTransform(*args, **kwargs):
+    return _wrap_op("ElasticTransform", msc_ops.ElasticTransform)(*args, **kwargs)
+
+
+def Equalization(*args, **kwargs):
+    return _wrap_op("Equalization", msc_ops.Equalization)(*args, **kwargs)
+
+
+def ExpandDims(*args, **kwargs):
+    return _wrap_op("ExpandDims", msc_ops.ExpandDims)(*args, **kwargs)
+
+
+def ExtractBoundingBoxes(*args, **kwargs):
+    return _wrap_op("ExtractBoundingBoxes", msc_ops.ExtractBoundingBoxes)(
         *args, **kwargs
     )
 
 
-def BroadcastTo(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("BroadcastTo", getattr(msc_ops, "BroadcastTo"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ColumnStack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ColumnStack", getattr(msc_ops, "ColumnStack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ComplexWarning(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ComplexWarning", getattr(msc_ops, "ComplexWarning")
-    )(  # pragma: no cover
+def ExtractPatchesOptions(*args, **kwargs):
+    return _wrap_op("ExtractPatchesOptions", msc_ops.ExtractPatchesOptions)(
         *args, **kwargs
     )
 
 
-def Concatenate(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Concatenate", getattr(msc_ops, "Concatenate"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def FillDiagonal(*args, **kwargs):
+    return _wrap_op("FillDiagonal", msc_ops.FillDiagonal)(*args, **kwargs)
 
 
-def ConvGeneralDilated(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def Flip(*args, **kwargs):
+    return _wrap_op("Flip", msc_ops.Flip)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ConvGeneralDilated", getattr(msc_ops, "ConvGeneralDilated")
-    )(  # pragma: no cover
+
+def Fliplr(*args, **kwargs):
+    return _wrap_op("Fliplr", msc_ops.Fliplr)(*args, **kwargs)
+
+
+def Flipud(*args, **kwargs):
+    return _wrap_op("Flipud", msc_ops.Flipud)(*args, **kwargs)
+
+
+def Hsplit(*args, **kwargs):
+    return _wrap_op("Hsplit", msc_ops.Hsplit)(*args, **kwargs)
+
+
+def Hstack(*args, **kwargs):
+    return _wrap_op("Hstack", msc_ops.Hstack)(*args, **kwargs)
+
+
+def Insert(*args, **kwargs):
+    return _wrap_op("Insert", msc_ops.Insert)(*args, **kwargs)
+
+
+def Invert(*args, **kwargs):
+    return _wrap_op("Invert", msc_ops.Invert)(*args, **kwargs)
+
+
+def Iou(*args, **kwargs):
+    return _wrap_op("Iou", msc_ops.Iou)(*args, **kwargs)
+
+
+def LinearOperator(*args, **kwargs):
+    return _wrap_op("LinearOperator", msc_ops.LinearOperator)(*args, **kwargs)
+
+
+def LinearOperatorAdjoint(*args, **kwargs):
+    return _wrap_op("LinearOperatorAdjoint", msc_ops.LinearOperatorAdjoint)(
         *args, **kwargs
     )
 
 
-def CreationOp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("CreationOp", getattr(msc_ops, "CreationOp"))(  # pragma: no cover
+def LinearOperatorBlockDiag(*args, **kwargs):
+    return _wrap_op("LinearOperatorBlockDiag", msc_ops.LinearOperatorBlockDiag)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def DType(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("DType", getattr(msc_ops, "DType"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Dot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Dot", getattr(msc_ops, "Dot"))(*args, **kwargs)  # pragma: no cover
-
-
-def DotGeneral(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("DotGeneral", getattr(msc_ops, "DotGeneral"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Dsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Dsplit", getattr(msc_ops, "Dsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Dstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Dstack", getattr(msc_ops, "Dstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def DynamicSlice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
+def LinearOperatorBlockLowerTriangular(*args, **kwargs):
     return _wrap_op(
-        "DynamicSlice", getattr(msc_ops, "DynamicSlice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def DynamicUpdateSlice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "DynamicUpdateSlice", getattr(msc_ops, "DynamicUpdateSlice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Einsum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Einsum", getattr(msc_ops, "Einsum"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ElasticTransform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ElasticTransform", getattr(msc_ops, "ElasticTransform")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Expand(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Expand", getattr(msc_ops, "Expand"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ExtractBoundingBoxes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ExtractBoundingBoxes", getattr(msc_ops, "ExtractBoundingBoxes")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Fft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Fft", getattr(msc_ops, "Fft"))(*args, **kwargs)  # pragma: no cover
-
-
-def Flatten(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Flatten", getattr(msc_ops, "Flatten"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Full(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Full", getattr(msc_ops, "Full"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Gather(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Gather", getattr(msc_ops, "Gather"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def GatherNd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("GatherNd", getattr(msc_ops, "GatherNd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def GaussianBlur(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "GaussianBlur", getattr(msc_ops, "GaussianBlur")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Hsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Hsplit", getattr(msc_ops, "Hsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Hstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Hstack", getattr(msc_ops, "Hstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def IoU(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("IoU", getattr(msc_ops, "IoU"))(*args, **kwargs)  # pragma: no cover
-
-
-def Matmul(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Matmul", getattr(msc_ops, "Matmul"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def MedianFilter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "MedianFilter", getattr(msc_ops, "MedianFilter")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Meshgrid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Meshgrid", getattr(msc_ops, "Meshgrid"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Moveaxis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Moveaxis", getattr(msc_ops, "Moveaxis"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def NonMaxSuppression(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "NonMaxSuppression", getattr(msc_ops, "NonMaxSuppression")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def NormConfig(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("NormConfig", getattr(msc_ops, "NormConfig"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Ones(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Ones", getattr(msc_ops, "Ones"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def OpDef(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("OpDef", getattr(msc_ops, "OpDef"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Permute(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Permute", getattr(msc_ops, "Permute"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def PerspectiveTransform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "PerspectiveTransform", getattr(msc_ops, "PerspectiveTransform")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Pmean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Pmean", getattr(msc_ops, "Pmean"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Psum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Psum", getattr(msc_ops, "Psum"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def RaggedGather(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "RaggedGather", getattr(msc_ops, "RaggedGather")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def RaggedTensorToDense(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "RaggedTensorToDense", getattr(msc_ops, "RaggedTensorToDense")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def ReadVariable(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "ReadVariable", getattr(msc_ops, "ReadVariable")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ReduceScatterOp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ReduceScatterOp", getattr(msc_ops, "ReduceScatterOp")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def ReduceWindow(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "ReduceWindow", getattr(msc_ops, "ReduceWindow")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Repeat(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Repeat", getattr(msc_ops, "Repeat"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Reshape(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Reshape", getattr(msc_ops, "Reshape"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Resize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Resize", getattr(msc_ops, "Resize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ResizeBicubic(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "ResizeBicubic", getattr(msc_ops, "ResizeBicubic")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ResizeBilinear(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ResizeBilinear", getattr(msc_ops, "ResizeBilinear")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def ResizeLanczos3(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ResizeLanczos3", getattr(msc_ops, "ResizeLanczos3")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def ResizeNearest(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "ResizeNearest", getattr(msc_ops, "ResizeNearest")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Rfft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Rfft", getattr(msc_ops, "Rfft"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Roll(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Roll", getattr(msc_ops, "Roll"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def RowStack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("RowStack", getattr(msc_ops, "RowStack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Scatter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Scatter", getattr(msc_ops, "Scatter"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ScatterAdd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ScatterAdd", getattr(msc_ops, "ScatterAdd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ScatterNd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ScatterNd", getattr(msc_ops, "ScatterNd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def SearchSorted(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "SearchSorted", getattr(msc_ops, "SearchSorted")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Select(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Select", getattr(msc_ops, "Select"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ShardTensorOp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "ShardTensorOp", getattr(msc_ops, "ShardTensorOp")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Slice", getattr(msc_ops, "Slice"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def SobolSample(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("SobolSample", getattr(msc_ops, "SobolSample"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Sort(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Sort", getattr(msc_ops, "Sort"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def SpaceConfig(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("SpaceConfig", getattr(msc_ops, "SpaceConfig"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def SparseAdd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("SparseAdd", getattr(msc_ops, "SparseAdd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def SparseDenseMatMul(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "SparseDenseMatMul", getattr(msc_ops, "SparseDenseMatMul")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def SparseReduceSum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "SparseReduceSum", getattr(msc_ops, "SparseReduceSum")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Split(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Split", getattr(msc_ops, "Split"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Squeeze(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Squeeze", getattr(msc_ops, "Squeeze"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Stack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Stack", getattr(msc_ops, "Stack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def StridedSlice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "StridedSlice", getattr(msc_ops, "StridedSlice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Swapaxes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Swapaxes", getattr(msc_ops, "Swapaxes"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Take(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Take", getattr(msc_ops, "Take"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def TakeAlongAxis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "TakeAlongAxis", getattr(msc_ops, "TakeAlongAxis")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Tensor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Tensor", getattr(msc_ops, "Tensor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def TensorArrayRead(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "TensorArrayRead", getattr(msc_ops, "TensorArrayRead")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def TensorArrayStack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "TensorArrayStack", getattr(msc_ops, "TensorArrayStack")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def TensorArrayWrite(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "TensorArrayWrite", getattr(msc_ops, "TensorArrayWrite")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def TensorConfig(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "TensorConfig", getattr(msc_ops, "TensorConfig")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def TensorScatterUpdate(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "TensorScatterUpdate", getattr(msc_ops, "TensorScatterUpdate")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def Tile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Tile", getattr(msc_ops, "Tile"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def TopK(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("TopK", getattr(msc_ops, "TopK"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Transpose", getattr(msc_ops, "Transpose"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Tril(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Tril", getattr(msc_ops, "Tril"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Triu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Triu", getattr(msc_ops, "Triu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Vdot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Vdot", getattr(msc_ops, "Vdot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Vsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Vsplit", getattr(msc_ops, "Vsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Vstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Vstack", getattr(msc_ops, "Vstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Where(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Where", getattr(msc_ops, "Where"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def Zeros(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("Zeros", getattr(msc_ops, "Zeros"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def abs(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("abs", getattr(msc_ops, "abs"))(*args, **kwargs)  # pragma: no cover
-
-
-def absolute(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("absolute", getattr(msc_ops, "absolute"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def acos(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("acos", getattr(msc_ops, "acos"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def acosh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("acosh", getattr(msc_ops, "acosh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def activity_regularization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "activity_regularization", getattr(msc_ops, "activity_regularization")
+        "LinearOperatorBlockLowerTriangular",
+        msc_ops.LinearOperatorBlockLowerTriangular,
     )(*args, **kwargs)
 
 
-def add(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("add", getattr(msc_ops, "add"))(*args, **kwargs)  # pragma: no cover
-
-
-def adjust_brightness(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "adjust_brightness", getattr(msc_ops, "adjust_brightness")
-    )(  # pragma: no cover
+def LinearOperatorCirculant(*args, **kwargs):
+    return _wrap_op("LinearOperatorCirculant", msc_ops.LinearOperatorCirculant)(
         *args, **kwargs
     )
 
 
-def adjust_contrast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "adjust_contrast", getattr(msc_ops, "adjust_contrast")
-    )(  # pragma: no cover
+def LinearOperatorCirculant2D(*args, **kwargs):
+    return _wrap_op("LinearOperatorCirculant2D", msc_ops.LinearOperatorCirculant2D)(
         *args, **kwargs
     )
 
 
-def adjust_hue(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("adjust_hue", getattr(msc_ops, "adjust_hue"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def adjust_saturation(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "adjust_saturation", getattr(msc_ops, "adjust_saturation")
-    )(  # pragma: no cover
+def LinearOperatorCirculant3D(*args, **kwargs):
+    return _wrap_op("LinearOperatorCirculant3D", msc_ops.LinearOperatorCirculant3D)(
         *args, **kwargs
     )
 
 
-def affine_generator(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "affine_generator", getattr(msc_ops, "affine_generator")
-    )(  # pragma: no cover
+def LinearOperatorComposition(*args, **kwargs):
+    return _wrap_op("LinearOperatorComposition", msc_ops.LinearOperatorComposition)(
         *args, **kwargs
     )
 
 
-def affine_transform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def LinearOperatorDiag(*args, **kwargs):
+    return _wrap_op("LinearOperatorDiag", msc_ops.LinearOperatorDiag)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "affine_transform", getattr(msc_ops, "affine_transform")
-    )(  # pragma: no cover
+
+def LinearOperatorFullMatrix(*args, **kwargs):
+    return _wrap_op("LinearOperatorFullMatrix", msc_ops.LinearOperatorFullMatrix)(
         *args, **kwargs
     )
 
 
-aliases = msc_ops.aliases
-
-
-def all(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("all", getattr(msc_ops, "all"))(*args, **kwargs)  # pragma: no cover
-
-
-def all_gather(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("all_gather", getattr(msc_ops, "all_gather"))(  # pragma: no cover
+def LinearOperatorHouseholder(*args, **kwargs):
+    return _wrap_op("LinearOperatorHouseholder", msc_ops.LinearOperatorHouseholder)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def all_reduce(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("all_reduce", getattr(msc_ops, "all_reduce"))(  # pragma: no cover
+def LinearOperatorIdentity(*args, **kwargs):
+    return _wrap_op("LinearOperatorIdentity", msc_ops.LinearOperatorIdentity)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def allclose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("allclose", getattr(msc_ops, "allclose"))(  # pragma: no cover
+def LinearOperatorInversion(*args, **kwargs):
+    return _wrap_op("LinearOperatorInversion", msc_ops.LinearOperatorInversion)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def amax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("amax", getattr(msc_ops, "amax"))(  # pragma: no cover
+def LinearOperatorKronecker(*args, **kwargs):
+    return _wrap_op("LinearOperatorKronecker", msc_ops.LinearOperatorKronecker)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def amin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("amin", getattr(msc_ops, "amin"))(  # pragma: no cover
+def LinearOperatorLowRankUpdate(*args, **kwargs):
+    return _wrap_op("LinearOperatorLowRankUpdate", msc_ops.LinearOperatorLowRankUpdate)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
 
 
-def angle(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def LinearOperatorLowerTriangular(*args, **kwargs):
+    return _wrap_op(
+        "LinearOperatorLowerTriangular",
+        msc_ops.LinearOperatorLowerTriangular,
+    )(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("angle", getattr(msc_ops, "angle"))(  # pragma: no cover
+
+def LinearOperatorPermutation(*args, **kwargs):
+    return _wrap_op("LinearOperatorPermutation", msc_ops.LinearOperatorPermutation)(
         *args, **kwargs
-    )  # pragma: no cover
+    )
+
+
+def LinearOperatorScaledIdentity(*args, **kwargs):
+    return _wrap_op(
+        "LinearOperatorScaledIdentity", msc_ops.LinearOperatorScaledIdentity
+    )(*args, **kwargs)
+
+
+def LinearOperatorToeplitz(*args, **kwargs):
+    return _wrap_op("LinearOperatorToeplitz", msc_ops.LinearOperatorToeplitz)(
+        *args, **kwargs
+    )
+
+
+def LinearOperatorTridiag(*args, **kwargs):
+    return _wrap_op("LinearOperatorTridiag", msc_ops.LinearOperatorTridiag)(
+        *args, **kwargs
+    )
+
+
+def LinearOperatorZeros(*args, **kwargs):
+    return _wrap_op("LinearOperatorZeros", msc_ops.LinearOperatorZeros)(*args, **kwargs)
+
+
+def MapFlatValues(*args, **kwargs):
+    return _wrap_op("MapFlatValues", msc_ops.MapFlatValues)(*args, **kwargs)
+
+
+def Matmul(*args, **kwargs):
+    return _wrap_op("Matmul", msc_ops.Matmul)(*args, **kwargs)
+
+
+def MatrixRank(*args, **kwargs):
+    return _wrap_op("MatrixRank", msc_ops.MatrixRank)(*args, **kwargs)
+
+
+def MatrixTranspose(*args, **kwargs):
+    return _wrap_op("MatrixTranspose", msc_ops.MatrixTranspose)(*args, **kwargs)
+
+
+def Moveaxis(*args, **kwargs):
+    return _wrap_op("Moveaxis", msc_ops.Moveaxis)(*args, **kwargs)
+
+
+def Nms(*args, **kwargs):
+    return _wrap_op("Nms", msc_ops.Nms)(*args, **kwargs)
+
+
+def NormConfig(*args, **kwargs):
+    return _wrap_op("NormConfig", msc_ops.NormConfig)(*args, **kwargs)
+
+
+def OpDef(*args, **kwargs):
+    return _wrap_op("OpDef", msc_ops.OpDef)(*args, **kwargs)
+
+
+def Pdot(*args, **kwargs):
+    return _wrap_op("Pdot", msc_ops.Pdot)(*args, **kwargs)
+
+
+def Permute(*args, **kwargs):
+    return _wrap_op("Permute", msc_ops.Permute)(*args, **kwargs)
+
+
+def PerspectiveConfig(*args, **kwargs):
+    return _wrap_op("PerspectiveConfig", msc_ops.PerspectiveConfig)(*args, **kwargs)
+
+
+def PerspectiveTransform(*args, **kwargs):
+    return _wrap_op("PerspectiveTransform", msc_ops.PerspectiveTransform)(
+        *args, **kwargs
+    )
+
+
+def Pmean(*args, **kwargs):
+    return _wrap_op("Pmean", msc_ops.Pmean)(*args, **kwargs)
+
+
+def Posterize(*args, **kwargs):
+    return _wrap_op("Posterize", msc_ops.Posterize)(*args, **kwargs)
+
+
+def Psum(*args, **kwargs):
+    return _wrap_op("Psum", msc_ops.Psum)(*args, **kwargs)
+
+
+def RNNConfig(*args, **kwargs):
+    return _wrap_op("RNNConfig", msc_ops.RNNConfig)(*args, **kwargs)
+
+
+def RaggedAdd(*args, **kwargs):
+    return _wrap_op("RaggedAdd", msc_ops.RaggedAdd)(*args, **kwargs)
+
+
+def RaggedConstant(*args, **kwargs):
+    return _wrap_op("RaggedConstant", msc_ops.RaggedConstant)(*args, **kwargs)
+
+
+def RaggedCrossHashed(*args, **kwargs):
+    return _wrap_op("RaggedCrossHashed", msc_ops.RaggedCrossHashed)(*args, **kwargs)
+
+
+def RaggedDot(*args, **kwargs):
+    return _wrap_op("RaggedDot", msc_ops.RaggedDot)(*args, **kwargs)
+
+
+def RaggedDynamicBroadcast(*args, **kwargs):
+    return _wrap_op("RaggedDynamicBroadcast", msc_ops.RaggedDynamicBroadcast)(
+        *args, **kwargs
+    )
+
+
+def RaggedGather(*args, **kwargs):
+    return _wrap_op("RaggedGather", msc_ops.RaggedGather)(*args, **kwargs)
+
+
+def RaggedMatMul(*args, **kwargs):
+    return _wrap_op("RaggedMatMul", msc_ops.RaggedMatMul)(*args, **kwargs)
+
+
+def RaggedRange(*args, **kwargs):
+    return _wrap_op("RaggedRange", msc_ops.RaggedRange)(*args, **kwargs)
+
+
+def RaggedRowSplitsToSegmentIds(*args, **kwargs):
+    return _wrap_op("RaggedRowSplitsToSegmentIds", msc_ops.RaggedRowSplitsToSegmentIds)(
+        *args, **kwargs
+    )
+
+
+def RaggedSegmentIdsToRowSplits(*args, **kwargs):
+    return _wrap_op("RaggedSegmentIdsToRowSplits", msc_ops.RaggedSegmentIdsToRowSplits)(
+        *args, **kwargs
+    )
+
+
+def RaggedStack(*args, **kwargs):
+    return _wrap_op("RaggedStack", msc_ops.RaggedStack)(*args, **kwargs)
+
+
+def RaggedStackDynamicPartitions(*args, **kwargs):
+    return _wrap_op(
+        "RaggedStackDynamicPartitions", msc_ops.RaggedStackDynamicPartitions
+    )(*args, **kwargs)
+
+
+def RaggedTensorToDense(*args, **kwargs):
+    return _wrap_op("RaggedTensorToDense", msc_ops.RaggedTensorToDense)(*args, **kwargs)
+
+
+def RawConv2D(*args, **kwargs):
+    return _wrap_op("RawConv2D", msc_ops.RawConv2D)(*args, **kwargs)
+
+
+def RawMatMul(*args, **kwargs):
+    return _wrap_op("RawMatMul", msc_ops.RawMatMul)(*args, **kwargs)
+
+
+def RawMerge(*args, **kwargs):
+    return _wrap_op("RawMerge", msc_ops.RawMerge)(*args, **kwargs)
+
+
+def RawOp(*args, **kwargs):
+    return _wrap_op("RawOp", msc_ops.RawOp)(*args, **kwargs)
+
+
+def RawSwitch(*args, **kwargs):
+    return _wrap_op("RawSwitch", msc_ops.RawSwitch)(*args, **kwargs)
+
+
+def ReadVariable(*args, **kwargs):
+    return _wrap_op("ReadVariable", msc_ops.ReadVariable)(*args, **kwargs)
+
+
+def Resize(*args, **kwargs):
+    return _wrap_op("Resize", msc_ops.Resize)(*args, **kwargs)
+
+
+def RgbToGrayscale(*args, **kwargs):
+    return _wrap_op("RgbToGrayscale", msc_ops.RgbToGrayscale)(*args, **kwargs)
+
+
+def Roll(*args, **kwargs):
+    return _wrap_op("Roll", msc_ops.Roll)(*args, **kwargs)
+
+
+def ScanOp(*args, **kwargs):
+    return _wrap_op("ScanOp", msc_ops.ScanOp)(*args, **kwargs)
+
+
+def SobolSample(*args, **kwargs):
+    return _wrap_op("SobolSample", msc_ops.SobolSample)(*args, **kwargs)
+
+
+def Solarize(*args, **kwargs):
+    return _wrap_op("Solarize", msc_ops.Solarize)(*args, **kwargs)
+
+
+def SparseConcat(*args, **kwargs):
+    return _wrap_op("SparseConcat", msc_ops.SparseConcat)(*args, **kwargs)
+
+
+def SparseDenseMatMul(*args, **kwargs):
+    return _wrap_op("SparseDenseMatMul", msc_ops.SparseDenseMatMul)(*args, **kwargs)
+
+
+def SparseMapValues(*args, **kwargs):
+    return _wrap_op("SparseMapValues", msc_ops.SparseMapValues)(*args, **kwargs)
+
+
+def SparseReduceMax(*args, **kwargs):
+    return _wrap_op("SparseReduceMax", msc_ops.SparseReduceMax)(*args, **kwargs)
+
+
+def SparseReshape(*args, **kwargs):
+    return _wrap_op("SparseReshape", msc_ops.SparseReshape)(*args, **kwargs)
+
+
+def SparseSampledAdd(*args, **kwargs):
+    return _wrap_op("SparseSampledAdd", msc_ops.SparseSampledAdd)(*args, **kwargs)
+
+
+def SparseSegmentSum(*args, **kwargs):
+    return _wrap_op("SparseSegmentSum", msc_ops.SparseSegmentSum)(*args, **kwargs)
+
+
+def SparseSplit(*args, **kwargs):
+    return _wrap_op("SparseSplit", msc_ops.SparseSplit)(*args, **kwargs)
+
+
+def SparseToDense(*args, **kwargs):
+    return _wrap_op("SparseToDense", msc_ops.SparseToDense)(*args, **kwargs)
+
+
+def SparseTranspose(*args, **kwargs):
+    return _wrap_op("SparseTranspose", msc_ops.SparseTranspose)(*args, **kwargs)
+
+
+def Sqrtm(*args, **kwargs):
+    return _wrap_op("Sqrtm", msc_ops.Sqrtm)(*args, **kwargs)
+
+
+def Squeeze(*args, **kwargs):
+    return _wrap_op("Squeeze", msc_ops.Squeeze)(*args, **kwargs)
+
+
+def Swapaxes(*args, **kwargs):
+    return _wrap_op("Swapaxes", msc_ops.Swapaxes)(*args, **kwargs)
+
+
+def SwitchOp(*args, **kwargs):
+    return _wrap_op("SwitchOp", msc_ops.SwitchOp)(*args, **kwargs)
+
+
+def TFRecordOptions(*args, **kwargs):
+    return _wrap_op("TFRecordOptions", msc_ops.TFRecordOptions)(*args, **kwargs)
+
+
+def TFRecordWriter(*args, **kwargs):
+    return _wrap_op("TFRecordWriter", msc_ops.TFRecordWriter)(*args, **kwargs)
+
+
+def Tensor(*args, **kwargs):
+    return _wrap_op("Tensor", msc_ops.Tensor)(*args, **kwargs)
+
+
+def TensorArrayRead(*args, **kwargs):
+    return _wrap_op("TensorArrayRead", msc_ops.TensorArrayRead)(*args, **kwargs)
+
+
+def TensorArrayStack(*args, **kwargs):
+    return _wrap_op("TensorArrayStack", msc_ops.TensorArrayStack)(*args, **kwargs)
+
+
+def TensorArrayWrite(*args, **kwargs):
+    return _wrap_op("TensorArrayWrite", msc_ops.TensorArrayWrite)(*args, **kwargs)
+
+
+def TensorConfig(*args, **kwargs):
+    return _wrap_op("TensorConfig", msc_ops.TensorConfig)(*args, **kwargs)
+
+
+def Trace(*args, **kwargs):
+    return _wrap_op("Trace", msc_ops.Trace)(*args, **kwargs)
+
+
+def Vecdot(*args, **kwargs):
+    return _wrap_op("Vecdot", msc_ops.Vecdot)(*args, **kwargs)
+
+
+def Vsplit(*args, **kwargs):
+    return _wrap_op("Vsplit", msc_ops.Vsplit)(*args, **kwargs)
+
+
+def Vstack(*args, **kwargs):
+    return _wrap_op("Vstack", msc_ops.Vstack)(*args, **kwargs)
+
+
+def abs(*args, **kwargs):
+    return _wrap_op("abs", msc_ops.abs)(*args, **kwargs)
+
+
+def absolute(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.absolute is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def accumulate_n(*args, **kwargs):
+    return _wrap_op("accumulate_n", msc_ops.accumulate_n)(*args, **kwargs)
+
+
+def acos(*args, **kwargs):
+    return _wrap_op("acos", msc_ops.acos)(*args, **kwargs)
+
+
+def acosh(*args, **kwargs):
+    return _wrap_op("acosh", msc_ops.acosh)(*args, **kwargs)
+
+
+activations = msc_ops.activations
+
+
+def adaptive_avg_pool2d(*args, **kwargs):
+    return _wrap_op("adaptive_avg_pool2d", msc_ops.adaptive_avg_pool2d)(*args, **kwargs)
+
+
+def adaptive_max_pool2d(*args, **kwargs):
+    return _wrap_op("adaptive_max_pool2d", msc_ops.adaptive_max_pool2d)(*args, **kwargs)
+
+
+def add(*args, **kwargs):
+    return _wrap_op("add", msc_ops.add)(*args, **kwargs)
+
+
+def add_n(*args, **kwargs):
+    return _wrap_op("add_n", msc_ops.add_n)(*args, **kwargs)
+
+
+def addmm(*args, **kwargs):
+    return _wrap_op("addmm", msc_ops.addmm)(*args, **kwargs)
+
+
+def adjoint(*args, **kwargs):
+    return _wrap_op("adjoint", msc_ops.adjoint)(*args, **kwargs)
+
+
+def adjust_brightness(*args, **kwargs):
+    return _wrap_op("adjust_brightness", msc_ops.adjust_brightness)(*args, **kwargs)
+
+
+def adjust_contrast(*args, **kwargs):
+    return _wrap_op("adjust_contrast", msc_ops.adjust_contrast)(*args, **kwargs)
+
+
+def adjust_hue(*args, **kwargs):
+    return _wrap_op("adjust_hue", msc_ops.adjust_hue)(*args, **kwargs)
+
+
+def adjust_saturation(*args, **kwargs):
+    return _wrap_op("adjust_saturation", msc_ops.adjust_saturation)(*args, **kwargs)
+
+
+def affine_generator(*args, **kwargs):
+    return _wrap_op("affine_generator", msc_ops.affine_generator)(*args, **kwargs)
+
+
+def affine_grid(*args, **kwargs):
+    return _wrap_op("affine_grid", msc_ops.affine_grid)(*args, **kwargs)
+
+
+def affine_transform(*args, **kwargs):
+    return _wrap_op("affine_transform", msc_ops.affine_transform)(*args, **kwargs)
+
+
+aggregations = msc_ops.aggregations
+
+
+def all(*args, **kwargs):
+    return _wrap_op("all", msc_ops.all)(*args, **kwargs)
+
+
+def allclose(*args, **kwargs):
+    return _wrap_op("allclose", msc_ops.allclose)(*args, **kwargs)
+
+
+def amax(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.amax is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def amin(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.amin is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def angle(*args, **kwargs):
+    return _wrap_op("angle", msc_ops.angle)(*args, **kwargs)
 
 
 annotations = msc_ops.annotations
 
 
-def any(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("any", getattr(msc_ops, "any"))(*args, **kwargs)  # pragma: no cover
+def any(*args, **kwargs):
+    return _wrap_op("any", msc_ops.any)(*args, **kwargs)
 
 
-def append(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("append", getattr(msc_ops, "append"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def append(*args, **kwargs):
+    return _wrap_op("append", msc_ops.append)(*args, **kwargs)
 
 
-def apply_along_axis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def approx_max_k(*args, **kwargs):
+    return _wrap_op("approx_max_k", msc_ops.approx_max_k)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "apply_along_axis", getattr(msc_ops, "apply_along_axis")
-    )(  # pragma: no cover
+
+def approx_min_k(*args, **kwargs):
+    return _wrap_op("approx_min_k", msc_ops.approx_min_k)(*args, **kwargs)
+
+
+def arange(*args, **kwargs):
+    return _wrap_op("arange", msc_ops.arange)(*args, **kwargs)
+
+
+def arccos(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arccos is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arccosh(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arccosh is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arcsin(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arcsin is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arcsinh(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arcsinh is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arctan(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arctan is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arctan2(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arctan2 is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def arctanh(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.arctanh is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def argmax(*args, **kwargs):
+    return _wrap_op("argmax", msc_ops.argmax)(*args, **kwargs)
+
+
+def argmin(*args, **kwargs):
+    return _wrap_op("argmin", msc_ops.argmin)(*args, **kwargs)
+
+
+def argpartition(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.argpartition is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def argsort(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.argsort is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+arithmetic = msc_ops.arithmetic
+
+
+def array(*args, **kwargs):
+    return _wrap_op("array", msc_ops.array)(*args, **kwargs)
+
+
+def array_split(*args, **kwargs):
+    return _wrap_op("array_split", msc_ops.array_split)(*args, **kwargs)
+
+
+def as_string(*args, **kwargs):
+    return _wrap_op("as_string", msc_ops.as_string)(*args, **kwargs)
+
+
+def asarray(*args, **kwargs):
+    return _wrap_op("asarray", msc_ops.asarray)(*args, **kwargs)
+
+
+def asin(*args, **kwargs):
+    return _wrap_op("asin", msc_ops.asin)(*args, **kwargs)
+
+
+def asinh(*args, **kwargs):
+    return _wrap_op("asinh", msc_ops.asinh)(*args, **kwargs)
+
+
+def assert_value(*args, **kwargs):
+    return _wrap_op("assert_value", msc_ops.assert_value)(*args, **kwargs)
+
+
+def assert_value_eager(*args, **kwargs):
+    return _wrap_op("assert_value_eager", msc_ops.assert_value_eager)(*args, **kwargs)
+
+
+def assert_value_tracing(*args, **kwargs):
+    return _wrap_op("assert_value_tracing", msc_ops.assert_value_tracing)(
         *args, **kwargs
     )
 
 
-def apply_over_axes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def associative_scan(*args, **kwargs):
+    return _wrap_op("associative_scan", msc_ops.associative_scan)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "apply_over_axes", getattr(msc_ops, "apply_over_axes")
-    )(  # pragma: no cover
+
+def atan(*args, **kwargs):
+    return _wrap_op("atan", msc_ops.atan)(*args, **kwargs)
+
+
+def atan2(*args, **kwargs):
+    return _wrap_op("atan2", msc_ops.atan2)(*args, **kwargs)
+
+
+def atanh(*args, **kwargs):
+    return _wrap_op("atanh", msc_ops.atanh)(*args, **kwargs)
+
+
+def atleast_1d(*args, **kwargs):
+    return _wrap_op("atleast_1d", msc_ops.atleast_1d)(*args, **kwargs)
+
+
+def atleast_2d(*args, **kwargs):
+    return _wrap_op("atleast_2d", msc_ops.atleast_2d)(*args, **kwargs)
+
+
+def atleast_3d(*args, **kwargs):
+    return _wrap_op("atleast_3d", msc_ops.atleast_3d)(*args, **kwargs)
+
+
+def augmix(*args, **kwargs):
+    return _wrap_op("augmix", msc_ops.augmix)(*args, **kwargs)
+
+
+def auto_contrast(*args, **kwargs):
+    return _wrap_op("auto_contrast", msc_ops.auto_contrast)(*args, **kwargs)
+
+
+def average(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.average is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def average_pool(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.average_pool is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def avg_pool(*args, **kwargs):
+    return _wrap_op("avg_pool", msc_ops.avg_pool)(*args, **kwargs)
+
+
+def avg_pool1d(*args, **kwargs):
+    return _wrap_op("avg_pool1d", msc_ops.avg_pool1d)(*args, **kwargs)
+
+
+def avg_pool2d(*args, **kwargs):
+    return _wrap_op("avg_pool2d", msc_ops.avg_pool2d)(*args, **kwargs)
+
+
+def avg_pool3d(*args, **kwargs):
+    return _wrap_op("avg_pool3d", msc_ops.avg_pool3d)(*args, **kwargs)
+
+
+def band_part(*args, **kwargs):
+    return _wrap_op("band_part", msc_ops.band_part)(*args, **kwargs)
+
+
+def banded_triangular_solve(*args, **kwargs):
+    return _wrap_op("banded_triangular_solve", msc_ops.banded_triangular_solve)(
         *args, **kwargs
     )
 
 
-def approx_max_k(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "approx_max_k", getattr(msc_ops, "approx_max_k")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def approx_min_k(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "approx_min_k", getattr(msc_ops, "approx_min_k")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arange(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arange", getattr(msc_ops, "arange"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arccos(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arccos", getattr(msc_ops, "arccos"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arccosh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arccosh", getattr(msc_ops, "arccosh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arcsin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arcsin", getattr(msc_ops, "arcsin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arcsinh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arcsinh", getattr(msc_ops, "arcsinh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arctan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arctan", getattr(msc_ops, "arctan"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arctan2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arctan2", getattr(msc_ops, "arctan2"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def arctanh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("arctanh", getattr(msc_ops, "arctanh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def argmax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("argmax", getattr(msc_ops, "argmax"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def argmin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("argmin", getattr(msc_ops, "argmin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def argpartition(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "argpartition", getattr(msc_ops, "argpartition")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def argsort(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("argsort", getattr(msc_ops, "argsort"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def argwhere(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("argwhere", getattr(msc_ops, "argwhere"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def around(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("around", getattr(msc_ops, "around"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array", getattr(msc_ops, "array"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array_equal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array_equal", getattr(msc_ops, "array_equal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array_equiv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array_equiv", getattr(msc_ops, "array_equiv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array_repr(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array_repr", getattr(msc_ops, "array_repr"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array_split(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array_split", getattr(msc_ops, "array_split"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def array_str(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("array_str", getattr(msc_ops, "array_str"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def as_string(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("as_string", getattr(msc_ops, "as_string"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def asarray(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("asarray", getattr(msc_ops, "asarray"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def asin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("asin", getattr(msc_ops, "asin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def asinh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("asinh", getattr(msc_ops, "asinh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def associative_scan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "associative_scan", getattr(msc_ops, "associative_scan")
-    )(  # pragma: no cover
-        *args, **kwargs
+def bartlett(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.bartlett is not yet implemented in ml-switcheroo-compiler"
     )
-
-
-def astype(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("astype", getattr(msc_ops, "astype"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atan", getattr(msc_ops, "atan"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atan2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atan2", getattr(msc_ops, "atan2"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atanh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atanh", getattr(msc_ops, "atanh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atleast_1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atleast_1d", getattr(msc_ops, "atleast_1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atleast_2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atleast_2d", getattr(msc_ops, "atleast_2d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def atleast_3d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("atleast_3d", getattr(msc_ops, "atleast_3d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def attention(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("attention", getattr(msc_ops, "attention"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-audio = msc_ops.audio
-
-
-def augmix(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("augmix", getattr(msc_ops, "augmix"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def auto_contrast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "auto_contrast", getattr(msc_ops, "auto_contrast")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def average(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("average", getattr(msc_ops, "average"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def average_pool(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "average_pool", getattr(msc_ops, "average_pool")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def avg_pool(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("avg_pool", getattr(msc_ops, "avg_pool"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bartlett(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bartlett", getattr(msc_ops, "bartlett"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
 
 base = msc_ops.base
 
 
-def batch_normalization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "batch_normalization", getattr(msc_ops, "batch_normalization")
-    )(  # pragma: no cover
-        *args, **kwargs
+def batch_normalization(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.batch_normalization is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def bessel_i0(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bessel_i0", getattr(msc_ops, "bessel_i0"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def bessel_i0(*args, **kwargs):
+    return _wrap_op("bessel_i0", msc_ops.bessel_i0)(*args, **kwargs)
 
 
-def bessel_i0e(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bessel_i0e", getattr(msc_ops, "bessel_i0e"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def bessel_i0e(*args, **kwargs):
+    return _wrap_op("bessel_i0e", msc_ops.bessel_i0e)(*args, **kwargs)
 
 
-def bessel_i1(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bessel_i1", getattr(msc_ops, "bessel_i1"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def bessel_i1(*args, **kwargs):
+    return _wrap_op("bessel_i1", msc_ops.bessel_i1)(*args, **kwargs)
 
 
-def bessel_i1e(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bessel_i1e", getattr(msc_ops, "bessel_i1e"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def bessel_i1e(*args, **kwargs):
+    return _wrap_op("bessel_i1e", msc_ops.bessel_i1e)(*args, **kwargs)
 
 
-def betainc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("betainc", getattr(msc_ops, "betainc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-bfloat16 = msc_ops.bfloat16
-
-
-def bidirectional(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "bidirectional", getattr(msc_ops, "bidirectional")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def betainc(*args, **kwargs):
+    return _wrap_op("betainc", msc_ops.betainc)(*args, **kwargs)
 
 
 binary = msc_ops.binary
 
 
-def binary_crossentropy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def binary_crossentropy(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.binary_crossentropy is not yet implemented in ml-switcheroo-compiler"
+    )
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "binary_crossentropy", getattr(msc_ops, "binary_crossentropy")
-    )(  # pragma: no cover
+
+def bincount(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.bincount is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def bitcast(*args, **kwargs):
+    return _wrap_op("bitcast", msc_ops.bitcast)(*args, **kwargs)
+
+
+def bitwise_and(*args, **kwargs):
+    return _wrap_op("bitwise_and", msc_ops.bitwise_and)(*args, **kwargs)
+
+
+def bitwise_count(*args, **kwargs):
+    return _wrap_op("bitwise_count", msc_ops.bitwise_count)(*args, **kwargs)
+
+
+def bitwise_invert(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.bitwise_invert is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def bitwise_left_shift(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.bitwise_left_shift is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def bitwise_not(*args, **kwargs):
+    return _wrap_op("bitwise_not", msc_ops.bitwise_not)(*args, **kwargs)
+
+
+def bitwise_or(*args, **kwargs):
+    return _wrap_op("bitwise_or", msc_ops.bitwise_or)(*args, **kwargs)
+
+
+def bitwise_right_shift(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.bitwise_right_shift is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def bitwise_xor(*args, **kwargs):
+    return _wrap_op("bitwise_xor", msc_ops.bitwise_xor)(*args, **kwargs)
+
+
+def blackman(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.blackman is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def block(*args, **kwargs):
+    return _wrap_op("block", msc_ops.block)(*args, **kwargs)
+
+
+def block_masked_mm(*args, **kwargs):
+    return _wrap_op("block_masked_mm", msc_ops.block_masked_mm)(*args, **kwargs)
+
+
+boolean = msc_ops.boolean
+
+
+def boolean_mask(*args, **kwargs):
+    return _wrap_op("boolean_mask", msc_ops.boolean_mask)(*args, **kwargs)
+
+
+def broadcast_arrays(*args, **kwargs):
+    return _wrap_op("broadcast_arrays", msc_ops.broadcast_arrays)(*args, **kwargs)
+
+
+def broadcast_to(*args, **kwargs):
+    return _wrap_op("broadcast_to", msc_ops.broadcast_to)(*args, **kwargs)
+
+
+def case(*args, **kwargs):
+    return _wrap_op("case", msc_ops.case)(*args, **kwargs)
+
+
+def cast(*args, **kwargs):
+    return _wrap_op("cast", msc_ops.cast)(*args, **kwargs)
+
+
+def categorical_crossentropy(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.categorical_crossentropy is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def cbrt(*args, **kwargs):
+    return _wrap_op("cbrt", msc_ops.cbrt)(*args, **kwargs)
+
+
+def ceil(*args, **kwargs):
+    return _wrap_op("ceil", msc_ops.ceil)(*args, **kwargs)
+
+
+def celu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.celu is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def chebyshev_polynomial_t(*args, **kwargs):
+    return _wrap_op("chebyshev_polynomial_t", msc_ops.chebyshev_polynomial_t)(
         *args, **kwargs
     )
 
 
-def bincount(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bincount", getattr(msc_ops, "bincount"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bitcast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bitcast", getattr(msc_ops, "bitcast"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bitwise_and(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bitwise_and", getattr(msc_ops, "bitwise_and"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bitwise_count(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "bitwise_count", getattr(msc_ops, "bitwise_count")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bitwise_invert(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "bitwise_invert", getattr(msc_ops, "bitwise_invert")
-    )(  # pragma: no cover
+def chebyshev_polynomial_u(*args, **kwargs):
+    return _wrap_op("chebyshev_polynomial_u", msc_ops.chebyshev_polynomial_u)(
         *args, **kwargs
     )
 
 
-def bitwise_left_shift(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "bitwise_left_shift", getattr(msc_ops, "bitwise_left_shift")
-    )(  # pragma: no cover
-        *args, **kwargs
+def cholesky(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.cholesky is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def bitwise_not(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def cholesky_solve(*args, **kwargs):
+    return _wrap_op("cholesky_solve", msc_ops.cholesky_solve)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bitwise_not", getattr(msc_ops, "bitwise_not"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def clip(*args, **kwargs):
+    return _wrap_op("clip", msc_ops.clip)(*args, **kwargs)
 
-def bitwise_or(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bitwise_or", getattr(msc_ops, "bitwise_or"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def column_stack(*args, **kwargs):
+    return _wrap_op("column_stack", msc_ops.column_stack)(*args, **kwargs)
 
 
-def bitwise_right_shift(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+complex_types = msc_ops.complex_types
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "bitwise_right_shift", getattr(msc_ops, "bitwise_right_shift")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+concat = msc_ops.concat
 
 
-def bitwise_xor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def concatenate(*args, **kwargs):
+    return _wrap_op("concatenate", msc_ops.concatenate)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bitwise_xor", getattr(msc_ops, "bitwise_xor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def cond(*args, **kwargs):
+    return _wrap_op("cond", msc_ops.cond)(*args, **kwargs)
 
-def blackman(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("blackman", getattr(msc_ops, "blackman"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def cond_eager(*args, **kwargs):
+    return _wrap_op("cond_eager", msc_ops.cond_eager)(*args, **kwargs)
 
 
-def block(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("block", getattr(msc_ops, "block"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def bool(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("bool", getattr(msc_ops, "bool"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-bool_ = msc_ops.bool_
-
-
-def boolean_mask(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "boolean_mask", getattr(msc_ops, "boolean_mask")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def broadcast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("broadcast", getattr(msc_ops, "broadcast"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def broadcast_arrays(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "broadcast_arrays", getattr(msc_ops, "broadcast_arrays")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def broadcast_in_dim(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "broadcast_in_dim", getattr(msc_ops, "broadcast_in_dim")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def broadcast_shapes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "broadcast_shapes", getattr(msc_ops, "broadcast_shapes")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def broadcast_to(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "broadcast_to", getattr(msc_ops, "broadcast_to")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-c_ = msc_ops.c_
-
-
-def can_cast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("can_cast", getattr(msc_ops, "can_cast"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def cast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cast", getattr(msc_ops, "cast"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def categorical_crossentropy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "categorical_crossentropy", getattr(msc_ops, "categorical_crossentropy")
-    )(*args, **kwargs)
-
-
-def categorical_generalized_cross_entropy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "categorical_generalized_cross_entropy",
-        getattr(msc_ops, "categorical_generalized_cross_entropy"),
-    )(*args, **kwargs)
-
-
-def cbrt(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cbrt", getattr(msc_ops, "cbrt"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-cdouble = msc_ops.cdouble
-
-
-def ceil(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ceil", getattr(msc_ops, "ceil"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def celu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("celu", getattr(msc_ops, "celu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-character = msc_ops.character
-
-
-def cholesky(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cholesky", getattr(msc_ops, "cholesky"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def choose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("choose", getattr(msc_ops, "choose"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def circle_loss(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("circle_loss", getattr(msc_ops, "circle_loss"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def clamp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("clamp", getattr(msc_ops, "clamp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def clip(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("clip", getattr(msc_ops, "clip"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def column_stack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "column_stack", getattr(msc_ops, "column_stack")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def complex(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("complex", getattr(msc_ops, "complex"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-complex128 = msc_ops.complex128
-
-complex64 = msc_ops.complex64
-
-complex_ = msc_ops.complex_
-
-complexfloating = msc_ops.complexfloating
-
-
-def compress(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("compress", getattr(msc_ops, "compress"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def concat(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("concat", getattr(msc_ops, "concat"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def concatenate(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("concatenate", getattr(msc_ops, "concatenate"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def cond(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cond", getattr(msc_ops, "cond"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def cond_tracing(*args, **kwargs):
+    return _wrap_op("cond_tracing", msc_ops.cond_tracing)(*args, **kwargs)
 
 
 config = msc_ops.config
@@ -2725,4418 +1184,1748 @@ config = msc_ops.config
 configs = msc_ops.configs
 
 
-def conj(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conj", getattr(msc_ops, "conj"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def confusion_matrix(*args, **kwargs):
+    return _wrap_op("confusion_matrix", msc_ops.confusion_matrix)(*args, **kwargs)
 
 
-def conjugate(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conjugate", getattr(msc_ops, "conjugate"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def conj(*args, **kwargs):
+    return _wrap_op("conj", msc_ops.conj)(*args, **kwargs)
 
 
-def conv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conv", getattr(msc_ops, "conv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def conjugate(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.conjugate is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def conv1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conv1d", getattr(msc_ops, "conv1d"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def conjugate_gradient(*args, **kwargs):
+    return _wrap_op("conjugate_gradient", msc_ops.conjugate_gradient)(*args, **kwargs)
 
 
-def conv1d_lstm_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+control_flow = msc_ops.control_flow
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "conv1d_lstm_cell", getattr(msc_ops, "conv1d_lstm_cell")
-    )(  # pragma: no cover
+control_flow_utils = msc_ops.control_flow_utils
+
+
+def conv(*args, **kwargs):
+    return _wrap_op("conv", msc_ops.conv.conv)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.nn.conv1d import conv1d as msc_conv1d
+
+
+def conv1d(*args, **kwargs):
+    return _wrap_op("conv1d", msc_conv1d)(*args, **kwargs)
+
+
+def conv1d_lstm_cell(*args, **kwargs):
+    return _wrap_op("conv1d_lstm_cell", msc_ops.conv1d_lstm_cell)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.nn.conv_nd import conv_transpose as msc_conv_transpose
+
+
+def conv1d_transpose(*args, **kwargs):
+    return _wrap_op("conv1d_transpose", msc_conv_transpose)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.nn.conv2d import conv2d as msc_conv2d
+
+
+def conv2d(*args, **kwargs):
+    return _wrap_op("conv2d", msc_conv2d)(*args, **kwargs)
+
+
+def conv2d_lstm_cell(*args, **kwargs):
+    return _wrap_op("conv2d_lstm_cell", msc_ops.conv2d_lstm_cell)(*args, **kwargs)
+
+
+def conv2d_transpose(*args, **kwargs):
+    return _wrap_op("conv2d_transpose", msc_conv_transpose)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.nn.conv3d import conv3d as msc_conv3d
+
+
+def conv3d(*args, **kwargs):
+    return _wrap_op("conv3d", msc_conv3d)(*args, **kwargs)
+
+
+def conv3d_lstm_cell(*args, **kwargs):
+    return _wrap_op("conv3d_lstm_cell", msc_ops.conv3d_lstm_cell)(*args, **kwargs)
+
+
+def conv3d_transpose(*args, **kwargs):
+    return _wrap_op("conv3d_transpose", msc_conv_transpose)(*args, **kwargs)
+
+
+def conv_general_dilated(*args, **kwargs):
+    return _wrap_op("conv_general_dilated", msc_ops.conv_general_dilated)(
         *args, **kwargs
     )
 
 
-def conv1d_transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def conv_general_dilated_local(*args, **kwargs):
+    return _wrap_op("conv_general_dilated_local", msc_ops.conv_general_dilated_local)(
+        *args, **kwargs
+    )
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
+
+def conv_general_dilated_patches(*args, **kwargs):
     return _wrap_op(
-        "conv1d_transpose", getattr(msc_ops, "conv1d_transpose")
-    )(  # pragma: no cover
+        "conv_general_dilated_patches", msc_ops.conv_general_dilated_patches
+    )(*args, **kwargs)
+
+
+conv_lstm = msc_ops.conv_lstm
+
+conv_nd = msc_ops.conv_nd
+
+
+def conv_transpose(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.conv_transpose is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+conv_utils = msc_ops.conv_utils
+
+
+def conv_with_general_padding(*args, **kwargs):
+    return _wrap_op("conv_with_general_padding", msc_ops.conv_with_general_padding)(
         *args, **kwargs
     )
 
 
-def conv2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conv2d", getattr(msc_ops, "conv2d"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def convert_to_numpy(*args, **kwargs):
+    return _wrap_op("convert_to_numpy", msc_ops.convert_to_numpy)(*args, **kwargs)
 
 
-def conv2d_lstm_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def convert_to_tensor(*args, **kwargs):
+    return _wrap_op("convert_to_tensor", msc_ops.convert_to_tensor)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "conv2d_lstm_cell", getattr(msc_ops, "conv2d_lstm_cell")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def convolve(*args, **kwargs):
+    return _wrap_op("convolve", msc_ops.convolve)(*args, **kwargs)
+
+
+def convolve2d(*args, **kwargs):
+    return _wrap_op("convolve2d", msc_ops.convolve2d)(*args, **kwargs)
+
+
+def copy(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.copy is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def conv2d_transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "conv2d_transpose", getattr(msc_ops, "conv2d_transpose")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def copysign(*args, **kwargs):
+    return _wrap_op("copysign", msc_ops.copysign)(*args, **kwargs)
 
 
-def conv3d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("conv3d", getattr(msc_ops, "conv3d"))(
-        *args, **kwargs
-    )  # pragma: no cover
+core = msc_ops.core
 
 
-def conv3d_lstm_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "conv3d_lstm_cell", getattr(msc_ops, "conv3d_lstm_cell")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def corrcoef(*args, **kwargs):
+    return _wrap_op("corrcoef", msc_ops.corrcoef)(*args, **kwargs)
 
 
-def conv3d_transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "conv3d_transpose", getattr(msc_ops, "conv3d_transpose")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def correlate(*args, **kwargs):
+    return _wrap_op("correlate", msc_ops.correlate)(*args, **kwargs)
 
 
-def conv_general_dilated(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "conv_general_dilated", getattr(msc_ops, "conv_general_dilated")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def cos(*args, **kwargs):
+    return _wrap_op("cos", msc_ops.cos)(*args, **kwargs)
 
 
-def conv_lstm_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "conv_lstm_cell", getattr(msc_ops, "conv_lstm_cell")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def cosh(*args, **kwargs):
+    return _wrap_op("cosh", msc_ops.cosh)(*args, **kwargs)
 
 
-def conv_transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "conv_transpose", getattr(msc_ops, "conv_transpose")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def count_nonzero(*args, **kwargs):
+    return _wrap_op("count_nonzero", msc_ops.count_nonzero)(*args, **kwargs)
 
 
-def convert_to_numpy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "convert_to_numpy", getattr(msc_ops, "convert_to_numpy")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def convert_to_tensor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "convert_to_tensor", getattr(msc_ops, "convert_to_tensor")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def convolve(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("convolve", getattr(msc_ops, "convolve"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def copy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("copy", getattr(msc_ops, "copy"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def copysign(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("copysign", getattr(msc_ops, "copysign"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-core_config = msc_ops.core_config
-
-
-def corrcoef(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("corrcoef", getattr(msc_ops, "corrcoef"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def correlate(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("correlate", getattr(msc_ops, "correlate"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def cos(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cos", getattr(msc_ops, "cos"))(*args, **kwargs)  # pragma: no cover
-
-
-def cosh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cosh", getattr(msc_ops, "cosh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def count_nonzero(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "count_nonzero", getattr(msc_ops, "count_nonzero")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def cov(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cov", getattr(msc_ops, "cov"))(*args, **kwargs)  # pragma: no cover
-
-
-def create_eager_alias(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "create_eager_alias", getattr(msc_ops, "create_eager_alias")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def cov(*args, **kwargs):
+    return _wrap_op("cov", msc_ops.cov)(*args, **kwargs)
 
 
 creation = msc_ops.creation
 
 
-def crop(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("crop", getattr(msc_ops, "crop"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def crop(*args, **kwargs):
+    return _wrap_op("crop", msc_ops.crop)(*args, **kwargs)
 
 
-def crop_and_resize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def crop_and_resize(*args, **kwargs):
+    return _wrap_op("crop_and_resize", msc_ops.crop_and_resize)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "crop_and_resize", getattr(msc_ops, "crop_and_resize")
-    )(  # pragma: no cover
+
+def crop_images(*args, **kwargs):
+    return _wrap_op("crop_images", msc_ops.crop_images)(*args, **kwargs)
+
+
+def cross(*args, **kwargs):
+    return _wrap_op("cross", msc_ops.cross)(*args, **kwargs)
+
+
+def ctc_decode(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.ctc_decode is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def ctc_loss(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.ctc_loss is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def cummax(*args, **kwargs):
+    return _wrap_op("cummax", msc_ops.cummax)(*args, **kwargs)
+
+
+def cummin(*args, **kwargs):
+    return _wrap_op("cummin", msc_ops.cummin)(*args, **kwargs)
+
+
+def cumprod(*args, **kwargs):
+    return _wrap_op("cumprod", msc_ops.cumprod)(*args, **kwargs)
+
+
+def cumsum(*args, **kwargs):
+    return _wrap_op("cumsum", msc_ops.cumsum)(*args, **kwargs)
+
+
+def cumulative_logsumexp(*args, **kwargs):
+    return _wrap_op("cumulative_logsumexp", msc_ops.cumulative_logsumexp)(
         *args, **kwargs
     )
 
 
-def cross(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cross", getattr(msc_ops, "cross"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def custom_gradient(*args, **kwargs):
+    return _wrap_op("custom_gradient", msc_ops.custom_gradient)(*args, **kwargs)
 
 
-csingle = msc_ops.csingle
+def cutmix(*args, **kwargs):
+    return _wrap_op("cutmix", msc_ops.cutmix)(*args, **kwargs)
 
 
-def ctc_decode(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ctc_decode", getattr(msc_ops, "ctc_decode"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def dataclass(*args, **kwargs):
+    return _wrap_op("dataclass", msc_ops.dataclass)(*args, **kwargs)
 
 
-def ctc_loss(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ctc_loss", getattr(msc_ops, "ctc_loss"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def debug_infs(*args, **kwargs):
+    return _wrap_op("debug_infs", msc_ops.debug_infs)(*args, **kwargs)
 
 
-def cumprod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cumprod", getattr(msc_ops, "cumprod"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def debug_nans(*args, **kwargs):
+    return _wrap_op("debug_nans", msc_ops.debug_nans)(*args, **kwargs)
 
 
-def cumsum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cumsum", getattr(msc_ops, "cumsum"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def decode_base64(*args, **kwargs):
+    return _wrap_op("decode_base64", msc_ops.decode_base64)(*args, **kwargs)
 
 
-def cumulative_sum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def decode_bmp(*args, **kwargs):
+    return _wrap_op("decode_bmp", msc_ops.decode_bmp)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "cumulative_sum", getattr(msc_ops, "cumulative_sum")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def decode_csv(*args, **kwargs):
+    return _wrap_op("decode_csv", msc_ops.decode_csv)(*args, **kwargs)
+
+
+def decode_gif(*args, **kwargs):
+    return _wrap_op("decode_gif", msc_ops.decode_gif)(*args, **kwargs)
+
+
+def decode_image(*args, **kwargs):
+    return _wrap_op("decode_image", msc_ops.decode_image)(*args, **kwargs)
+
+
+def decode_jpeg(*args, **kwargs):
+    return _wrap_op("decode_jpeg", msc_ops.decode_jpeg)(*args, **kwargs)
+
+
+def decode_png(*args, **kwargs):
+    return _wrap_op("decode_png", msc_ops.decode_png)(*args, **kwargs)
+
+
+def deg2rad(*args, **kwargs):
+    return _wrap_op("deg2rad", msc_ops.deg2rad)(*args, **kwargs)
+
+
+def degeneration(*args, **kwargs):
+    return _wrap_op("degeneration", msc_ops.degeneration)(*args, **kwargs)
+
+
+def degrees(*args, **kwargs):
+    return _wrap_op("degrees", msc_ops.degrees)(*args, **kwargs)
+
+
+def delete(*args, **kwargs):
+    return _wrap_op("delete", msc_ops.delete)(*args, **kwargs)
+
+
+def depthwise_conv(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.depthwise_conv is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def custom_gradient(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def descriptive(*args, **kwargs):
+    return _wrap_op("descriptive", msc_ops.descriptive.descriptive)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "custom_gradient", getattr(msc_ops, "custom_gradient")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def det(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.det is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def cutmix(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("cutmix", getattr(msc_ops, "cutmix"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+device = msc_ops.device
 
 
-def deg2rad(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("deg2rad", getattr(msc_ops, "deg2rad"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def diag(*args, **kwargs):
+    return _wrap_op("diag", msc_ops.diag)(*args, **kwargs)
 
 
-def degeneration(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "degeneration", getattr(msc_ops, "degeneration")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def diag_indices(*args, **kwargs):
+    return _wrap_op("diag_indices", msc_ops.diag_indices)(*args, **kwargs)
 
 
-def degrees(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("degrees", getattr(msc_ops, "degrees"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def diag_indices_from(*args, **kwargs):
+    return _wrap_op("diag_indices_from", msc_ops.diag_indices_from)(*args, **kwargs)
 
 
-def delete(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("delete", getattr(msc_ops, "delete"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def diag_part(*args, **kwargs):
+    return _wrap_op("diag_part", msc_ops.diag_part)(*args, **kwargs)
 
 
-def depthwise_conv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def diagflat(*args, **kwargs):
+    return _wrap_op("diagflat", msc_ops.diagflat)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "depthwise_conv", getattr(msc_ops, "depthwise_conv")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def diagonal(*args, **kwargs):
+    return _wrap_op("diagonal", msc_ops.diagonal)(*args, **kwargs)
+
+
+def diff(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.diff is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def depthwise_conv1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def digamma(*args, **kwargs):
+    return _wrap_op("digamma", msc_ops.digamma)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "depthwise_conv1d", getattr(msc_ops, "depthwise_conv1d")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def digitize(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.digitize is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def depthwise_conv2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "depthwise_conv2d", getattr(msc_ops, "depthwise_conv2d")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def det(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("det", getattr(msc_ops, "det"))(*args, **kwargs)  # pragma: no cover
-
-
-def diag(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("diag", getattr(msc_ops, "diag"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def diag_indices(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "diag_indices", getattr(msc_ops, "diag_indices")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def diag_indices_from(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "diag_indices_from", getattr(msc_ops, "diag_indices_from")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def diagflat(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("diagflat", getattr(msc_ops, "diagflat"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def diagonal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("diagonal", getattr(msc_ops, "diagonal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def dice_loss(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dice_loss", getattr(msc_ops, "dice_loss"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def diff(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("diff", getattr(msc_ops, "diff"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def digamma(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("digamma", getattr(msc_ops, "digamma"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def digitize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("digitize", getattr(msc_ops, "digitize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def dispatch_eager(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "dispatch_eager", getattr(msc_ops, "dispatch_eager")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def dispatch_eager(*args, **kwargs):
+    return _wrap_op("dispatch_eager", msc_ops.dispatch_eager)(*args, **kwargs)
 
 
 dispatcher = msc_ops.dispatcher
 
 distributed = msc_ops.distributed
 
+distributed_ops = msc_ops.distributed_ops
 
-def divide(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("divide", getattr(msc_ops, "divide"))(
-        *args, **kwargs
-    )  # pragma: no cover
+distributions = msc_ops.distributions
 
 
-def divide_no_nan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "divide_no_nan", getattr(msc_ops, "divide_no_nan")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def divide(*args, **kwargs):
+    return _wrap_op("divide", msc_ops.divide)(*args, **kwargs)
 
 
-def divmod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("divmod", getattr(msc_ops, "divmod"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def divide_no_nan(*args, **kwargs):
+    return _wrap_op("divide_no_nan", msc_ops.divide_no_nan)(*args, **kwargs)
 
 
-def dot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dot", getattr(msc_ops, "dot"))(*args, **kwargs)  # pragma: no cover
+def divmod(*args, **kwargs):
+    return _wrap_op("divmod", msc_ops.divmod)(*args, **kwargs)
 
 
-def dot_general(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dot_general", getattr(msc_ops, "dot_general"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def dot(*args, **kwargs):
+    return _wrap_op("dot", msc_ops.dot)(*args, **kwargs)
 
 
-def dot_product_attention(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def dot_general(*args, **kwargs):
+    return _wrap_op("dot_general", msc_ops.dot_general)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "dot_product_attention", getattr(msc_ops, "dot_product_attention")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def dot_product_attention(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.dot_product_attention is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-double = msc_ops.double
+def draw_bounding_boxes(*args, **kwargs):
+    return _wrap_op("draw_bounding_boxes", msc_ops.draw_bounding_boxes)(*args, **kwargs)
 
 
-def dropout(
-    x, rate=0.5, noise_shape=None, seed=None, training=False, **kwargs
-):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        x: Description.
-        rate: Description.
-        noise_shape: Description.
-        seed: Description.
-        training: Description.
-        kwargs: Description.
-    """
-    from ml_switcheroo_compiler.ops.nn.dropout import DropoutConfig
-
-    config = DropoutConfig(noise_shape=noise_shape, training=training, seed=seed)
-    return _wrap_op("dropout", getattr(msc_ops, "dropout"))(
-        x, rate=rate, config=config
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.nn.dropout import dropout as msc_dropout
 
 
-def dsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dsplit", getattr(msc_ops, "dsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def dropout(*args, **kwargs):
+    return _wrap_op("dropout", msc_dropout)(*args, **kwargs)
 
 
-def dstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dstack", getattr(msc_ops, "dstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def dsplit(*args, **kwargs):
+    return _wrap_op("dsplit", msc_ops.dsplit)(*args, **kwargs)
 
 
-def dtype(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("dtype", getattr(msc_ops, "dtype"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def dstack(*args, **kwargs):
+    return _wrap_op("dstack", msc_ops.dstack)(*args, **kwargs)
 
 
-def dynamic_slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "dynamic_slice", getattr(msc_ops, "dynamic_slice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def dynamic_update_slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "dynamic_update_slice", getattr(msc_ops, "dynamic_update_slice")
-    )(  # pragma: no cover
-        *args, **kwargs
+def dtype(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.dtype is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-e = msc_ops.e
+dynamic_slicing = msc_ops.dynamic_slicing
+
+from ml_switcheroo_compiler.ops.shape.dynamic_slicing import (
+    dynamic_update_slice as msc_dynamic_update_slice,
+)
+
+
+def dynamic_update_slice(*args, **kwargs):
+    return _wrap_op("dynamic_update_slice", msc_dynamic_update_slice)(*args, **kwargs)
+
+
+eager = msc_ops.eager
 
 eager_evaluator = msc_ops.eager_evaluator
 
 
-def ediff1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ediff1d", getattr(msc_ops, "ediff1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def ediff1d(*args, **kwargs):
+    return _wrap_op("ediff1d", msc_ops.ediff1d)(*args, **kwargs)
 
 
-def edit_distance(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "edit_distance", getattr(msc_ops, "edit_distance")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def edit_distance(*args, **kwargs):
+    return _wrap_op("edit_distance", msc_ops.edit_distance)(*args, **kwargs)
 
 
-def eig(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("eig", getattr(msc_ops, "eig"))(*args, **kwargs)  # pragma: no cover
+def eig(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.eig is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def eigh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("eigh", getattr(msc_ops, "eigh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def eigh(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.eigh is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def eigvalsh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("eigvalsh", getattr(msc_ops, "eigvalsh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def eigh_tridiagonal(*args, **kwargs):
+    return _wrap_op("eigh_tridiagonal", msc_ops.eigh_tridiagonal)(*args, **kwargs)
 
 
-def einsum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("einsum", getattr(msc_ops, "einsum"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def einsum(*args, **kwargs):
+    return _wrap_op("einsum", msc_ops.einsum)(*args, **kwargs)
 
 
-def einsum_path(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("einsum_path", getattr(msc_ops, "einsum_path"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def elastic_transform(*args, **kwargs):
+    return _wrap_op("elastic_transform", msc_ops.elastic_transform)(*args, **kwargs)
 
 
-def elastic_transform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def elu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.elu is not yet implemented in ml-switcheroo-compiler"
+    )
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "elastic_transform", getattr(msc_ops, "elastic_transform")
-    )(  # pragma: no cover
+
+def emit_ir_node(*args, **kwargs):
+    return _wrap_op("emit_ir_node", msc_ops.emit_ir_node)(*args, **kwargs)
+
+
+def empty(*args, **kwargs):
+    return _wrap_op("empty", msc_ops.empty)(*args, **kwargs)
+
+
+def empty_like(*args, **kwargs):
+    return _wrap_op("empty_like", msc_ops.empty_like)(*args, **kwargs)
+
+
+def encode_base64(*args, **kwargs):
+    return _wrap_op("encode_base64", msc_ops.encode_base64)(*args, **kwargs)
+
+
+def equal(*args, **kwargs):
+    return _wrap_op("equal", msc_ops.equal)(*args, **kwargs)
+
+
+def equalization(*args, **kwargs):
+    return _wrap_op("equalization", msc_ops.equalization)(*args, **kwargs)
+
+
+def erf(*args, **kwargs):
+    return _wrap_op("erf", msc_ops.erf)(*args, **kwargs)
+
+
+def erf_inv(*args, **kwargs):
+    return _wrap_op("erf_inv", msc_ops.erf_inv)(*args, **kwargs)
+
+
+def erfc(*args, **kwargs):
+    return _wrap_op("erfc", msc_ops.erfc)(*args, **kwargs)
+
+
+def erfcinv(*args, **kwargs):
+    return _wrap_op("erfcinv", msc_ops.erfcinv)(*args, **kwargs)
+
+
+def erfinv(*args, **kwargs):
+    return _wrap_op("erfinv", msc_ops.erfinv)(*args, **kwargs)
+
+
+def eval(*args, **kwargs):
+    return _wrap_op("eval", msc_ops.eval)(*args, **kwargs)
+
+
+def exp(*args, **kwargs):
+    return _wrap_op("exp", msc_ops.exp)(*args, **kwargs)
+
+
+def exp2(*args, **kwargs):
+    return _wrap_op("exp2", msc_ops.exp2)(*args, **kwargs)
+
+
+def expand_dims(*args, **kwargs):
+    return _wrap_op("expand_dims", msc_ops.expand_dims)(*args, **kwargs)
+
+
+def expm(*args, **kwargs):
+    return _wrap_op("expm", msc_ops.expm)(*args, **kwargs)
+
+
+def expm1(*args, **kwargs):
+    return _wrap_op("expm1", msc_ops.expm1)(*args, **kwargs)
+
+
+exponential = msc_ops.exponential
+
+
+def extract_bounding_boxes(*args, **kwargs):
+    return _wrap_op("extract_bounding_boxes", msc_ops.extract_bounding_boxes)(
         *args, **kwargs
     )
 
 
-def elu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("elu", getattr(msc_ops, "elu"))(*args, **kwargs)  # pragma: no cover
+def extract_patches(*args, **kwargs):
+    return _wrap_op("extract_patches", msc_ops.extract_patches)(*args, **kwargs)
 
 
-def embedding(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("embedding", getattr(msc_ops, "embedding"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def extract_sequences(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.extract_sequences is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def emit_ir_node(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "emit_ir_node", getattr(msc_ops, "emit_ir_node")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def eye(*args, **kwargs):
+    return _wrap_op("eye", msc_ops.eye)(*args, **kwargs)
 
 
-def empty(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("empty", getattr(msc_ops, "empty"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fft(*args, **kwargs):
+    return _wrap_op("fft", msc_ops.fft)(*args, **kwargs)
 
 
-def empty_like(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("empty_like", getattr(msc_ops, "empty_like"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fft2(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.fft2 is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def equal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("equal", getattr(msc_ops, "equal"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def fftconvolve(*args, **kwargs):
+    return _wrap_op("fftconvolve", msc_ops.fftconvolve)(*args, **kwargs)
 
 
-def equalization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "equalization", getattr(msc_ops, "equalization")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fftn(*args, **kwargs):
+    return _wrap_op("fftn", msc_ops.fftn)(*args, **kwargs)
 
 
-def erf(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("erf", getattr(msc_ops, "erf"))(*args, **kwargs)  # pragma: no cover
+def fftnd(*args, **kwargs):
+    return _wrap_op("fftnd", msc_ops.fftnd)(*args, **kwargs)
 
 
-def erfc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("erfc", getattr(msc_ops, "erfc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fftshift(*args, **kwargs):
+    return _wrap_op("fftshift", msc_ops.fftshift)(*args, **kwargs)
 
 
-def erfcinv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("erfcinv", getattr(msc_ops, "erfcinv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fill_diagonal(*args, **kwargs):
+    return _wrap_op("fill_diagonal", msc_ops.fill_diagonal)(*args, **kwargs)
 
 
-def erfinv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("erfinv", getattr(msc_ops, "erfinv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fix(*args, **kwargs):
+    return _wrap_op("fix", msc_ops.fix)(*args, **kwargs)
 
 
-euler_gamma = msc_ops.euler_gamma
+def flip(*args, **kwargs):
+    return _wrap_op("flip", msc_ops.flip)(*args, **kwargs)
 
 
-def exp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("exp", getattr(msc_ops, "exp"))(*args, **kwargs)  # pragma: no cover
+def flip_left_right(*args, **kwargs):
+    return _wrap_op("flip_left_right", msc_ops.flip_left_right)(*args, **kwargs)
 
 
-def exp2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("exp2", getattr(msc_ops, "exp2"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def flip_up_down(*args, **kwargs):
+    return _wrap_op("flip_up_down", msc_ops.flip_up_down)(*args, **kwargs)
 
 
-def expand(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("expand", getattr(msc_ops, "expand"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def fliplr(*args, **kwargs):
+    return _wrap_op("fliplr", msc_ops.fliplr)(*args, **kwargs)
 
 
-def expand_dims(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("expand_dims", getattr(msc_ops, "expand_dims"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def flipud(*args, **kwargs):
+    return _wrap_op("flipud", msc_ops.flipud)(*args, **kwargs)
 
 
-def expm1(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("expm1", getattr(msc_ops, "expm1"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def float_power(*args, **kwargs):
+    return _wrap_op("float_power", msc_ops.float_power)(*args, **kwargs)
 
 
-def extract(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("extract", getattr(msc_ops, "extract"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def floor(*args, **kwargs):
+    return _wrap_op("floor", msc_ops.floor)(*args, **kwargs)
 
 
-def extract_bounding_boxes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "extract_bounding_boxes", getattr(msc_ops, "extract_bounding_boxes")
-    )(*args, **kwargs)
+def floor_divide(*args, **kwargs):
+    return _wrap_op("floor_divide", msc_ops.floor_divide)(*args, **kwargs)
 
 
-def extract_sequences(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def fmax(*args, **kwargs):
+    return _wrap_op("fmax", msc_ops.fmax)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "extract_sequences", getattr(msc_ops, "extract_sequences")
-    )(  # pragma: no cover
+
+def fmin(*args, **kwargs):
+    return _wrap_op("fmin", msc_ops.fmin)(*args, **kwargs)
+
+
+def fmod(*args, **kwargs):
+    return _wrap_op("fmod", msc_ops.fmod)(*args, **kwargs)
+
+
+def fori_loop(*args, **kwargs):
+    return _wrap_op("fori_loop", msc_ops.fori_loop)(*args, **kwargs)
+
+
+def frexp(*args, **kwargs):
+    return _wrap_op("frexp", msc_ops.frexp)(*args, **kwargs)
+
+
+def frombuffer(*args, **kwargs):
+    return _wrap_op("frombuffer", msc_ops.frombuffer)(*args, **kwargs)
+
+
+frontend = msc_ops.frontend
+
+frontend_pool = msc_ops.frontend_pool
+
+frontend_segment = msc_ops.frontend_segment
+
+frontend_stats = msc_ops.frontend_stats
+
+frontend_utils = msc_ops.frontend_utils
+
+
+def full(*args, **kwargs):
+    return _wrap_op("full", msc_ops.full)(*args, **kwargs)
+
+
+def full_like(*args, **kwargs):
+    return _wrap_op("full_like", msc_ops.full_like)(*args, **kwargs)
+
+
+def gather_mm(*args, **kwargs):
+    return _wrap_op("gather_mm", msc_ops.gather_mm)(*args, **kwargs)
+
+
+def gaussian_blur(*args, **kwargs):
+    return _wrap_op("gaussian_blur", msc_ops.gaussian_blur)(*args, **kwargs)
+
+
+def gcd(*args, **kwargs):
+    return _wrap_op("gcd", msc_ops.gcd)(*args, **kwargs)
+
+
+def gelu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.gelu is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def get_active_backend(*args, **kwargs):
+    return _wrap_op("get_active_backend", msc_ops.get_active_backend)(*args, **kwargs)
+
+
+def get_item(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.get_item is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def get_op(*args, **kwargs):
+    return _wrap_op("get_op", msc_ops.get_op)(*args, **kwargs)
+
+
+def get_peak_memory(*args, **kwargs):
+    return _wrap_op("get_peak_memory", msc_ops.get_peak_memory)(*args, **kwargs)
+
+
+def gfile_copy(*args, **kwargs):
+    return _wrap_op("gfile_copy", msc_ops.gfile_copy)(*args, **kwargs)
+
+
+def gfile_glob(*args, **kwargs):
+    return _wrap_op("gfile_glob", msc_ops.gfile_glob)(*args, **kwargs)
+
+
+def gfile_makedirs(*args, **kwargs):
+    return _wrap_op("gfile_makedirs", msc_ops.gfile_makedirs)(*args, **kwargs)
+
+
+def gfile_stat(*args, **kwargs):
+    return _wrap_op("gfile_stat", msc_ops.gfile_stat)(*args, **kwargs)
+
+
+global_config = msc_ops.global_config
+
+
+def global_norm(*args, **kwargs):
+    return _wrap_op("global_norm", msc_ops.global_norm)(*args, **kwargs)
+
+
+def glu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.glu is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def greater(*args, **kwargs):
+    return _wrap_op("greater", msc_ops.greater)(*args, **kwargs)
+
+
+def greater_equal(*args, **kwargs):
+    return _wrap_op("greater_equal", msc_ops.greater_equal)(*args, **kwargs)
+
+
+def grid_sample(*args, **kwargs):
+    return _wrap_op("grid_sample", msc_ops.grid_sample)(*args, **kwargs)
+
+
+def group_variance(*args, **kwargs):
+    return _wrap_op("group_variance", msc_ops.group_variance)(*args, **kwargs)
+
+
+def gru(*args, **kwargs):
+    return _wrap_op("gru", msc_ops.gru)(*args, **kwargs)
+
+
+def gru_cell(*args, **kwargs):
+    return _wrap_op("gru_cell", msc_ops.gru_cell)(*args, **kwargs)
+
+
+def hadamard_transform(*args, **kwargs):
+    return _wrap_op("hadamard_transform", msc_ops.hadamard_transform)(*args, **kwargs)
+
+
+def hamming(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.hamming is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def hard_shrink(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.hard_shrink is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def hard_sigmoid(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.hard_sigmoid is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def hard_silu(*args, **kwargs):
+    return _wrap_op("hard_silu", msc_ops.activations.hard_silu)(*args, **kwargs)
+
+
+def hard_swish(*args, **kwargs):
+    return _wrap_op("hard_swish", msc_ops.activations.hard_swish)(*args, **kwargs)
+
+
+def hard_tanh(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.hard_tanh is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def heaviside(*args, **kwargs):
+    return _wrap_op("heaviside", msc_ops.heaviside)(*args, **kwargs)
+
+
+def hermite_polynomial_h(*args, **kwargs):
+    return _wrap_op("hermite_polynomial_h", msc_ops.hermite_polynomial_h)(
         *args, **kwargs
     )
 
 
-def eye(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("eye", getattr(msc_ops, "eye"))(*args, **kwargs)  # pragma: no cover
-
-
-def fabs(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fabs", getattr(msc_ops, "fabs"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fft", getattr(msc_ops, "fft"))(*args, **kwargs)  # pragma: no cover
-
-
-def fft2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fft2", getattr(msc_ops, "fft2"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fft2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fft2d", getattr(msc_ops, "fft2d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fill_diagonal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "fill_diagonal", getattr(msc_ops, "fill_diagonal")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def finfo(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("finfo", getattr(msc_ops, "finfo"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fix(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fix", getattr(msc_ops, "fix"))(*args, **kwargs)  # pragma: no cover
-
-
-def flatnonzero(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("flatnonzero", getattr(msc_ops, "flatnonzero"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def flatten(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("flatten", getattr(msc_ops, "flatten"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-flexible = msc_ops.flexible
-
-
-def flip(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("flip", getattr(msc_ops, "flip"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def flip_left_right(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "flip_left_right", getattr(msc_ops, "flip_left_right")
-    )(  # pragma: no cover
+def hermite_polynomial_he(*args, **kwargs):
+    return _wrap_op("hermite_polynomial_he", msc_ops.hermite_polynomial_he)(
         *args, **kwargs
     )
 
 
-def flip_up_down(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def hfft(*args, **kwargs):
+    return _wrap_op("hfft", msc_ops.hfft)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "flip_up_down", getattr(msc_ops, "flip_up_down")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def histogram(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.histogram is not yet implemented in ml-switcheroo-compiler"
+    )
 
-def fliplr(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fliplr", getattr(msc_ops, "fliplr"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def hsplit(*args, **kwargs):
+    return _wrap_op("hsplit", msc_ops.hsplit)(*args, **kwargs)
 
 
-def flipud(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def hstack(*args, **kwargs):
+    return _wrap_op("hstack", msc_ops.hstack)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("flipud", getattr(msc_ops, "flipud"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def hsv_to_rgb(*args, **kwargs):
+    return _wrap_op("hsv_to_rgb", msc_ops.hsv_to_rgb)(*args, **kwargs)
 
-def float(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("float", getattr(msc_ops, "float"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+hyperbolic = msc_ops.hyperbolic
 
 
-float16 = msc_ops.float16
+def hypot(*args, **kwargs):
+    return _wrap_op("hypot", msc_ops.hypot)(*args, **kwargs)
 
-float32 = msc_ops.float32
 
-float64 = msc_ops.float64
+def identity(*args, **kwargs):
+    return _wrap_op("identity", msc_ops.identity)(*args, **kwargs)
 
-float8_e4m3b11fnuz = msc_ops.float8_e4m3b11fnuz
 
-float8_e4m3fn = msc_ops.float8_e4m3fn
+def ifft(*args, **kwargs):
+    return _wrap_op("ifft", msc_ops.ifft)(*args, **kwargs)
 
-float8_e4m3fnuz = msc_ops.float8_e4m3fnuz
 
-float8_e5m2 = msc_ops.float8_e5m2
+def ifft2(*args, **kwargs):
+    return _wrap_op("ifft2", msc_ops.ifft2)(*args, **kwargs)
 
-float8_e5m2fnuz = msc_ops.float8_e5m2fnuz
 
-float_ = msc_ops.float_
+def ifftn(*args, **kwargs):
+    return _wrap_op("ifftn", msc_ops.ifftn)(*args, **kwargs)
 
 
-def float_power(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def ifftnd(*args, **kwargs):
+    return _wrap_op("ifftnd", msc_ops.ifftnd)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("float_power", getattr(msc_ops, "float_power"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def ifftshift(*args, **kwargs):
+    return _wrap_op("ifftshift", msc_ops.ifftshift)(*args, **kwargs)
 
-floating = msc_ops.floating
 
+def igamma(*args, **kwargs):
+    return _wrap_op("igamma", msc_ops.igamma)(*args, **kwargs)
 
-def floor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("floor", getattr(msc_ops, "floor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def igammac(*args, **kwargs):
+    return _wrap_op("igammac", msc_ops.igammac)(*args, **kwargs)
 
 
-def floor_divide(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def imag(*args, **kwargs):
+    return _wrap_op("imag", msc_ops.imag)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "floor_divide", getattr(msc_ops, "floor_divide")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fmax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fmax", getattr(msc_ops, "fmax"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fmin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fmin", getattr(msc_ops, "fmin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fmod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fmod", getattr(msc_ops, "fmod"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fori_loop(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fori_loop", getattr(msc_ops, "fori_loop"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def frexp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("frexp", getattr(msc_ops, "frexp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def from_dlpack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("from_dlpack", getattr(msc_ops, "from_dlpack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def frombuffer(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("frombuffer", getattr(msc_ops, "frombuffer"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fromfile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fromfile", getattr(msc_ops, "fromfile"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fromfunction(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "fromfunction", getattr(msc_ops, "fromfunction")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def fromiter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fromiter", getattr(msc_ops, "fromiter"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def frompyfunc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("frompyfunc", getattr(msc_ops, "frompyfunc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
 
-def fromstring(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+class image:
+    @staticmethod
+    def resize(*args, **kwargs):
+        return _wrap_op("resize", msc_ops.resize)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("fromstring", getattr(msc_ops, "fromstring"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
+    @staticmethod
+    def crop_images(*args, **kwargs):
+        return _wrap_op("crop_images", msc_ops.crop_images)(*args, **kwargs)
 
-def full(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+    @staticmethod
+    def extract_patches(*args, **kwargs):
+        return _wrap_op("extract_patches", msc_ops.extract_patches)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("full", getattr(msc_ops, "full"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def full_like(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("full_like", getattr(msc_ops, "full_like"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def gather(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gather", getattr(msc_ops, "gather"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def gather_nd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gather_nd", getattr(msc_ops, "gather_nd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def gaussian_blur(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "gaussian_blur", getattr(msc_ops, "gaussian_blur")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def gcd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gcd", getattr(msc_ops, "gcd"))(*args, **kwargs)  # pragma: no cover
-
-
-def gelu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gelu", getattr(msc_ops, "gelu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-generic = msc_ops.generic
-
-
-def geomspace(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("geomspace", getattr(msc_ops, "geomspace"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def get_active_backend(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "get_active_backend", getattr(msc_ops, "get_active_backend")
-    )(  # pragma: no cover
+    @staticmethod
+    def affine_transform(*args, **kwargs):
+        return _wrap_op("affine_transform", msc_ops.affine_transform)(*args, **kwargs)
+
+    @staticmethod
+    def elastic_transform(*args, **kwargs):
+        return _wrap_op("elastic_transform", msc_ops.elastic_transform)(*args, **kwargs)
+
+    @staticmethod
+    def gaussian_blur(*args, **kwargs):
+        return _wrap_op("gaussian_blur", msc_ops.gaussian_blur)(*args, **kwargs)
+
+    @staticmethod
+    def hsv_to_rgb(*args, **kwargs):
+        return _wrap_op("hsv_to_rgb", msc_ops.hsv_to_rgb)(*args, **kwargs)
+
+    @staticmethod
+    def map_coordinates(*args, **kwargs):
+        return _wrap_op("map_coordinates", msc_ops.map_coordinates)(*args, **kwargs)
+
+    @staticmethod
+    def pad_images(*args, **kwargs):
+        return _wrap_op("pad_images", msc_ops.pad_images)(*args, **kwargs)
+
+    @staticmethod
+    def perspective_transform(*args, **kwargs):
+        return _wrap_op("perspective_transform", msc_ops.perspective_transform)(
+            *args, **kwargs
+        )
+
+    @staticmethod
+    def rgb_to_grayscale(*args, **kwargs):
+        return _wrap_op("rgb_to_grayscale", msc_ops.rgb_to_grayscale)(*args, **kwargs)
+
+    @staticmethod
+    def rgb_to_hsv(*args, **kwargs):
+        return _wrap_op("rgb_to_hsv", msc_ops.rgb_to_hsv)(*args, **kwargs)
+
+    @staticmethod
+    def random_flip(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.affine import random_flip as rf
+
+        return _wrap_op("random_flip", rf)(*args, **kwargs)
+
+    @staticmethod
+    def random_rotation(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.affine import random_rotation as rr
+
+        return _wrap_op("random_rotation", rr)(*args, **kwargs)
+
+    @staticmethod
+    def adjust_contrast(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.color import adjust_contrast as ac
+
+        return _wrap_op("adjust_contrast", ac)(*args, **kwargs)
+
+    @staticmethod
+    def auto_contrast(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.color import auto_contrast as ac
+
+        return _wrap_op("auto_contrast", ac)(*args, **kwargs)
+
+    @staticmethod
+    def equalization(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.color import equalization as eq
+
+        return _wrap_op("equalization", eq)(*args, **kwargs)
+
+    @staticmethod
+    def resize_bilinear(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.interpolation import (
+            resize_bilinear as rb,
+        )
+
+        return _wrap_op("resize_bilinear", rb)(*args, **kwargs)
+
+    @staticmethod
+    def resize_nearest(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.interpolation import resize_nearest as rn
+
+        return _wrap_op("resize_nearest", rn)(*args, **kwargs)
+
+    @staticmethod
+    def resize_bicubic(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.interpolation import (
+            resize_bicubic as rbc,
+        )
+
+        return _wrap_op("resize_bicubic", rbc)(*args, **kwargs)
+
+    @staticmethod
+    def resize_lanczos3(*args, **kwargs):
+        from ml_switcheroo_compiler.ops.vision.interpolation import (
+            resize_lanczos3 as rl3,
+        )
+
+        return _wrap_op("resize_lanczos3", rl3)(*args, **kwargs)
+
+
+def in_top_k(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.in_top_k is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+indexing = msc_ops.indexing
+
+indexing_advanced = msc_ops.indexing_advanced
+
+
+def inner(*args, **kwargs):
+    return _wrap_op("inner", msc_ops.inner)(*args, **kwargs)
+
+
+def insert(*args, **kwargs):
+    return _wrap_op("insert", msc_ops.insert)(*args, **kwargs)
+
+
+def inv(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.inv is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def invert(*args, **kwargs):
+    return _wrap_op("invert", msc_ops.invert)(*args, **kwargs)
+
+
+io = msc_ops.io
+
+
+def iou(*args, **kwargs):
+    return _wrap_op("iou", msc_ops.iou)(*args, **kwargs)
+
+
+def irfft(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.irfft is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def irfft2(*args, **kwargs):
+    return _wrap_op("irfft2", msc_ops.irfft2)(*args, **kwargs)
+
+
+def irfftn(*args, **kwargs):
+    return _wrap_op("irfftn", msc_ops.irfftn)(*args, **kwargs)
+
+
+def irfftnd(*args, **kwargs):
+    return _wrap_op("irfftnd", msc_ops.irfftnd)(*args, **kwargs)
+
+
+def is_non_decreasing(*args, **kwargs):
+    return _wrap_op("is_non_decreasing", msc_ops.is_non_decreasing)(*args, **kwargs)
+
+
+def is_strictly_increasing(*args, **kwargs):
+    return _wrap_op("is_strictly_increasing", msc_ops.is_strictly_increasing)(
         *args, **kwargs
     )
 
 
-def get_item(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("get_item", getattr(msc_ops, "get_item"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def is_tensor(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.is_tensor is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def get_op(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("get_op", getattr(msc_ops, "get_op"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def isclose(*args, **kwargs):
+    return _wrap_op("isclose", msc_ops.isclose)(*args, **kwargs)
 
 
-def get_printoptions(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def iscomplex(*args, **kwargs):
+    return _wrap_op("iscomplex", msc_ops.iscomplex)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "get_printoptions", getattr(msc_ops, "get_printoptions")
-    )(  # pragma: no cover
+
+def iscomplexobj(*args, **kwargs):
+    return _wrap_op("iscomplexobj", msc_ops.iscomplexobj)(*args, **kwargs)
+
+
+def isfinite(*args, **kwargs):
+    return _wrap_op("isfinite", msc_ops.isfinite)(*args, **kwargs)
+
+
+def isin(*args, **kwargs):
+    return _wrap_op("isin", msc_ops.isin)(*args, **kwargs)
+
+
+def isinf(*args, **kwargs):
+    return _wrap_op("isinf", msc_ops.isinf)(*args, **kwargs)
+
+
+def isnan(*args, **kwargs):
+    return _wrap_op("isnan", msc_ops.isnan)(*args, **kwargs)
+
+
+def isneginf(*args, **kwargs):
+    return _wrap_op("isneginf", msc_ops.isneginf)(*args, **kwargs)
+
+
+def isposinf(*args, **kwargs):
+    return _wrap_op("isposinf", msc_ops.isposinf)(*args, **kwargs)
+
+
+def isreal(*args, **kwargs):
+    return _wrap_op("isreal", msc_ops.isreal)(*args, **kwargs)
+
+
+def isrealobj(*args, **kwargs):
+    return _wrap_op("isrealobj", msc_ops.isrealobj)(*args, **kwargs)
+
+
+def issubdtype(*args, **kwargs):
+    return _wrap_op("issubdtype", msc_ops.issubdtype)(*args, **kwargs)
+
+
+def istft(*args, **kwargs):
+    return _wrap_op("istft", msc_ops.istft)(*args, **kwargs)
+
+
+joining = msc_ops.joining
+
+
+def laguerre_polynomial_l(*args, **kwargs):
+    return _wrap_op("laguerre_polynomial_l", msc_ops.laguerre_polynomial_l)(
         *args, **kwargs
     )
 
 
-def glu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("glu", getattr(msc_ops, "glu"))(*args, **kwargs)  # pragma: no cover
+def lbeta(*args, **kwargs):
+    return _wrap_op("lbeta", msc_ops.lbeta)(*args, **kwargs)
 
 
-def gradient(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gradient", getattr(msc_ops, "gradient"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def lcm(*args, **kwargs):
+    return _wrap_op("lcm", msc_ops.lcm)(*args, **kwargs)
 
 
-def greater(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("greater", getattr(msc_ops, "greater"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def ldexp(*args, **kwargs):
+    return _wrap_op("ldexp", msc_ops.ldexp)(*args, **kwargs)
 
 
-def greater_equal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("greater_equal", getattr(msc_ops, "greater_equal"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def leaky_relu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.leaky_relu is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def group_mean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("group_mean", getattr(msc_ops, "group_mean"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def left_shift(*args, **kwargs):
+    return _wrap_op("left_shift", msc_ops.left_shift)(*args, **kwargs)
 
 
-def group_norm(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("group_norm", getattr(msc_ops, "group_norm"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def group_variance(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "group_variance", getattr(msc_ops, "group_variance")
-    )(  # pragma: no cover
+def legendre_polynomial_p(*args, **kwargs):
+    return _wrap_op("legendre_polynomial_p", msc_ops.legendre_polynomial_p)(
         *args, **kwargs
     )
 
 
-def gru_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def less(*args, **kwargs):
+    return _wrap_op("less", msc_ops.less)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("gru_cell", getattr(msc_ops, "gru_cell"))(
-        *args, **kwargs
-    )  # pragma: no cover
 
+def less_equal(*args, **kwargs):
+    return _wrap_op("less_equal", msc_ops.less_equal)(*args, **kwargs)
 
-def hamming(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hamming", getattr(msc_ops, "hamming"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hanning(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hanning", getattr(msc_ops, "hanning"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hard_shrink(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hard_shrink", getattr(msc_ops, "hard_shrink"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hard_sigmoid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "hard_sigmoid", getattr(msc_ops, "hard_sigmoid")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hard_silu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hard_silu", getattr(msc_ops, "hard_silu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hard_swish(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hard_swish", getattr(msc_ops, "hard_swish"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hard_tanh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hard_tanh", getattr(msc_ops, "hard_tanh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def heaviside(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("heaviside", getattr(msc_ops, "heaviside"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def histogram(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("histogram", getattr(msc_ops, "histogram"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def histogram2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("histogram2d", getattr(msc_ops, "histogram2d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def histogram_bin_edges(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "histogram_bin_edges", getattr(msc_ops, "histogram_bin_edges")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def histogramdd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("histogramdd", getattr(msc_ops, "histogramdd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hsplit", getattr(msc_ops, "hsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hstack", getattr(msc_ops, "hstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hsv_to_rgb(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hsv_to_rgb", getattr(msc_ops, "hsv_to_rgb"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def hypot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("hypot", getattr(msc_ops, "hypot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def i0(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("i0", getattr(msc_ops, "i0"))(*args, **kwargs)  # pragma: no cover
-
-
-def identity(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("identity", getattr(msc_ops, "identity"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ifft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ifft", getattr(msc_ops, "ifft"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ifft2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ifft2", getattr(msc_ops, "ifft2"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ifft2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ifft2d", getattr(msc_ops, "ifft2d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def igamma(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("igamma", getattr(msc_ops, "igamma"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def igammac(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("igammac", getattr(msc_ops, "igammac"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def iinfo(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("iinfo", getattr(msc_ops, "iinfo"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def imag(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("imag", getattr(msc_ops, "imag"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-image = msc_ops.image
-
-
-def image_resize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "image_resize", getattr(msc_ops, "image_resize")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def in_top_k(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("in_top_k", getattr(msc_ops, "in_top_k"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-index_exp = msc_ops.index_exp
-
-
-def indices(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("indices", getattr(msc_ops, "indices"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-inexact = msc_ops.inexact
-
-inf = msc_ops.inf
-
-
-def inner(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("inner", getattr(msc_ops, "inner"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def insert(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("insert", getattr(msc_ops, "insert"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def int(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("int", getattr(msc_ops, "int"))(*args, **kwargs)  # pragma: no cover
-
-
-int16 = msc_ops.int16
-
-int32 = msc_ops.int32
-
-int4 = msc_ops.int4
-
-int64 = msc_ops.int64
-
-int8 = msc_ops.int8
-
-int_ = msc_ops.int_
-
-integer = msc_ops.integer
-
-
-def interp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("interp", getattr(msc_ops, "interp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def intersect1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("intersect1d", getattr(msc_ops, "intersect1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def inv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("inv", getattr(msc_ops, "inv"))(*args, **kwargs)  # pragma: no cover
-
-
-def invert(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("invert", getattr(msc_ops, "invert"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def invert_permutation(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "invert_permutation", getattr(msc_ops, "invert_permutation")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def iou(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("iou", getattr(msc_ops, "iou"))(*args, **kwargs)  # pragma: no cover
-
-
-def irfft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("irfft", getattr(msc_ops, "irfft"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def is_tensor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("is_tensor", getattr(msc_ops, "is_tensor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isclose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isclose", getattr(msc_ops, "isclose"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def iscomplex(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("iscomplex", getattr(msc_ops, "iscomplex"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def iscomplexobj(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "iscomplexobj", getattr(msc_ops, "iscomplexobj")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isdtype(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isdtype", getattr(msc_ops, "isdtype"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isfinite(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isfinite", getattr(msc_ops, "isfinite"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isin", getattr(msc_ops, "isin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isinf(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isinf", getattr(msc_ops, "isinf"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isnan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isnan", getattr(msc_ops, "isnan"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isneginf(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isneginf", getattr(msc_ops, "isneginf"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isposinf(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isposinf", getattr(msc_ops, "isposinf"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isreal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isreal", getattr(msc_ops, "isreal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isrealobj(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isrealobj", getattr(msc_ops, "isrealobj"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def isscalar(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("isscalar", getattr(msc_ops, "isscalar"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def issubdtype(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("issubdtype", getattr(msc_ops, "issubdtype"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def istft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("istft", getattr(msc_ops, "istft"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def iterable(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("iterable", getattr(msc_ops, "iterable"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ix_(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ix_", getattr(msc_ops, "ix_"))(*args, **kwargs)  # pragma: no cover
-
-
-def kaiser(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("kaiser", getattr(msc_ops, "kaiser"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def kron(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("kron", getattr(msc_ops, "kron"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lbeta(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lbeta", getattr(msc_ops, "lbeta"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lcm(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lcm", getattr(msc_ops, "lcm"))(*args, **kwargs)  # pragma: no cover
-
-
-def ldexp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ldexp", getattr(msc_ops, "ldexp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def leaky_relu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("leaky_relu", getattr(msc_ops, "leaky_relu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def left_shift(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("left_shift", getattr(msc_ops, "left_shift"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def less(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("less", getattr(msc_ops, "less"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def less_equal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("less_equal", getattr(msc_ops, "less_equal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lexsort(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lexsort", getattr(msc_ops, "lexsort"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lgamma(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lgamma", getattr(msc_ops, "lgamma"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def lgamma(*args, **kwargs):
+    return _wrap_op("lgamma", msc_ops.lgamma)(*args, **kwargs)
 
 
 linalg = msc_ops.linalg
 
 
-def linspace(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("linspace", getattr(msc_ops, "linspace"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def linspace(*args, **kwargs):
+    return _wrap_op("linspace", msc_ops.linspace)(*args, **kwargs)
 
 
-def load(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("load", getattr(msc_ops, "load"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def load(*args, **kwargs):
+    return _wrap_op("load", msc_ops.load)(*args, **kwargs)
 
 
-def local_response_normalization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "local_response_normalization", getattr(msc_ops, "local_response_normalization")
-    )(*args, **kwargs)
+def log(*args, **kwargs):
+    return _wrap_op("log", msc_ops.log)(*args, **kwargs)
 
 
-def log(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log", getattr(msc_ops, "log"))(*args, **kwargs)  # pragma: no cover
+def log10(*args, **kwargs):
+    return _wrap_op("log10", msc_ops.log10)(*args, **kwargs)
 
 
-def log10(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def log1p(*args, **kwargs):
+    return _wrap_op("log1p", msc_ops.log1p)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log10", getattr(msc_ops, "log10"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def log2(*args, **kwargs):
+    return _wrap_op("log2", msc_ops.log2)(*args, **kwargs)
 
-def log1p(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log1p", getattr(msc_ops, "log1p"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def log_sigmoid(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.log_sigmoid is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def log2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def log_softmax(*args, **kwargs):
+    return _wrap_op("log_softmax", msc_ops.activations.log_softmax)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log2", getattr(msc_ops, "log2"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def logaddexp(*args, **kwargs):
+    return _wrap_op("logaddexp", msc_ops.logaddexp)(*args, **kwargs)
 
-def log_sigmoid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log_sigmoid", getattr(msc_ops, "log_sigmoid"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def logaddexp2(*args, **kwargs):
+    return _wrap_op("logaddexp2", msc_ops.logaddexp2)(*args, **kwargs)
 
 
-def log_softmax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def logcumsumexp(*args, **kwargs):
+    return _wrap_op("logcumsumexp", msc_ops.logcumsumexp)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("log_softmax", getattr(msc_ops, "log_softmax"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def logdet(*args, **kwargs):
+    return _wrap_op("logdet", msc_ops.logdet)(*args, **kwargs)
 
-def logaddexp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logaddexp", getattr(msc_ops, "logaddexp"))(
-        *args, **kwargs
-    )  # pragma: no cover
+logical = msc_ops.logical
 
 
-def logaddexp2(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def logical_and(*args, **kwargs):
+    return _wrap_op("logical_and", msc_ops.logical_and)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logaddexp2", getattr(msc_ops, "logaddexp2"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def logical_not(*args, **kwargs):
+    return _wrap_op("logical_not", msc_ops.logical_not)(*args, **kwargs)
 
-def logdet(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logdet", getattr(msc_ops, "logdet"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def logical_or(*args, **kwargs):
+    return _wrap_op("logical_or", msc_ops.logical_or)(*args, **kwargs)
 
 
-def logical_and(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def logical_xor(*args, **kwargs):
+    return _wrap_op("logical_xor", msc_ops.logical_xor)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logical_and", getattr(msc_ops, "logical_and"))(
-        *args, **kwargs
-    )  # pragma: no cover
 
+def logit(*args, **kwargs):
+    return _wrap_op("logit", msc_ops.logit)(*args, **kwargs)
 
-def logical_not(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logical_not", getattr(msc_ops, "logical_not"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def logm(*args, **kwargs):
+    return _wrap_op("logm", msc_ops.logm)(*args, **kwargs)
 
 
-def logical_or(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def logspace(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.logspace is not yet implemented in ml-switcheroo-compiler"
+    )
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logical_or", getattr(msc_ops, "logical_or"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def logsumexp(*args, **kwargs):
+    return _wrap_op("logsumexp", msc_ops.logsumexp)(*args, **kwargs)
 
-def logical_xor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logical_xor", getattr(msc_ops, "logical_xor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def lookup(*args, **kwargs):
+    return _wrap_op("lookup", msc_ops.lookup)(*args, **kwargs)
 
 
-def logit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+loss = msc_ops.loss
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logit", getattr(msc_ops, "logit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+lstm = msc_ops.lstm
 
 
-def logspace(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def lstm_cell(*args, **kwargs):
+    return _wrap_op("lstm_cell", msc_ops.lstm_cell)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logspace", getattr(msc_ops, "logspace"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def logsumexp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("logsumexp", getattr(msc_ops, "logsumexp"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lookup(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lookup", getattr(msc_ops, "lookup"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lstm_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lstm_cell", getattr(msc_ops, "lstm_cell"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lstsq(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lstsq", getattr(msc_ops, "lstsq"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def lu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lu", getattr(msc_ops, "lu"))(*args, **kwargs)  # pragma: no cover
-
-
-def lu_factor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("lu_factor", getattr(msc_ops, "lu_factor"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def map(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("map", getattr(msc_ops, "map"))(*args, **kwargs)  # pragma: no cover
-
-
-def mask_indices(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "mask_indices", getattr(msc_ops, "mask_indices")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+
+def lstsq(*args, **kwargs):
+    return _wrap_op("lstsq", msc_ops.lstsq)(*args, **kwargs)
+
+
+def lu(*args, **kwargs):
+    return _wrap_op("lu", msc_ops.lu)(*args, **kwargs)
+
+
+def lu_factor(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.lu_factor is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def lu_matrix_inverse(*args, **kwargs):
+    return _wrap_op("lu_matrix_inverse", msc_ops.lu_matrix_inverse)(*args, **kwargs)
+
+
+def lu_reconstruct(*args, **kwargs):
+    return _wrap_op("lu_reconstruct", msc_ops.lu_reconstruct)(*args, **kwargs)
+
+
+def lu_solve(*args, **kwargs):
+    return _wrap_op("lu_solve", msc_ops.lu_solve)(*args, **kwargs)
+
+
+def manual_seed(*args, **kwargs):
+    return _wrap_op("manual_seed", msc_ops.manual_seed)(*args, **kwargs)
+
+
+def map(*args, **kwargs):
+    return _wrap_op("map", msc_ops.map)(*args, **kwargs)
+
+
+def map_coordinates(*args, **kwargs):
+    return _wrap_op("map_coordinates", msc_ops.map_coordinates)(*args, **kwargs)
+
+
+def map_flat_values(*args, **kwargs):
+    return _wrap_op("map_flat_values", msc_ops.map_flat_values)(*args, **kwargs)
+
+
+def map_fn(*args, **kwargs):
+    return _wrap_op("map_fn", msc_ops.map_fn)(*args, **kwargs)
+
+
+def map_fn_eager(*args, **kwargs):
+    return _wrap_op("map_fn_eager", msc_ops.map_fn_eager)(*args, **kwargs)
+
+
+def map_fn_tracing(*args, **kwargs):
+    return _wrap_op("map_fn_tracing", msc_ops.map_fn_tracing)(*args, **kwargs)
 
 
 math = msc_ops.math
 
 
-def matmul(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("matmul", getattr(msc_ops, "matmul"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def matmul(*args, **kwargs):
+    return _wrap_op("matmul", msc_ops.matmul)(*args, **kwargs)
 
 
-def matrix_power(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "matrix_power", getattr(msc_ops, "matrix_power")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def matrix_norm(*args, **kwargs):
+    return _wrap_op("matrix_norm", msc_ops.matrix_norm)(*args, **kwargs)
 
 
-def matrix_transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def matrix_rank(*args, **kwargs):
+    return _wrap_op("matrix_rank", msc_ops.matrix_rank)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "matrix_transpose", getattr(msc_ops, "matrix_transpose")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def matrix_transpose(*args, **kwargs):
+    return _wrap_op("matrix_transpose", msc_ops.matrix_transpose)(*args, **kwargs)
+
+
+def matvec(*args, **kwargs):
+    return _wrap_op("matvec", msc_ops.matvec)(*args, **kwargs)
+
+
+def max(*args, **kwargs):
+    return _wrap_op("max", msc_ops.max)(*args, **kwargs)
+
+
+def max_pool(*args, **kwargs):
+    return _wrap_op("max_pool", msc_ops.max_pool)(*args, **kwargs)
+
+
+def max_pool1d(*args, **kwargs):
+    return _wrap_op("max_pool1d", msc_ops.max_pool1d)(*args, **kwargs)
+
+
+def max_pool2d(*args, **kwargs):
+    return _wrap_op("max_pool2d", msc_ops.max_pool2d)(*args, **kwargs)
+
+
+def max_pool3d(*args, **kwargs):
+    return _wrap_op("max_pool3d", msc_ops.max_pool3d)(*args, **kwargs)
+
+
+def maximum(*args, **kwargs):
+    return _wrap_op("maximum", msc_ops.maximum)(*args, **kwargs)
+
+
+def mean(*args, **kwargs):
+    return _wrap_op("mean", msc_ops.mean)(*args, **kwargs)
+
+
+def median(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.median is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def max(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("max", getattr(msc_ops, "max"))(*args, **kwargs)  # pragma: no cover
+def median_filter(*args, **kwargs):
+    return _wrap_op("median_filter", msc_ops.median_filter)(*args, **kwargs)
 
 
-def max_pool(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("max_pool", getattr(msc_ops, "max_pool"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def maximum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("maximum", getattr(msc_ops, "maximum"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def mean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("mean", getattr(msc_ops, "mean"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def median(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("median", getattr(msc_ops, "median"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def median_filter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "median_filter", getattr(msc_ops, "median_filter")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def mel_filterbank(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "mel_filterbank", getattr(msc_ops, "mel_filterbank")
-    )(  # pragma: no cover
-        *args, **kwargs
+def meshgrid(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.meshgrid is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def mel_spectrogram(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def min(*args, **kwargs):
+    return _wrap_op("min", msc_ops.min)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "mel_spectrogram", getattr(msc_ops, "mel_spectrogram")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def minimum(*args, **kwargs):
+    return _wrap_op("minimum", msc_ops.minimum)(*args, **kwargs)
+
+
+misc = msc_ops.misc
+
+
+def mixup(*args, **kwargs):
+    return _wrap_op("mixup", msc_ops.mixup)(*args, **kwargs)
+
+
+def mod(*args, **kwargs):
+    return _wrap_op("mod", msc_ops.mod)(*args, **kwargs)
+
+
+def modified_bessel_i0(*args, **kwargs):
+    return _wrap_op("modified_bessel_i0", msc_ops.modified_bessel_i0)(*args, **kwargs)
+
+
+def modified_bessel_i1(*args, **kwargs):
+    return _wrap_op("modified_bessel_i1", msc_ops.modified_bessel_i1)(*args, **kwargs)
+
+
+def modified_bessel_k0(*args, **kwargs):
+    return _wrap_op("modified_bessel_k0", msc_ops.modified_bessel_k0)(*args, **kwargs)
+
+
+def modified_bessel_k1(*args, **kwargs):
+    return _wrap_op("modified_bessel_k1", msc_ops.modified_bessel_k1)(*args, **kwargs)
+
+
+def moments(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.moments is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def meshgrid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def moveaxis(*args, **kwargs):
+    return _wrap_op("moveaxis", msc_ops.moveaxis)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("meshgrid", getattr(msc_ops, "meshgrid"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def multi_dot(*args, **kwargs):
+    return _wrap_op("multi_dot", msc_ops.multi_dot)(*args, **kwargs)
 
-def mfcc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("mfcc", getattr(msc_ops, "mfcc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def multi_hot(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.multi_hot is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-mgrid = msc_ops.mgrid
+def multiply(*args, **kwargs):
+    return _wrap_op("multiply", msc_ops.multiply)(*args, **kwargs)
 
 
-def min(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def multiply_no_nan(*args, **kwargs):
+    return _wrap_op("multiply_no_nan", msc_ops.multiply_no_nan)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("min", getattr(msc_ops, "min"))(*args, **kwargs)  # pragma: no cover
 
+def mvlgamma(*args, **kwargs):
+    return _wrap_op("mvlgamma", msc_ops.mvlgamma)(*args, **kwargs)
 
-def minimum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("minimum", getattr(msc_ops, "minimum"))(
-        *args, **kwargs
-    )  # pragma: no cover
+nan = msc_ops.nan
 
 
-def mixup(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nan_to_num(*args, **kwargs):
+    return _wrap_op("nan_to_num", msc_ops.nan_to_num)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("mixup", getattr(msc_ops, "mixup"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def nanargmax(*args, **kwargs):
+    return _wrap_op("nanargmax", msc_ops.nanargmax)(*args, **kwargs)
 
-def mod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("mod", getattr(msc_ops, "mod"))(*args, **kwargs)  # pragma: no cover
+def nanargmin(*args, **kwargs):
+    return _wrap_op("nanargmin", msc_ops.nanargmin)(*args, **kwargs)
 
 
-def modf(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nancumprod(*args, **kwargs):
+    return _wrap_op("nancumprod", msc_ops.nancumprod)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("modf", getattr(msc_ops, "modf"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def nancumsum(*args, **kwargs):
+    return _wrap_op("nancumsum", msc_ops.nancumsum)(*args, **kwargs)
 
-def moments(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("moments", getattr(msc_ops, "moments"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def nanmax(*args, **kwargs):
+    return _wrap_op("nanmax", msc_ops.nanmax)(*args, **kwargs)
 
 
-def moveaxis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nanmean(*args, **kwargs):
+    return _wrap_op("nanmean", msc_ops.nanmean)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("moveaxis", getattr(msc_ops, "moveaxis"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
 
-def multi_hot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("multi_hot", getattr(msc_ops, "multi_hot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
+def nanmedian(*args, **kwargs):
+    return _wrap_op("nanmedian", msc_ops.nanmedian)(*args, **kwargs)
 
-def multiply(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("multiply", getattr(msc_ops, "multiply"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
 
-def mvlgamma(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("mvlgamma", getattr(msc_ops, "mvlgamma"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nan_to_num(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nan_to_num", getattr(msc_ops, "nan_to_num"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nanargmax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanargmax", getattr(msc_ops, "nanargmax"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nanargmin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanargmin", getattr(msc_ops, "nanargmin"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nancumprod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nancumprod", getattr(msc_ops, "nancumprod"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nancumsum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nancumsum", getattr(msc_ops, "nancumsum"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nanmean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanmean", getattr(msc_ops, "nanmean"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nanmedian(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanmedian", getattr(msc_ops, "nanmedian"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def nanpercentile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nanmin(*args, **kwargs):
+    return _wrap_op("nanmin", msc_ops.nanmin)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "nanpercentile", getattr(msc_ops, "nanpercentile")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def nanpercentile(*args, **kwargs):
+    return _wrap_op("nanpercentile", msc_ops.nanpercentile)(*args, **kwargs)
 
-def nanquantile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanquantile", getattr(msc_ops, "nanquantile"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def nanprod(*args, **kwargs):
+    return _wrap_op("nanprod", msc_ops.nanprod)(*args, **kwargs)
 
 
-def nanstd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nanquantile(*args, **kwargs):
+    return _wrap_op("nanquantile", msc_ops.nanquantile)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanstd", getattr(msc_ops, "nanstd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def nanstd(*args, **kwargs):
+    return _wrap_op("nanstd", msc_ops.nanstd)(*args, **kwargs)
 
-def nanvar(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nanvar", getattr(msc_ops, "nanvar"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def nansum(*args, **kwargs):
+    return _wrap_op("nansum", msc_ops.nansum)(*args, **kwargs)
 
 
-def ndarray(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def nanvar(*args, **kwargs):
+    return _wrap_op("nanvar", msc_ops.nanvar)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ndarray", getattr(msc_ops, "ndarray"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def ndim(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.ndim is not yet implemented in ml-switcheroo-compiler"
+    )
 
-def ndim(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ndim", getattr(msc_ops, "ndim"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def ndtri(*args, **kwargs):
+    return _wrap_op("ndtri", msc_ops.ndtri)(*args, **kwargs)
 
 
-def ndtri(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def negative(*args, **kwargs):
+    return _wrap_op("negative", msc_ops.negative)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ndtri", getattr(msc_ops, "ndtri"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+newaxis = None
 
-def negative(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("negative", getattr(msc_ops, "negative"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def nextafter(*args, **kwargs):
+    return _wrap_op("nextafter", msc_ops.nextafter)(*args, **kwargs)
 
 
-newaxis = msc_ops.newaxis
-
-
-def nextafter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nextafter", getattr(msc_ops, "nextafter"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
+nlp = msc_ops.nlp
 
 nn = msc_ops.nn
 
 
-# Missing nn ops that are at the top level of msc_ops
-nn.moments = _wrap_op("moments", msc_ops.moments)
-nn.multi_hot = _wrap_op("multi_hot", msc_ops.multi_hot)
-nn.normalize = _wrap_op("normalize", msc_ops.normalize)
-nn.one_hot = _wrap_op("one_hot", msc_ops.one_hot)
-nn.polar = _wrap_op("polar", msc_ops.polar)
-nn.psnr = _wrap_op("psnr", msc_ops.psnr)
+def non_max_suppression(*args, **kwargs):
+    return _wrap_op("non_max_suppression", msc_ops.non_max_suppression)(*args, **kwargs)
 
 
-class NumpyWrapper:
-    pass  # pragma: no cover
-
-
-numpy = NumpyWrapper()
-
-numpy_ops = [
-    "abs",
-    "absolute",
-    "add",
-    "all",
-    "amax",
-    "amin",
-    "angle",
-    "any",
-    "append",
-    "arange",
-    "arccos",
-    "arccosh",
-    "arcsin",
-    "arcsinh",
-    "arctan",
-    "arctan2",
-    "arctanh",
-    "argmax",
-    "argmin",
-    "argpartition",
-    "argsort",
-    "array",
-    "average",
-    "bartlett",
-    "bincount",
-    "bitwise_and",
-    "bitwise_invert",
-    "bitwise_left_shift",
-    "bitwise_not",
-    "bitwise_or",
-    "bitwise_right_shift",
-    "bitwise_xor",
-    "blackman",
-    "broadcast_to",
-    "ceil",
-    "clip",
-    "concatenate",
-    "conj",
-    "conjugate",
-    "copy",
-    "correlate",
-    "cos",
-    "cosh",
-    "count_nonzero",
-    "cross",
-    "cumprod",
-    "cumsum",
-    "diag",
-    "diagflat",
-    "diagonal",
-    "diff",
-    "digitize",
-    "divide",
-    "divide_no_nan",
-    "dot",
-    "einsum",
-    "empty",
-    "equal",
-    "exp",
-    "exp2",
-    "expand_dims",
-    "expm1",
-    "eye",
-    "flip",
-    "floor",
-    "floor_divide",
-    "full",
-    "full_like",
-    "get_item",
-    "greater",
-    "greater_equal",
-    "hamming",
-    "histogram",
-    "hstack",
-    "identity",
-    "imag",
-    "inner",
-    "isclose",
-    "isfinite",
-    "isinf",
-    "isnan",
-    "left_shift",
-    "less",
-    "less_equal",
-    "linspace",
-    "log",
-    "log10",
-    "log1p",
-    "log2",
-    "logaddexp",
-    "logical_and",
-    "logical_not",
-    "logical_or",
-    "logical_xor",
-    "logspace",
-    "matmul",
-    "max",
-    "maximum",
-    "mean",
-    "median",
-    "meshgrid",
-    "min",
-    "minimum",
-    "mod",
-    "moveaxis",
-    "multiply",
-    "nan_to_num",
-    "ndim",
-    "negative",
-    "nonzero",
-    "not_equal",
-    "ones",
-    "ones_like",
-    "outer",
-    "pad",
-    "power",
-    "prod",
-    "quantile",
-    "ravel",
-    "real",
-    "reciprocal",
-    "repeat",
-    "reshape",
-    "right_shift",
-    "roll",
-    "rot90",
-    "round",
-    "select",
-    "sign",
-    "signbit",
-    "sin",
-    "sinh",
-    "size",
-    "slogdet",
-    "sort",
-    "split",
-    "sqrt",
-    "square",
-    "squeeze",
-    "stack",
-    "std",
-    "subtract",
-    "sum",
-    "swapaxes",
-    "take",
-    "take_along_axis",
-    "tan",
-    "tanh",
-    "tensordot",
-    "tile",
-    "trace",
-    "transpose",
-    "tri",
-    "tril",
-    "triu",
-    "true_divide",
-    "trunc",
-    "unravel_index",
-    "var",
-    "vdot",
-    "vectorize",
-    "vstack",
-    "where",
-    "zeros",
-    "zeros_like",
-]
-
-for op_name in numpy_ops:
-    if hasattr(msc_ops, op_name):  # pragma: no cover
-        setattr(numpy, op_name, _wrap_op(op_name, getattr(msc_ops, op_name)))
-    else:
-        # Fallback to dummy wrap
-        setattr(
-            numpy, op_name, _wrap_op(op_name, lambda *args, **kwargs: args[0])
-        )  # pragma: no cover
-
-
-def non_max_suppression(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "non_max_suppression", getattr(msc_ops, "non_max_suppression")
-    )(  # pragma: no cover
-        *args, **kwargs
+def nonzero(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.nonzero is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def nonzero(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("nonzero", getattr(msc_ops, "nonzero"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def norm(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("norm", getattr(msc_ops, "norm"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def norm(*args, **kwargs):
+    return _wrap_op("norm", msc_ops.norm)(*args, **kwargs)
 
 
 normalization = msc_ops.normalization
 
 
-def normalize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("normalize", getattr(msc_ops, "normalize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def normalize(*args, **kwargs):
+    return _wrap_op("normalize", msc_ops.normalize)(*args, **kwargs)
 
 
-def not_equal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("not_equal", getattr(msc_ops, "not_equal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def not_equal(*args, **kwargs):
+    return _wrap_op("not_equal", msc_ops.not_equal)(*args, **kwargs)
 
 
-number = msc_ops.number
+def numpy(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.numpy is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def numpy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("numpy", getattr(msc_ops, "numpy"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def one_hot(*args, **kwargs):
+    return _wrap_op("one_hot", msc_ops.activations.one_hot)(*args, **kwargs)
 
 
-object_ = msc_ops.object_
-
-ogrid = msc_ops.ogrid
-
-
-def one_hot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("one_hot", getattr(msc_ops, "one_hot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def ones(*args, **kwargs):
+    return _wrap_op("ones", msc_ops.ones)(*args, **kwargs)
 
 
-def ones(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ones", getattr(msc_ops, "ones"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def ones_like(*args, **kwargs):
+    return _wrap_op("ones_like", msc_ops.ones_like)(*args, **kwargs)
 
 
-def ones_like(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ones_like", getattr(msc_ops, "ones_like"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def outer(*args, **kwargs):
+    return _wrap_op("outer", msc_ops.outer)(*args, **kwargs)
 
 
-def outer(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("outer", getattr(msc_ops, "outer"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.shape.misc import pad as msc_pad
 
 
-def packbits(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("packbits", getattr(msc_ops, "packbits"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def pad(*args, **kwargs):
+    return _wrap_op("pad", msc_pad)(*args, **kwargs)
 
 
-def pad(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pad", getattr(msc_ops, "pad"))(*args, **kwargs)  # pragma: no cover
+def pad_images(*args, **kwargs):
+    return _wrap_op("pad_images", msc_ops.pad_images)(*args, **kwargs)
 
 
-def pad_to_bounding_box(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def pad_to_bounding_box(*args, **kwargs):
+    return _wrap_op("pad_to_bounding_box", msc_ops.pad_to_bounding_box)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "pad_to_bounding_box", getattr(msc_ops, "pad_to_bounding_box")
-    )(  # pragma: no cover
+
+def parse_example(*args, **kwargs):
+    return _wrap_op("parse_example", msc_ops.parse_example)(*args, **kwargs)
+
+
+def parse_sequence_example(*args, **kwargs):
+    return _wrap_op("parse_sequence_example", msc_ops.parse_sequence_example)(
         *args, **kwargs
     )
 
 
-def partition(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("partition", getattr(msc_ops, "partition"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def parse_tensor(*args, **kwargs):
+    return _wrap_op("parse_tensor", msc_ops.parse_tensor)(*args, **kwargs)
 
 
-def percentile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("percentile", getattr(msc_ops, "percentile"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def permute(*args, **kwargs):
+    return _wrap_op("permute", msc_ops.permute)(*args, **kwargs)
 
 
-def permute(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("permute", getattr(msc_ops, "permute"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def permute_dims(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "permute_dims", getattr(msc_ops, "permute_dims")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def perspective_transform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "perspective_transform", getattr(msc_ops, "perspective_transform")
-    )(  # pragma: no cover
+def perspective_transform(*args, **kwargs):
+    return _wrap_op("perspective_transform", msc_ops.perspective_transform)(
         *args, **kwargs
     )
 
 
-pi = msc_ops.pi
+def pmap(*args, **kwargs):
+    return _wrap_op("pmap", msc_ops.pmap)(*args, **kwargs)
 
 
-def piecewise(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def pmap_eager(*args, **kwargs):
+    return _wrap_op("pmap_eager", msc_ops.pmap_eager)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("piecewise", getattr(msc_ops, "piecewise"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def pmap_tracing(*args, **kwargs):
+    return _wrap_op("pmap_tracing", msc_ops.pmap_tracing)(*args, **kwargs)
 
-def pinv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pinv", getattr(msc_ops, "pinv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def pmean(*args, **kwargs):
+    return _wrap_op("pmean", msc_ops.pmean)(*args, **kwargs)
 
 
-def place(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def polar(*args, **kwargs):
+    return _wrap_op("polar", msc_ops.polar)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("place", getattr(msc_ops, "place"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def polygamma(*args, **kwargs):
+    return _wrap_op("polygamma", msc_ops.polygamma)(*args, **kwargs)
 
-def pmean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pmean", getattr(msc_ops, "pmean"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+pooling = msc_ops.pooling
 
 
-def polar(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def positive(*args, **kwargs):
+    return _wrap_op("positive", msc_ops.positive)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polar", getattr(msc_ops, "polar"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def posterize(*args, **kwargs):
+    return _wrap_op("posterize", msc_ops.posterize)(*args, **kwargs)
 
-def poly(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("poly", getattr(msc_ops, "poly"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def power(*args, **kwargs):
+    return _wrap_op("power", msc_ops.power)(*args, **kwargs)
 
 
-def polyadd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def power_iteration(*args, **kwargs):
+    return _wrap_op("power_iteration", msc_ops.power_iteration)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polyadd", getattr(msc_ops, "polyadd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def prod(*args, **kwargs):
+    return _wrap_op("prod", msc_ops.prod)(*args, **kwargs)
 
-def polyder(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polyder", getattr(msc_ops, "polyder"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polydiv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polydiv", getattr(msc_ops, "polydiv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polyfit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polyfit", getattr(msc_ops, "polyfit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polygamma(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polygamma", getattr(msc_ops, "polygamma"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polyint(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polyint", getattr(msc_ops, "polyint"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polymul(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polymul", getattr(msc_ops, "polymul"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polysub(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polysub", getattr(msc_ops, "polysub"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def polyval(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("polyval", getattr(msc_ops, "polyval"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def pool1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pool1d", getattr(msc_ops, "pool1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def pool2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pool2d", getattr(msc_ops, "pool2d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def pool3d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pool3d", getattr(msc_ops, "pool3d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def positive(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("positive", getattr(msc_ops, "positive"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def posterize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("posterize", getattr(msc_ops, "posterize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def pow(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("pow", getattr(msc_ops, "pow"))(*args, **kwargs)  # pragma: no cover
-
-
-def power(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("power", getattr(msc_ops, "power"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def power_iteration(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "power_iteration", getattr(msc_ops, "power_iteration")
-    )(  # pragma: no cover
-        *args, **kwargs
+def psnr(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.psnr is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def printoptions(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "printoptions", getattr(msc_ops, "printoptions")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def psum(*args, **kwargs):
+    return _wrap_op("psum", msc_ops.psum)(*args, **kwargs)
 
 
-def prod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("prod", getattr(msc_ops, "prod"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.linalg.decompositions.qr import qr as msc_qr
 
 
-def promote_types(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "promote_types", getattr(msc_ops, "promote_types")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def qr(*args, **kwargs):
+    return _wrap_op("qr", msc_qr)(*args, **kwargs)
 
 
-def psnr(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("psnr", getattr(msc_ops, "psnr"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def quantile(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.quantile is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def psum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("psum", getattr(msc_ops, "psum"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def rad2deg(*args, **kwargs):
+    return _wrap_op("rad2deg", msc_ops.rad2deg)(*args, **kwargs)
 
 
-def ptp(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ptp", getattr(msc_ops, "ptp"))(*args, **kwargs)  # pragma: no cover
-
-
-def put(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("put", getattr(msc_ops, "put"))(*args, **kwargs)  # pragma: no cover
-
-
-def qr(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("qr", getattr(msc_ops, "qr"))(*args, **kwargs)  # pragma: no cover
-
-
-def quantile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("quantile", getattr(msc_ops, "quantile"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-r_ = msc_ops.r_
-
-
-def rad2deg(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rad2deg", getattr(msc_ops, "rad2deg"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def radians(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("radians", getattr(msc_ops, "radians"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def radians(*args, **kwargs):
+    return _wrap_op("radians", msc_ops.radians)(*args, **kwargs)
 
 
 ragged = msc_ops.ragged
 
 
-def rand_augment(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "rand_augment", getattr(msc_ops, "rand_augment")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def random_color_jitter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_color_jitter", getattr(msc_ops, "random_color_jitter")
-    )(  # pragma: no cover
+def ragged_tensor_to_dense(*args, **kwargs):
+    return _wrap_op("ragged_tensor_to_dense", msc_ops.ragged_tensor_to_dense)(
         *args, **kwargs
     )
 
 
-def random_crop(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("random_crop", getattr(msc_ops, "random_crop"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def rand(*args, **kwargs):
+    return _wrap_op("rand", msc_ops.rand)(*args, **kwargs)
 
 
-def random_elastic_transform(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_elastic_transform", getattr(msc_ops, "random_elastic_transform")
-    )(*args, **kwargs)
+def rand_augment(*args, **kwargs):
+    return _wrap_op("rand_augment", msc_ops.rand_augment)(*args, **kwargs)
 
 
-def random_erasing(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def randint(*args, **kwargs):
+    return _wrap_op("randint", msc_ops.randint)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_erasing", getattr(msc_ops, "random_erasing")
-    )(  # pragma: no cover
+
+def randn(*args, **kwargs):
+    return _wrap_op("randn", msc_ops.randn)(*args, **kwargs)
+
+
+def random_color_jitter(*args, **kwargs):
+    return _wrap_op("random_color_jitter", msc_ops.random_color_jitter)(*args, **kwargs)
+
+
+def random_crop(*args, **kwargs):
+    return _wrap_op("random_crop", msc_ops.random_crop)(*args, **kwargs)
+
+
+def random_elastic_transform(*args, **kwargs):
+    return _wrap_op("random_elastic_transform", msc_ops.random_elastic_transform)(
         *args, **kwargs
     )
 
 
-def random_flip(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("random_flip", getattr(msc_ops, "random_flip"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def random_erasing(*args, **kwargs):
+    return _wrap_op("random_erasing", msc_ops.random_erasing)(*args, **kwargs)
 
 
-def random_gaussian_blur(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def random_flip(*args, **kwargs):
+    return _wrap_op("random_flip", msc_ops.random_flip)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_gaussian_blur", getattr(msc_ops, "random_gaussian_blur")
-    )(  # pragma: no cover
+
+def random_gaussian_blur(*args, **kwargs):
+    return _wrap_op("random_gaussian_blur", msc_ops.random_gaussian_blur)(
         *args, **kwargs
     )
 
@@ -7144,2295 +2933,1081 @@ def random_gaussian_blur(*args, **kwargs):  # pragma: no cover
 random_ops = msc_ops.random_ops
 
 
-def random_perspective(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def random_perspective(*args, **kwargs):
+    return _wrap_op("random_perspective", msc_ops.random_perspective)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_perspective", getattr(msc_ops, "random_perspective")
-    )(  # pragma: no cover
+
+def random_rotation(*args, **kwargs):
+    return _wrap_op("random_rotation", msc_ops.random_rotation)(*args, **kwargs)
+
+
+def random_sharpness(*args, **kwargs):
+    return _wrap_op("random_sharpness", msc_ops.random_sharpness)(*args, **kwargs)
+
+
+def random_shear(*args, **kwargs):
+    return _wrap_op("random_shear", msc_ops.random_shear)(*args, **kwargs)
+
+
+def random_translation(*args, **kwargs):
+    return _wrap_op("random_translation", msc_ops.random_translation)(*args, **kwargs)
+
+
+def random_zoom(*args, **kwargs):
+    return _wrap_op("random_zoom", msc_ops.random_zoom)(*args, **kwargs)
+
+
+def ravel(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.ravel is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+raw_ops = msc_ops.raw_ops
+
+
+def read_file(*args, **kwargs):
+    return _wrap_op("read_file", msc_ops.read_file)(*args, **kwargs)
+
+
+def real(*args, **kwargs):
+    return _wrap_op("real", msc_ops.real)(*args, **kwargs)
+
+
+def rearrange(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.rearrange is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def reciprocal(*args, **kwargs):
+    return _wrap_op("reciprocal", msc_ops.reciprocal)(*args, **kwargs)
+
+
+def reciprocal_no_nan(*args, **kwargs):
+    return _wrap_op("reciprocal_no_nan", msc_ops.reciprocal_no_nan)(*args, **kwargs)
+
+
+def reduce_euclidean_norm(*args, **kwargs):
+    return _wrap_op("reduce_euclidean_norm", msc_ops.reduce_euclidean_norm)(
         *args, **kwargs
     )
 
 
-def random_rotation(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_rotation", getattr(msc_ops, "random_rotation")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def reduce_logsumexp(*args, **kwargs):
+    return _wrap_op("reduce_logsumexp", msc_ops.reduce_logsumexp)(*args, **kwargs)
 
 
-def random_sharpness(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_sharpness", getattr(msc_ops, "random_sharpness")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def random_shear(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "random_shear", getattr(msc_ops, "random_shear")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def random_translation(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "random_translation", getattr(msc_ops, "random_translation")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def random_zoom(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("random_zoom", getattr(msc_ops, "random_zoom"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ravel(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("ravel", getattr(msc_ops, "ravel"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def ravel_multi_index(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "ravel_multi_index", getattr(msc_ops, "ravel_multi_index")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def real(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("real", getattr(msc_ops, "real"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rearrange(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rearrange", getattr(msc_ops, "rearrange"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def reciprocal(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("reciprocal", getattr(msc_ops, "reciprocal"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def reduce_scatter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "reduce_scatter", getattr(msc_ops, "reduce_scatter")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def reduce_window(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "reduce_window", getattr(msc_ops, "reduce_window")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def reduce_window(*args, **kwargs):
+    return _wrap_op("reduce_window", msc_ops.reduce_window)(*args, **kwargs)
 
 
 reductions = msc_ops.reductions
 
 
-def regex_replace(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "regex_replace", getattr(msc_ops, "regex_replace")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def regex_full_match(*args, **kwargs):
+    return _wrap_op("regex_full_match", msc_ops.regex_full_match)(*args, **kwargs)
 
 
-def register_op(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("register_op", getattr(msc_ops, "register_op"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def regex_replace(*args, **kwargs):
+    return _wrap_op("regex_replace", msc_ops.regex_replace)(*args, **kwargs)
 
 
-def relu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("relu", getattr(msc_ops, "relu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def register_op(*args, **kwargs):
+    return _wrap_op("register_op", msc_ops.register_op)(*args, **kwargs)
 
 
-def relu6(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("relu6", getattr(msc_ops, "relu6"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+registry = msc_ops.registry
 
 
-def remainder(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("remainder", getattr(msc_ops, "remainder"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def repeat(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("repeat", getattr(msc_ops, "repeat"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def reshape(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("reshape", getattr(msc_ops, "reshape"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def resize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("resize", getattr(msc_ops, "resize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def resize_bicubic(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "resize_bicubic", getattr(msc_ops, "resize_bicubic")
-    )(  # pragma: no cover
-        *args, **kwargs
+def relu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.relu is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def resize_bilinear(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "resize_bilinear", getattr(msc_ops, "resize_bilinear")
-    )(  # pragma: no cover
-        *args, **kwargs
+def relu6(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.relu6 is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def resize_lanczos3(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def rem(*args, **kwargs):
+    return _wrap_op("rem", msc_ops.rem)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "resize_lanczos3", getattr(msc_ops, "resize_lanczos3")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def remainder(*args, **kwargs):
+    return _wrap_op("remainder", msc_ops.remainder)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.shape.misc import repeat as msc_repeat
+
+
+def repeat(*args, **kwargs):
+    if "axis" in kwargs:
+        kwargs["dim"] = kwargs.pop("axis")
+    return _wrap_op("repeat", msc_repeat)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.shape.frontend import reshape as msc_reshape
+
+
+def reshape(*args, **kwargs):
+    return _wrap_op("reshape", msc_reshape)(*args, **kwargs)
+
+
+def resize(*args, **kwargs):
+    return _wrap_op("resize", msc_ops.resize)(*args, **kwargs)
+
+
+def resize_bicubic(*args, **kwargs):
+    return _wrap_op("resize_bicubic", msc_ops.resize_bicubic)(*args, **kwargs)
+
+
+def resize_bilinear(*args, **kwargs):
+    return _wrap_op("resize_bilinear", msc_ops.resize_bilinear)(*args, **kwargs)
+
+
+def resize_lanczos3(*args, **kwargs):
+    return _wrap_op("resize_lanczos3", msc_ops.resize_lanczos3)(*args, **kwargs)
+
+
+def resize_nearest(*args, **kwargs):
+    return _wrap_op("resize_nearest", msc_ops.resize_nearest)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.shape.frontend import flip as msc_flip
+
+
+def reverse(*args, **kwargs):
+    if "dims" in kwargs:
+        kwargs["axis"] = kwargs.pop("dims")
+    elif "axes" in kwargs:
+        kwargs["axis"] = kwargs.pop("axes")
+    return _wrap_op("reverse", msc_flip)(*args, **kwargs)
+
+
+def rfft(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.rfft is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def resize_nearest(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def rfft2(*args, **kwargs):
+    return _wrap_op("rfft2", msc_ops.rfft2)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "resize_nearest", getattr(msc_ops, "resize_nearest")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def rfftfreq(*args, **kwargs):
+    return _wrap_op("rfftfreq", msc_ops.rfftfreq)(*args, **kwargs)
+
+
+def rfftn(*args, **kwargs):
+    return _wrap_op("rfftn", msc_ops.rfftn)(*args, **kwargs)
+
+
+def rfftnd(*args, **kwargs):
+    return _wrap_op("rfftnd", msc_ops.rfftnd)(*args, **kwargs)
+
+
+def rgb_to_grayscale(*args, **kwargs):
+    return _wrap_op("rgb_to_grayscale", msc_ops.rgb_to_grayscale)(*args, **kwargs)
+
+
+def rgb_to_hsv(*args, **kwargs):
+    return _wrap_op("rgb_to_hsv", msc_ops.rgb_to_hsv)(*args, **kwargs)
+
+
+def rgb_to_yiq(*args, **kwargs):
+    return _wrap_op("rgb_to_yiq", msc_ops.rgb_to_yiq)(*args, **kwargs)
+
+
+def rgb_to_yuv(*args, **kwargs):
+    return _wrap_op("rgb_to_yuv", msc_ops.rgb_to_yuv)(*args, **kwargs)
+
+
+def right_shift(*args, **kwargs):
+    return _wrap_op("right_shift", msc_ops.right_shift)(*args, **kwargs)
+
+
+def rint(*args, **kwargs):
+    return _wrap_op("rint", msc_ops.rint)(*args, **kwargs)
+
+
+def rms_normalization(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.rms_normalization is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def result_type(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("result_type", getattr(msc_ops, "result_type"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.nn.rnn_utils import (
+    RNNConfig as MSC_RNNConfig,
+)
+from ml_switcheroo_compiler.ops.nn.rnn_utils import (
+    rnn as msc_rnn,
+)
 
 
-def rfft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rfft", getattr(msc_ops, "rfft"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rgb_to_grayscale(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "rgb_to_grayscale", getattr(msc_ops, "rgb_to_grayscale")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def rgb_to_hsv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rgb_to_hsv", getattr(msc_ops, "rgb_to_hsv"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def right_shift(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("right_shift", getattr(msc_ops, "right_shift"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rint(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rint", getattr(msc_ops, "rint"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rms_normalization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "rms_normalization", getattr(msc_ops, "rms_normalization")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def rnn(  # pragma: no cover
+def rnn(
     inputs,
     initial_state,
     cell_fn,
-    time_major=False,
     go_backwards=False,
+    mask=None,
     unroll=False,
+    input_length=None,
+    time_major=False,
     return_all_outputs=True,
+    zero_output_for_mask=False,
     **kwargs,
 ):
-    """Function docstring.
-
-    Args:
-        inputs: Description.
-        initial_state: Description.
-        cell_fn: Description.
-        time_major: Description.
-        go_backwards: Description.
-        unroll: Description.
-        return_all_outputs: Description.
-        kwargs: Description.
-    """
-    from ml_switcheroo_compiler.ops.nn.rnn_utils import RNNConfig
-
-    config = RNNConfig(
+    config = MSC_RNNConfig(
         time_major=time_major,
         go_backwards=go_backwards,
         unroll=unroll,
         return_all_outputs=return_all_outputs,
     )
-    return _wrap_op("rnn", getattr(msc_ops, "rnn"))(  # pragma: no cover
-        inputs, initial_state, cell_fn, config=config
+    return _wrap_op("rnn", msc_rnn)(inputs, initial_state, cell_fn, config)
+
+
+rnn_cell = msc_ops.rnn_cell
+
+rnn_utils = msc_ops.rnn_utils
+
+
+def roll(*args, **kwargs):
+    return _wrap_op("roll", msc_ops.roll)(*args, **kwargs)
+
+
+def rot90(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.rot90 is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def roll(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("roll", getattr(msc_ops, "roll"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def round(*args, **kwargs):
+    return _wrap_op("round", msc_ops.round)(*args, **kwargs)
 
 
-def rollaxis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rollaxis", getattr(msc_ops, "rollaxis"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def rsqrt(*args, **kwargs):
+    return _wrap_op("rsqrt", msc_ops.rsqrt)(*args, **kwargs)
 
 
-def roots(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("roots", getattr(msc_ops, "roots"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rot90(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rot90", getattr(msc_ops, "rot90"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def round(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("round", getattr(msc_ops, "round"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def round_(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("round_", getattr(msc_ops, "round_"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def rsqrt(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("rsqrt", getattr(msc_ops, "rsqrt"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-s_ = msc_ops.s_
-
-
-def saturate_cast(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "saturate_cast", getattr(msc_ops, "saturate_cast")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def save(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("save", getattr(msc_ops, "save"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def savez(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("savez", getattr(msc_ops, "savez"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def scan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("scan", getattr(msc_ops, "scan"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def scatter(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("scatter", getattr(msc_ops, "scatter"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def scatter_add(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("scatter_add", getattr(msc_ops, "scatter_add"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def scatter_nd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("scatter_nd", getattr(msc_ops, "scatter_nd"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def scatter_update(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "scatter_update", getattr(msc_ops, "scatter_update")
-    )(  # pragma: no cover
-        *args, **kwargs
+def saturate_cast(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.saturate_cast is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def searchsorted(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "searchsorted", getattr(msc_ops, "searchsorted")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def save(*args, **kwargs):
+    return _wrap_op("save", msc_ops.save)(*args, **kwargs)
 
 
-def segment_max(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("segment_max", getattr(msc_ops, "segment_max"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def save_gguf(*args, **kwargs):
+    return _wrap_op("save_gguf", msc_ops.save_gguf)(*args, **kwargs)
 
 
-def segment_mean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "segment_mean", getattr(msc_ops, "segment_mean")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def save_safetensors(*args, **kwargs):
+    return _wrap_op("save_safetensors", msc_ops.save_safetensors)(*args, **kwargs)
 
 
-def segment_min(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("segment_min", getattr(msc_ops, "segment_min"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def savez(*args, **kwargs):
+    return _wrap_op("savez", msc_ops.savez)(*args, **kwargs)
 
 
-def segment_prod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "segment_prod", getattr(msc_ops, "segment_prod")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def savez_compressed(*args, **kwargs):
+    return _wrap_op("savez_compressed", msc_ops.savez_compressed)(*args, **kwargs)
 
 
-def segment_sum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("segment_sum", getattr(msc_ops, "segment_sum"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def select(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("select", getattr(msc_ops, "select"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def selu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("selu", getattr(msc_ops, "selu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def separable_conv(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "separable_conv", getattr(msc_ops, "separable_conv")
-    )(  # pragma: no cover
-        *args, **kwargs
+def scalar_mul(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.scalar_mul is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def separable_conv1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def scan(*args, **kwargs):
+    return _wrap_op("scan", msc_ops.scan)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "separable_conv1d", getattr(msc_ops, "separable_conv1d")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def scan_bind(*args, **kwargs):
+    return _wrap_op("scan_bind", msc_ops.scan_bind)(*args, **kwargs)
+
+
+def scan_eager(*args, **kwargs):
+    return _wrap_op("scan_eager", msc_ops.scan_eager)(*args, **kwargs)
+
+
+def scan_tracing(*args, **kwargs):
+    return _wrap_op("scan_tracing", msc_ops.scan_tracing)(*args, **kwargs)
+
+
+def scatter(*args, **kwargs):
+    return _wrap_op("scatter", msc_ops.scatter.scatter)(*args, **kwargs)
+
+
+def scatter_update(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.scatter_update is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def separable_conv2d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+from ml_switcheroo_compiler.ops.shape.indexing import searchsorted as msc_searchsorted
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "separable_conv2d", getattr(msc_ops, "separable_conv2d")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def searchsorted(*args, **kwargs):
+    return _wrap_op("searchsorted", msc_searchsorted)(*args, **kwargs)
+
+
+def segment_max(*args, **kwargs):
+    return _wrap_op("segment_max", msc_ops.segment_max)(*args, **kwargs)
+
+
+def segment_mean(*args, **kwargs):
+    return _wrap_op("segment_mean", msc_ops.segment_mean)(*args, **kwargs)
+
+
+def segment_min(*args, **kwargs):
+    return _wrap_op("segment_min", msc_ops.segment_min)(*args, **kwargs)
+
+
+def segment_prod(*args, **kwargs):
+    return _wrap_op("segment_prod", msc_ops.segment_prod)(*args, **kwargs)
+
+
+def segment_sum(*args, **kwargs):
+    return _wrap_op("segment_sum", msc_ops.segment_sum)(*args, **kwargs)
+
+
+def segmented_mm(*args, **kwargs):
+    return _wrap_op("segmented_mm", msc_ops.segmented_mm)(*args, **kwargs)
+
+
+def select(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.select is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def set_printoptions(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "set_printoptions", getattr(msc_ops, "set_printoptions")
-    )(  # pragma: no cover
-        *args, **kwargs
+def selu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.selu is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def setdiff1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("setdiff1d", getattr(msc_ops, "setdiff1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def separable_conv(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.separable_conv is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def setxor1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def serialize_tensor(*args, **kwargs):
+    return _wrap_op("serialize_tensor", msc_ops.serialize_tensor)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("setxor1d", getattr(msc_ops, "setxor1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
 
+def set_default_stream(*args, **kwargs):
+    return _wrap_op("set_default_stream", msc_ops.set_default_stream)(*args, **kwargs)
+
+
+def set_diag(*args, **kwargs):
+    return _wrap_op("set_diag", msc_ops.set_diag)(*args, **kwargs)
+
+
+def set_memory_limit(*args, **kwargs):
+    return _wrap_op("set_memory_limit", msc_ops.set_memory_limit)(*args, **kwargs)
+
+
+def set_wired_limit(*args, **kwargs):
+    return _wrap_op("set_wired_limit", msc_ops.set_wired_limit)(*args, **kwargs)
+
+
+sets = msc_ops.sets
 
 shape = msc_ops.shape
 
 shape_inference = msc_ops.shape_inference
 
 
-def shard_tensor(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def sharpen(*args, **kwargs):
+    return _wrap_op("sharpen", msc_ops.sharpen)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
+
+def shifted_chebyshev_polynomial_t(*args, **kwargs):
     return _wrap_op(
-        "shard_tensor", getattr(msc_ops, "shard_tensor")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+        "shifted_chebyshev_polynomial_t",
+        msc_ops.shifted_chebyshev_polynomial_t,
+    )(*args, **kwargs)
 
 
-def sharpen(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sharpen", getattr(msc_ops, "sharpen"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def shifted_chebyshev_polynomial_u(*args, **kwargs):
+    return _wrap_op(
+        "shifted_chebyshev_polynomial_u",
+        msc_ops.shifted_chebyshev_polynomial_u,
+    )(*args, **kwargs)
 
 
-def sigmoid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sigmoid", getattr(msc_ops, "sigmoid"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def shifted_chebyshev_polynomial_v(*args, **kwargs):
+    return _wrap_op(
+        "shifted_chebyshev_polynomial_v",
+        msc_ops.shifted_chebyshev_polynomial_v,
+    )(*args, **kwargs)
 
 
-def sign(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sign", getattr(msc_ops, "sign"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def shifted_chebyshev_polynomial_w(*args, **kwargs):
+    return _wrap_op(
+        "shifted_chebyshev_polynomial_w",
+        msc_ops.shifted_chebyshev_polynomial_w,
+    )(*args, **kwargs)
 
 
-def signbit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("signbit", getattr(msc_ops, "signbit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def sigmoid(*args, **kwargs):
+    return _wrap_op("sigmoid", msc_ops.activations.sigmoid)(*args, **kwargs)
 
 
-signedinteger = msc_ops.signedinteger
+def sign(*args, **kwargs):
+    return _wrap_op("sign", msc_ops.sign)(*args, **kwargs)
 
 
-def silu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("silu", getattr(msc_ops, "silu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+signal = msc_ops.signal
 
 
-def simple_rnn_cell(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def signbit(*args, **kwargs):
+    return _wrap_op("signbit", msc_ops.signbit)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "simple_rnn_cell", getattr(msc_ops, "simple_rnn_cell")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def silu(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.silu is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def sin(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sin", getattr(msc_ops, "sin"))(*args, **kwargs)  # pragma: no cover
+def sin(*args, **kwargs):
+    return _wrap_op("sin", msc_ops.sin)(*args, **kwargs)
 
 
-def sinc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sinc", getattr(msc_ops, "sinc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def sinc(*args, **kwargs):
+    return _wrap_op("sinc", msc_ops.sinc)(*args, **kwargs)
 
 
-single = msc_ops.single
+def sinh(*args, **kwargs):
+    return _wrap_op("sinh", msc_ops.sinh)(*args, **kwargs)
 
 
-def sinh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sinh", getattr(msc_ops, "sinh"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def size(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("size", getattr(msc_ops, "size"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("slice", getattr(msc_ops, "slice"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def slice_update(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "slice_update", getattr(msc_ops, "slice_update")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def slogdet(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("slogdet", getattr(msc_ops, "slogdet"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def sobol_sample(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "sobol_sample", getattr(msc_ops, "sobol_sample")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def soft_shrink(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("soft_shrink", getattr(msc_ops, "soft_shrink"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def softmax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("softmax", getattr(msc_ops, "softmax"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def softplus(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("softplus", getattr(msc_ops, "softplus"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def softsign(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("softsign", getattr(msc_ops, "softsign"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def solarize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("solarize", getattr(msc_ops, "solarize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def solve(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("solve", getattr(msc_ops, "solve"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def solve_triangular(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "solve_triangular", getattr(msc_ops, "solve_triangular")
-    )(  # pragma: no cover
-        *args, **kwargs
+def size(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.size is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def sort(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sort", getattr(msc_ops, "sort"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def slice(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.slice is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def sort_complex(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def slice_update(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.slice_update is not yet implemented in ml-switcheroo-compiler"
+    )
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "sort_complex", getattr(msc_ops, "sort_complex")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+
+slicing = msc_ops.slicing
+
+
+def slogdet(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.slogdet is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def smm(*args, **kwargs):
+    return _wrap_op("smm", msc_ops.smm)(*args, **kwargs)
+
+
+def sobol_sample(*args, **kwargs):
+    return _wrap_op("sobol_sample", msc_ops.sobol_sample)(*args, **kwargs)
+
+
+def soft_shrink(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.soft_shrink is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def softmax(*args, **kwargs):
+    return _wrap_op("softmax", msc_ops.activations.softmax)(*args, **kwargs)
+
+
+def softplus(*args, **kwargs):
+    return _wrap_op("softplus", msc_ops.activations.softplus)(*args, **kwargs)
+
+
+def softsign(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.softsign is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def solarize(*args, **kwargs):
+    return _wrap_op("solarize", msc_ops.solarize)(*args, **kwargs)
+
+
+def solve(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.solve is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+def solve_triangular(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.solve_triangular is not yet implemented in ml-switcheroo-compiler"
+    )
+
+
+from ml_switcheroo_compiler.ops.shape.misc import sort as msc_sort
+
+
+def sort(*args, **kwargs):
+    if "axis" in kwargs:
+        kwargs["dim"] = kwargs.pop("axis")
+    return _wrap_op("sort", msc_sort)(*args, **kwargs)
+
+
+space_batch = msc_ops.space_batch
+
+
+def space_to_batch(*args, **kwargs):
+    return _wrap_op("space_to_batch", msc_ops.space_to_batch)(*args, **kwargs)
+
+
+def space_to_batch_nd(*args, **kwargs):
+    return _wrap_op("space_to_batch_nd", msc_ops.space_to_batch_nd)(*args, **kwargs)
 
 
 sparse = msc_ops.sparse
 
 
-def sparse_categorical_crossentropy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "sparse_categorical_crossentropy",
-        getattr(msc_ops, "sparse_categorical_crossentropy"),
-    )(*args, **kwargs)
-
-
-def sparse_plus(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sparse_plus", getattr(msc_ops, "sparse_plus"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def sparse_sigmoid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "sparse_sigmoid", getattr(msc_ops, "sparse_sigmoid")
-    )(  # pragma: no cover
-        *args, **kwargs
+def sparse_categorical_crossentropy(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.sparse_categorical_crossentropy is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def sparsemax(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def sparse_concat(*args, **kwargs):
+    return _wrap_op("sparse_concat", msc_ops.sparse_concat)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sparsemax", getattr(msc_ops, "sparsemax"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+
+def sparse_eye(*args, **kwargs):
+    return _wrap_op("sparse_eye", msc_ops.sparse_eye)(*args, **kwargs)
+
+
+def sparse_maximum(*args, **kwargs):
+    return _wrap_op("sparse_maximum", msc_ops.sparse_maximum)(*args, **kwargs)
+
+
+def sparse_plus(*args, **kwargs):
+    return _wrap_op("sparse_plus", msc_ops.sparse_plus)(*args, **kwargs)
+
+
+def sparse_reorder(*args, **kwargs):
+    return _wrap_op("sparse_reorder", msc_ops.sparse_reorder)(*args, **kwargs)
+
+
+def sparse_segment_mean(*args, **kwargs):
+    return _wrap_op("sparse_segment_mean", msc_ops.sparse_segment_mean)(*args, **kwargs)
+
+
+def sparse_sigmoid(*args, **kwargs):
+    return _wrap_op("sparse_sigmoid", msc_ops.sparse_sigmoid)(*args, **kwargs)
+
+
+def sparse_softmax(*args, **kwargs):
+    return _wrap_op("sparse_softmax", msc_ops.sparse_softmax)(*args, **kwargs)
+
+
+def sparse_split(*args, **kwargs):
+    return _wrap_op("sparse_split", msc_ops.sparse_split)(*args, **kwargs)
+
+
+def sparse_to_dense(*args, **kwargs):
+    return _wrap_op("sparse_to_dense", msc_ops.sparse_to_dense)(*args, **kwargs)
+
+
+def sparsemax(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.sparsemax is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
 special = msc_ops.special
 
-
-def spectral_normalization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "spectral_normalization", getattr(msc_ops, "spectral_normalization")
-    )(*args, **kwargs)
+from ml_switcheroo_compiler.ops.shape.splitting import split as msc_split
 
 
-def split(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("split", getattr(msc_ops, "split"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def split(*args, **kwargs):
+    if "axis" in kwargs:
+        kwargs["dim"] = kwargs.pop("axis")
+    return _wrap_op("split", msc_split)(*args, **kwargs)
 
 
-def sqrt(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sqrt", getattr(msc_ops, "sqrt"))(
-        *args, **kwargs
-    )  # pragma: no cover
+splitting = msc_ops.splitting
 
 
-def square(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("square", getattr(msc_ops, "square"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def sqrt(*args, **kwargs):
+    return _wrap_op("sqrt", msc_ops.sqrt)(*args, **kwargs)
 
 
-def squareplus(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("squareplus", getattr(msc_ops, "squareplus"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def sqrtm(*args, **kwargs):
+    return _wrap_op("sqrtm", msc_ops.sqrtm)(*args, **kwargs)
 
 
-def squeeze(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("squeeze", getattr(msc_ops, "squeeze"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def square(*args, **kwargs):
+    return _wrap_op("square", msc_ops.square)(*args, **kwargs)
 
 
-def stack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def squared_difference(*args, **kwargs):
+    return _wrap_op("squared_difference", msc_ops.squared_difference)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("stack", getattr(msc_ops, "stack"))(
-        *args, **kwargs
-    )  # pragma: no cover
+
+def squareplus(*args, **kwargs):
+    return _wrap_op("squareplus", msc_ops.activations.squareplus)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.shape.frontend import squeeze as msc_squeeze
+
+
+def squeeze(*args, **kwargs):
+    return _wrap_op("squeeze", msc_squeeze)(*args, **kwargs)
+
+
+def stack(*args, **kwargs):
+    return _wrap_op("stack", msc_ops.stack)(*args, **kwargs)
 
 
 state = msc_ops.state
 
-
-def std(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("std", getattr(msc_ops, "std"))(*args, **kwargs)  # pragma: no cover
+stats = msc_ops.stats
 
 
-def stft(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("stft", getattr(msc_ops, "stft"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def std(*args, **kwargs):
+    return _wrap_op("std", msc_ops.std)(*args, **kwargs)
 
 
-def stop_gradient(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("stop_gradient", getattr(msc_ops, "stop_gradient"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def stft(*args, **kwargs):
+    return _wrap_op("stft", msc_ops.stft)(*args, **kwargs)
 
 
-def strided_slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "strided_slice", getattr(msc_ops, "strided_slice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def stop_gradient(*args, **kwargs):
+    return _wrap_op("stop_gradient", msc_ops.stop_gradient)(*args, **kwargs)
 
 
-def string_lower(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "string_lower", getattr(msc_ops, "string_lower")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def stop_gradient_eager(*args, **kwargs):
+    return _wrap_op("stop_gradient_eager", msc_ops.stop_gradient_eager)(*args, **kwargs)
 
 
-def string_split(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "string_split", getattr(msc_ops, "string_split")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def string_to_hash(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "string_to_hash", getattr(msc_ops, "string_to_hash")
-    )(  # pragma: no cover
+def stop_gradient_tracing(*args, **kwargs):
+    return _wrap_op("stop_gradient_tracing", msc_ops.stop_gradient_tracing)(
         *args, **kwargs
     )
 
 
-def string_to_number(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def string_join(*args, **kwargs):
+    return _wrap_op("string_join", msc_ops.string_join)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "string_to_number", getattr(msc_ops, "string_to_number")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def string_length(*args, **kwargs):
+    return _wrap_op("string_length", msc_ops.string_length)(*args, **kwargs)
+
+
+def string_lower(*args, **kwargs):
+    return _wrap_op("string_lower", msc_ops.string_lower)(*args, **kwargs)
+
+
+def string_split(*args, **kwargs):
+    return _wrap_op("string_split", msc_ops.string_split)(*args, **kwargs)
+
+
+def string_substr(*args, **kwargs):
+    return _wrap_op("string_substr", msc_ops.string_substr)(*args, **kwargs)
+
+
+def string_to_hash(*args, **kwargs):
+    return _wrap_op("string_to_hash", msc_ops.string_to_hash)(*args, **kwargs)
+
+
+def string_to_number(*args, **kwargs):
+    return _wrap_op("string_to_number", msc_ops.string_to_number)(*args, **kwargs)
+
+
+def string_upper(*args, **kwargs):
+    return _wrap_op("string_upper", msc_ops.string_upper)(*args, **kwargs)
+
+
+def subtract(*args, **kwargs):
+    return _wrap_op("subtract", msc_ops.subtract)(*args, **kwargs)
+
+
+def sum(*args, **kwargs):
+    return _wrap_op("sum", msc_ops.sum)(*args, **kwargs)
+
+
+def svd(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.svd is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def string_upper(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "string_upper", getattr(msc_ops, "string_upper")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def svdvals(*args, **kwargs):
+    return _wrap_op("svdvals", msc_ops.svdvals)(*args, **kwargs)
 
 
-def subtract(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("subtract", getattr(msc_ops, "subtract"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def swapaxes(*args, **kwargs):
+    return _wrap_op("swapaxes", msc_ops.swapaxes)(*args, **kwargs)
 
 
-def sum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("sum", getattr(msc_ops, "sum"))(*args, **kwargs)  # pragma: no cover
-
-
-def svd(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("svd", getattr(msc_ops, "svd"))(*args, **kwargs)  # pragma: no cover
-
-
-def swapaxes(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("swapaxes", getattr(msc_ops, "swapaxes"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def swish(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("swish", getattr(msc_ops, "swish"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def switch(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("switch", getattr(msc_ops, "switch"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def take(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("take", getattr(msc_ops, "take"))(
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def take_along_axis(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "take_along_axis", getattr(msc_ops, "take_along_axis")
-    )(  # pragma: no cover
-        *args, **kwargs
+def swish(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.swish is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def tan(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tan", getattr(msc_ops, "tan"))(*args, **kwargs)  # pragma: no cover
+def switch(*args, **kwargs):
+    return _wrap_op("switch", msc_ops.switch)(*args, **kwargs)
 
 
-def tanh(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tanh", getattr(msc_ops, "tanh"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def switch_case(*args, **kwargs):
+    return _wrap_op("switch_case", msc_ops.switch_case)(*args, **kwargs)
 
 
-def tanh_shrink(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def synchronize(*args, **kwargs):
+    return _wrap_op("synchronize", msc_ops.synchronize)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tanh_shrink", getattr(msc_ops, "tanh_shrink"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+
+from ml_switcheroo_compiler.ops.shape.indexing import take as msc_take
+
+
+def take(*args, **kwargs):
+    return _wrap_op("take", msc_take)(*args, **kwargs)
+
+
+from ml_switcheroo_compiler.ops.shape.indexing import (
+    take_along_axis as msc_take_along_axis,
+)
+
+
+def take_along_axis(*args, **kwargs):
+    return _wrap_op("take_along_axis", msc_take_along_axis)(*args, **kwargs)
+
+
+def tan(*args, **kwargs):
+    return _wrap_op("tan", msc_ops.tan)(*args, **kwargs)
+
+
+def tanh(*args, **kwargs):
+    return _wrap_op("tanh", msc_ops.tanh)(*args, **kwargs)
+
+
+def tanh_shrink(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.tanh_shrink is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
 tensor_array = msc_ops.tensor_array
 
 
-def tensor_scatter_add(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "tensor_scatter_add", getattr(msc_ops, "tensor_scatter_add")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def tensor_diag(*args, **kwargs):
+    return _wrap_op("tensor_diag", msc_ops.tensor_diag)(*args, **kwargs)
 
 
-def tensor_scatter_max(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "tensor_scatter_max", getattr(msc_ops, "tensor_scatter_max")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def tensor_diag_part(*args, **kwargs):
+    return _wrap_op("tensor_diag_part", msc_ops.tensor_diag_part)(*args, **kwargs)
 
 
-def tensor_scatter_min(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "tensor_scatter_min", getattr(msc_ops, "tensor_scatter_min")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def tensordot(*args, **kwargs):
+    return _wrap_op("tensordot", msc_ops.tensordot)(*args, **kwargs)
 
 
-def tensor_scatter_update(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "tensor_scatter_update", getattr(msc_ops, "tensor_scatter_update")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def tensorinv(*args, **kwargs):
+    return _wrap_op("tensorinv", msc_ops.tensorinv)(*args, **kwargs)
 
 
-def tensordot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tensordot", getattr(msc_ops, "tensordot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def tensorsolve(*args, **kwargs):
+    return _wrap_op("tensorsolve", msc_ops.tensorsolve)(*args, **kwargs)
 
 
 text = msc_ops.text
 
 
-def text_vectorization(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def text_vectorization(*args, **kwargs):
+    return _wrap_op("text_vectorization", msc_ops.text_vectorization)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "text_vectorization", getattr(msc_ops, "text_vectorization")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def threshold(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.threshold is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def threshold(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("threshold", getattr(msc_ops, "threshold"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.shape.misc import tile as msc_tile
 
 
-def tile(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tile", getattr(msc_ops, "tile"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def tile(*args, **kwargs):
+    return _wrap_op("tile", msc_tile)(*args, **kwargs)
 
 
-def time_distributed(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+from ml_switcheroo_compiler.ops.shape.misc import top_k as msc_top_k
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "time_distributed", getattr(msc_ops, "time_distributed")
-    )(  # pragma: no cover
-        *args, **kwargs
+
+def top_k(*args, **kwargs):
+    return _wrap_op("top_k", msc_top_k)(*args, **kwargs)
+
+
+def trace(*args, **kwargs):
+    return _wrap_op("trace", msc_ops.trace)(*args, **kwargs)
+
+
+tracing = msc_ops.tracing
+
+from ml_switcheroo_compiler.ops.shape.frontend import permute as msc_permute
+
+
+def transpose(*args, **kwargs):
+    if "axes" in kwargs:
+        kwargs["dims"] = kwargs.pop("axes")
+    elif len(args) > 1:
+        args = list(args)
+        dims = args.pop(1)
+        kwargs["dims"] = dims
+    return _wrap_op("transpose", msc_permute)(*args, **kwargs)
+
+
+def tri(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.tri is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def top_k(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("top_k", getattr(msc_ops, "top_k"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def triangular_solve(*args, **kwargs):
+    return _wrap_op("triangular_solve", msc_ops.triangular_solve)(*args, **kwargs)
 
 
-def trace(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("trace", getattr(msc_ops, "trace"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def tridiagonal_matmul(*args, **kwargs):
+    return _wrap_op("tridiagonal_matmul", msc_ops.tridiagonal_matmul)(*args, **kwargs)
 
 
-def transpose(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("transpose", getattr(msc_ops, "transpose"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def tridiagonal_solve(*args, **kwargs):
+    return _wrap_op("tridiagonal_solve", msc_ops.tridiagonal_solve)(*args, **kwargs)
 
 
-def trapezoid(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("trapezoid", getattr(msc_ops, "trapezoid"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+trigonometric = msc_ops.trigonometric
 
 
-def tri(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tri", getattr(msc_ops, "tri"))(*args, **kwargs)  # pragma: no cover
+def tril(x, k=0):
+    return _wrap_op("band_part", msc_ops.band_part)(x, -1, k)
 
 
-def tril(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("tril", getattr(msc_ops, "tril"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def triu(x, k=0):
+    return _wrap_op("band_part", msc_ops.band_part)(x, k, -1)
 
 
-def tril_indices(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "tril_indices", getattr(msc_ops, "tril_indices")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def true_divide(*args, **kwargs):
+    return _wrap_op("true_divide", msc_ops.true_divide)(*args, **kwargs)
 
 
-def tril_indices_from(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "tril_indices_from", getattr(msc_ops, "tril_indices_from")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def trunc(*args, **kwargs):
+    return _wrap_op("trunc", msc_ops.trunc)(*args, **kwargs)
 
 
-def trim_zeros(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("trim_zeros", getattr(msc_ops, "trim_zeros"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def truncatediv(*args, **kwargs):
+    return _wrap_op("truncatediv", msc_ops.truncatediv)(*args, **kwargs)
 
 
-def triu(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("triu", getattr(msc_ops, "triu"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def triu_indices(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "triu_indices", getattr(msc_ops, "triu_indices")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def triu_indices_from(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "triu_indices_from", getattr(msc_ops, "triu_indices_from")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
-
-
-def true_divide(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("true_divide", getattr(msc_ops, "true_divide"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def trunc(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("trunc", getattr(msc_ops, "trunc"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def truncatemod(*args, **kwargs):
+    return _wrap_op("truncatemod", msc_ops.truncatemod)(*args, **kwargs)
 
 
 type_inference = msc_ops.type_inference
 
-ufunc = msc_ops.ufunc
-
-uint = msc_ops.uint
-
-uint16 = msc_ops.uint16
-
-uint32 = msc_ops.uint32
-
-uint4 = msc_ops.uint4
-
-uint64 = msc_ops.uint64
-
-uint8 = msc_ops.uint8
-
 unary = msc_ops.unary
 
 
-def union1d(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("union1d", getattr(msc_ops, "union1d"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def unravel_index(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.unravel_index is not yet implemented in ml-switcheroo-compiler"
+    )
 
 
-def unique(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unique", getattr(msc_ops, "unique"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def unique_all(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unique_all", getattr(msc_ops, "unique_all"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def unique_counts(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "unique_counts", getattr(msc_ops, "unique_counts")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def unique_inverse(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unique_inverse", getattr(msc_ops, "unique_inverse")
-    )(  # pragma: no cover
+def unsorted_segment_max(*args, **kwargs):
+    return _wrap_op("unsorted_segment_max", msc_ops.unsorted_segment_max)(
         *args, **kwargs
     )
 
 
-def unique_values(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "unique_values", getattr(msc_ops, "unique_values")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def unpackbits(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unpackbits", getattr(msc_ops, "unpackbits"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def unravel_index(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "unravel_index", getattr(msc_ops, "unravel_index")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-unsignedinteger = msc_ops.unsignedinteger
-
-
-def unsorted_segment_max(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_max", getattr(msc_ops, "unsorted_segment_max")
-    )(  # pragma: no cover
+def unsorted_segment_mean(*args, **kwargs):
+    return _wrap_op("unsorted_segment_mean", msc_ops.unsorted_segment_mean)(
         *args, **kwargs
     )
 
 
-def unsorted_segment_mean(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_mean", getattr(msc_ops, "unsorted_segment_mean")
-    )(  # pragma: no cover
+def unsorted_segment_min(*args, **kwargs):
+    return _wrap_op("unsorted_segment_min", msc_ops.unsorted_segment_min)(
         *args, **kwargs
     )
 
 
-def unsorted_segment_min(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_min", getattr(msc_ops, "unsorted_segment_min")
-    )(  # pragma: no cover
+def unsorted_segment_prod(*args, **kwargs):
+    return _wrap_op("unsorted_segment_prod", msc_ops.unsorted_segment_prod)(
         *args, **kwargs
     )
 
 
-def unsorted_segment_prod(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_prod", getattr(msc_ops, "unsorted_segment_prod")
-    )(  # pragma: no cover
+def unsorted_segment_sqrt_n(*args, **kwargs):
+    return _wrap_op("unsorted_segment_sqrt_n", msc_ops.unsorted_segment_sqrt_n)(
         *args, **kwargs
     )
 
 
-def unsorted_segment_sqrt_n(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_sqrt_n", getattr(msc_ops, "unsorted_segment_sqrt_n")
-    )(*args, **kwargs)
-
-
-def unsorted_segment_sum(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "unsorted_segment_sum", getattr(msc_ops, "unsorted_segment_sum")
-    )(  # pragma: no cover
+def unsorted_segment_sum(*args, **kwargs):
+    return _wrap_op("unsorted_segment_sum", msc_ops.unsorted_segment_sum)(
         *args, **kwargs
     )
 
 
-def unsqueeze(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unsqueeze", getattr(msc_ops, "unsqueeze"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def unstack(*args, **kwargs):
+    return _wrap_op("unstack", msc_ops.unstack)(*args, **kwargs)
 
 
-def unstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unstack", getattr(msc_ops, "unstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+utils = msc_ops.utils
 
 
-def unwrap(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("unwrap", getattr(msc_ops, "unwrap"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def var(*args, **kwargs):
+    return _wrap_op("variance", msc_ops.variance)(*args, **kwargs)
 
 
-def update_slice(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "update_slice", getattr(msc_ops, "update_slice")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def variance(*args, **kwargs):
+    return _wrap_op("variance", msc_ops.variance)(*args, **kwargs)
 
 
-def vander(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vander", getattr(msc_ops, "vander"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def vdot(*args, **kwargs):
+    return _wrap_op("vdot", msc_ops.vdot)(*args, **kwargs)
 
 
-def var(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("var", getattr(msc_ops, "var"))(*args, **kwargs)  # pragma: no cover
+def vecdot(*args, **kwargs):
+    return _wrap_op("vecdot", msc_ops.vecdot)(*args, **kwargs)
 
 
-def variance(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("variance", getattr(msc_ops, "variance"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def vector_norm(*args, **kwargs):
+    return _wrap_op("vector_norm", msc_ops.vector_norm)(*args, **kwargs)
 
 
-def vdot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vdot", getattr(msc_ops, "vdot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def vecdot(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vecdot", getattr(msc_ops, "vecdot"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def vectorize(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vectorize", getattr(msc_ops, "vectorize"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
-
-
-def vectorized_map(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "vectorized_map", getattr(msc_ops, "vectorized_map")
-    )(  # pragma: no cover
-        *args, **kwargs
+def vectorize(*args, **kwargs):
+    raise NotImplementedError(
+        "ops.vectorize is not yet implemented in ml-switcheroo-compiler"
     )
 
 
-def view_as_complex(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(  # pragma: no cover
-        "view_as_complex", getattr(msc_ops, "view_as_complex")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )
+def vectorized_map(*args, **kwargs):
+    return _wrap_op("vectorized_map", msc_ops.vectorized_map)(*args, **kwargs)
 
 
-def view_as_real(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
+def view_as_complex(*args, **kwargs):
+    return _wrap_op("view_as_complex", msc_ops.view_as_complex)(*args, **kwargs)
 
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op(
-        "view_as_real", getattr(msc_ops, "view_as_real")
-    )(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+
+def view_as_real(*args, **kwargs):
+    return _wrap_op("view_as_real", msc_ops.view_as_real)(*args, **kwargs)
 
 
 vision = msc_ops.vision
 
 
-def vsplit(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vsplit", getattr(msc_ops, "vsplit"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def vmap(*args, **kwargs):
+    return _wrap_op("vmap", msc_ops.vmap)(*args, **kwargs)
 
 
-def vstack(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("vstack", getattr(msc_ops, "vstack"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def vsplit(*args, **kwargs):
+    return _wrap_op("vsplit", msc_ops.vsplit)(*args, **kwargs)
 
 
-def where(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("where", getattr(msc_ops, "where"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def vstack(*args, **kwargs):
+    return _wrap_op("vstack", msc_ops.vstack)(*args, **kwargs)
 
 
-def while_loop(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("while_loop", getattr(msc_ops, "while_loop"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def welch(*args, **kwargs):
+    return _wrap_op("welch", msc_ops.welch)(*args, **kwargs)
 
 
-def xlogy(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("xlogy", getattr(msc_ops, "xlogy"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+from ml_switcheroo_compiler.ops.shape.indexing import where as msc_where
 
 
-def zeros(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("zeros", getattr(msc_ops, "zeros"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def where(*args, **kwargs):
+    return _wrap_op("where", msc_where)(*args, **kwargs)
 
 
-def zeros_like(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("zeros_like", getattr(msc_ops, "zeros_like"))(
-        *args, **kwargs
-    )  # pragma: no cover
+def while_loop(*args, **kwargs):
+    return _wrap_op("while_loop", msc_ops.while_loop)(*args, **kwargs)
 
 
-def zeta(*args, **kwargs):  # pragma: no cover
-    """Function docstring.
-
-    Args:
-        args: Description.
-        kwargs: Description.
-    """
-    return _wrap_op("zeta", getattr(msc_ops, "zeta"))(  # pragma: no cover
-        *args, **kwargs
-    )  # pragma: no cover
+def while_loop_eager(*args, **kwargs):
+    return _wrap_op("while_loop_eager", msc_ops.while_loop_eager)(*args, **kwargs)
 
 
-import sys
+def while_loop_tracing(*args, **kwargs):
+    return _wrap_op("while_loop_tracing", msc_ops.while_loop_tracing)(*args, **kwargs)
 
-ops = sys.modules[__name__]
+
+def window_hamming(*args, **kwargs):
+    return _wrap_op("window_hamming", msc_ops.window_hamming)(*args, **kwargs)
+
+
+def window_hann(*args, **kwargs):
+    return _wrap_op("window_hann", msc_ops.window_hann)(*args, **kwargs)
+
+
+def write_file(*args, **kwargs):
+    return _wrap_op("write_file", msc_ops.write_file)(*args, **kwargs)
+
+
+def xdivy(*args, **kwargs):
+    return _wrap_op("xdivy", msc_ops.xdivy)(*args, **kwargs)
+
+
+def xlog1py(*args, **kwargs):
+    return _wrap_op("xlog1py", msc_ops.xlog1py)(*args, **kwargs)
+
+
+def xlogy(*args, **kwargs):
+    return _wrap_op("xlogy", msc_ops.xlogy)(*args, **kwargs)
+
+
+def yiq_to_rgb(*args, **kwargs):
+    return _wrap_op("yiq_to_rgb", msc_ops.yiq_to_rgb)(*args, **kwargs)
+
+
+def yuv_to_rgb(*args, **kwargs):
+    return _wrap_op("yuv_to_rgb", msc_ops.yuv_to_rgb)(*args, **kwargs)
+
+
+def zero_fraction(*args, **kwargs):
+    return _wrap_op("zero_fraction", msc_ops.zero_fraction)(*args, **kwargs)
+
+
+def zeros(*args, **kwargs):
+    return _wrap_op("zeros", msc_ops.zeros)(*args, **kwargs)
+
+
+def zeros_like(*args, **kwargs):
+    return _wrap_op("zeros_like", msc_ops.zeros_like)(*args, **kwargs)
+
+
+def zeta(*args, **kwargs):
+    return _wrap_op("zeta", msc_ops.zeta)(*args, **kwargs)
+
+
+class _OpsNamespace:
+    def __getattr__(self, name):
+        if name in globals():
+            return globals()[name]
+        raise AttributeError(f"module 'zero_keras.ops' has no attribute '{name}'")
+
+
+ops = _OpsNamespace()

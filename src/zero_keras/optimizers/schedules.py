@@ -1,7 +1,8 @@
 """Learning rate schedules."""
 
+from __future__ import annotations
+
 import math
-from typing import List, Optional, Union
 
 
 class LearningRateSchedule:
@@ -53,9 +54,9 @@ class LearningRateSchedule:
         Args:
             kwargs: Description.
         """
-        pass  # pragma: no cover
+        # pragma: no cover
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         return 0.0  # pragma: no cover
 
@@ -172,7 +173,7 @@ class CosineDecay(LearningRateSchedule):
         decay_steps: int,
         alpha: float = 0.0,
         name: str = "CosineDecay",
-        warmup_target: Optional[float] = None,
+        warmup_target: float | None = None,
         warmup_steps: int = 0,
     ):
         """Function docstring.
@@ -192,7 +193,7 @@ class CosineDecay(LearningRateSchedule):
         self.warmup_steps = warmup_steps
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         step = float(step)
         decay_steps = float(self.decay_steps)
@@ -311,7 +312,7 @@ class ExponentialDecay(LearningRateSchedule):
         self.staircase = staircase
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         p = step / self.decay_steps
         if self.staircase:
@@ -411,7 +412,7 @@ class CosineDecayRestarts(LearningRateSchedule):
         self.alpha = alpha
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         # Standard implementation of cosine decay with restarts
         step = float(step)
@@ -544,7 +545,7 @@ class InverseTimeDecay(LearningRateSchedule):
         self.staircase = staircase
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         p = step / self.decay_steps
         if self.staircase:
@@ -620,8 +621,8 @@ class PiecewiseConstantDecay(LearningRateSchedule):
 
     def __init__(
         self,
-        boundaries: List[int],
-        values: List[float],
+        boundaries: list[int],
+        values: list[float],
         name: str = "PiecewiseConstantDecay",
     ):
         """Function docstring.
@@ -635,7 +636,7 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         self.values = values
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         for boundary, value in zip(self.boundaries, self.values):
             if step <= boundary:
@@ -760,7 +761,7 @@ class PolynomialDecay(LearningRateSchedule):
         self.cycle = cycle
         self.name = name
 
-    def __call__(self, step: Union[int, float]) -> float:
+    def __call__(self, step: float) -> float:
         """Call self as a function."""
         step = float(step)
         decay_steps = float(self.decay_steps)

@@ -1,33 +1,9 @@
 """Module docstring."""
 
+from zero_keras.applications.resnet import (
+    ResNet50,
+    decode_predictions,
+    preprocess_input,
+)
 
-def ResNet50(*args, **kwargs):
-    """ResNet50 docstring.
-
-    Args:
-        *args: Args.
-        **kwargs: Kwargs.
-    """
-    from zero_keras.core_layers import Model
-
-    return Model()
-
-
-def decode_predictions(*args, **kwargs):
-    """decode_predictions docstring.
-
-    Args:
-        *args: Args.
-        **kwargs: Kwargs.
-    """
-    return []
-
-
-def preprocess_input(*args, **kwargs):
-    """preprocess_input docstring.
-
-    Args:
-        *args: Args.
-        **kwargs: Kwargs.
-    """
-    return args[0] if args else None
+__all__ = ["ResNet50", "decode_predictions", "preprocess_input"]

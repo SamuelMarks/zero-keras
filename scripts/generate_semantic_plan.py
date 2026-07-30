@@ -38,6 +38,5 @@ with open("SEMANTIC_PLAN.md", "w") as f:
 
     for namespace in sorted(modules.keys()):
         f.write(f"## {namespace}\n\n")
-        for fqn in sorted(modules[namespace]):
-            f.write(f"- [x] `{fqn}`\n")
+        f.writelines(f"- [x] `{fqn}`\n" for fqn in sorted(modules[namespace]))
         f.write("\n")

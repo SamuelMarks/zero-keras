@@ -28,7 +28,7 @@ class DataParallel:
         Args:
             data_shape: Data shape.
         """
-        return None
+        return
 
     def get_tensor_layout(self, tensor_shape):
         """get_tensor_layout docstring.
@@ -36,7 +36,7 @@ class DataParallel:
         Args:
             tensor_shape: Tensor shape.
         """
-        return None
+        return
 
     def get_variable_layout(self, variable):
         """get_variable_layout docstring.
@@ -44,7 +44,7 @@ class DataParallel:
         Args:
             variable: Variable.
         """
-        return None
+        return
 
     def scope(self):
         """scope docstring."""
@@ -55,12 +55,8 @@ class DataParallel:
             def __enter__(self):
                 """docstring."""
 
-                pass
-
             def __exit__(self, *args):
                 """docstring."""
-
-                pass
 
         return DummyScope()
 
@@ -92,17 +88,21 @@ class DeviceMesh:
 class LayoutMap:
     """LayoutMap docstring."""
 
+    def __init__(self, device_mesh=None):
+        self._device_mesh = device_mesh
+        self._mapping = {}
+
     def __iter__(self):
         """__iter__ docstring."""
-        return iter({})
+        return iter(self._mapping)
 
     def __len__(self):
         """__len__ docstring."""
-        return 0
+        return len(self._mapping)
 
     def clear(self):
         """clear docstring."""
-        pass
+        self._mapping.clear()
 
     @property
     def device_mesh(self):
@@ -111,11 +111,11 @@ class LayoutMap:
 
     def items(self):
         """items docstring."""
-        return {}.items()
+        return self._mapping.items()
 
     def keys(self):
         """keys docstring."""
-        return {}.keys()
+        return self._mapping.keys()
 
     def pop(self, key, default=None):
         """pop docstring.
@@ -128,7 +128,7 @@ class LayoutMap:
 
     def popitem(self):
         """popitem docstring."""
-        return None
+        return self._mapping.popitem()
 
     def setdefault(self, key, default=None):
         """setdefault docstring.
@@ -145,7 +145,6 @@ class LayoutMap:
         Args:
             other: Other.
         """
-        pass
 
     def values(self):
         """values docstring."""
@@ -165,6 +164,11 @@ class ModelParallel:
         """device_mesh docstring."""
         return getattr(self, "_device_mesh", None)
 
+    @property
+    def layout_map(self):
+        """layout_map docstring."""
+        return getattr(self, "_layout_map", None)
+
     def distribute_dataset(self, dataset):
         """distribute_dataset docstring.
 
@@ -179,7 +183,7 @@ class ModelParallel:
         Args:
             data_shape: Data shape.
         """
-        return None
+        return
 
     def get_tensor_layout(self, tensor_shape):
         """get_tensor_layout docstring.
@@ -187,7 +191,7 @@ class ModelParallel:
         Args:
             tensor_shape: Tensor shape.
         """
-        return None
+        return
 
     def get_variable_layout(self, variable):
         """get_variable_layout docstring.
@@ -195,7 +199,7 @@ class ModelParallel:
         Args:
             variable: Variable.
         """
-        return None
+        return
 
     def scope(self):
         """scope docstring."""
@@ -206,12 +210,8 @@ class ModelParallel:
             def __enter__(self):
                 """docstring."""
 
-                pass
-
             def __exit__(self, *args):
                 """docstring."""
-
-                pass
 
         return DummyScope()
 
@@ -233,3 +233,39 @@ class TensorLayout:
     def device_mesh(self):
         """device_mesh docstring."""
         return getattr(self, "_device_mesh", None)
+
+
+def distribute_tensor(tensor, layout):
+    """distribute_tensor docstring.
+
+    Args:
+        tensor: Tensor to distribute.
+        layout: Layout to use.
+    """
+    return tensor
+
+
+def distribution():
+    """distribution docstring."""
+    from zero_keras.config import backend as backend_name
+
+    if backend_name() == "jax":
+        return DataParallel()
+    return None
+
+
+def initialize():
+    """initialize docstring."""
+
+
+def list_devices():
+    """list_devices docstring."""
+    return []
+
+
+def set_distribution(distribution):
+    """set_distribution docstring.
+
+    Args:
+        distribution: Distribution to set.
+    """

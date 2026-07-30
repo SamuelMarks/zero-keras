@@ -1,20 +1,21 @@
 """Module docstring."""
 
 import numpy as np
-import ml_switcheroo_compiler.ops as ops
+from ml_switcheroo_compiler import ops
+
 from zero_keras.layers import (
+    Bidirectional,
     Conv1D,
     Conv2D,
     Conv3D,
+    ConvLSTM1D,
     Cropping2D,
     Cropping3D,
-    SimpleRNNCell,
-    Bidirectional,
-    RMSNormalization,
-    GroupNormalization,
-    ConvLSTM1D,
-    SimpleRNN,
     Dense,
+    GroupNormalization,
+    RMSNormalization,
+    SimpleRNN,
+    SimpleRNNCell,
 )
 
 

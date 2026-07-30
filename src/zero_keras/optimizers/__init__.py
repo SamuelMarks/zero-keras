@@ -65,7 +65,6 @@ class Optimizer:
         Args:
             variables: Variables.
         """
-        pass
 
     def add_variable_from_reference(self, reference_variable, name=""):
         """add_variable_from_reference docstring.
@@ -74,7 +73,7 @@ class Optimizer:
             reference_variable: Reference variable.
             name: Name.
         """
-        return None
+        return
 
     def apply(self, grads, variables):
         """apply docstring.
@@ -83,7 +82,6 @@ class Optimizer:
             grads: Grads.
             variables: Variables.
         """
-        pass
 
     def assign(self, variable, value):
         """assign docstring.
@@ -92,7 +90,7 @@ class Optimizer:
             variable: Variable.
             value: Value.
         """
-        pass
+        variable.assign(value)
 
     def assign_add(self, variable, value):
         """assign_add docstring.
@@ -101,7 +99,7 @@ class Optimizer:
             variable: Variable.
             value: Value.
         """
-        pass
+        variable.assign(variable + value)
 
     def assign_sub(self, variable, value):
         """assign_sub docstring.
@@ -110,7 +108,7 @@ class Optimizer:
             variable: Variable.
             value: Value.
         """
-        pass
+        variable.assign(variable - value)
 
     def exclude_from_weight_decay(self, var_list=None, var_names=None):
         """exclude_from_weight_decay docstring.
@@ -119,7 +117,10 @@ class Optimizer:
             var_list: Var list.
             var_names: Var names.
         """
-        pass
+        if var_list:
+            self._exclude_from_weight_decay = set(var_list)
+        if var_names:
+            self._exclude_from_weight_decay_names = set(var_names)
 
     def finalize_variable_values(self, var_list):
         """finalize_variable_values docstring.
@@ -127,7 +128,7 @@ class Optimizer:
         Args:
             var_list: Var list.
         """
-        pass
+        # Handled automatically in most cases by variables
 
     @classmethod
     def from_config(cls, config):
@@ -170,7 +171,11 @@ class Optimizer:
         Args:
             store: Store.
         """
-        pass
+        if not hasattr(self, "variables") or not self.variables:
+            return
+        for i, var in enumerate(self.variables):
+            if str(i) in store:
+                var.assign(store[str(i)])
 
     def save_own_variables(self, store):
         """save_own_variables docstring.
@@ -178,7 +183,10 @@ class Optimizer:
         Args:
             store: Store.
         """
-        pass
+        if not hasattr(self, "variables") or not self.variables:
+            return
+        for i, var in enumerate(self.variables):
+            store[str(i)] = var.numpy()
 
     def scale_loss(self, loss):
         """scale_loss docstring.
@@ -194,7 +202,8 @@ class Optimizer:
         Args:
             weights: Weights.
         """
-        pass
+        for v, w in zip(self.variables, weights):
+            v.assign(w)
 
     def stateless_apply(self, optimizer_variables, grads, trainable_variables):
         """stateless_apply docstring.
@@ -204,7 +213,6 @@ class Optimizer:
             grads: Grads.
             trainable_variables: Trainable variables.
         """
-        pass
 
     def update_step(self, gradient, variable, learning_rate):
         """update_step docstring.
@@ -214,7 +222,7 @@ class Optimizer:
             variable: Variable.
             learning_rate: Learning rate.
         """
-        pass
+        self.assign_sub(variable, gradient * learning_rate)
 
     def __init__(self, **kwargs):
         """Function docstring.
@@ -228,8 +236,6 @@ class Optimizer:
 
         class DummyKerasOpt:
             """DummyKerasOpt class."""
-
-            pass
 
         DummyKerasOpt.__name__ = self.__class__.__name__
         self._keras_optimizer = DummyKerasOpt()
@@ -247,15 +253,20 @@ class Optimizer:
         Any: Return value.
 
         """
-        from zero_keras.ops import ops
         import ml_switcheroo_compiler.core.dtype as dtypes
+
+        from zero_keras import ops
+        from zero_keras.core_layers import Variable
 
         if isinstance(dtype, str):
             dtype = dtypes.DType(dtype)
         if initializer == "zeros":
-            var = ops.zeros(shape, dtype=dtype)
+            val = ops.zeros(shape, dtype=dtype)
         else:
-            var = ops.ones(shape, dtype=dtype)
+            val = ops.ones(shape, dtype=dtype)
+
+        var = Variable(initializer=initializer, shape=shape, dtype=dtype, name=name)
+        var.assign(val)
         self.variables.append(var)
         return var
 
@@ -271,7 +282,6 @@ class Optimizer:
         Any: Return value.
 
         """
-        pass
 
     def build(self, var_list):
         """Build function.
@@ -436,7 +446,7 @@ class Adadelta(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -466,12 +476,9 @@ class Adadelta(Optimizer):
                 delta_var
             )
 
-            try:
-                acc_g.assign(acc_g_new)
-                acc_delta.assign(acc_delta_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            acc_g.assign(acc_g_new)
+            acc_delta.assign(acc_delta_new)
+            var.assign(var_new)
 
 
 class Adafactor(Optimizer):
@@ -628,7 +635,7 @@ class Adafactor(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -644,11 +651,8 @@ class Adafactor(Optimizer):
             v = self.v[i]
             v_new = 0.9 * v + 0.1 * ops.square(g)
             var_new = var - lr * g / ops.sqrt(v_new + self.epsilon_2)
-            try:
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class Adagrad(Optimizer):
@@ -778,14 +782,12 @@ class Adagrad(Optimizer):
             return
         self.accumulator = []
         for var in var_list:
-            from zero_keras.ops import ops
+            from zero_keras import ops
 
             acc = self.add_variable(shape=var.shape, name="accumulator")
-            init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
-            try:
-                acc.assign(init_val)
-            except AttributeError:
-                pass
+
+            init_val = ops.ones(var.shape) * _to_tensor(self.initial_accumulator_value)
+            acc.assign(init_val)
             self.accumulator.append(acc)
         self.built = True
 
@@ -797,7 +799,7 @@ class Adagrad(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -816,11 +818,8 @@ class Adagrad(Optimizer):
 
             var_new = var - lr * g / ops.sqrt(acc_new + self.epsilon)
 
-            try:
-                acc.assign(acc_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            acc.assign(acc_new)
+            var.assign(var_new)
 
 
 class Adam(Optimizer):
@@ -958,16 +957,13 @@ class Adam(Optimizer):
         Any: Return value.
 
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
-        try:
-            self.iterations.assign(self.iterations + 1)
-        except AttributeError:
-            pass
+        self.iterations.assign(self.iterations + 1)
 
         t = self.iterations + 1
         lr_t = (
@@ -987,12 +983,9 @@ class Adam(Optimizer):
 
             var_new = var - lr_t * m_new / (ops.sqrt(v_new) + self.epsilon)
 
-            try:
-                m.assign(m_new)
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class AdamW(Optimizer):
@@ -1165,16 +1158,13 @@ class AdamW(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
-        try:
-            self.iterations.assign(self.iterations + 1)
-        except AttributeError:
-            pass
+        self.iterations.assign(self.iterations + 1)
 
         t = self.iterations + 1
         lr_t = (
@@ -1187,31 +1177,32 @@ class AdamW(Optimizer):
             if g is None:
                 continue
 
-            var_new = var - self.learning_rate * self.weight_decay * var
+            var_val = var
+            var_new = (
+                var_val
+                - ops.convert_to_tensor(self.learning_rate * self.weight_decay)
+                * var_val
+            )
 
             m = self.m[i]
             v = self.v[i]
+            m_val = m
+            v_val_opt = v
 
-            m_new = self.beta_1 * m + (1.0 - self.beta_1) * g
-            v_new = self.beta_2 * v + (1.0 - self.beta_2) * ops.square(g)
+            m_new = self.beta_1 * m_val + (1.0 - self.beta_1) * g
+            v_new = self.beta_2 * v_val_opt + (1.0 - self.beta_2) * ops.square(g)
 
             if self.amsgrad:
                 v_hat = self.v_hat[i]
                 v_hat_new = ops.maximum(v_hat, v_new)
                 var_new = var_new - lr_t * m_new / (ops.sqrt(v_hat_new) + self.epsilon)
-                try:
-                    v_hat.assign(v_hat_new)
-                except AttributeError:
-                    pass
+                v_hat.assign(v_hat_new)
             else:
                 var_new = var_new - lr_t * m_new / (ops.sqrt(v_new) + self.epsilon)
 
-            try:
-                m.assign(m_new)
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class Adamax(Optimizer):
@@ -1377,16 +1368,13 @@ class Adamax(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
-        try:
-            self.iterations.assign(self.iterations + 1)
-        except AttributeError:
-            pass
+        self.iterations.assign(self.iterations + 1)
 
         t = self.iterations + 1
         lr_t = self.learning_rate / (1.0 - ops.power(self.beta_1, t))
@@ -1403,12 +1391,9 @@ class Adamax(Optimizer):
 
             var_new = var - lr_t * m_new / (u_new + self.epsilon)
 
-            try:
-                m.assign(m_new)
-                u.assign(u_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            u.assign(u_new)
+            var.assign(var_new)
 
 
 class Ftrl(Optimizer):
@@ -1588,14 +1573,11 @@ class Ftrl(Optimizer):
         self.z = []
         self.n = []
         for var in var_list:
-            from zero_keras.ops import ops
+            from zero_keras import ops
 
             n_var = self.add_variable(shape=var.shape, name="n")
-            init_val = ops.ones_like(var) * _to_tensor(self.initial_accumulator_value)
-            try:
-                n_var.assign(init_val)
-            except AttributeError:
-                pass
+            init_val = ops.ones(var.shape) * _to_tensor(self.initial_accumulator_value)
+            n_var.assign(init_val)
             self.n.append(n_var)
             self.z.append(self.add_variable(shape=var.shape, name="z"))
         self.built = True
@@ -1608,7 +1590,7 @@ class Ftrl(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1627,12 +1609,9 @@ class Ftrl(Optimizer):
             sigma = (ops.sqrt(n_new) - ops.sqrt(n)) / lr
             z_new = z + g - sigma * var
             var_new = var - lr * z_new / ops.sqrt(n_new)
-            try:
-                n.assign(n_new)
-                z.assign(z_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            n.assign(n_new)
+            z.assign(z_new)
+            var.assign(var_new)
 
 
 class Lamb(Optimizer):
@@ -1783,7 +1762,7 @@ class Lamb(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1812,12 +1791,9 @@ class Lamb(Optimizer):
             )
 
             var_new = var - lr * ratio * update
-            try:
-                m.assign(m_new)
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class Lion(Optimizer):
@@ -1966,7 +1942,7 @@ class Lion(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -1986,11 +1962,8 @@ class Lion(Optimizer):
             var_new = var - lr * ops.sign(c)
             m_new = self.beta_2 * m + (1.0 - self.beta_2) * g
 
-            try:
-                m.assign(m_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            var.assign(var_new)
 
 
 class LossScaleOptimizer(Optimizer):
@@ -2231,7 +2204,7 @@ class Muon(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -2247,11 +2220,8 @@ class Muon(Optimizer):
             m = self.m[i]
             m_new = self.momentum * m + (1.0 - self.momentum) * g
             var_new = var - lr * m_new
-            try:
-                m.assign(m_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            var.assign(var_new)
 
 
 class Nadam(Optimizer):
@@ -2401,16 +2371,13 @@ class Nadam(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
-        try:
-            self.iterations.assign(self.iterations + 1)
-        except AttributeError:
-            pass
+        self.iterations.assign(self.iterations + 1)
 
         t = self.iterations + 1
 
@@ -2436,12 +2403,9 @@ class Nadam(Optimizer):
             m_hat = beta_1_t_next * m_new + (1.0 - beta_1_t) * g
             var_new = var - lr_t * m_hat / (ops.sqrt(v_new) + self.epsilon)
 
-            try:
-                m.assign(m_new)
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            m.assign(m_new)
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class RMSprop(Optimizer):
@@ -2614,7 +2578,7 @@ class RMSprop(Optimizer):
             args: Description.
             kwargs: Description.
         """
-        from zero_keras.ops import ops
+        from zero_keras import ops
 
         grads_and_vars = list(grads_and_vars)
         if not self.built:
@@ -2635,10 +2599,7 @@ class RMSprop(Optimizer):
                 mg = self.mg[i]
                 mg_new = self.rho * mg + (1.0 - self.rho) * g
                 denominator = v_new - ops.square(mg_new) + self.epsilon
-                try:
-                    mg.assign(mg_new)
-                except AttributeError:
-                    pass
+                mg.assign(mg_new)
             else:
                 denominator = v_new + self.epsilon
 
@@ -2648,18 +2609,12 @@ class RMSprop(Optimizer):
                 m = self.m[i]
                 m_new = self.momentum * m + lr * g / denominator
                 var_new = var - m_new
-                try:
-                    m.assign(m_new)
-                except AttributeError:
-                    pass
+                m.assign(m_new)
             else:
                 var_new = var - lr * g / denominator
 
-            try:
-                v.assign(v_new)
-                var.assign(var_new)
-            except AttributeError:
-                pass
+            v.assign(v_new)
+            var.assign(var_new)
 
 
 class SGD(Optimizer):
@@ -2793,8 +2748,6 @@ class SGD(Optimizer):
         Any: Return value.
 
         """
-        from zero_keras.ops import ops  # noqa: F401
-
         grads_and_vars = list(grads_and_vars)
         if not self.built:
             self.build([v for _, v in grads_and_vars])
@@ -2802,27 +2755,20 @@ class SGD(Optimizer):
         for i, (g, v) in enumerate(grads_and_vars):
             if g is None:
                 continue
+            v_val = v
             if self.momentum != 0:
                 m = self.momentums[i]
                 m_new = self.momentum * m - self.learning_rate * g
                 if self.nesterov:
-                    v_new = v + self.momentum * m_new - self.learning_rate * g
+                    v_new = v_val + self.momentum * m_new - self.learning_rate * g
                 else:
-                    v_new = v + m_new
+                    v_new = v_val + m_new
 
-                try:
-                    m.assign(m_new)
-                    v.assign(v_new)
-                except AttributeError:
-                    # In eager without proper variables, we can't assign in-place easily
-                    # but we mock it
-                    pass
+                m.assign(m_new)
+                v.assign(v_new)
             else:
-                v_new = v - self.learning_rate * g
-                try:
-                    v.assign(v_new)
-                except AttributeError:
-                    pass
+                v_new = v_val - self.learning_rate * g
+                v.assign(v_new)
 
 
 from . import schedules as schedules
@@ -2831,8 +2777,6 @@ from . import schedules as schedules
 # Legacy namespace support
 class legacy:
     """Class docstring."""
-
-    pass
 
 
 def serialize(optimizer):

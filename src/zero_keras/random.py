@@ -1,6 +1,16 @@
+import random as py_random
+
 """random API."""
 
 import ml_switcheroo_compiler.ops as msc_ops
+
+
+class RandomState:
+    def __init__(self, seed=None):
+        self._rng = py_random.Random(seed)
+
+    def shuffle(self, x):
+        self._rng.shuffle(x)
 
 
 class SeedGenerator:
@@ -52,7 +62,9 @@ def categorical(logits, num_samples, dtype=None, seed=None):  # pragma: no cover
 def dropout(inputs, rate, noise_shape=None, seed=None):  # pragma: no cover
     """dropout docstring."""
     return (
-        msc_ops.dropout(inputs, rate) if hasattr(msc_ops, "dropout") else inputs
+        msc_ops.dropout.dropout(inputs, rate=rate)
+        if hasattr(msc_ops, "dropout") and hasattr(msc_ops.dropout, "dropout")
+        else inputs
     )  # pragma: no cover
 
 
@@ -124,6 +136,7 @@ def uniform(shape, minval=0.0, maxval=1.0, dtype=None, seed=None):  # pragma: no
 
 
 __all__ = [
+    "RandomState",
     "SeedGenerator",
     "beta",
     "binomial",

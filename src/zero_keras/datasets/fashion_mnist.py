@@ -3,9 +3,7 @@
 import gzip
 import os
 
-
-np = __import__("nu" + "mpy")
-
+from zero_keras import ops
 from zero_keras.utils.generic_utils import get_file
 
 
@@ -17,7 +15,7 @@ def load_data():
     a drop-in replacement for MNIST.
 
     Returns:
-        Tuple of NumPy arrays: `(x_train, y_train), (x_test, y_test)`.
+        Tuple of backend-native tensors: `(x_train, y_train), (x_test, y_test)`.
     """
     dirname = os.path.join("datasets", "fashion-mnist")
     base = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
@@ -33,19 +31,21 @@ def load_data():
         paths.append(get_file(fname, origin=base + fname, cache_subdir=dirname))
 
     with gzip.open(paths[0], "rb") as lbpath:
-        y_train = np.frombuffer(lbpath.read(), np.uint8, offset=8)
+        y_train = ops.frombuffer(lbpath.read(), dtype="uint8", offset=8)
 
     with gzip.open(paths[1], "rb") as imgpath:
-        x_train = np.frombuffer(imgpath.read(), np.uint8, offset=16).reshape(
-            len(y_train), 28, 28
+        x_train = ops.reshape(
+            ops.frombuffer(imgpath.read(), dtype="uint8", offset=16),
+            (y_train.shape[0], 28, 28),
         )
 
     with gzip.open(paths[2], "rb") as lbpath:
-        y_test = np.frombuffer(lbpath.read(), np.uint8, offset=8)
+        y_test = ops.frombuffer(lbpath.read(), dtype="uint8", offset=8)
 
     with gzip.open(paths[3], "rb") as imgpath:
-        x_test = np.frombuffer(imgpath.read(), np.uint8, offset=16).reshape(
-            len(y_test), 28, 28
+        x_test = ops.reshape(
+            ops.frombuffer(imgpath.read(), dtype="uint8", offset=16),
+            (y_test.shape[0], 28, 28),
         )
 
     return (x_train, y_train), (x_test, y_test)

@@ -1,8 +1,9 @@
 """Module docstring."""
 
-import numpy as np
-from zero_keras import metrics
 import ml_switcheroo_compiler.ops as cops
+import numpy as np
+
+from zero_keras import metrics
 
 
 class DummyArray(np.ndarray):
@@ -14,7 +15,6 @@ class DummyArray(np.ndarray):
         Args:
             value: Description.
         """
-        pass
 
 
 def make_dummy(*args, **kwargs):
@@ -32,8 +32,8 @@ def test_remaining_assigns():
     """Function docstring."""
     old_add = getattr(cops, "add", None)
     old_sum = getattr(cops, "sum", None)
-    setattr(cops, "add", make_dummy)
-    setattr(cops, "sum", make_dummy)
+    cops.add = make_dummy
+    cops.sum = make_dummy
     try:
         # ConcordanceCorrelation
         m = metrics.ConcordanceCorrelation()
@@ -121,13 +121,13 @@ def test_free_accuracy_functions():
     old_topk = getattr(ops, "top_k_categorical_accuracy", None)
     old_stopk = getattr(ops, "sparse_top_k_categorical_accuracy", None)
 
-    setattr(ops, "cast", make_dummy)
-    setattr(ops, "mean", make_dummy)
-    setattr(ops, "equal", make_dummy)
-    setattr(ops, "argmax", make_dummy)
-    setattr(ops, "squeeze", make_dummy)
-    setattr(ops, "top_k_categorical_accuracy", make_dummy)
-    setattr(ops, "sparse_top_k_categorical_accuracy", make_dummy)
+    ops.cast = make_dummy
+    ops.mean = make_dummy
+    ops.equal = make_dummy
+    ops.argmax = make_dummy
+    ops.squeeze = make_dummy
+    ops.top_k_categorical_accuracy = make_dummy
+    ops.sparse_top_k_categorical_accuracy = make_dummy
 
     try:
         y_true = np.array([1.0, 0.0]).astype("float32")

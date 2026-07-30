@@ -1,6 +1,6 @@
 """Module docstring."""
 
-from zero_keras.core_layers import Input, Layer, Model, KerasTensor
+from zero_keras.core_layers import Input, KerasTensor, Layer, Model
 from zero_keras.ops import ops
 
 
@@ -17,8 +17,9 @@ def test_keras_tensor():
     assert t_data.data == [1]
 
     # hit branch 28->30 by raising in ops.zeros
-    import ml_switcheroo_compiler.ops as ops
-    import unittest.mock as mock
+    from unittest import mock
+
+    from ml_switcheroo_compiler import ops
 
     with mock.patch.object(ops, "zeros", side_effect=Exception):
         t_bad_shape = KerasTensor((2,))
@@ -175,7 +176,6 @@ def test_model_functional():
 
         def reset_state(self):
             """Function docstring."""
-            pass
 
         def update_state(self, y, y_pred):
             """Function docstring.
@@ -184,7 +184,6 @@ def test_model_functional():
                 y: Description.
                 y_pred: Description.
             """
-            pass
 
         def result(self):
             """Function docstring."""
@@ -308,7 +307,6 @@ def test_model_functional():
 
         def reset_state(self):
             """Function docstring."""
-            pass
 
         def update_state(self, y, y_pred):
             """Function docstring.
@@ -317,7 +315,6 @@ def test_model_functional():
                 y: Description.
                 y_pred: Description.
             """
-            pass
 
         def result(self):
             """Function docstring."""
@@ -512,8 +509,8 @@ def test_layer_properties():
     w_list = layer_obj.get_weights()
     assert len(w_list) == 6
 
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "model_with_iter_weight.keras")
@@ -533,8 +530,8 @@ def test_layer_properties():
 
 def test_sequential_properties():
     """Function docstring."""
-    from zero_keras.models import Sequential
     from zero_keras.layers import Dense
+    from zero_keras.models import Sequential
 
     m = Sequential([Dense(5, input_shape=(10,)), Dense(1)], name="seq")
     assert m.name == "seq"
@@ -571,15 +568,16 @@ def test_sequential_properties():
 
 def test_models_sequential():
     """Function docstring."""
-    from zero_keras.models import Sequential
-    from zero_keras.layers import Dense
     import numpy as np
+
+    from zero_keras.layers import Dense
+    from zero_keras.models import Sequential
 
     m_real = Sequential([Dense(1)])
     m_real.build((2, 5))
     m_real(np.random.rand(2, 5))
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.TemporaryDirectory() as d:
         m_real.save(os.path.join(d, "seq.keras"))
@@ -588,8 +586,9 @@ def test_models_sequential():
     m_real.trainable_weights
     m_real.non_trainable_weights
     m_real.set_weights(m_real.get_weights())
-    from zero_keras.layers import Dense
     import numpy as np
+
+    from zero_keras.layers import Dense
 
     # Test Sequential
     model = Sequential(name="my_seq")
@@ -628,13 +627,10 @@ def test_models_sequential():
         non_trainable_weights = []
 
         def __call__(self, inputs, **kwargs):
-            """Function docstring.
-
-            Args:
-                inputs: Description.
-                kwargs: Description.
-            """
             return inputs
+
+        def compute_output_shape(self, shape):
+            return shape
 
     class DummyLayerWithComputeShape:
         """Class docstring."""
@@ -692,25 +688,27 @@ def test_models_sequential():
 
     m4 = Sequential()
     m4.add(DummyLayerWithUnits())
-    m4.build(None)  # hit 315
+    import pytest
+
+    with pytest.raises(NotImplementedError):
+        m4.build(None)  # hit 315
 
     m5 = Sequential()
     m5.add(DummyLayerWithUnits())
-    m5.build((1,))  # hit 313
+    with pytest.raises(NotImplementedError):
+        m5.build((1,))  # hit 313
 
     # Weights empty properties for dummy layer
 
     class LayerNoGetWeights(Layer):
         """Class docstring."""
 
-        pass
-
     m3.add(LayerNoGetWeights())
     m3.set_weights(m3.get_weights())
 
     # Save
-    import tempfile
     import os
+    import tempfile
 
     with tempfile.TemporaryDirectory() as d:
         path = os.path.join(d, "model.keras")
@@ -723,9 +721,9 @@ def test_models_sequential():
         assert len(loaded.layers) == 2
 
         # load non-sequential config
-        import zipfile
         import json
         import struct
+        import zipfile
 
         path2 = os.path.join(d, "model2.keras")
         with zipfile.ZipFile(path2, "w") as z:
@@ -782,9 +780,11 @@ def test_models_sequential():
         path6 = os.path.join(d, "model6.txt")
         with open(path6, "w") as f:
             f.write("not zip")
-        load_model(path6)
+        with pytest.raises(ValueError):
+            load_model(path6)
 
-    from zero_keras.core_layers import Functional, ops as keras_ops, deserialize, get
+    from zero_keras.core_layers import Functional, deserialize, get
+    from zero_keras.core_layers import ops as keras_ops
 
     f = Functional()
     s = Sequential()
@@ -793,7 +793,8 @@ def test_models_sequential():
 
     assert keras_ops.add(Input((2,)), Input((2,))) is not None
     assert deserialize("a") == "a"
-    assert get("b") == "b"
+    with pytest.raises(ValueError):
+        get("b")
 
 
 def test_model_dict_in_out():
@@ -819,7 +820,7 @@ def test_model_dict_in_out():
 
 def test_model_coverage_edges():
     """Function docstring."""
-    from zero_keras.core_layers import Input, Model, Layer
+    from zero_keras.core_layers import Input, Layer, Model
     from zero_keras.layers import Dense
 
     # Custom layer to take a list and a dict

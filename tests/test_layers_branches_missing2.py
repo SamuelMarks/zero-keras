@@ -1,7 +1,8 @@
 """Module docstring."""
 
 import numpy as np
-import zero_keras.layers as layers
+
+from zero_keras import layers
 
 
 def test_preset_weights_convs():
