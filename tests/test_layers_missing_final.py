@@ -1,5 +1,8 @@
 """Tests for missing coverage in layers."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras.layers import (
@@ -20,7 +23,7 @@ from zero_keras.layers import (
 )
 
 
-def test_activation_none_branches():
+def test_activation_none_branches() -> TensorLike:
     """Test branches where activation is None."""
     # Dense
     layer = Dense(2)
@@ -63,7 +66,7 @@ def test_activation_none_branches():
     layer(np.ones((2, 2)), [np.ones((2, 2))])
 
 
-def test_rnn_cell_no_bias_branch():
+def test_rnn_cell_no_bias_branch() -> TensorLike:
     """Test RNN cells where use_bias is False or getattr returns None."""
     # SimpleRNNCell 5539-5540
     # True branch (getattr is None)
@@ -90,7 +93,7 @@ def test_rnn_cell_no_bias_branch():
     layer.build((None, 2))
 
 
-def test_bidirectional_rnn_cell_units():
+def test_bidirectional_rnn_cell_units() -> TensorLike:
     """Test Bidirectional wrapper missing branches."""
     # 6405
     layer = Bidirectional(RNN(SimpleRNNCell(3)))
@@ -99,9 +102,13 @@ def test_bidirectional_rnn_cell_units():
     class DummyBidirectionalLayer(Layer):
         """Dummy layer for testing Bidirectional branches."""
 
-        def call(self, inputs):
-            """Call function."""
-            return inputs  # pragma: no cover
+        def call(self, inputs: TensorLike) -> TensorLike:
+            """Call function.
+
+            Args:
+                inputs: Input parameter ``inputs``.
+            """
+            return inputs
 
     layer2 = DummyBidirectionalLayer()
     layer2.args = ()
@@ -110,15 +117,20 @@ def test_bidirectional_rnn_cell_units():
     Bidirectional(layer2)
 
 
-def test_spectral_norm_no_weights_branch():
+def test_spectral_norm_no_weights_branch() -> TensorLike:
     """Test SpectralNormalization where u is not in _weights."""
 
     # 12831->12835
     class DummyWrapper(SpectralNormalization):
         """Dummy wrapper to skip adding weight to _weights."""
 
-        def add_weight(self, *args, **kwargs):
-            """Override add_weight."""
+        def add_weight(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+            """Override add_weight.
+
+            Args:
+                args: Input parameter ``args``.
+                kwargs: Input parameter ``kwargs``.
+            """
             weight = super().add_weight(*args, **kwargs)
             if weight in self._weights:
                 self._weights.remove(weight)

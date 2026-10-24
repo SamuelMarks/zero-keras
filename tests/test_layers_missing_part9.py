@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from unittest.mock import patch
 
 from ml_switcheroo_compiler.ops import asarray
@@ -7,14 +10,12 @@ from ml_switcheroo_compiler.ops import asarray
 from zero_keras import layers
 
 
-def test_dense_and_conv_missing_branches():
+def test_dense_and_conv_missing_branches() -> TensorLike:
     """Function docstring."""
     with (
         patch("zero_keras.layers.core.ops") as mock_ops,
         patch("zero_keras.layers.convolution.ops") as mock_conv_ops,
-        patch(
-            "ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated"
-        ) as mock_cgd,
+        patch("ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated") as mock_cgd,
     ):
         mock_ops.matmul.return_value = asarray([[1.0]])
         mock_ops.add.return_value = asarray([[1.0]])
@@ -89,7 +90,7 @@ def test_dense_and_conv_missing_branches():
                 layer2(asarray([[[[[1.0] * 4] * 4] * 4] * 4] * 2))
 
 
-def test_pre_set_weights_with_bias():
+def test_pre_set_weights_with_bias() -> TensorLike:
     """Function docstring."""
     for layer_cls in [
         layers.Dense,

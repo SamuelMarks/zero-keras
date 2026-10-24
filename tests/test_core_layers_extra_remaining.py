@@ -1,18 +1,21 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import ml_switcheroo_compiler.ops
 import numpy as np
 
 from zero_keras.core_layers import KerasTensor, Model
 
 
-def test_model_train_step_apply_gradients():
+def test_model_train_step_apply_gradients() -> TensorLike:
     """Function docstring."""
 
     class SimpleModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -28,7 +31,7 @@ def test_model_train_step_apply_gradients():
     class Opt:
         """Class docstring."""
 
-        def apply_gradients(self, grads):
+        def apply_gradients(self, grads: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -37,16 +40,20 @@ def test_model_train_step_apply_gradients():
 
     model.optimizer = Opt()
 
-    def fake_get_grads(*args, **kwargs):
+    def fake_get_grads(*args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             args: Description.
             kwargs: Description.
         """
-        return {"w_id": 1.0}  # pragma: no cover
+        return {"w_id": 1.0}
 
-    original = getattr(ml_switcheroo_compiler.ops, "get_gradients", None)
+    original = (
+        ml_switcheroo_compiler.ops.get_gradients
+        if hasattr(ml_switcheroo_compiler.ops, "get_gradients")
+        else None
+    )
     ml_switcheroo_compiler.ops.get_gradients = fake_get_grads
     try:
         model.train_step((np.array([1.0]), np.array([1.0])))
@@ -54,4 +61,4 @@ def test_model_train_step_apply_gradients():
         if original is None:
             del ml_switcheroo_compiler.ops.get_gradients
         else:
-            ml_switcheroo_compiler.ops.get_gradients = original  # pragma: no cover
+            ml_switcheroo_compiler.ops.get_gradients = original

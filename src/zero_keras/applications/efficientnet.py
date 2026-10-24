@@ -1,9 +1,12 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import copy
 import math
 
-from ml_switcheroo_compiler import core as backend
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
@@ -207,27 +210,28 @@ IMAGENET_STDDEV_RGB = [0.229, 0.224, 0.225]
 
 
 def EfficientNet(
-    width_coefficient,
-    depth_coefficient,
-    default_size,
-    dropout_rate=0.2,
-    drop_connect_rate=0.2,
-    depth_divisor=8,
-    activation="swish",
-    blocks_args="default",
-    name="efficientnet",
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    weights_name=None,
-):
+    width_coefficient: TensorLike,
+    depth_coefficient: TensorLike,
+    default_size: TensorLike,
+    dropout_rate: TensorLike = 0.2,
+    drop_connect_rate: TensorLike = 0.2,
+    depth_divisor: TensorLike = 8,
+    activation: TensorLike = "swish",
+    blocks_args: TensorLike = "default",
+    name: TensorLike = "efficientnet",
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    weights_name: TensorLike = None,
+) -> TensorLike:
     """Instantiates the EfficientNet architecture.
 
     Args:
+      weights_name: Input parameter ``weights_name``.
       width_coefficient: float, scaling coefficient for network width.
       depth_coefficient: float, scaling coefficient for network depth.
       default_size: integer, default input image size.
@@ -273,7 +277,7 @@ def EfficientNet(
         blocks_args = DEFAULT_BLOCKS_ARGS
 
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -281,9 +285,8 @@ def EfficientNet(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
-            'If using `weights="imagenet"` with `include_top`'
-            " as true, `classes` should be 1000"
+        raise ValueError(
+            'If using `weights="imagenet"` with `include_top` as true, `classes` should be 1000'
         )
 
     # Determine proper input shape
@@ -299,17 +302,20 @@ def EfficientNet(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
-    def round_filters(filters, divisor=depth_divisor):
-        """Round number of filters based on depth multiplier."""
+    def round_filters(filters: TensorLike, divisor: TensorLike = depth_divisor) -> TensorLike:
+        """Round number of filters based on depth multiplier.
+
+        Args:
+            filters: Input parameter ``filters``.
+            divisor: Input parameter ``divisor``.
+        """
         filters *= width_coefficient
         new_filters = max(divisor, int(filters + divisor / 2) // divisor * divisor)
         # Make sure that round down does not go down by more than 10%.
@@ -317,8 +323,12 @@ def EfficientNet(
             new_filters += divisor
         return int(new_filters)
 
-    def round_repeats(repeats):
-        """Round number of repeats based on depth multiplier."""
+    def round_repeats(repeats: TensorLike) -> TensorLike:
+        """Round number of repeats based on depth multiplier.
+
+        Args:
+            repeats: Input parameter ``repeats``.
+        """
         return math.ceil(depth_coefficient * repeats)
 
     # Build stem
@@ -334,13 +344,9 @@ def EfficientNet(
         # original implementation.
         # See https://github.com/tensorflow/tensorflow/issues/49930 for more
         # details
-        x = layers.Rescaling(  # pragma: no cover
-            [1.0 / math.sqrt(stddev) for stddev in IMAGENET_STDDEV_RGB]
-        )(x)
+        x = layers.Rescaling([1.0 / math.sqrt(stddev) for stddev in IMAGENET_STDDEV_RGB])(x)
 
-    x = layers.ZeroPadding2D(
-        padding=imagenet_utils.correct_pad(x, 3), name="stem_conv_pad"
-    )(x)
+    x = layers.ZeroPadding2D(padding=imagenet_utils.correct_pad(x, 3), name="stem_conv_pad")(x)
     x = layers.Conv2D(
         round_filters(32),
         3,
@@ -360,7 +366,7 @@ def EfficientNet(
     blocks = float(sum(round_repeats(args["repeats"]) for args in blocks_args))
     for i, args in enumerate(blocks_args):
         if args["repeats"] <= 0:
-            raise ValueError(  # pragma: no cover
+            raise ValueError(
                 f"The number of repeats in `EfficientNet` must be > 0. "
                 f"Received: repeats={args['repeats']}"
             )
@@ -406,15 +412,15 @@ def EfficientNet(
             name="predictions",
         )(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D(name="max_pool")(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D(name="max_pool")(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -423,38 +429,38 @@ def EfficientNet(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            file_suffix = ".h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][0]  # pragma: no cover
+        if include_top:
+            file_suffix = ".h5"
+            file_hash = WEIGHTS_HASHES[weights_name][0]
         else:
-            file_suffix = "_notop.h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][1]  # pragma: no cover
-        file_name = name + file_suffix  # pragma: no cover
-        weights_path = generic_utils.get_file(  # pragma: no cover
+            file_suffix = "_notop.h5"
+            file_hash = WEIGHTS_HASHES[weights_name][1]
+        file_name = name + file_suffix
+        weights_path = generic_utils.get_file(
             file_name,
             BASE_WEIGHTS_PATH + file_name,
             cache_subdir="models",
             file_hash=file_hash,
         )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
     return model
 
 
 def block(
-    inputs,
-    activation="swish",
-    drop_rate=0.0,
-    name="",
-    filters_in=32,
-    filters_out=16,
-    kernel_size=3,
-    strides=1,
-    expand_ratio=1,
-    se_ratio=0.0,
-    id_skip=True,
-):
+    inputs: TensorLike,
+    activation: TensorLike = "swish",
+    drop_rate: TensorLike = 0.0,
+    name: TensorLike = "",
+    filters_in: TensorLike = 32,
+    filters_out: TensorLike = 16,
+    kernel_size: TensorLike = 3,
+    strides: TensorLike = 1,
+    expand_ratio: TensorLike = 1,
+    se_ratio: TensorLike = 0.0,
+    id_skip: TensorLike = True,
+) -> TensorLike:
     """An inverted residual block.
 
     Args:
@@ -515,10 +521,7 @@ def block(
     if 0 < se_ratio <= 1:
         filters_se = max(1, int(filters_in * se_ratio))
         se = layers.GlobalAveragePooling2D(name=f"{name}se_squeeze")(x)
-        if bn_axis == 1:
-            se_shape = (filters, 1, 1)  # pragma: no cover
-        else:
-            se_shape = (1, 1, filters)
+        se_shape = (filters, 1, 1) if bn_axis == 1 else (1, 1, filters)
         se = layers.Reshape(se_shape, name=f"{name}se_reshape")(se)
         se = layers.Conv2D(
             filters_se,
@@ -550,23 +553,21 @@ def block(
     x = layers.BatchNormalization(axis=bn_axis, name=f"{name}project_bn")(x)
     if id_skip and strides == 1 and filters_in == filters_out:
         if drop_rate > 0:
-            x = layers.Dropout(
-                drop_rate, noise_shape=(None, 1, 1, 1), name=f"{name}drop"
-            )(x)
+            x = layers.Dropout(drop_rate, noise_shape=(None, 1, 1, 1), name=f"{name}drop")(x)
         x = layers.add([x, inputs], name=f"{name}add")
     return x
 
 
 def EfficientNetB0(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb0",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb0",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -597,15 +598,15 @@ def EfficientNetB0(
 
 
 def EfficientNetB1(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb1",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb1",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -636,15 +637,15 @@ def EfficientNetB1(
 
 
 def EfficientNetB2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb2",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb2",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -675,15 +676,15 @@ def EfficientNetB2(
 
 
 def EfficientNetB3(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb3",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb3",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -714,15 +715,15 @@ def EfficientNetB3(
 
 
 def EfficientNetB4(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb4",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb4",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -753,15 +754,15 @@ def EfficientNetB4(
 
 
 def EfficientNetB5(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb5",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb5",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -792,15 +793,15 @@ def EfficientNetB5(
 
 
 def EfficientNetB6(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb6",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb6",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -831,15 +832,15 @@ def EfficientNetB6(
 
 
 def EfficientNetB7(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="efficientnetb7",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "efficientnetb7",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -879,7 +880,7 @@ EfficientNetB6.__doc__ = BASE_DOCSTRING.format(name="EfficientNetB6")
 EfficientNetB7.__doc__ = BASE_DOCSTRING.format(name="EfficientNetB7")
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """A placeholder method for backward compatibility.
 
     The preprocessing logic has been included in the efficientnet model
@@ -897,17 +898,17 @@ def preprocess_input(x, data_format=None):
     Returns:
         Unchanged `numpy.array` or tensor.
     """
-    return x  # pragma: no cover
+    return x
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

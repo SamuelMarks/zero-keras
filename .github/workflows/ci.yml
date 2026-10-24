@@ -20,12 +20,32 @@ jobs:
       with:
         python-version: '3.12'
 
+    - name: Checkout Ecosystem Sibling Repositories
+      run: |
+        git clone --depth 1 https://github.com/SamuelMarks/ml-switcheroo-ir.git ../ml-switcheroo-ir
+        git clone --depth 1 https://github.com/SamuelMarks/ml-switcheroo-compiler.git ../ml-switcheroo-compiler
+
+    - name: Download Snapshot Release Assets (v0.0.4)
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        mkdir -p ~/.cache/ml_ecosystem_snapshots/snapshots
+        gh release download v0.0.4 --repo SamuelMarks/ml-ecosystem-snapshots --pattern "*.json" --dir ~/.cache/ml_ecosystem_snapshots/snapshots --clobber
+        if [ -f ~/.cache/ml_ecosystem_snapshots/snapshots/concept_map.json ]; then
+          mv ~/.cache/ml_ecosystem_snapshots/snapshots/concept_map.json ~/.cache/ml_ecosystem_snapshots/concept_map.json
+        fi
+
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install ruff pytest pytest-cov build
-        if [ -f "pyproject.toml" ]; then pip install -e . || true; fi
-        if [ -f "requirements.txt" ]; then pip install -r requirements.txt || true; fi
+        pip install ruff pytest pytest-cov interrogate mypy build
+        pip install "https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.4/ml_ecosystem_snapshots-0.0.4-py3-none-any.whl"
+        pip install -e ../ml-switcheroo-ir
+        pip install -e ../ml-switcheroo-compiler
+        pip install -e ".[test]"
+
+    - name: Check Disallowed 3rd-Party Imports
+      run: python scripts/check_imports.py
 
     - name: Check Code Formatting (Ruff)
       run: ruff format --check .
@@ -33,10 +53,23 @@ jobs:
     - name: Check Linting (Ruff)
       run: ruff check .
 
-    - name: Test & Coverage
+    - name: Check Docstring Coverage (Interrogate & AST Docstrings)
       run: |
-        pytest --cov=. --cov-report=xml
-        
+        interrogate -vv -f 100 -M -i -c pyproject.toml src scripts tests
+        python scripts/check_docstrings.py
+
+    - name: Check Static Typing (Mypy & AST Typing Linter)
+      run: |
+        python scripts/lint_typing.py
+        mypy src tests scripts
+
+    - name: Check Snapshot Compliance
+      run: python scripts/check_compliance.py
+
+    - name: Test & Coverage (100% Line, Branch, Function)
+      run: |
+        pytest --cov=src/zero_keras --cov=scripts --cov-branch --cov-fail-under=100 --cov-report=xml
+
     - name: Update Badges
       run: |
         python scripts/update_badges.py

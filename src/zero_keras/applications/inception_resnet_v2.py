@@ -1,6 +1,9 @@
 """Module docstring."""
 
-from ml_switcheroo_compiler import core as backend
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
@@ -14,15 +17,15 @@ BASE_WEIGHT_URL = (
 
 
 def InceptionResNetV2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="inception_resnet_v2",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "inception_resnet_v2",
+) -> TensorLike:
     """Instantiates the Inception-ResNet v2 architecture.
 
     Reference:
@@ -89,7 +92,7 @@ def InceptionResNetV2(
         A model instance.
     """
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -97,7 +100,7 @@ def InceptionResNetV2(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             'If using `weights="imagenet"` with `include_top=True`, '
             "`classes` should be 1000. "
             f"Received classes={classes}"
@@ -116,12 +119,10 @@ def InceptionResNetV2(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     # Stem block: 35 x 35 x 192
     x = conv2d_bn(img_input, 32, 3, strides=2, padding="valid")
@@ -147,9 +148,7 @@ def InceptionResNetV2(
 
     # 10x block35 (Inception-ResNet-A block): 35 x 35 x 320
     for block_idx in range(1, 11):
-        x = inception_resnet_block(
-            x, scale=0.17, block_type="block35", block_idx=block_idx
-        )
+        x = inception_resnet_block(x, scale=0.17, block_type="block35", block_idx=block_idx)
 
     # Mixed 6a (Reduction-A block): 17 x 17 x 1088
     branch_0 = conv2d_bn(x, 384, 3, strides=2, padding="valid")
@@ -162,9 +161,7 @@ def InceptionResNetV2(
 
     # 20x block17 (Inception-ResNet-B block): 17 x 17 x 1088
     for block_idx in range(1, 21):
-        x = inception_resnet_block(
-            x, scale=0.1, block_type="block17", block_idx=block_idx
-        )
+        x = inception_resnet_block(x, scale=0.1, block_type="block17", block_idx=block_idx)
 
     # Mixed 7a (Reduction-B block): 8 x 8 x 2080
     branch_0 = conv2d_bn(x, 256, 1)
@@ -180,12 +177,8 @@ def InceptionResNetV2(
 
     # 10x block8 (Inception-ResNet-C block): 8 x 8 x 2080
     for block_idx in range(1, 10):
-        x = inception_resnet_block(
-            x, scale=0.2, block_type="block8", block_idx=block_idx
-        )
-    x = inception_resnet_block(
-        x, scale=1.0, activation=None, block_type="block8", block_idx=10
-    )
+        x = inception_resnet_block(x, scale=0.2, block_type="block8", block_idx=block_idx)
+    x = inception_resnet_block(x, scale=1.0, activation=None, block_type="block8", block_idx=10)
 
     # Final convolution block: 8 x 8 x 1536
     x = conv2d_bn(x, 1536, 1, name="conv_7b")
@@ -194,19 +187,17 @@ def InceptionResNetV2(
         # Classification block
         x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
-        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
-            x
-        )
+        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D()(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -215,39 +206,39 @@ def InceptionResNetV2(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            fname = "inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5"  # pragma: no cover
-            weights_path = generic_utils.get_file(  # pragma: no cover
+        if include_top:
+            fname = "inception_resnet_v2_weights_tf_dim_ordering_tf_kernels.h5"
+            weights_path = generic_utils.get_file(
                 fname,
                 BASE_WEIGHT_URL + fname,
                 cache_subdir="models",
                 file_hash="e693bd0210a403b3192acc6073ad2e96",
             )
         else:
-            fname = "inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5"  # pragma: no cover
-            weights_path = generic_utils.get_file(  # pragma: no cover
+            fname = "inception_resnet_v2_weights_tf_dim_ordering_tf_kernels_notop.h5"
+            weights_path = generic_utils.get_file(
                 fname,
                 BASE_WEIGHT_URL + fname,
                 cache_subdir="models",
                 file_hash="d19885ff4a710c122648d3b5c3b684e4",
             )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
 def conv2d_bn(
-    x,
-    filters,
-    kernel_size,
-    strides=1,
-    padding="same",
-    activation="relu",
-    use_bias=False,
-    name=None,
-):
+    x: TensorLike,
+    filters: TensorLike,
+    kernel_size: TensorLike,
+    strides: TensorLike = 1,
+    padding: TensorLike = "same",
+    activation: TensorLike = "relu",
+    use_bias: TensorLike = False,
+    name: TensorLike = None,
+) -> TensorLike:
     """Utility function to apply conv + BN.
 
     Args:
@@ -285,7 +276,7 @@ def conv2d_bn(
 class CustomScaleLayer(Layer):
     """Class docstring."""
 
-    def __init__(self, scale, **kwargs):
+    def __init__(self, scale: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -295,13 +286,13 @@ class CustomScaleLayer(Layer):
         super().__init__(**kwargs)
         self.scale = scale
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """Function docstring."""
-        config = super().get_config()  # pragma: no cover
-        config.update({"scale": self.scale})  # pragma: no cover
-        return config  # pragma: no cover
+        config = super().get_config()
+        config.update({"scale": self.scale})
+        return config
 
-    def call(self, inputs):
+    def call(self, inputs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -310,7 +301,13 @@ class CustomScaleLayer(Layer):
         return inputs[0] + inputs[1] * self.scale
 
 
-def inception_resnet_block(x, scale, block_type, block_idx, activation="relu"):
+def inception_resnet_block(
+    x: TensorLike,
+    scale: TensorLike,
+    block_type: TensorLike,
+    block_idx: TensorLike,
+    activation: TensorLike = "relu",
+) -> TensorLike:
     """Adds an Inception-ResNet block.
 
     Args:
@@ -355,7 +352,7 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation="relu"):
         branch_1 = conv2d_bn(branch_1, 256, [3, 1])
         branches = [branch_0, branch_1]
     else:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "Unknown Inception-ResNet block type. "
             'Expects "block35", "block17" or "block8", '
             f"but got: {block_type}"
@@ -379,26 +376,24 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation="relu"):
     return x
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="tf"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(

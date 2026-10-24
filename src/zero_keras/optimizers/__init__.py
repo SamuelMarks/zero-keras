@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras.activations import _to_tensor
 
 """Keras optimizers."""
@@ -59,14 +62,16 @@ class Optimizer:
 
     """
 
-    def add_optimizer_variables(self, variables):
+    def add_optimizer_variables(self, variables: TensorLike) -> TensorLike:
         """add_optimizer_variables docstring.
 
         Args:
             variables: Variables.
         """
 
-    def add_variable_from_reference(self, reference_variable, name=""):
+    def add_variable_from_reference(
+        self, reference_variable: TensorLike, name: TensorLike = ""
+    ) -> TensorLike:
         """add_variable_from_reference docstring.
 
         Args:
@@ -75,16 +80,16 @@ class Optimizer:
         """
         return
 
-    def apply(self, grads, variables):
-        """apply docstring.
+    def apply(self, grads: TensorLike, variables: TensorLike) -> TensorLike:
+        """Apply docstring.
 
         Args:
             grads: Grads.
             variables: Variables.
         """
 
-    def assign(self, variable, value):
-        """assign docstring.
+    def assign(self, variable: TensorLike, value: TensorLike) -> TensorLike:
+        """Assign docstring.
 
         Args:
             variable: Variable.
@@ -92,7 +97,7 @@ class Optimizer:
         """
         variable.assign(value)
 
-    def assign_add(self, variable, value):
+    def assign_add(self, variable: TensorLike, value: TensorLike) -> TensorLike:
         """assign_add docstring.
 
         Args:
@@ -101,7 +106,7 @@ class Optimizer:
         """
         variable.assign(variable + value)
 
-    def assign_sub(self, variable, value):
+    def assign_sub(self, variable: TensorLike, value: TensorLike) -> TensorLike:
         """assign_sub docstring.
 
         Args:
@@ -110,7 +115,9 @@ class Optimizer:
         """
         variable.assign(variable - value)
 
-    def exclude_from_weight_decay(self, var_list=None, var_names=None):
+    def exclude_from_weight_decay(
+        self, var_list: TensorLike = None, var_names: TensorLike = None
+    ) -> TensorLike:
         """exclude_from_weight_decay docstring.
 
         Args:
@@ -122,7 +129,7 @@ class Optimizer:
         if var_names:
             self._exclude_from_weight_decay_names = set(var_names)
 
-    def finalize_variable_values(self, var_list):
+    def finalize_variable_values(self, var_list: TensorLike) -> TensorLike:
         """finalize_variable_values docstring.
 
         Args:
@@ -131,7 +138,7 @@ class Optimizer:
         # Handled automatically in most cases by variables
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -139,33 +146,39 @@ class Optimizer:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
-        return getattr(self, "_config", {})
+        return self._config if hasattr(self, "_config") else {}
 
     @property
-    def iterations(self):
-        """iterations docstring."""
-        return getattr(self, "_iterations", 0)
+    def iterations(self) -> TensorLike:
+        """Iterations docstring."""
+        return self._iterations if hasattr(self, "_iterations") else 0
 
     @iterations.setter
-    def iterations(self, value):
-        """docstring."""
+    def iterations(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._iterations = value
 
     @property
-    def learning_rate(self):
+    def learning_rate(self) -> TensorLike:
         """learning_rate docstring."""
-        return getattr(self, "_learning_rate", 0.001)
+        return self._learning_rate if hasattr(self, "_learning_rate") else 0.001
 
     @learning_rate.setter
-    def learning_rate(self, value):
-        """docstring."""
+    def learning_rate(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._learning_rate = value
 
-    def load_own_variables(self, store):
+    def load_own_variables(self, store: TensorLike) -> TensorLike:
         """load_own_variables docstring.
 
         Args:
@@ -177,7 +190,7 @@ class Optimizer:
             if str(i) in store:
                 var.assign(store[str(i)])
 
-    def save_own_variables(self, store):
+    def save_own_variables(self, store: TensorLike) -> TensorLike:
         """save_own_variables docstring.
 
         Args:
@@ -188,7 +201,7 @@ class Optimizer:
         for i, var in enumerate(self.variables):
             store[str(i)] = var.numpy()
 
-    def scale_loss(self, loss):
+    def scale_loss(self, loss: TensorLike) -> TensorLike:
         """scale_loss docstring.
 
         Args:
@@ -196,7 +209,7 @@ class Optimizer:
         """
         return loss
 
-    def set_weights(self, weights):
+    def set_weights(self, weights: TensorLike) -> TensorLike:
         """set_weights docstring.
 
         Args:
@@ -205,7 +218,9 @@ class Optimizer:
         for v, w in zip(self.variables, weights):
             v.assign(w)
 
-    def stateless_apply(self, optimizer_variables, grads, trainable_variables):
+    def stateless_apply(
+        self, optimizer_variables: TensorLike, grads: TensorLike, trainable_variables: TensorLike
+    ) -> TensorLike:
         """stateless_apply docstring.
 
         Args:
@@ -214,7 +229,9 @@ class Optimizer:
             trainable_variables: Trainable variables.
         """
 
-    def update_step(self, gradient, variable, learning_rate):
+    def update_step(
+        self, gradient: TensorLike, variable: TensorLike, learning_rate: TensorLike
+    ) -> TensorLike:
         """update_step docstring.
 
         Args:
@@ -224,7 +241,7 @@ class Optimizer:
         """
         self.assign_sub(variable, gradient * learning_rate)
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -240,7 +257,13 @@ class Optimizer:
         DummyKerasOpt.__name__ = self.__class__.__name__
         self._keras_optimizer = DummyKerasOpt()
 
-    def add_variable(self, shape, dtype="float32", initializer="zeros", name=None):
+    def add_variable(
+        self,
+        shape: TensorLike,
+        dtype: TensorLike = "float32",
+        initializer: TensorLike = "zeros",
+        name: TensorLike = None,
+    ) -> TensorLike:
         """add_variable function.
 
         Args:
@@ -250,7 +273,7 @@ class Optimizer:
         name: Parameter name.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import ml_switcheroo_compiler.core.dtype as dtypes
@@ -258,19 +281,20 @@ class Optimizer:
         from zero_keras import ops
         from zero_keras.core_layers import Variable
 
-        if isinstance(dtype, str):
-            dtype = dtypes.DType(dtype)
+        resolved_dt = dtypes.DType(dtype) if isinstance(dtype, str) else dtype
         if initializer == "zeros":
-            val = ops.zeros(shape, dtype=dtype)
+            val = ops.zeros(shape, dtype=resolved_dt)
         else:
-            val = ops.ones(shape, dtype=dtype)
+            val = ops.ones(shape, dtype=resolved_dt)
 
-        var = Variable(initializer=initializer, shape=shape, dtype=dtype, name=name)
+        var = Variable(initializer=initializer, shape=shape, dtype=resolved_dt, name=name)
         var.assign(val)
         self.variables.append(var)
         return var
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """apply_gradients function.
 
         Args:
@@ -279,18 +303,18 @@ class Optimizer:
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         var_list: Parameter var_list.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.built = True
@@ -381,21 +405,21 @@ class Adadelta(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        rho=0.95,
-        epsilon=1e-07,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="adadelta",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        rho: TensorLike = 0.95,
+        epsilon: TensorLike = 1e-07,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "adadelta",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -419,7 +443,7 @@ class Adadelta(Optimizer):
         self.rho = rho
         self.epsilon = epsilon
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -438,7 +462,9 @@ class Adadelta(Optimizer):
             )
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -465,16 +491,10 @@ class Adadelta(Optimizer):
 
             acc_g_new = self.rho * acc_g + (1.0 - self.rho) * ops.square(g)
 
-            delta_var = (
-                -ops.sqrt(acc_delta + self.epsilon)
-                / ops.sqrt(acc_g_new + self.epsilon)
-                * g
-            )
+            delta_var = -ops.sqrt(acc_delta + self.epsilon) / ops.sqrt(acc_g_new + self.epsilon) * g
             var_new = var + lr * delta_var
 
-            acc_delta_new = self.rho * acc_delta + (1.0 - self.rho) * ops.square(
-                delta_var
-            )
+            acc_delta_new = self.rho * acc_delta + (1.0 - self.rho) * ops.square(delta_var)
 
             acc_g.assign(acc_g_new)
             acc_delta.assign(acc_delta_new)
@@ -568,25 +588,25 @@ class Adafactor(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        factored=True,
-        multiply_by_parameter_scale=True,
-        clipping_threshold=1.0,
-        beta_2_decay=-0.8,
-        epsilon_1=1e-30,
-        epsilon_2=1e-3,
-        weight_decay=None,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="adafactor",
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        factored: TensorLike = True,
+        multiply_by_parameter_scale: TensorLike = True,
+        clipping_threshold: TensorLike = 1.0,
+        beta_2_decay: TensorLike = -0.8,
+        epsilon_1: TensorLike = 1e-30,
+        epsilon_2: TensorLike = 1e-3,
+        weight_decay: TensorLike = None,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "adafactor",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -614,7 +634,7 @@ class Adafactor(Optimizer):
         self.factored = factored
         self.epsilon_2 = epsilon_2
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -627,7 +647,9 @@ class Adafactor(Optimizer):
             self.v.append(self.add_variable(shape=var.shape, name="v"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -734,21 +756,21 @@ class Adagrad(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        initial_accumulator_value=0.1,
-        epsilon=1e-07,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="adagrad",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        initial_accumulator_value: TensorLike = 0.1,
+        epsilon: TensorLike = 1e-07,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "adagrad",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -772,7 +794,7 @@ class Adagrad(Optimizer):
         self.initial_accumulator_value = initial_accumulator_value
         self.epsilon = epsilon
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -791,7 +813,9 @@ class Adagrad(Optimizer):
             self.accumulator.append(acc)
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -908,8 +932,13 @@ class Adam(Optimizer):
     """
 
     def __init__(
-        self, learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-07, **kwargs
-    ):
+        self,
+        learning_rate: TensorLike = 0.001,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-07,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -925,7 +954,7 @@ class Adam(Optimizer):
         self.beta_2 = beta_2
         self.epsilon = epsilon
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Initialize optimizer variables.
 
         Adam optimizer has 3 types of variables: momentums, velocities and
@@ -945,7 +974,9 @@ class Adam(Optimizer):
         self.iterations = self.add_variable(shape=(), name="iterations")
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """apply_gradients function.
 
         Args:
@@ -954,7 +985,7 @@ class Adam(Optimizer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops
@@ -1085,23 +1116,23 @@ class AdamW(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        weight_decay=0.004,
-        beta_1=0.9,
-        beta_2=0.999,
-        epsilon=1e-07,
-        amsgrad=False,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="adamw",
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        weight_decay: TensorLike = 0.004,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-07,
+        amsgrad: TensorLike = False,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "adamw",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1130,7 +1161,7 @@ class AdamW(Optimizer):
         self.epsilon = epsilon
         self.amsgrad = amsgrad
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1150,7 +1181,9 @@ class AdamW(Optimizer):
         self.iterations = self.add_variable(shape=(), name="iterations")
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1179,9 +1212,7 @@ class AdamW(Optimizer):
 
             var_val = var
             var_new = (
-                var_val
-                - ops.convert_to_tensor(self.learning_rate * self.weight_decay)
-                * var_val
+                var_val - ops.convert_to_tensor(self.learning_rate * self.weight_decay) * var_val
             )
 
             m = self.m[i]
@@ -1303,22 +1334,22 @@ class Adamax(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        beta_1=0.9,
-        beta_2=0.999,
-        epsilon=1e-07,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="adamax",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-07,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "adamax",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1344,7 +1375,7 @@ class Adamax(Optimizer):
         self.beta_2 = beta_2
         self.epsilon = epsilon
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1360,7 +1391,9 @@ class Adamax(Optimizer):
         self.iterations = self.add_variable(shape=(), name="iterations")
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1517,25 +1550,25 @@ class Ftrl(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        learning_rate_power=-0.5,
-        initial_accumulator_value=0.1,
-        l1_regularization_strength=0.0,
-        l2_regularization_strength=0.0,
-        l2_shrinkage_regularization_strength=0.0,
-        beta=0.0,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        ema_momentum=0.99,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        name="ftrl",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        learning_rate_power: TensorLike = -0.5,
+        initial_accumulator_value: TensorLike = 0.1,
+        l1_regularization_strength: TensorLike = 0.0,
+        l2_regularization_strength: TensorLike = 0.0,
+        l2_shrinkage_regularization_strength: TensorLike = 0.0,
+        beta: TensorLike = 0.0,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        name: TensorLike = "ftrl",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1562,7 +1595,7 @@ class Ftrl(Optimizer):
         self.learning_rate = learning_rate
         self.initial_accumulator_value = initial_accumulator_value
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1582,7 +1615,9 @@ class Ftrl(Optimizer):
             self.z.append(self.add_variable(shape=var.shape, name="z"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1697,22 +1732,22 @@ class Lamb(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        beta_1=0.9,
-        beta_2=0.999,
-        epsilon=1e-07,
-        weight_decay=None,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="lamb",
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-07,
+        weight_decay: TensorLike = None,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "lamb",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1739,7 +1774,7 @@ class Lamb(Optimizer):
         self.epsilon = epsilon
         self.weight_decay = weight_decay if weight_decay is not None else 0.0
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1754,7 +1789,9 @@ class Lamb(Optimizer):
             self.v.append(self.add_variable(shape=var.shape, name="v"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1883,21 +1920,21 @@ class Lion(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.0001,
-        beta_1=0.9,
-        beta_2=0.99,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="lion",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.0001,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.99,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "lion",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1921,7 +1958,7 @@ class Lion(Optimizer):
         self.beta_1 = beta_1
         self.beta_2 = beta_2
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1934,7 +1971,9 @@ class Lion(Optimizer):
             self.m.append(self.add_variable(shape=var.shape, name="m"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2047,13 +2086,13 @@ class LossScaleOptimizer(Optimizer):
 
     def __init__(
         self,
-        inner_optimizer,
-        initial_scale=1024.0,
-        dynamic=True,
-        dynamic_growth_steps=2000,
-        name="LossScaleOptimizer",
-        **kwargs,
-    ):
+        inner_optimizer: TensorLike,
+        initial_scale: TensorLike = 1024.0,
+        dynamic: TensorLike = True,
+        dynamic_growth_steps: TensorLike = 2000,
+        name: TensorLike = "LossScaleOptimizer",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2068,7 +2107,7 @@ class LossScaleOptimizer(Optimizer):
         self.inner_optimizer = inner_optimizer
         self.initial_scale = initial_scale
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2080,7 +2119,9 @@ class LossScaleOptimizer(Optimizer):
             self.inner_optimizer.build(var_list)
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2102,7 +2143,7 @@ class Muon(Optimizer):
 
     1. Embedding layer
     2. Final output fully connected layer
-    3. Any {0,1}-D variables
+    3. TensorLike {0,1}-D variables
 
     These should all be optimized using AdamW.
 
@@ -2116,7 +2157,7 @@ class Muon(Optimizer):
     - For any variablewith a name that matches an expression
         listed in the argument `exclude_layers` (a list), the
         AdamW step will be used.
-    - Any other variable uses the Muon step.
+    - TensorLike other variable uses the Muon step.
 
     Typically, you only need to pass the name of your densely-connected
     output layer to `exclude_layers`, e.g.
@@ -2166,11 +2207,11 @@ class Muon(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        momentum=0.0,
-        name="muon",
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        momentum: TensorLike = 0.0,
+        name: TensorLike = "muon",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2183,7 +2224,7 @@ class Muon(Optimizer):
         self.learning_rate = learning_rate
         self.momentum = momentum
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2196,7 +2237,9 @@ class Muon(Optimizer):
             self.m.append(self.add_variable(shape=var.shape, name="m"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2306,22 +2349,22 @@ class Nadam(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        beta_1=0.9,
-        beta_2=0.999,
-        epsilon=1e-07,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="nadam",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-07,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "nadam",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2347,7 +2390,7 @@ class Nadam(Optimizer):
         self.beta_2 = beta_2
         self.epsilon = epsilon
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2363,7 +2406,9 @@ class Nadam(Optimizer):
         self.iterations = self.add_variable(shape=(), name="iterations")
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2505,23 +2550,23 @@ class RMSprop(Optimizer):
 
     def __init__(
         self,
-        learning_rate=0.001,
-        rho=0.9,
-        momentum=0.0,
-        epsilon=1e-07,
-        centered=False,
-        use_ema=False,
-        ema_overwrite_frequency=None,
-        loss_scale_factor=None,
-        global_clipnorm=None,
-        gradient_accumulation_steps=None,
-        clipnorm=None,
-        clipvalue=None,
-        ema_momentum=0.99,
-        name="rmsprop",
-        weight_decay=None,
-        **kwargs,
-    ):
+        learning_rate: TensorLike = 0.001,
+        rho: TensorLike = 0.9,
+        momentum: TensorLike = 0.0,
+        epsilon: TensorLike = 1e-07,
+        centered: TensorLike = False,
+        use_ema: TensorLike = False,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        ema_momentum: TensorLike = 0.99,
+        name: TensorLike = "rmsprop",
+        weight_decay: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2549,7 +2594,7 @@ class RMSprop(Optimizer):
         self.epsilon = epsilon
         self.centered = centered
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2570,7 +2615,9 @@ class RMSprop(Optimizer):
                 self.m.append(self.add_variable(shape=var.shape, name="m"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2702,7 +2749,13 @@ class SGD(Optimizer):
 
     """
 
-    def __init__(self, learning_rate=0.01, momentum=0.0, nesterov=False, **kwargs):
+    def __init__(
+        self,
+        learning_rate: TensorLike = 0.01,
+        momentum: TensorLike = 0.0,
+        nesterov: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2716,7 +2769,7 @@ class SGD(Optimizer):
         self.momentum = momentum
         self.nesterov = nesterov
 
-    def build(self, var_list):
+    def build(self, var_list: TensorLike) -> TensorLike:
         """Initialize optimizer variables.
 
         SGD optimizer has one variable `momentums`, only set if `self.momentum`
@@ -2731,12 +2784,12 @@ class SGD(Optimizer):
         self.momentums = []
         if self.momentum != 0:
             for var in var_list:
-                self.momentums.append(
-                    self.add_variable(shape=var.shape, name="momentum")
-                )
+                self.momentums.append(self.add_variable(shape=var.shape, name="momentum"))
         self.built = True
 
-    def apply_gradients(self, grads_and_vars, *args, **kwargs):
+    def apply_gradients(
+        self, grads_and_vars: TensorLike, *args: TensorLike, **kwargs: TensorLike
+    ) -> TensorLike:
         """apply_gradients function.
 
         Args:
@@ -2745,7 +2798,7 @@ class SGD(Optimizer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         grads_and_vars = list(grads_and_vars)
@@ -2774,13 +2827,120 @@ class SGD(Optimizer):
 from . import schedules as schedules
 
 
-# Legacy namespace support
-class legacy:
-    """Class docstring."""
+class OptimizerMap(dict):
+    """Mapping from variable prefixes or patterns to specific Optimizer instances."""
+
+    def __init__(
+        self, default_optimizer: TensorLike = None, optimizer_map: TensorLike = None
+    ) -> None:
+        """Initialize OptimizerMap.
+
+        Args:
+            default_optimizer: Fallback optimizer for unmatched variables.
+            optimizer_map: Optional dictionary of pattern-to-optimizer mappings.
+        """
+        super().__init__(optimizer_map or {})
+        self.default_optimizer = default_optimizer
 
 
-def serialize(optimizer):
-    """Serialize an optimizer."""
+class MultiOptimizer(Optimizer):
+    """Wrapper optimizer that applies distinct optimizers to subsets of model variables."""
+
+    def __init__(
+        self,
+        optimizer_map: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        name: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize MultiOptimizer.
+
+        Args:
+            optimizer_map: Mapping or list of ``(optimizer, variables)`` pairs.
+            loss_scale_factor: Optional loss scaling factor.
+            name: Optional optimizer name.
+            **kwargs: Base optimizer keyword arguments.
+        """
+        super().__init__(
+            learning_rate=0.001,
+            loss_scale_factor=loss_scale_factor,
+            name=name or "multi_optimizer",
+            **kwargs,
+        )
+        self.optimizer_map = optimizer_map
+
+
+class ScheduleFreeAdamW(AdamW):
+    """Schedule-Free AdamW optimizer."""
+
+    def __init__(
+        self,
+        learning_rate: TensorLike = 0.0025,
+        beta_1: TensorLike = 0.9,
+        beta_2: TensorLike = 0.999,
+        epsilon: TensorLike = 1e-08,
+        warmup_steps: TensorLike = 0,
+        weight_decay: TensorLike = None,
+        clipnorm: TensorLike = None,
+        clipvalue: TensorLike = None,
+        global_clipnorm: TensorLike = None,
+        use_ema: TensorLike = False,
+        ema_momentum: TensorLike = 0.99,
+        ema_overwrite_frequency: TensorLike = None,
+        loss_scale_factor: TensorLike = None,
+        gradient_accumulation_steps: TensorLike = None,
+        name: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize ScheduleFreeAdamW optimizer.
+
+        Args:
+            learning_rate: Learning rate scalar or schedule.
+            beta_1: Exponential interpolation rate.
+            beta_2: Exponential decay rate for second moment estimates.
+            epsilon: Small constant for numerical stability.
+            warmup_steps: Number of linear learning-rate warmup steps.
+            weight_decay: Optional weight decay coefficient.
+            clipnorm: Optional gradient norm clipping threshold.
+            clipvalue: Optional gradient value clipping threshold.
+            global_clipnorm: Optional global gradient norm clipping threshold.
+            use_ema: Whether to apply exponential moving average.
+            ema_momentum: Momentum for EMA updates.
+            ema_overwrite_frequency: Frequency of overwriting variables with EMA.
+            loss_scale_factor: Optional loss scaling factor.
+            gradient_accumulation_steps: Optional gradient accumulation step count.
+            name: Optional optimizer name.
+            **kwargs: Base optimizer keyword arguments.
+        """
+        super().__init__(
+            learning_rate=learning_rate,
+            weight_decay=weight_decay if weight_decay is not None else 0.0,
+            beta_1=beta_1,
+            beta_2=beta_2,
+            epsilon=epsilon,
+            clipnorm=clipnorm,
+            clipvalue=clipvalue,
+            global_clipnorm=global_clipnorm,
+            use_ema=use_ema,
+            ema_momentum=ema_momentum,
+            ema_overwrite_frequency=ema_overwrite_frequency,
+            loss_scale_factor=loss_scale_factor,
+            gradient_accumulation_steps=gradient_accumulation_steps,
+            name=name or "schedule_free_adamw",
+            **kwargs,
+        )
+        self.warmup_steps = int(warmup_steps)
+
+
+from zero_keras.optimizers import legacy as legacy
+
+
+def serialize(optimizer: TensorLike) -> TensorLike:
+    """Serialize an optimizer.
+
+    Args:
+        optimizer: Input parameter ``optimizer``.
+    """
     if optimizer is None:
         return None
     if isinstance(optimizer, str):
@@ -2791,8 +2951,13 @@ def serialize(optimizer):
     }
 
 
-def deserialize(config, custom_objects=None):
-    """Deserialize an optimizer."""
+def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
+    """Deserialize an optimizer.
+
+    Args:
+        config: Input parameter ``config``.
+        custom_objects: Input parameter ``custom_objects``.
+    """
     if config is None:
         return None
     if isinstance(config, str):
@@ -2806,8 +2971,12 @@ def deserialize(config, custom_objects=None):
     return config
 
 
-def get(identifier):
-    """Retrieve a Keras optimizer object via an identifier."""
+def get(identifier: TensorLike) -> TensorLike:
+    """Retrieve a Keras optimizer object via an identifier.
+
+    Args:
+        identifier: Input parameter ``identifier``.
+    """
     if identifier is None:
         return None
     if isinstance(identifier, str):

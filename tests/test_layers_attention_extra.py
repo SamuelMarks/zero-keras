@@ -1,8 +1,13 @@
+"""Module `test_layers_attention_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 import pytest
 
 
-def test_additive_attention():
+def test_additive_attention() -> TensorLike:
+    """Execute ``test_additive_attention``."""
     from zero_keras.layers.attention import AdditiveAttention
 
     layer = AdditiveAttention(use_scale=True, causal=True, dropout=0.1)
@@ -21,7 +26,8 @@ def test_additive_attention():
     assert res.shape == (2, 3, 4)
 
 
-def test_attention():
+def test_attention() -> TensorLike:
+    """Execute ``test_attention``."""
     from zero_keras.layers.attention import Attention
 
     layer = Attention(use_scale=True, score_mode="dot", causal=True, dropout=0.1)
@@ -45,7 +51,8 @@ def test_attention():
     assert res.shape == (2, 3, 4)
 
 
-def test_group_query_attention():
+def test_group_query_attention() -> TensorLike:
+    """Execute ``test_group_query_attention``."""
     from zero_keras.layers.attention import GroupQueryAttention
 
     layer = GroupQueryAttention(
@@ -57,7 +64,9 @@ def test_group_query_attention():
     assert res.shape == (2, 3, 8)
 
     layer_get_config = layer.get_config()
-    assert layer_get_config.get("head_dim", getattr(layer, "head_dim", 2)) == 2
+    assert (
+        layer_get_config.get("head_dim", (layer.head_dim if hasattr(layer, "head_dim") else 2)) == 2
+    )
 
     # test return_attention_scores
     res = layer(query, value, return_attention_scores=True)
@@ -68,7 +77,8 @@ if __name__ == "__main__":
     pytest.main(["-v", "test_layers_attention_extra.py"])
 
 
-def test_multi_head_attention():
+def test_multi_head_attention() -> TensorLike:
+    """Execute ``test_multi_head_attention``."""
     from zero_keras.layers.attention import MultiHeadAttention
 
     layer = MultiHeadAttention(
@@ -81,4 +91,9 @@ def test_multi_head_attention():
     res = layer(query, value)
 
     layer_get_config = layer.get_config()
-    assert layer_get_config.get("num_heads", getattr(layer, "num_heads", None)) == 2
+    assert (
+        layer_get_config.get(
+            "num_heads", (layer.num_heads if hasattr(layer, "num_heads") else None)
+        )
+        == 2
+    )

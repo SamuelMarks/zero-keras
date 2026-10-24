@@ -1,36 +1,31 @@
 """Module docstring."""
 
-from ml_switcheroo_compiler import core as backend
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
 from zero_keras.utils import file_utils, generic_utils, operation_utils
 
-BASE_WEIGHTS_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/densenet/"
-)
-DENSENET121_WEIGHT_PATH = (
-    f"{BASE_WEIGHTS_PATH}densenet121_weights_tf_dim_ordering_tf_kernels.h5"
-)
+BASE_WEIGHTS_PATH = "https://storage.googleapis.com/tensorflow/keras-applications/densenet/"
+DENSENET121_WEIGHT_PATH = f"{BASE_WEIGHTS_PATH}densenet121_weights_tf_dim_ordering_tf_kernels.h5"
 DENSENET121_WEIGHT_PATH_NO_TOP = (
     f"{BASE_WEIGHTS_PATH}densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5"
 )
-DENSENET169_WEIGHT_PATH = (
-    f"{BASE_WEIGHTS_PATH}densenet169_weights_tf_dim_ordering_tf_kernels.h5"
-)
+DENSENET169_WEIGHT_PATH = f"{BASE_WEIGHTS_PATH}densenet169_weights_tf_dim_ordering_tf_kernels.h5"
 DENSENET169_WEIGHT_PATH_NO_TOP = (
     f"{BASE_WEIGHTS_PATH}densenet169_weights_tf_dim_ordering_tf_kernels_notop.h5"
 )
-DENSENET201_WEIGHT_PATH = (
-    f"{BASE_WEIGHTS_PATH}densenet201_weights_tf_dim_ordering_tf_kernels.h5"
-)
+DENSENET201_WEIGHT_PATH = f"{BASE_WEIGHTS_PATH}densenet201_weights_tf_dim_ordering_tf_kernels.h5"
 DENSENET201_WEIGHT_PATH_NO_TOP = (
     f"{BASE_WEIGHTS_PATH}densenet201_weights_tf_dim_ordering_tf_kernels_notop.h5"
 )
 
 
-def dense_block(x, blocks, name):
+def dense_block(x: TensorLike, blocks: TensorLike, name: TensorLike) -> TensorLike:
     """A dense block.
 
     Args:
@@ -46,7 +41,7 @@ def dense_block(x, blocks, name):
     return x
 
 
-def transition_block(x, reduction, name):
+def transition_block(x: TensorLike, reduction: TensorLike, name: TensorLike) -> TensorLike:
     """A transition block.
 
     Args:
@@ -70,7 +65,7 @@ def transition_block(x, reduction, name):
     return x
 
 
-def conv_block(x, growth_rate, name):
+def conv_block(x: TensorLike, growth_rate: TensorLike, name: TensorLike) -> TensorLike:
     """A building block for a dense block.
 
     Args:
@@ -82,33 +77,27 @@ def conv_block(x, growth_rate, name):
         Output tensor for the block.
     """
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
-    x1 = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=f"{name}_0_bn")(
-        x
-    )
+    x1 = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=f"{name}_0_bn")(x)
     x1 = layers.Activation("relu", name=f"{name}_0_relu")(x1)
     x1 = layers.Conv2D(4 * growth_rate, 1, use_bias=False, name=f"{name}_1_conv")(x1)
-    x1 = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=f"{name}_1_bn")(
-        x1
-    )
+    x1 = layers.BatchNormalization(axis=bn_axis, epsilon=1.001e-5, name=f"{name}_1_bn")(x1)
     x1 = layers.Activation("relu", name=f"{name}_1_relu")(x1)
-    x1 = layers.Conv2D(
-        growth_rate, 3, padding="same", use_bias=False, name=f"{name}_2_conv"
-    )(x1)
+    x1 = layers.Conv2D(growth_rate, 3, padding="same", use_bias=False, name=f"{name}_2_conv")(x1)
     x = layers.Concatenate(axis=bn_axis, name=f"{name}_concat")([x, x1])
     return x
 
 
 def DenseNet(
-    blocks,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="densenet",
-):
+    blocks: TensorLike,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "densenet",
+) -> TensorLike:
     """Instantiates the DenseNet architecture.
 
     Reference:
@@ -177,13 +166,13 @@ def DenseNet(
         A model instance.
     """
     if backend.image_data_format() == "channels_first":
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "DenseNet does not support the `channels_first` image data "
             "format. Switch to `channels_last` by editing your local "
             "config file at ~/.keras/keras.json"
         )
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -191,7 +180,7 @@ def DenseNet(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             'If using `weights` as `"imagenet"` with `include_top`'
             " as true, `classes` should be 1000"
         )
@@ -209,12 +198,10 @@ def DenseNet(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
@@ -240,19 +227,17 @@ def DenseNet(
         x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
 
         imagenet_utils.validate_activation(classifier_activation, weights)
-        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
-            x
-        )
+        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D(name="max_pool")(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D(name="max_pool")(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -261,72 +246,83 @@ def DenseNet(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            if blocks == [6, 12, 24, 16]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+        if include_top:
+            if blocks == [6, 12, 24, 16]:
+                weights_path = generic_utils.get_file(
                     "densenet121_weights_tf_dim_ordering_tf_kernels.h5",
                     DENSENET121_WEIGHT_PATH,
                     cache_subdir="models",
                     file_hash="9d60b8095a5708f2dcce2bca79d332c7",
                 )
-            elif blocks == [6, 12, 32, 32]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            elif blocks == [6, 12, 32, 32]:
+                weights_path = generic_utils.get_file(
                     "densenet169_weights_tf_dim_ordering_tf_kernels.h5",
                     DENSENET169_WEIGHT_PATH,
                     cache_subdir="models",
                     file_hash="d699b8f76981ab1b30698df4c175e90b",
                 )
-            elif blocks == [6, 12, 48, 32]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            elif blocks == [6, 12, 48, 32]:
+                weights_path = generic_utils.get_file(
                     "densenet201_weights_tf_dim_ordering_tf_kernels.h5",
                     DENSENET201_WEIGHT_PATH,
                     cache_subdir="models",
                     file_hash="1ceb130c1ea1b78c3bf6114dbdfd8807",
                 )
             else:
-                raise ValueError("weights_path undefined")  # pragma: no cover
+                raise ValueError("weights_path undefined")
         else:
-            if blocks == [6, 12, 24, 16]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            if blocks == [6, 12, 24, 16]:
+                weights_path = generic_utils.get_file(
                     "densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5",
                     DENSENET121_WEIGHT_PATH_NO_TOP,
                     cache_subdir="models",
                     file_hash="30ee3e1110167f948a6b9946edeeb738",
                 )
-            elif blocks == [6, 12, 32, 32]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            elif blocks == [6, 12, 32, 32]:
+                weights_path = generic_utils.get_file(
                     "densenet169_weights_tf_dim_ordering_tf_kernels_notop.h5",
                     DENSENET169_WEIGHT_PATH_NO_TOP,
                     cache_subdir="models",
                     file_hash="b8c4d4c20dd625c148057b9ff1c1176b",
                 )
-            elif blocks == [6, 12, 48, 32]:  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            elif blocks == [6, 12, 48, 32]:
+                weights_path = generic_utils.get_file(
                     "densenet201_weights_tf_dim_ordering_tf_kernels_notop.h5",
                     DENSENET201_WEIGHT_PATH_NO_TOP,
                     cache_subdir="models",
                     file_hash="c13680b51ded0fb44dff2d8f86ac8bb1",
                 )
             else:
-                raise ValueError("weights_path undefined")  # pragma: no cover
-        model.load_weights(weights_path)  # pragma: no cover
+                raise ValueError("weights_path undefined")
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
 def DenseNet121(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="densenet121",
-):
-    """Instantiates the Densenet121 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "densenet121",
+) -> TensorLike:
+    """Instantiates the Densenet121 architecture.
+
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
     return DenseNet(
         [6, 12, 24, 16],
         include_top,
@@ -341,16 +337,27 @@ def DenseNet121(
 
 
 def DenseNet169(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="densenet169",
-):
-    """Instantiates the Densenet169 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "densenet169",
+) -> TensorLike:
+    """Instantiates the Densenet169 architecture.
+
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
     return DenseNet(
         [6, 12, 32, 32],
         include_top,
@@ -365,16 +372,27 @@ def DenseNet169(
 
 
 def DenseNet201(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="densenet201",
-):
-    """Instantiates the Densenet201 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "densenet201",
+) -> TensorLike:
+    """Instantiates the Densenet201 architecture.
+
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
     return DenseNet(
         [6, 12, 48, 32],
         include_top,
@@ -388,26 +406,24 @@ def DenseNet201(
     )
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="torch"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="torch")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
@@ -473,9 +489,6 @@ Returns:
     A Keras model instance.
 """
 
-if DenseNet121.__doc__ is not None:  # pragma: no branch
-    DenseNet121.__doc__ = DenseNet121.__doc__ + DOC
-if DenseNet169.__doc__ is not None:  # pragma: no branch
-    DenseNet169.__doc__ = DenseNet169.__doc__ + DOC
-if DenseNet201.__doc__ is not None:  # pragma: no branch
-    DenseNet201.__doc__ = DenseNet201.__doc__ + DOC
+DenseNet121.__doc__ = (DenseNet121.__doc__ or "") + DOC
+DenseNet169.__doc__ = (DenseNet169.__doc__ or "") + DOC
+DenseNet201.__doc__ = (DenseNet201.__doc__ or "") + DOC

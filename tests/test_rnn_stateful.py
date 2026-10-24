@@ -1,12 +1,22 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 
 from zero_keras import layers
 
 
-def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwargs):
+def check_layer_parity(
+    layer_cls: TensorLike,
+    keras_cls: TensorLike,
+    inputs: TensorLike,
+    atol: TensorLike = 0.5,
+    rtol: TensorLike = 0.5,
+    **kwargs: TensorLike,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -36,18 +46,12 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=0.5, rtol=0.5, **kwarg
     _ = zero_layer(inputs)
     zero_out2 = zero_layer(inputs)
 
-    keras_out_np2 = (
-        keras_out2.numpy() if hasattr(keras_out2, "numpy") else np.array(keras_out2)
-    )
-    zero_out_np2 = (
-        zero_out2.numpy() if hasattr(zero_out2, "numpy") else np.array(zero_out2)
-    )
+    keras_out_np2 = keras_out2.numpy() if hasattr(keras_out2, "numpy") else np.array(keras_out2)
+    zero_out_np2 = zero_out2.numpy() if hasattr(zero_out2, "numpy") else np.array(zero_out2)
     np.testing.assert_allclose(keras_out_np2, zero_out_np2, atol=atol, rtol=rtol)
 
 
-def test_simplernn_stateful():
+def test_simplernn_stateful() -> TensorLike:
     """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(
-        layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, stateful=True
-    )
+    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, stateful=True)

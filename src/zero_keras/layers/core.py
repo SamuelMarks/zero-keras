@@ -1,3 +1,7 @@
+"""Core layers (`Dense`, `Activation`, `Dropout`, `Flatten`, `Reshape`, `Permute`, `RepeatVector`, `Lambda`, `Masking`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.activations import get as get_activation
@@ -93,7 +97,7 @@ class Layer(BaseLayer):
             self.units = units
 
         # Create the state of the layer (weights)
-            # pragma: no cover
+
     def build(self, input_shape):
             self.kernel = self.add_weight(
                 shape=(input_shape[-1], self.units),
@@ -109,7 +113,7 @@ class Layer(BaseLayer):
             )
 
         # Defines the computation
-            # pragma: no cover
+
     def call(self, inputs):
             return ops.matmul(inputs, self.kernel) + self.bias
 
@@ -142,7 +146,7 @@ class Layer(BaseLayer):
             name="total",
           )
 
-          # pragma: no cover
+
     def call(self, inputs):
           self.total.assign(self.total + ops.sum(inputs))
           return self.total
@@ -158,7 +162,7 @@ class Layer(BaseLayer):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -166,17 +170,18 @@ class Layer(BaseLayer):
         """
         super().__init__(**kwargs)
 
-        # pragma: no cover
-
-    def call(self, *args, **kwargs):
+    def call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         *args: Variable length argument list.
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
+        Args:
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
         """
         return args[0] if args else None
 
@@ -243,7 +248,13 @@ class Dense(Layer):
 
     """
 
-    def __init__(self, units, activation=None, use_bias=True, **kwargs):
+    def __init__(
+        self,
+        units: TensorLike,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -259,20 +270,17 @@ class Dense(Layer):
         self.kernel = None
         self.bias = None
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
         """compute_output_shape docstring.
 
         Args:
             input_shape: Input shape.
         """
-
         input_shape = tuple(input_shape)
 
         return input_shape[:-1] + (self.units,)
 
-        # pragma: no cover
-
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         from zero_keras.activations import serialize as serialize_activation
 
@@ -286,30 +294,28 @@ class Dense(Layer):
         )
         return config
 
-        # pragma: no cover
-
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
             return
         in_dim = input_shape[-1]
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 name="kernel",
                 shape=(in_dim, self.units),
                 initializer=self._kwargs.get("kernel_initializer", "glorot_uniform"),
                 trainable=True,
             )
-        if self.use_bias:  # pragma: no branch  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     name="bias",
                     shape=(self.units,),
@@ -318,9 +324,7 @@ class Dense(Layer):
                 )
         self.built = True
 
-        # pragma: no cover
-
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -329,18 +333,18 @@ class Dense(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
 
         out = ops.matmul(inputs, _to_tensor(self.kernel))
-        if self.use_bias:  # pragma: no branch  # pragma: no branch
+        if self.use_bias:
             out = ops.add(out, self.bias)
 
-        if self.activation is not None:  # pragma: no branch
+        if self.activation is not None:
             out = self.activation(out)
         return _wrap(out)
 
@@ -380,7 +384,7 @@ class Dropout(Layer):
 
     """
 
-    def __init__(self, rate, **kwargs):
+    def __init__(self, rate: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -390,9 +394,9 @@ class Dropout(Layer):
         super().__init__(**kwargs)
         self.rate = rate
 
-        # pragma: no cover
-
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -401,23 +405,23 @@ class Dropout(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if training or training is None:
             from ml_switcheroo_compiler import random
 
-            key = random.PRNGKey(42)
+            key = "42"
             from zero_keras.core_layers import KerasTensor
 
-            if isinstance(inputs, KerasTensor):  # pragma: no branch
+            if isinstance(inputs, KerasTensor):
                 return _wrap(inputs)
             mask_t = ops.cast(
                 random.bernoulli(key, 1.0 - self.rate, inputs.shape), dtype=inputs.dtype
             ) / (1.0 - self.rate)
             return _wrap(ops.multiply(inputs, mask_t))
-        return _wrap(inputs)  # pragma: no cover
+        return _wrap(inputs)
 
 
 class Flatten(Layer):
@@ -444,13 +448,17 @@ class Flatten(Layer):
 
     """
 
-    def __init__(self, data_format=None, **kwargs):
+    def __init__(self, data_format: TensorLike = None, **kwargs: TensorLike) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            data_format: Input parameter ``data_format``.
+            kwargs: Input parameter ``kwargs``.
+        """
         super().__init__(**kwargs)
         self.data_format = data_format
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -458,13 +466,13 @@ class Flatten(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         shape = inputs.shape
         if len(shape) <= 1:
-            return _wrap(inputs)  # pragma: no cover
+            return _wrap(inputs)
 
         new_dim = 1
         for d in shape[1:]:
@@ -501,7 +509,7 @@ class Reshape(Layer):
 
     """
 
-    def __init__(self, target_shape, **kwargs):
+    def __init__(self, target_shape: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -511,9 +519,7 @@ class Reshape(Layer):
         super().__init__(**kwargs)
         self.target_shape = tuple(target_shape)
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -521,7 +527,7 @@ class Reshape(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -555,7 +561,7 @@ class Permute(Layer):
 
     """
 
-    def __init__(self, dims, **kwargs):
+    def __init__(self, dims: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -565,9 +571,7 @@ class Permute(Layer):
         super().__init__(**kwargs)
         self.dims = tuple(dims)
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -575,7 +579,7 @@ class Permute(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -603,7 +607,7 @@ class RepeatVector(Layer):
 
     """
 
-    def __init__(self, n, **kwargs):
+    def __init__(self, n: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -613,9 +617,7 @@ class RepeatVector(Layer):
         super().__init__(**kwargs)
         self.n = n
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -623,7 +625,7 @@ class RepeatVector(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -670,7 +672,7 @@ class Masking(Layer):
 
     """
 
-    def __init__(self, mask_value=0.0, **kwargs):
+    def __init__(self, mask_value: TensorLike = 0.0, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -680,9 +682,7 @@ class Masking(Layer):
         super().__init__(**kwargs)
         self.mask_value = mask_value
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -690,7 +690,7 @@ class Masking(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return _wrap(_to_tensor(inputs))
@@ -745,7 +745,7 @@ class Lambda(Layer):
 
     """
 
-    def __init__(self, function, **kwargs):
+    def __init__(self, function: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -755,9 +755,7 @@ class Lambda(Layer):
         super().__init__(**kwargs)
         self.function = function
 
-        # pragma: no cover
-
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -765,7 +763,7 @@ class Lambda(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return self.function(inputs, **kwargs)
@@ -778,8 +776,7 @@ class Identity(Layer):
     performed. The layer just returns its `inputs` argument as output.
     """
 
-    # pragma: no cover
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -787,7 +784,7 @@ class Identity(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -883,7 +880,7 @@ class InputLayer(Layer):
             self.units = units
 
         # Create the state of the layer (weights)
-            # pragma: no cover
+
     def build(self, input_shape):
             self.kernel = self.add_weight(
                 shape=(input_shape[-1], self.units),
@@ -899,7 +896,7 @@ class InputLayer(Layer):
             )
 
         # Defines the computation
-            # pragma: no cover
+
     def call(self, inputs):
             return ops.matmul(inputs, self.kernel) + self.bias
 
@@ -932,7 +929,7 @@ class InputLayer(Layer):
             name="total",
           )
 
-          # pragma: no cover
+
     def call(self, inputs):
           self.total.assign(self.total + ops.sum(inputs))
           return self.total
@@ -950,15 +947,15 @@ class InputLayer(Layer):
 
     def __init__(
         self,
-        input_shape=None,
-        batch_size=None,
-        dtype=None,
-        input_tensor=None,
-        sparse=None,
-        name=None,
-        batch_input_shape=None,
-        **kwargs,
-    ):
+        input_shape: TensorLike = None,
+        batch_size: TensorLike = None,
+        dtype: TensorLike = None,
+        input_tensor: TensorLike = None,
+        sparse: TensorLike = None,
+        name: TensorLike = None,
+        batch_input_shape: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -971,74 +968,34 @@ class InputLayer(Layer):
             batch_input_shape: Description.
             kwargs: Description.
         """
-
-        # pragma: no cover
         super().__init__(name=name, **kwargs)
-        # pragma: no cover
 
-        # pragma: no cover
-        if input_shape is not None and batch_size is not None:  # pragma: no branch
-            # pragma: no cover
-
-            # pragma: no cover
+        if input_shape is not None and batch_size is not None:
             self.batch_input_shape = (batch_size,) + tuple(input_shape)
-        # pragma: no cover
 
-        # pragma: no cover
-        elif input_shape is not None:  # pragma: no branch
-            # pragma: no cover
-
-            # pragma: no cover
+        elif input_shape is not None:
             self.batch_input_shape = (None,) + tuple(input_shape)
-        # pragma: no cover
 
-        # pragma: no cover
         else:
-            # pragma: no cover
-
-            # pragma: no cover
             self.batch_input_shape = batch_input_shape
-        # pragma: no cover
 
-        # pragma: no cover
-
-        # pragma: no cover
-
-        # pragma: no cover
         self._dtype = dtype or "float32"
-        # pragma: no cover
 
-        # pragma: no cover
         self.sparse = sparse or False
-        # pragma: no cover
 
-        # pragma: no cover
         if input_tensor is None and self.batch_input_shape is not None:
-            # pragma: no cover
-
-            # pragma: no cover
             from zero_keras.core_layers import KerasTensor
-            # pragma: no cover
 
-            # pragma: no cover
-
-            # pragma: no cover
-
-            # pragma: no cover
             self.input_tensor = KerasTensor(
-                # pragma: no cover
-                # pragma: no cover
                 self.batch_input_shape,
                 self.dtype,
                 name=name,
-                # pragma: no cover
             )
-        # pragma: no cover
+
         else:
-            # pragma: no cover
             self.input_tensor = input_tensor
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1046,7 +1003,7 @@ class InputLayer(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return inputs
@@ -1098,15 +1055,15 @@ class InputSpec:
 
     def __init__(
         self,
-        dtype=None,
-        shape=None,
-        ndim=None,
-        max_ndim=None,
-        min_ndim=None,
-        axes=None,
-        allow_last_axis_squeeze=False,
-        name=None,
-    ):
+        dtype: TensorLike = None,
+        shape: TensorLike = None,
+        ndim: TensorLike = None,
+        max_ndim: TensorLike = None,
+        min_ndim: TensorLike = None,
+        axes: TensorLike = None,
+        allow_last_axis_squeeze: TensorLike = False,
+        name: TensorLike = None,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1119,33 +1076,20 @@ class InputSpec:
             allow_last_axis_squeeze: Description.
             name: Description.
         """
-        # pragma: no cover
         self.dtype = dtype
-        # pragma: no cover
+
         self.shape = shape
-        # pragma: no cover
 
-        # pragma: no cover
         self.ndim = ndim
-        # pragma: no cover
 
-        # pragma: no cover
         self.max_ndim = max_ndim
-        # pragma: no cover
 
-        # pragma: no cover
         self.min_ndim = min_ndim
-        # pragma: no cover
 
-        # pragma: no cover
         self.axes = axes or {}
-        # pragma: no cover
 
-        # pragma: no cover
         self.allow_last_axis_squeeze = allow_last_axis_squeeze
-        # pragma: no cover
 
-        # pragma: no cover
         self.name = name
 
 
@@ -1161,63 +1105,43 @@ class Wrapper(Layer):
 
     """
 
-    def __init__(self, layer, **kwargs):
+    def __init__(self, layer: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
-
-
         Args:
-
             layer: Description.
 
             kwargs: Description.
 
         """
-
         super().__init__(layer=layer, **kwargs)
 
         self.layer = layer
 
-        # pragma: no cover
-
-    def build(self, input_shape=None):
+    def build(self, input_shape: TensorLike = None) -> TensorLike:
         """Build function.
 
-
-
-            Args:
-
-            input_shape: Parameter input_shape.
+        Args:
+        input_shape: Parameter input_shape.
 
 
 
-            Returns:
-
-            Any: Return value.
-
+        Returns:
+        TensorLike: Return value.
 
 
-        # pragma: no cover
+
+
         """
-        # pragma: no cover
-
-        # pragma: no cover
         if self.built:
-            # pragma: no cover
-
-            # pragma: no cover
             return
-        # pragma: no cover
 
-        # pragma: no cover
         if not self.layer.built:
             self.layer.build(input_shape)
 
         self.built = True
 
-        # pragma: no cover
-
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1226,58 +1150,7 @@ class Wrapper(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return self.layer(inputs, *args, **kwargs)
-
-
-class _LegacyInput(Layer):
-    """Input layer is not strictly needed in eager API compatible mode."""
-
-    def __init__(
-        self,  # pragma: no cover
-        shape=None,  # pragma: no cover
-        batch_size=None,  # pragma: no cover
-        dtype=None,  # pragma: no cover
-        input_tensor=None,  # pragma: no cover
-        sparse=None,  # pragma: no cover
-        name=None,  # pragma: no cover
-        batch_shape=None,  # pragma: no cover
-        **kwargs,  # pragma: no cover
-    ):  # pragma: no cover
-        """Function docstring.  # pragma: no cover
-        # pragma: no cover
-              Args:  # pragma: no cover
-                  shape: Description.  # pragma: no cover
-                  batch_size: Description.  # pragma: no cover
-                  dtype: Description.  # pragma: no cover
-                  input_tensor: Description.  # pragma: no cover
-                  sparse: Description.  # pragma: no cover
-                  name: Description.  # pragma: no cover
-                  batch_shape: Description.  # pragma: no cover
-                  kwargs: Description.  # pragma: no cover
-        """  # pragma: no cover
-        # pragma: no cover  # pragma: no cover
-        super().__init__(name=name, dtype=dtype, **kwargs)  # pragma: no cover
-        # pragma: no cover  # pragma: no cover
-        if shape is not None and batch_shape is None:  # pragma: no cover
-            # pragma: no cover  # pragma: no cover  # pragma: no cover
-            batch_shape = (batch_size,) + tuple(
-                shape
-            )  # pragma: no cover  # pragma: no cover
-        # pragma: no cover  # pragma: no cover  # pragma: no cover
-        self.batch_shape = batch_shape  # pragma: no cover  # pragma: no cover
-
-    # pragma: no cover
-    # pragma: no cover  # pragma: no cover
-    # pragma: no cover
-    def call(self, inputs, *args, **kwargs):  # pragma: no cover
-        """Function docstring.  # pragma: no cover
-        # pragma: no cover
-              Args:  # pragma: no cover
-                  inputs: Description.  # pragma: no cover
-                  args: Description.  # pragma: no cover
-                  kwargs: Description.  # pragma: no cover
-        """  # pragma: no cover
-        return inputs  # pragma: no cover

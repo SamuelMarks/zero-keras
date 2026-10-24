@@ -1,46 +1,50 @@
-"""mixed_precision API."""
+"""Mixed precision policy management API for zero_keras."""
 
-from typing import Any
+from __future__ import annotations
 
-from zero_keras.core_layers import DTypePolicy
+from zero_keras import config as zk_config
+from zero_keras.dtype_policies import DTypePolicy
 from zero_keras.optimizers import LossScaleOptimizer
 
 
 class Policy(DTypePolicy):
-    """Policy docstring."""
+    """Deprecated alias for ``DTypePolicy`` in mixed_precision."""
 
 
-_GLOBAL_POLICY: Any = None
+def dtype_policy() -> DTypePolicy | str | None:
+    """Return the active global dtype policy.
+
+    Returns:
+        DTypePolicy | str | None: Current global dtype policy.
+    """
+    return zk_config.dtype_policy()
 
 
-def dtype_policy() -> Any:
-    """dtype_policy docstring."""
-    return _GLOBAL_POLICY
+def global_policy() -> DTypePolicy | str | None:
+    """Return the active global mixed-precision policy.
+
+    Returns:
+        DTypePolicy | str | None: Current global policy.
+    """
+    return zk_config.dtype_policy()
 
 
-def global_policy() -> Any:
-    """global_policy docstring."""
-    return _GLOBAL_POLICY
-
-
-def set_dtype_policy(policy: Any) -> None:
-    """set_dtype_policy docstring.
+def set_dtype_policy(policy: DTypePolicy | str | None) -> None:
+    """Set the global dtype policy.
 
     Args:
-        policy: Policy.
+        policy: Policy instance or string name.
     """
-    global _GLOBAL_POLICY
-    _GLOBAL_POLICY = policy
+    zk_config.set_dtype_policy(policy)
 
 
-def set_global_policy(policy: Any) -> None:
-    """set_global_policy docstring.
+def set_global_policy(policy: DTypePolicy | str | None) -> None:
+    """Set the global mixed-precision policy.
 
     Args:
-        policy: Policy.
+        policy: Policy instance or string name.
     """
-    global _GLOBAL_POLICY
-    _GLOBAL_POLICY = policy
+    zk_config.set_dtype_policy(policy)
 
 
 __all__ = [

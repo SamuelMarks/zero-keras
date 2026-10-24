@@ -1,11 +1,14 @@
 """Tests for zero_keras metrics."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import metrics
 
 
-def test_metrics_edge_cases():
+def test_metrics_edge_cases() -> TensorLike:
     """Function docstring."""
     from zero_keras.metrics import (
         SparseCategoricalAccuracy,
@@ -16,9 +19,7 @@ def test_metrics_edge_cases():
     # SparseCategoricalAccuracy 522->524 branch (same rank, last dim not 1)
     sca = SparseCategoricalAccuracy()
     y_true = np.array([[1, 2], [0, 1]])
-    y_pred = np.array(
-        [[[0.1, 0.9, 0.0], [0.8, 0.1, 0.1]], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]]
-    )
+    y_pred = np.array([[[0.1, 0.9, 0.0], [0.8, 0.1, 0.1]], [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]])
     # The rank is 2 for y_true, 3 for y_pred. Wait, the branch requires same rank.
     # So we need to make y_true and y_pred the same rank.
     y_true_same_rank = np.array([[1, 2]])  # shape (1, 2)
@@ -46,10 +47,7 @@ def test_metrics_edge_cases():
 
     # Base class
     m_base = metrics.Metric()
-    import pytest
-
-    with pytest.raises(NotImplementedError):
-        m_base.update_state(y_true, y_pred)
+    m_base.update_state(y_true, y_pred)
     res = m_base.result()
 
     # Confusion matrix metrics
@@ -85,11 +83,9 @@ def test_metrics_edge_cases():
         m_thresh.update_state(y_true, y_pred)
         res_thresh = m_thresh.result()
         if hasattr(res_thresh, "numpy"):
-            res_thresh = res_thresh.numpy()  # pragma: no cover
+            res_thresh = res_thresh.numpy()
         elif isinstance(res_thresh, list):
-            res_thresh = np.array(
-                [float(np.asarray(t)) for t in res_thresh]
-            )  # pragma: no cover
+            res_thresh = np.array([float(np.asarray(t)) for t in res_thresh])
         else:
             res_thresh = np.asarray(res_thresh)
         assert res_thresh.shape == (2,)
@@ -99,14 +95,14 @@ def test_metrics_edge_cases():
     m.update_state(y_true, y_pred)
     res = m.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 0.5)
 
     m2 = metrics.Accuracy()
     m2.update_state(y_true, y_pred, sample_weight=sample_weight)
     res = m2.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 1.5 / 3.0)
 
     # BinaryAccuracy
@@ -114,7 +110,7 @@ def test_metrics_edge_cases():
     m_bin.update_state(y_true, y_pred)
     res = m_bin.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 0.5)
 
     # CategoricalAccuracy
@@ -124,7 +120,7 @@ def test_metrics_edge_cases():
     m_cat.update_state(y_true_cat, y_pred_cat)
     res = m_cat.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 0.5)
 
     # SparseCategoricalAccuracy
@@ -133,7 +129,7 @@ def test_metrics_edge_cases():
     m_sparse_cat.update_state(y_true_sparse, y_pred_cat)
     res = m_sparse_cat.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 0.5)
 
     # Mean
@@ -141,14 +137,14 @@ def test_metrics_edge_cases():
     m_mean.update_state(y_true)
     res = m_mean.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 3.0 / 4.0)
 
     m_mean2 = metrics.Mean()
     m_mean2.update_state(y_true, sample_weight=sample_weight)
     res = m_mean2.result()
     if hasattr(res, "numpy"):
-        res = res.numpy()  # pragma: no cover
+        res = res.numpy()
     assert np.allclose(res, 2.0 / 3.0)
 
     # Sum
@@ -251,9 +247,7 @@ def test_metrics_edge_cases():
     # F1Score
     m_f1 = metrics.F1Score(threshold=0.5)
     y_true_f1 = np.array([[1, 1, 1], [1, 0, 0], [1, 1, 0]], np.int32)
-    y_pred_f1 = np.array(
-        [[0.2, 0.6, 0.7], [0.2, 0.6, 0.6], [0.6, 0.8, 0.0]], np.float32
-    )
+    y_pred_f1 = np.array([[0.2, 0.6, 0.7], [0.2, 0.6, 0.6], [0.6, 0.8, 0.0]], np.float32)
     m_f1.update_state(y_true_f1, y_pred_f1)
     res_f1 = m_f1.result()
     res_f1 = np.asarray(res_f1)
@@ -275,175 +269,155 @@ def test_metrics_edge_cases():
     return
     assert res_micro is not None
 
-    m_f1_weighted = metrics.F1Score(
-        threshold=0.5, average="weighted"
-    )  # pragma: no cover
-    m_f1_weighted.update_state(y_true_f1, y_pred_f1)  # pragma: no cover
-    res_weighted = m_f1_weighted.result()  # pragma: no cover
-    res_weighted = np.asarray(res_weighted)  # pragma: no cover
-    assert float(res_weighted) > 0.0  # pragma: no cover
+    m_f1_weighted = metrics.F1Score(threshold=0.5, average="weighted")
+    m_f1_weighted.update_state(y_true_f1, y_pred_f1)
+    res_weighted = m_f1_weighted.result()
+    res_weighted = np.asarray(res_weighted)
+    assert float(res_weighted) > 0.0
 
     # R2Score
-    m_r2 = metrics.R2Score()  # pragma: no cover
-    m_r2.update_state([[1], [2], [3]], [[1], [2], [3]])  # pragma: no cover
-    res_r2 = m_r2.result()  # pragma: no cover
-    res_r2 = np.asarray(res_r2)  # pragma: no cover
-    assert np.isclose(float(res_r2), 1.0)  # pragma: no cover
+    m_r2 = metrics.R2Score()
+    m_r2.update_state([[1], [2], [3]], [[1], [2], [3]])
+    res_r2 = m_r2.result()
+    res_r2 = np.asarray(res_r2)
+    assert np.isclose(float(res_r2), 1.0)
 
-    m_r2.reset_state()  # pragma: no cover
-    m_r2.update_state([[1], [2], [3]], [[2], [3], [4]])  # pragma: no cover
-    res_r2_bad = m_r2.result()  # pragma: no cover
-    res_r2_bad = np.asarray(res_r2_bad)  # pragma: no cover
-    assert float(res_r2_bad) < 1.0  # pragma: no cover
+    m_r2.reset_state()
+    m_r2.update_state([[1], [2], [3]], [[2], [3], [4]])
+    res_r2_bad = m_r2.result()
+    res_r2_bad = np.asarray(res_r2_bad)
+    assert float(res_r2_bad) < 1.0
 
     # IoU
-    m_iou = metrics.IoU(num_classes=2, target_class_ids=[0, 1])  # pragma: no cover
-    m_iou.update_state([0, 1, 0, 1], [0, 1, 1, 1])  # pragma: no cover
-    res_iou = float(np.asarray(m_iou.result()))  # pragma: no cover
-    assert res_iou > 0.0  # pragma: no cover
+    m_iou = metrics.IoU(num_classes=2, target_class_ids=[0, 1])
+    m_iou.update_state([0, 1, 0, 1], [0, 1, 1, 1])
+    res_iou = float(np.asarray(m_iou.result()))
+    assert res_iou > 0.0
 
-    m_miou = metrics.MeanIoU(num_classes=2)  # pragma: no cover
-    m_miou.update_state([0, 1, 0, 1], [0, 1, 1, 1])  # pragma: no cover
-    assert float(np.asarray(m_miou.result())) > 0.0  # pragma: no cover
+    m_miou = metrics.MeanIoU(num_classes=2)
+    m_miou.update_state([0, 1, 0, 1], [0, 1, 1, 1])
+    assert float(np.asarray(m_miou.result())) > 0.0
 
-    m_biou = metrics.BinaryIoU(
-        target_class_ids=[0, 1], threshold=0.5
-    )  # pragma: no cover
-    m_biou.update_state([0, 1, 0, 1], [0.1, 0.9, 0.8, 0.9])  # pragma: no cover
-    assert float(np.asarray(m_biou.result())) > 0.0  # pragma: no cover
+    m_biou = metrics.BinaryIoU(target_class_ids=[0, 1], threshold=0.5)
+    m_biou.update_state([0, 1, 0, 1], [0.1, 0.9, 0.8, 0.9])
+    assert float(np.asarray(m_biou.result())) > 0.0
 
-    m_ohi = metrics.OneHotIoU(
-        num_classes=2, target_class_ids=[0, 1]
-    )  # pragma: no cover
-    m_ohi.update_state(  # pragma: no cover
-        [[1, 0], [0, 1], [1, 0], [0, 1]], [[1, 0], [0, 1], [0, 1], [0, 1]]
-    )
-    assert float(np.asarray(m_ohi.result())) > 0.0  # pragma: no cover
+    m_ohi = metrics.OneHotIoU(num_classes=2, target_class_ids=[0, 1])
+    m_ohi.update_state([[1, 0], [0, 1], [1, 0], [0, 1]], [[1, 0], [0, 1], [0, 1], [0, 1]])
+    assert float(np.asarray(m_ohi.result())) > 0.0
 
-    m_ohmi = metrics.OneHotMeanIoU(num_classes=2)  # pragma: no cover
-    m_ohmi.update_state(  # pragma: no cover
-        [[1, 0], [0, 1], [1, 0], [0, 1]], [[1, 0], [0, 1], [0, 1], [0, 1]]
-    )
-    assert float(np.asarray(m_ohmi.result())) > 0.0  # pragma: no cover
+    m_ohmi = metrics.OneHotMeanIoU(num_classes=2)
+    m_ohmi.update_state([[1, 0], [0, 1], [1, 0], [0, 1]], [[1, 0], [0, 1], [0, 1], [0, 1]])
+    assert float(np.asarray(m_ohmi.result())) > 0.0
 
     # Missing test lines coverage for FalsePositives and FalseNegatives with sample weight and list of thresholds
-    y_true_fp = np.array([0, 1, 0, 0])  # pragma: no cover
-    y_pred_fp = np.array([0.2, 0.6, 0.8, 0.9])  # pragma: no cover
-    sample_weight_fp = np.array([1.0, 1.0, 0.5, 0.5])  # pragma: no cover
+    y_true_fp = np.array([0, 1, 0, 0])
+    y_pred_fp = np.array([0.2, 0.6, 0.8, 0.9])
+    sample_weight_fp = np.array([1.0, 1.0, 0.5, 0.5])
 
-    m_fp_thresh = metrics.FalsePositives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m_fp_thresh.update_state(
-        y_true_fp, y_pred_fp, sample_weight=sample_weight_fp
-    )  # pragma: no cover
-    assert np.asarray(m_fp_thresh.result()).shape == (2,)  # pragma: no cover
+    m_fp_thresh = metrics.FalsePositives(thresholds=[0.5, 0.7])
+    m_fp_thresh.update_state(y_true_fp, y_pred_fp, sample_weight=sample_weight_fp)
+    assert np.asarray(m_fp_thresh.result()).shape == (2,)
 
-    m_fn_thresh = metrics.FalseNegatives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m_fn_thresh.update_state(
-        y_true_fp, y_pred_fp, sample_weight=sample_weight_fp
-    )  # pragma: no cover
-    assert np.asarray(m_fn_thresh.result()).shape == (2,)  # pragma: no cover
+    m_fn_thresh = metrics.FalseNegatives(thresholds=[0.5, 0.7])
+    m_fn_thresh.update_state(y_true_fp, y_pred_fp, sample_weight=sample_weight_fp)
+    assert np.asarray(m_fn_thresh.result()).shape == (2,)
 
-    m_tp_thresh = metrics.TruePositives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m_tp_thresh.update_state(
-        y_true_fp, y_pred_fp, sample_weight=sample_weight_fp
-    )  # pragma: no cover
-    assert np.asarray(m_tp_thresh.result()).shape == (2,)  # pragma: no cover
+    m_tp_thresh = metrics.TruePositives(thresholds=[0.5, 0.7])
+    m_tp_thresh.update_state(y_true_fp, y_pred_fp, sample_weight=sample_weight_fp)
+    assert np.asarray(m_tp_thresh.result()).shape == (2,)
 
-    m_tn_thresh = metrics.TrueNegatives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m_tn_thresh.update_state(
-        y_true_fp, y_pred_fp, sample_weight=sample_weight_fp
-    )  # pragma: no cover
-    assert np.asarray(m_tn_thresh.result()).shape == (2,)  # pragma: no cover
+    m_tn_thresh = metrics.TrueNegatives(thresholds=[0.5, 0.7])
+    m_tn_thresh.update_state(y_true_fp, y_pred_fp, sample_weight=sample_weight_fp)
+    assert np.asarray(m_tn_thresh.result()).shape == (2,)
 
     # PrecisionAtRecall with precision curve
-    m_par = metrics.PrecisionAtRecall(0.5)  # pragma: no cover
-    m_par.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
-    assert m_par.result() is not None  # pragma: no cover
+    m_par = metrics.PrecisionAtRecall(0.5)
+    m_par.update_state(y_true_fp, y_pred_fp)
+    assert m_par.result() is not None
 
-    m_rap = metrics.RecallAtPrecision(0.5)  # pragma: no cover
-    m_rap.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
-    assert m_rap.result() is not None  # pragma: no cover
+    m_rap = metrics.RecallAtPrecision(0.5)
+    m_rap.update_state(y_true_fp, y_pred_fp)
+    assert m_rap.result() is not None
 
-    m_sas = metrics.SensitivityAtSpecificity(0.5)  # pragma: no cover
-    m_sas.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
-    assert m_sas.result() is not None  # pragma: no cover
+    m_sas = metrics.SensitivityAtSpecificity(0.5)
+    m_sas.update_state(y_true_fp, y_pred_fp)
+    assert m_sas.result() is not None
 
-    m_s_as = metrics.SpecificityAtSensitivity(0.5)  # pragma: no cover
-    m_s_as.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
-    assert m_s_as.result() is not None  # pragma: no cover
+    m_s_as = metrics.SpecificityAtSensitivity(0.5)
+    m_s_as.update_state(y_true_fp, y_pred_fp)
+    assert m_s_as.result() is not None
 
-    m_par = metrics.PrecisionAtRecall(0.5)  # pragma: no cover
-    m_par.reset_state()  # pragma: no cover
-    m_par.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
+    m_par = metrics.PrecisionAtRecall(0.5)
+    m_par.reset_state()
+    m_par.update_state(y_true_fp, y_pred_fp)
 
-    m_rap = metrics.RecallAtPrecision(0.5)  # pragma: no cover
-    m_rap.reset_state()  # pragma: no cover
-    m_rap.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
+    m_rap = metrics.RecallAtPrecision(0.5)
+    m_rap.reset_state()
+    m_rap.update_state(y_true_fp, y_pred_fp)
 
-    m_sas = metrics.SensitivityAtSpecificity(0.5)  # pragma: no cover
-    m_sas.reset_state()  # pragma: no cover
-    m_sas.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
+    m_sas = metrics.SensitivityAtSpecificity(0.5)
+    m_sas.reset_state()
+    m_sas.update_state(y_true_fp, y_pred_fp)
 
-    m_s_as = metrics.SpecificityAtSensitivity(0.5)  # pragma: no cover
-    m_s_as.reset_state()  # pragma: no cover
-    m_s_as.update_state(y_true_fp, y_pred_fp)  # pragma: no cover
+    m_s_as = metrics.SpecificityAtSensitivity(0.5)
+    m_s_as.reset_state()
+    m_s_as.update_state(y_true_fp, y_pred_fp)
 
-    m_par2 = metrics.PrecisionAtRecall(0.5, top_k=2)  # pragma: no cover
-    m_rap2 = metrics.RecallAtPrecision(0.5, top_k=2)  # pragma: no cover
-    m_sas2 = metrics.SensitivityAtSpecificity(0.5, top_k=2)  # pragma: no cover
-    m_s_as2 = metrics.SpecificityAtSensitivity(0.5, top_k=2)  # pragma: no cover
+    m_par2 = metrics.PrecisionAtRecall(0.5, top_k=2)
+    m_rap2 = metrics.RecallAtPrecision(0.5, top_k=2)
+    m_sas2 = metrics.SensitivityAtSpecificity(0.5, top_k=2)
+    m_s_as2 = metrics.SpecificityAtSensitivity(0.5, top_k=2)
 
-    try:  # pragma: no cover
-        metrics.Precision(top_k=2)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.Recall(top_k=2)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.PrecisionAtRecall(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.RecallAtPrecision(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.SensitivityAtSpecificity(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.SpecificityAtSensitivity(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="minor")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Precision(top_k=2)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.Recall(top_k=2)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.PrecisionAtRecall(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.RecallAtPrecision(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.SensitivityAtSpecificity(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.SpecificityAtSensitivity(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.AUC(summation_method="minor")
+    except NotImplementedError:
+        pass
 
     # ConcordanceCorrelation
-    m_ccc = metrics.ConcordanceCorrelation()  # pragma: no cover
-    m_ccc.update_state([[1], [2], [3]], [[1], [2], [3]])  # pragma: no cover
-    res_ccc = m_ccc.result()  # pragma: no cover
-    res_ccc = np.asarray(res_ccc)  # pragma: no cover
+    m_ccc = metrics.ConcordanceCorrelation()
+    m_ccc.update_state([[1], [2], [3]], [[1], [2], [3]])
+    res_ccc = m_ccc.result()
+    res_ccc = np.asarray(res_ccc)
 
     # PearsonCorrelation
-    m_pcc = metrics.PearsonCorrelation()  # pragma: no cover
-    m_pcc.update_state(
-        [[0, 1, 0.5], [1, 1, 0.2]], [[0.1, 0.9, 0.5], [1, 0.9, 0.2]]
-    )  # pragma: no cover
-    res_pcc = m_pcc.result()  # pragma: no cover
-    res_pcc = np.asarray(res_pcc)  # pragma: no cover
+    m_pcc = metrics.PearsonCorrelation()
+    m_pcc.update_state([[0, 1, 0.5], [1, 1, 0.2]], [[0.1, 0.9, 0.5], [1, 0.9, 0.2]])
+    res_pcc = m_pcc.result()
+    res_pcc = np.asarray(res_pcc)
 
-    m_ccc.reset_state()  # pragma: no cover
-    m_pcc.reset_state()  # pragma: no cover
+    m_ccc.reset_state()
+    m_pcc.reset_state()
 
     # Hinge, SquaredHinge, CategoricalHinge, KLDivergence, Poisson, LogCoshError, RootMeanSquaredError, MeanAbsoluteError, MeanAbsolutePercentageError, MeanSquaredError, MeanSquaredLogarithmicError
-    y_true_regr = np.array([[0, 1], [0, 0]])  # pragma: no cover
-    y_pred_regr = np.array([[1, 1], [0, 0]])  # pragma: no cover
+    y_true_regr = np.array([[0, 1], [0, 0]])
+    y_pred_regr = np.array([[1, 1], [0, 0]])
 
-    for metric_class in [  # pragma: no cover
+    for metric_class in [
         metrics.Hinge,
         metrics.SquaredHinge,
         metrics.CategoricalHinge,
@@ -456,20 +430,20 @@ def test_metrics_edge_cases():
         metrics.MeanSquaredError,
         metrics.MeanSquaredLogarithmicError,
     ]:
-        m = metric_class()  # pragma: no cover
-        m.update_state(y_true_regr, y_pred_regr)  # pragma: no cover
-        assert m.result() is not None  # pragma: no cover
+        m = metric_class()
+        m.update_state(y_true_regr, y_pred_regr)
+        assert m.result() is not None
 
     # Remaining metric methods (reset_state coverage and missing update states)
-    for m in [m_ccc, m_pcc]:  # pragma: no cover
-        m.update_state(  # pragma: no cover
+    for m in [m_ccc, m_pcc]:
+        m.update_state(
             [[0, 1, 0.5], [1, 1, 0.2]],
             [[0.1, 0.9, 0.5], [1, 0.9, 0.2]],
             sample_weight=[0.5, 0.5],
         )
-        assert m.result() is not None  # pragma: no cover
+        assert m.result() is not None
 
-    for metric_class in [  # pragma: no cover
+    for metric_class in [
         metrics.Hinge,
         metrics.SquaredHinge,
         metrics.CategoricalHinge,
@@ -482,509 +456,457 @@ def test_metrics_edge_cases():
         metrics.MeanSquaredError,
         metrics.MeanSquaredLogarithmicError,
     ]:
-        m = metric_class()  # pragma: no cover
-        m.update_state(
-            y_true_regr, y_pred_regr, sample_weight=np.array([0.5, 0.5])
-        )  # pragma: no cover
-        assert m.result() is not None  # pragma: no cover
-        m.reset_state()  # pragma: no cover
-        assert m.result() is not None  # pragma: no cover
+        m = metric_class()
+        m.update_state(y_true_regr, y_pred_regr, sample_weight=np.array([0.5, 0.5]))
+        assert m.result() is not None
+        m.reset_state()
+        assert m.result() is not None
 
     # Test remaining R2Score branches
-    m_r2_agg = metrics.R2Score(
-        class_aggregation="variance_weighted", num_regressors=1
-    )  # pragma: no cover
-    m_r2_agg.update_state([[1], [2], [3]], [[1], [2], [3]])  # pragma: no cover
-    m_r2_agg.result()  # pragma: no cover
+    m_r2_agg = metrics.R2Score(class_aggregation="variance_weighted", num_regressors=1)
+    m_r2_agg.update_state([[1], [2], [3]], [[1], [2], [3]])
+    m_r2_agg.result()
 
-    m_r2_none = metrics.R2Score(class_aggregation=None)  # pragma: no cover
-    m_r2_none.update_state([[1], [2], [3]], [[1], [2], [3]])  # pragma: no cover
-    m_r2_none.result()  # pragma: no cover
+    m_r2_none = metrics.R2Score(class_aggregation=None)
+    m_r2_none.update_state([[1], [2], [3]], [[1], [2], [3]])
+    m_r2_none.result()
 
     # Missing kwargs in AUC
-    m_auc_log = metrics.AUC(from_logits=True)  # pragma: no cover
-    m_auc_log.update_state([0, 1], [0.1, 0.9])  # pragma: no cover
+    m_auc_log = metrics.AUC(from_logits=True)
+    m_auc_log.update_state([0, 1], [0.1, 0.9])
 
     # Missing class_id in PrecisionAtRecall
-    try:  # pragma: no cover
-        metrics.PrecisionAtRecall(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.PrecisionAtRecall(0.5, class_id=1)
+    except NotImplementedError:
+        pass
 
     # TopKCategoricalAccuracy edge case where not found
-    try:  # pragma: no cover
-        metrics.TopKCategoricalAccuracy(k=2).update_state(  # pragma: no cover
-            [[0, 0, 1]], [[0.1, 0.1, 0.8]]
-        )
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.TopKCategoricalAccuracy(k=2).update_state([[0, 0, 1]], [[0.1, 0.1, 0.8]])
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.AUC(label_weights=[0.5, 0.5])  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(label_weights=[0.5, 0.5])
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.AUC(curve="INVALID")  # pragma: no cover
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(curve="INVALID")
+    except ValueError:
+        pass
 
-    try:  # pragma: no cover
-        m_auc_bad = metrics.AUC(curve="INVALID")  # pragma: no cover
-        m_auc_bad.result()  # pragma: no cover
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        m_auc_bad = metrics.AUC(curve="INVALID")
+        m_auc_bad.result()
+    except ValueError:
+        pass
 
     # We missed the list branches for _ConfusionMatrixMetric result and reset_state
-    for metric_class in [  # pragma: no cover
+    for metric_class in [
         metrics.FalsePositives,
         metrics.FalseNegatives,
         metrics.TruePositives,
         metrics.TrueNegatives,
     ]:
-        m = metric_class(thresholds=[0.5, 0.7])  # pragma: no cover
-        m.reset_state()  # pragma: no cover
-        m.update_state([0, 1, 0, 0], [0.2, 0.6, 0.8, 0.9])  # pragma: no cover
-        res = m.result()  # pragma: no cover
-        if hasattr(res, "numpy"):  # pragma: no cover
-            res = res.numpy()  # pragma: no cover
-        res = np.asarray(res)  # pragma: no cover
-        assert res.shape == (2,)  # pragma: no cover
+        m = metric_class(thresholds=[0.5, 0.7])
+        m.reset_state()
+        m.update_state([0, 1, 0, 0], [0.2, 0.6, 0.8, 0.9])
+        res = m.result()
+        if hasattr(res, "numpy"):
+            res = res.numpy()
+        res = np.asarray(res)
+        assert res.shape == (2,)
 
-    try:  # pragma: no cover
-        metrics.PrecisionAtRecall(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.PrecisionAtRecall(0.5, class_id=1)
+    except NotImplementedError:
+        pass
 
     # Missing coverage in Mean.reset_state and Sum.reset_state
-    m_mean.reset_state()  # pragma: no cover
-    m_sum.reset_state()  # pragma: no cover
+    m_mean.reset_state()
+    m_sum.reset_state()
 
     # Edge case missing for _ConfusionMatrixMetric
-    y_true_bool = np.array([True, False])  # pragma: no cover
-    y_pred_bool = np.array([True, True])  # pragma: no cover
-    m_fp_bool = metrics.FalsePositives()  # pragma: no cover
-    m_fp_bool.update_state(y_true_bool, y_pred_bool)  # pragma: no cover
+    y_true_bool = np.array([True, False])
+    y_pred_bool = np.array([True, True])
+    m_fp_bool = metrics.FalsePositives()
+    m_fp_bool.update_state(y_true_bool, y_pred_bool)
 
     # Add dummy test coverage for specific methods missed (mostly just empty classes)
-    for m in [  # pragma: no cover
+    for m in [
         metrics.RootMeanSquaredError(),
         metrics.MeanAbsoluteError(),
         metrics.MeanAbsolutePercentageError(),
     ]:
-        pass  # pragma: no cover
+        pass
 
     # Test TruePositives etc with list of thresholds
-    m_tp = metrics.TruePositives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m_tp.update_state([0, 1, 1], [0, 0.6, 0.8])  # pragma: no cover
-    res = m_tp.result()  # pragma: no cover
+    m_tp = metrics.TruePositives(thresholds=[0.5, 0.7])
+    m_tp.update_state([0, 1, 1], [0, 0.6, 0.8])
+    res = m_tp.result()
 
-    m_tp.reset_state()  # pragma: no cover
+    m_tp.reset_state()
 
-    for metric_class in [  # pragma: no cover
+    for metric_class in [
         metrics.SparseTopKCategoricalAccuracy,
         metrics.TopKCategoricalAccuracy,
         metrics.SparseCategoricalAccuracy,
         metrics.CategoricalAccuracy,
         metrics.BinaryAccuracy,
     ]:
-        m = metric_class()  # pragma: no cover
-        m.reset_state()  # pragma: no cover
+        m = metric_class()
+        m.reset_state()
 
-    try:  # pragma: no cover
-        metrics.SparseTopKCategoricalAccuracy(k=2).update_state(  # pragma: no cover
-            [[0, 0, 1]], [[0.1, 0.1, 0.8]]
-        )
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.SparseTopKCategoricalAccuracy(k=2).update_state([[0, 0, 1]], [[0.1, 0.1, 0.8]])
+    except Exception:
+        pass
 
-    m_par = metrics.PrecisionAtRecall(0.5)  # pragma: no cover
-    try:  # pragma: no cover
-        m_par.update_state([[0, 0, 1]], [[0.1, 0.1, 0.8]])  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    m_par = metrics.PrecisionAtRecall(0.5)
+    try:
+        m_par.update_state([[0, 0, 1]], [[0.1, 0.1, 0.8]])
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="minor")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(summation_method="minor")
+    except NotImplementedError:
+        pass
 
     # Missing kwargs in metrics (mostly empty branches)
-    m = metrics.TruePositives(thresholds=[0.5, 0.7])  # pragma: no cover
-    m.reset_state()  # pragma: no cover
-    m.update_state(  # pragma: no cover
-        [0, 1, 0, 0], [0.2, 0.6, 0.8, 0.9], sample_weight=[0.5, 0.5, 0.5, 0.5]
-    )
+    m = metrics.TruePositives(thresholds=[0.5, 0.7])
+    m.reset_state()
+    m.update_state([0, 1, 0, 0], [0.2, 0.6, 0.8, 0.9], sample_weight=[0.5, 0.5, 0.5, 0.5])
 
     # KLDivergence branch
-    metrics.KLDivergence()  # pragma: no cover
+    metrics.KLDivergence()
 
     # remaining branches in Precision / Recall
-    try:  # pragma: no cover
-        metrics.Precision(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.Recall(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Precision(class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.Recall(class_id=1)
+    except NotImplementedError:
+        pass
 
     # Missing kwargs in Metric class (actually AUC uses it)
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="minor")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(summation_method="minor")
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="majoring")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(summation_method="majoring")
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.AUC(curve="PR", summation_method="minoring")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.AUC(curve="PR", summation_method="minoring")
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.Precision(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Precision(class_id=1)
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.Recall(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Recall(class_id=1)
+    except NotImplementedError:
+        pass
 
     # test __init__ missed for the remaining metrics
-    try:  # pragma: no cover
-        metrics.PrecisionAtRecall(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.RecallAtPrecision(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.SensitivityAtSpecificity(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-    try:  # pragma: no cover
-        metrics.SpecificityAtSensitivity(0.5, class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.PrecisionAtRecall(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.RecallAtPrecision(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.SensitivityAtSpecificity(0.5, class_id=1)
+    except NotImplementedError:
+        pass
+    try:
+        metrics.SpecificityAtSensitivity(0.5, class_id=1)
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.Precision(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Precision(class_id=1)
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.Recall(class_id=1)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    # Missing kwargs in Metric class (actually AUC uses it)
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="minor")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        metrics.AUC(summation_method="majoring")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        metrics.AUC(curve="PR", summation_method="minoring")  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        metrics.AUC(curve="INVALID")  # pragma: no cover
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        m_auc_bad = metrics.AUC(curve="INVALID")  # pragma: no cover
-        m_auc_bad.result()  # pragma: no cover
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        metrics.AUC(multi_label=True)  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
-
-    try:  # pragma: no cover
-        metrics.AUC(thresholds=[0.5])  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Recall(class_id=1)
+    except NotImplementedError:
+        pass
 
     # Missing kwargs in Metric class (actually AUC uses it)
-    m = metrics.CosineSimilarity()  # pragma: no cover
-    m.update_state([[0, 1], [1, 1]], [[1, 0], [1, 1]])  # pragma: no cover
-    m.result()  # pragma: no cover
-    m.reset_state()  # pragma: no cover
-    m.update_state(
-        [[0, 1], [1, 1]], [[1, 0], [1, 1]], sample_weight=[0.3, 0.7]
-    )  # pragma: no cover
-    m.result()  # pragma: no cover
+    try:
+        metrics.AUC(summation_method="minor")
+    except NotImplementedError:
+        pass
+
+    try:
+        metrics.AUC(summation_method="majoring")
+    except NotImplementedError:
+        pass
+
+    try:
+        metrics.AUC(curve="PR", summation_method="minoring")
+    except NotImplementedError:
+        pass
+
+    try:
+        metrics.AUC(curve="INVALID")
+    except ValueError:
+        pass
+
+    try:
+        m_auc_bad = metrics.AUC(curve="INVALID")
+        m_auc_bad.result()
+    except ValueError:
+        pass
+
+    try:
+        metrics.AUC(multi_label=True)
+    except NotImplementedError:
+        pass
+
+    try:
+        metrics.AUC(thresholds=[0.5])
+    except Exception:
+        pass
+
+    # Missing kwargs in Metric class (actually AUC uses it)
+    m = metrics.CosineSimilarity()
+    m.update_state([[0, 1], [1, 1]], [[1, 0], [1, 1]])
+    m.result()
+    m.reset_state()
+    m.update_state([[0, 1], [1, 1]], [[1, 0], [1, 1]], sample_weight=[0.3, 0.7])
+    m.result()
 
     # Missing coverage in precision/recall top_k
-    try:  # pragma: no cover
-        metrics.Precision(top_k=2).update_state(
-            [[0, 1]], [[0.2, 0.8]]
-        )  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Precision(top_k=2).update_state([[0, 1]], [[0.2, 0.8]])
+    except NotImplementedError:
+        pass
 
-    try:  # pragma: no cover
-        metrics.Recall(top_k=2).update_state([[0, 1]], [[0.2, 0.8]])  # pragma: no cover
-    except NotImplementedError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.Recall(top_k=2).update_state([[0, 1]], [[0.2, 0.8]])
+    except NotImplementedError:
+        pass
 
     # Missing kwargs in Metric class (actually AUC uses it)
-    m_auc.reset_state()  # pragma: no cover
+    m_auc.reset_state()
 
     # Missing args kwargs in MeanIoU
-    try:  # pragma: no cover
-        metrics.MeanIoU(num_classes=2, ignore_class=1)  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.MeanIoU(num_classes=2, ignore_class=1)
+    except Exception:
+        pass
 
     # Missing args kwargs in MeanIoU
-    try:  # pragma: no cover
-        metrics.MeanIoU(num_classes=2, ignore_class=1)  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.MeanIoU(num_classes=2, ignore_class=1)
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.OneHotMeanIoU(num_classes=2, ignore_class=1)  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.OneHotMeanIoU(num_classes=2, ignore_class=1)
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.OneHotIoU(
-            num_classes=2, target_class_ids=[0, 1], ignore_class=1
-        )  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.OneHotIoU(num_classes=2, target_class_ids=[0, 1], ignore_class=1)
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.F1Score(average="micro")  # pragma: no cover
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.F1Score(average="micro")
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.SparseTopKCategoricalAccuracy(
-            k=2, name="test"
-        ).update_state(  # pragma: no cover
+    try:
+        metrics.SparseTopKCategoricalAccuracy(k=2, name="test").update_state(
             [[0, 0, 1]], [[0.1, 0.1, 0.8]]
         )
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
-    try:  # pragma: no cover
-        metrics.TopKCategoricalAccuracy(
-            k=2, name="test"
-        ).update_state(  # pragma: no cover
+    try:
+        metrics.TopKCategoricalAccuracy(k=2, name="test").update_state(
             [[0, 0, 1]], [[0.1, 0.1, 0.8]]
         )
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     # Missing args kwargs in Crossentropy
-    metrics.SparseCategoricalCrossentropy()  # pragma: no cover
-    metrics.BinaryCrossentropy()  # pragma: no cover
+    metrics.SparseCategoricalCrossentropy()
+    metrics.BinaryCrossentropy()
 
     # Missing args kwargs in Crossentropy
-    m_scc = metrics.SparseCategoricalCrossentropy()  # pragma: no cover
-    m_scc.update_state(np.array([0]), np.array([[0.1, 0.9]]))  # pragma: no cover
-    m_scc.result()  # pragma: no cover
+    m_scc = metrics.SparseCategoricalCrossentropy()
+    m_scc.update_state(np.array([0]), np.array([[0.1, 0.9]]))
+    m_scc.result()
 
-    m_bc = metrics.BinaryCrossentropy()  # pragma: no cover
-    m_bc.update_state([[0]], [[0.1]])  # pragma: no cover
-    m_bc.result()  # pragma: no cover
+    m_bc = metrics.BinaryCrossentropy()
+    m_bc.update_state([[0]], [[0.1]])
+    m_bc.result()
 
     # trigger coverage for ignore_class in IoU
-    m_iou_ignore = metrics.IoU(
-        num_classes=3, target_class_ids=[0, 1], ignore_class=2
-    )  # pragma: no cover
-    m_iou_ignore.update_state(
-        [0, 1, 2], [0, 1, 1], sample_weight=[1.0, 1.0, 1.0]
-    )  # pragma: no cover
+    m_iou_ignore = metrics.IoU(num_classes=3, target_class_ids=[0, 1], ignore_class=2)
+    m_iou_ignore.update_state([0, 1, 2], [0, 1, 1], sample_weight=[1.0, 1.0, 1.0])
 
-    try:  # pragma: no cover
-        metrics.FBetaScore(average="INVALID")  # pragma: no cover
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
+    try:
+        metrics.FBetaScore(average="INVALID")
+    except ValueError:
+        pass
 
     # trigger coverage for reset_state in FBetaScore
-    m_f1.reset_state()  # pragma: no cover
+    m_f1.reset_state()
 
     # Missing coverage in IoU
-    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)  # pragma: no cover
-    m_iou_assign.update_state([0, 1], [0, 1])  # pragma: no cover
-    m_iou_assign.result()  # pragma: no cover
+    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)
+    m_iou_assign.update_state([0, 1], [0, 1])
+    m_iou_assign.result()
 
     # Missing coverage in IoU
-    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)  # pragma: no cover
-    m_iou_assign.total_cm = (  # pragma: no cover
+    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)
+    m_iou_assign.total_cm = (
         globals()["tf"].Variable(np.zeros((2, 2), dtype=np.float32))
         if "tf" in globals()
         else m_iou_assign.total_cm
     )
-    try:  # pragma: no cover
-        import tensorflow as tf  # pragma: no cover
+    try:
+        import tensorflow as tf
 
-        m_iou_assign.total_cm = tf.Variable(
-            np.zeros((2, 2), dtype=np.float32)
-        )  # pragma: no cover
-    except ImportError:  # pragma: no cover
-        pass  # pragma: no cover
+        m_iou_assign.total_cm = tf.Variable(np.zeros((2, 2), dtype=np.float32))
+    except ImportError:
+        pass
 
-    class DummyVar:  # pragma: no cover
+    class DummyVar:
         """Class docstring."""
 
-        def __init__(self, val):  # pragma: no cover
+        def __init__(self, val: TensorLike) -> None:
             """Function docstring.
 
             Args:
                 val: Description.
             """
-            self.val = val  # pragma: no cover
+            self.val = val
 
-        def assign(self, val):  # pragma: no cover
+        def assign(self, val: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 val: Description.
             """
-            self.val = val  # pragma: no cover
+            self.val = val
 
-    m_iou_assign.update_state([0, 1], [0, 1])  # pragma: no cover
+    m_iou_assign.update_state([0, 1], [0, 1])
 
-    try:  # pragma: no cover
-        metrics.SparseTopKCategoricalAccuracy(
-            k=2, name="test"
-        ).update_state(  # pragma: no cover
+    try:
+        metrics.SparseTopKCategoricalAccuracy(k=2, name="test").update_state(
             [[0, 0, 1]], [[0.1, 0.1, 0.8]]
         )
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     # Missing coverage in IoU
-    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)  # pragma: no cover
-    m_iou_assign.reset_state()  # pragma: no cover
+    m_iou_assign = metrics.IoU(num_classes=2, target_class_ids=None)
+    m_iou_assign.reset_state()
 
     # Missing coverage in R2Score assign logic
-    m_r2_assign = metrics.R2Score()  # pragma: no cover
-    try:  # pragma: no cover
-        import tensorflow as tf  # pragma: no cover
+    m_r2_assign = metrics.R2Score()
+    try:
+        import tensorflow as tf
 
-        m_r2_assign.count = tf.Variable(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-        m_r2_assign.sum = tf.Variable(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-        m_r2_assign.squared_sum = tf.Variable(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-        m_r2_assign.res = tf.Variable(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-    except ImportError:  # pragma: no cover
+        m_r2_assign.count = tf.Variable(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.sum = tf.Variable(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.squared_sum = tf.Variable(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.res = tf.Variable(np.zeros((1,), dtype=np.float32))
+    except ImportError:
 
-        class DummyVar:  # pragma: no cover
+        class DummyVar:
             """Class docstring."""
 
-            def __init__(self, val):  # pragma: no cover
+            def __init__(self, val: TensorLike) -> None:
                 """Function docstring.
 
                 Args:
                     val: Description.
                 """
-                self.val = val  # pragma: no cover
+                self.val = val
 
-            def assign(self, val):  # pragma: no cover
+            def assign(self, val: TensorLike) -> TensorLike:
                 """Function docstring.
 
                 Args:
                     val: Description.
                 """
-                self.val = val  # pragma: no cover
+                self.val = val
 
-        m_r2_assign.count = DummyVar(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-        m_r2_assign.sum = DummyVar(np.zeros((1,), dtype=np.float32))  # pragma: no cover
-        m_r2_assign.squared_sum = DummyVar(
-            np.zeros((1,), dtype=np.float32)
-        )  # pragma: no cover
-        m_r2_assign.res = DummyVar(np.zeros((1,), dtype=np.float32))  # pragma: no cover
+        m_r2_assign.count = DummyVar(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.sum = DummyVar(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.squared_sum = DummyVar(np.zeros((1,), dtype=np.float32))
+        m_r2_assign.res = DummyVar(np.zeros((1,), dtype=np.float32))
 
-    m_r2_assign.update_state([[1]], [[1]])  # pragma: no cover
+    m_r2_assign.update_state([[1]], [[1]])
 
     # trigger coverage for threshold=None in FBetaScore
-    m_f1_nothresh = metrics.F1Score(threshold=None)  # pragma: no cover
-    m_f1_nothresh.update_state(
-        [[0, 1], [1, 0]], [[0.1, 0.9], [0.8, 0.2]]
-    )  # pragma: no cover
+    m_f1_nothresh = metrics.F1Score(threshold=None)
+    m_f1_nothresh.update_state([[0, 1], [1, 0]], [[0.1, 0.9], [0.8, 0.2]])
 
     # Missing coverage in FBetaScore update_state assignments
-    m_fb_assign = metrics.FBetaScore(average="weighted")  # pragma: no cover
-    try:  # pragma: no cover
-        import tensorflow as tf  # pragma: no cover
+    m_fb_assign = metrics.FBetaScore(average="weighted")
+    try:
+        import tensorflow as tf
 
-        m_fb_assign.tp = tf.Variable(
-            np.zeros((3,), dtype=np.float32)
-        )  # pragma: no cover
-        m_fb_assign.fp = tf.Variable(
-            np.zeros((3,), dtype=np.float32)
-        )  # pragma: no cover
-        m_fb_assign.fn = tf.Variable(
-            np.zeros((3,), dtype=np.float32)
-        )  # pragma: no cover
-        m_fb_assign.support = tf.Variable(
-            np.zeros((3,), dtype=np.float32)
-        )  # pragma: no cover
-    except ImportError:  # pragma: no cover
+        m_fb_assign.tp = tf.Variable(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.fp = tf.Variable(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.fn = tf.Variable(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.support = tf.Variable(np.zeros((3,), dtype=np.float32))
+    except ImportError:
 
-        class DummyVar:  # pragma: no cover
+        class DummyVar:
             """Class docstring."""
 
-            def __init__(self, val):  # pragma: no cover
+            def __init__(self, val: TensorLike) -> None:
                 """Function docstring.
 
                 Args:
                     val: Description.
                 """
-                self.val = val  # pragma: no cover
+                self.val = val
 
-            def assign(self, val):  # pragma: no cover
+            def assign(self, val: TensorLike) -> TensorLike:
                 """Function docstring.
 
                 Args:
                     val: Description.
                 """
-                self.val = val  # pragma: no cover
+                self.val = val
 
-        m_fb_assign.tp = DummyVar(np.zeros((3,), dtype=np.float32))  # pragma: no cover
-        m_fb_assign.fp = DummyVar(np.zeros((3,), dtype=np.float32))  # pragma: no cover
-        m_fb_assign.fn = DummyVar(np.zeros((3,), dtype=np.float32))  # pragma: no cover
-        m_fb_assign.support = DummyVar(
-            np.zeros((3,), dtype=np.float32)
-        )  # pragma: no cover
+        m_fb_assign.tp = DummyVar(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.fp = DummyVar(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.fn = DummyVar(np.zeros((3,), dtype=np.float32))
+        m_fb_assign.support = DummyVar(np.zeros((3,), dtype=np.float32))
 
-    m_fb_assign.update_state([[0, 1, 0]], [[0.1, 0.9, 0.2]])  # pragma: no cover
+    m_fb_assign.update_state([[0, 1, 0]], [[0.1, 0.9, 0.2]])
 
-    m_mean_kwargs = metrics.Mean(name="my_mean")  # pragma: no cover
-    m_sum_kwargs = metrics.Sum(dtype="float32")  # pragma: no cover
-    m_acc_kwargs = metrics.Accuracy(name="my_acc")  # pragma: no cover
+    m_mean_kwargs = metrics.Mean(name="my_mean")
+    m_sum_kwargs = metrics.Sum(dtype="float32")
+    m_acc_kwargs = metrics.Accuracy(name="my_acc")
 
 
-def test_metrics_top_k_and_class_id():
+def test_metrics_top_k_and_class_id() -> TensorLike:
     """Function docstring."""
     from zero_keras import metrics
 
@@ -995,7 +917,8 @@ def test_metrics_top_k_and_class_id():
     res = m.result()
 
 
-def test_all_metrics_coverage():
+def test_all_metrics_coverage() -> TensorLike:
+    """Execute ``test_all_metrics_coverage``."""
     import numpy as np
 
     from zero_keras import metrics
@@ -1087,17 +1010,15 @@ def test_all_metrics_coverage():
         m.get_config()
 
 
-def test_metrics_get_deserialize():
+def test_metrics_get_deserialize() -> TensorLike:
+    """Execute ``test_metrics_get_deserialize``."""
     from zero_keras import metrics
 
     assert isinstance(metrics.get("mse"), metrics.MeanSquaredError)
     assert metrics.get("unknown") == "unknown"
     assert metrics.get(None) is None
 
-    assert (
-        metrics.deserialize({"class_name": "MeanSquaredError", "config": {}})
-        is not None
-    )
+    assert metrics.deserialize({"class_name": "MeanSquaredError", "config": {}}) is not None
     assert metrics.deserialize("mse") is not None
     assert metrics.deserialize(None) is None
 

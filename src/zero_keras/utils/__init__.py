@@ -1,8 +1,8 @@
-"""module docstring."""
+"""Utilities package for zero_keras."""
+
+from __future__ import annotations
 
 from zero_keras.utils import bounding_boxes, legacy
-
-"""Keras utils API."""
 
 from zero_keras.utils.dataset_utils import (
     audio_dataset_from_directory,

@@ -1,24 +1,25 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import losses
 
 
-def test_losses_deserialize_fallback():
+def test_losses_deserialize_fallback() -> TensorLike:
     """Function docstring."""
     assert losses.deserialize(123) == 123
-    assert losses.deserialize({"class_name": "UnknownLoss"}) == {
-        "class_name": "UnknownLoss"
-    }
+    assert losses.deserialize({"class_name": "UnknownLoss"}) == {"class_name": "UnknownLoss"}
 
 
-def test_losses_get_fallback():
+def test_losses_get_fallback() -> TensorLike:
     """Function docstring."""
     assert losses.get("some_unknown_loss_string") == "some_unknown_loss_string"
 
 
-def test_dice_loss():
+def test_dice_loss() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.2, 0.8]], dtype="float32")
@@ -26,7 +27,7 @@ def test_dice_loss():
     assert loss.shape == () or loss.shape == (2,)
 
 
-def test_tversky_loss():
+def test_tversky_loss() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.2, 0.8]], dtype="float32")
@@ -34,14 +35,19 @@ def test_tversky_loss():
     assert loss.shape == () or loss.shape == (2,)
 
 
-def test_ctc_loss(monkeypatch):
+def test_ctc_loss(monkeypatch: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
         monkeypatch: Description.
     """
 
-    def mock_ctc_loss(log_probs, targets, input_lengths, target_lengths):
+    def mock_ctc_loss(
+        log_probs: TensorLike,
+        targets: TensorLike,
+        input_lengths: TensorLike,
+        target_lengths: TensorLike,
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -63,14 +69,14 @@ def test_ctc_loss(monkeypatch):
     assert loss == "ctc_success"
 
 
-def test_circle_loss():
+def test_circle_loss() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1, 0], [0, 1]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
     loss = losses.circle(y_true, y_pred)
 
 
-def test_categorical_generalized_cross_entropy():
+def test_categorical_generalized_cross_entropy() -> TensorLike:
     """Function docstring."""
     # categorical generalized cross entropy uses basic math ops that DO support eager mode
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")

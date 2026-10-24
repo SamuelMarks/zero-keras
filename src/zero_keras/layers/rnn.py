@@ -1,3 +1,7 @@
+"""Recurrent neural network layers (`RNN`, `SimpleRNN`, `LSTM`, `GRU`, `ConvLSTM1D/2D/3D`, `Bidirectional`, `TimeDistributed`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -166,15 +170,15 @@ class RNN(Layer):
 
     def __init__(
         self,
-        cell,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        unroll=False,
-        time_major=False,
-        **kwargs,
-    ):
+        cell: TensorLike,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        unroll: TensorLike = False,
+        time_major: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -196,14 +200,14 @@ class RNN(Layer):
         self.unroll = unroll
         self.time_major = time_major
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -212,14 +216,14 @@ class RNN(Layer):
         self.cell.build(step_input_shape)
         self.built = True
 
-    def reset_states(self, states=None):
+    def reset_states(self, states: TensorLike = None) -> TensorLike:
         """reset_states function.
 
         Args:
         states: Parameter states.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if hasattr(self, "states") and self.states is not None:
@@ -227,12 +231,19 @@ class RNN(Layer):
                 from ml_switcheroo_compiler.ops import zeros
 
                 self.states = tuple(zeros(s.shape, dtype=s.dtype) for s in self.states)
-            else:  # pragma: no cover
+            else:
                 self.states = states
-        else:  # pragma: no cover
+        else:
             self.states = None
 
-    def call(self, inputs, initial_state=None, mask=None, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        initial_state: TensorLike = None,
+        mask: TensorLike = None,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -243,32 +254,30 @@ class RNN(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if initial_state is None:
-            if self.stateful and getattr(self, "states", None) is not None:
+            if self.stateful and (self.states if hasattr(self, "states") else None) is not None:
                 initial_state = self.states
-            else:  # pragma: no cover
+            else:
                 batch_size = inputs.shape[1] if self.time_major else inputs.shape[0]
                 if hasattr(self.cell, "state_size"):
                     state_size = self.cell.state_size
                     if isinstance(state_size, int):
-                        initial_state = (
-                            ops.zeros((batch_size, state_size), dtype=inputs.dtype),
-                        )
-                    else:  # pragma: no cover
+                        initial_state = (ops.zeros((batch_size, state_size), dtype=inputs.dtype),)
+                    else:
 
-                        def _get_shape(s):
+                        def _get_shape(s: TensorLike) -> TensorLike:
                             """_get_shape function.
 
                             Args:
                             s: Parameter s.
 
                             Returns:
-                            Any: Return value.
+                            TensorLike: Return value.
 
                             """
                             return (
@@ -278,20 +287,17 @@ class RNN(Layer):
                             )
 
                         initial_state = tuple(
-                            ops.zeros(_get_shape(s), dtype=inputs.dtype)
-                            for s in state_size
+                            ops.zeros(_get_shape(s), dtype=inputs.dtype) for s in state_size
                         )
-                else:  # pragma: no cover
-                    initial_state = (
-                        ops.zeros((batch_size, self.cell.units), dtype=inputs.dtype),
-                    )
+                else:
+                    initial_state = (ops.zeros((batch_size, self.cell.units), dtype=inputs.dtype),)
                 if self.stateful:
                     self.states = initial_state
 
         if not isinstance(initial_state, (tuple, list)):
             initial_state = (initial_state,)
 
-        def cell_fn(inputs, state):
+        def cell_fn(inputs: TensorLike, state: TensorLike) -> TensorLike:
             """cell_fn function.
 
             Args:
@@ -299,13 +305,13 @@ class RNN(Layer):
             state: Parameter state.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             out, new_state = self.cell(inputs, state, training=training, **kwargs)
             if not isinstance(new_state, (tuple, list)):
                 new_state = (new_state,)
-            return out, new_state  # pragma: no cover
+            return out, new_state
 
         outputs, final_state = ops.rnn(
             inputs,
@@ -392,14 +398,14 @@ class SimpleRNNCell(Layer):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        recurrent_initializer="orthogonal",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        recurrent_initializer: TensorLike = "orthogonal",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -422,42 +428,48 @@ class SimpleRNNCell(Layer):
         self.recurrent_initializer = recurrent_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if getattr(self, "kernel", None) is None:
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units),
                 initializer=self.kernel_initializer,
                 name="kernel",
             )
-        if getattr(self, "recurrent_kernel", None) is None:
+        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units),
                 initializer=self.recurrent_initializer,
                 name="recurrent_kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.units,), initializer=self.bias_initializer, name="bias"
                 )
-        else:  # pragma: no cover
-            if getattr(self, "bias", None) is None:
+        else:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = None
         self.built = True
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -467,21 +479,19 @@ class SimpleRNNCell(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if not self.built:
             self.build(inputs.shape)
 
         prev_output = (
-            _to_tensor(states[0])
-            if isinstance(states, (tuple, list))
-            else _to_tensor(states)
+            _to_tensor(states[0]) if isinstance(states, (tuple, list)) else _to_tensor(states)
         )
 
         h = ops.dot(inputs, _to_tensor(self.kernel))
         h = ops.add(h, ops.dot(prev_output, _to_tensor(self.recurrent_kernel)))
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             h = ops.add(h, _to_tensor(self.bias))
 
         if self.activation is not None:
@@ -576,16 +586,16 @@ class SimpleRNN(RNN):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        use_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        unroll=False,
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        use_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        unroll: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -683,13 +693,13 @@ class GRUCell(Layer):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        recurrent_activation="sigmoid",
-        use_bias=True,
-        reset_after=True,
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "sigmoid",
+        use_bias: TensorLike = True,
+        reset_after: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -710,48 +720,54 @@ class GRUCell(Layer):
         self.reset_after = reset_after
         self.state_size = self.units
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if getattr(self, "kernel", None) is None:
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units * 3),
                 initializer="glorot_uniform",
                 name="kernel",
             )
-        if getattr(self, "recurrent_kernel", None) is None:
+        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units * 3),
                 initializer="orthogonal",
                 name="recurrent_kernel",
             )
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             if self.reset_after:
-                if getattr(self, "bias", None) is None:
+                if (self.bias if hasattr(self, "bias") else None) is None:
                     self.bias = self.add_weight(
                         shape=(2, self.units * 3), initializer="zeros", name="bias"
                     )
-            else:  # pragma: no cover
-                if getattr(self, "bias", None) is None:
+            else:
+                if (self.bias if hasattr(self, "bias") else None) is None:
                     self.bias = self.add_weight(
                         shape=(self.units * 3,), initializer="zeros", name="bias"
                     )
-        else:  # pragma: no cover
-            if getattr(self, "bias", None) is None:
+        else:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = None
         self.built = True
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -761,7 +777,7 @@ class GRUCell(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if not self.built:
@@ -770,9 +786,7 @@ class GRUCell(Layer):
         state = (
             _to_tensor(state)
             if state is not None
-            else ops.zeros(
-                (inputs.shape[0] if inputs.shape else 1, self.units), dtype=self.dtype
-            )
+            else ops.zeros((inputs.shape[0] if inputs.shape else 1, self.units), dtype=self.dtype)
         )
 
         out, new_state = ops.gru_cell(
@@ -780,7 +794,9 @@ class GRUCell(Layer):
             state,
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias) if getattr(self, "bias", None) is not None else None,
+            _to_tensor(self.bias)
+            if (self.bias if hasattr(self, "bias") else None) is not None
+            else None,
         )
         return _wrap(out), _wrap(new_state)
 
@@ -911,18 +927,18 @@ class GRU(RNN):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        recurrent_activation="sigmoid",
-        use_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        unroll=False,
-        reset_after=True,
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "sigmoid",
+        use_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        unroll: TensorLike = False,
+        reset_after: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1030,13 +1046,13 @@ class LSTMCell(Layer):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        recurrent_activation="sigmoid",
-        use_bias=True,
-        unit_forget_bias=True,
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "sigmoid",
+        use_bias: TensorLike = True,
+        unit_forget_bias: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1057,34 +1073,34 @@ class LSTMCell(Layer):
         self.unit_forget_bias = unit_forget_bias
         self.state_size = (self.units, self.units)
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if getattr(self, "kernel", None) is None:
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units * 4),
                 initializer="glorot_uniform",
                 name="kernel",
             )
-        if getattr(self, "recurrent_kernel", None) is None:
+        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units * 4),
                 initializer="orthogonal",
                 name="recurrent_kernel",
             )
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
 
-            def bias_init(shape, dtype=None):
+            def bias_init(shape: TensorLike, dtype: TensorLike = None) -> TensorLike:
                 """bias_init function.
 
                 Args:
@@ -1092,7 +1108,7 @@ class LSTMCell(Layer):
                 dtype: Parameter dtype.
 
                 Returns:
-                Any: Return value.
+                TensorLike: Return value.
 
                 """
                 b = ops.zeros(shape, dtype=dtype)
@@ -1102,16 +1118,22 @@ class LSTMCell(Layer):
                     )
                 return b
 
-            if getattr(self, "bias", None) is None:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.units * 4,), initializer=bias_init, name="bias"
                 )
-        else:  # pragma: no cover
-            if getattr(self, "bias", None) is None:
+        else:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = None
         self.built = True
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -1121,7 +1143,7 @@ class LSTMCell(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if not self.built:
@@ -1134,7 +1156,9 @@ class LSTMCell(Layer):
             (h, c),
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias) if getattr(self, "bias", None) is not None else None,
+            _to_tensor(self.bias)
+            if (self.bias if hasattr(self, "bias") else None) is not None
+            else None,
         )
         return _wrap(out), [_wrap(s) for s in new_state]
 
@@ -1258,18 +1282,18 @@ class LSTM(RNN):
 
     def __init__(
         self,
-        units,
-        activation="tanh",
-        recurrent_activation="sigmoid",
-        use_bias=True,
-        unit_forget_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        unroll=False,
-        **kwargs,
-    ):
+        units: TensorLike,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "sigmoid",
+        use_bias: TensorLike = True,
+        unit_forget_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        unroll: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1376,8 +1400,13 @@ class Bidirectional(Layer):
     """
 
     def __init__(
-        self, layer, merge_mode="concat", weights=None, backward_layer=None, **kwargs
-    ):
+        self,
+        layer: TensorLike,
+        merge_mode: TensorLike = "concat",
+        weights: TensorLike = None,
+        backward_layer: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1391,27 +1420,27 @@ class Bidirectional(Layer):
         self.forward_layer = layer
         if backward_layer is None:
             config = layer._kwargs.copy() if hasattr(layer, "_kwargs") else {}
-            args = getattr(layer, "args", ())
+            args = layer.args if hasattr(layer, "args") else ()
             if hasattr(layer, "units"):
                 args = (layer.units,)
             elif hasattr(layer, "cell") and hasattr(layer.cell, "units"):
                 args = (layer.cell.units,)
             self.backward_layer = type(layer)(*args, **config)
-        else:  # pragma: no cover
+        else:
             self.backward_layer = backward_layer
         self.backward_layer.go_backwards = True
         self.merge_mode = merge_mode
         self.return_sequences = layer.return_sequences
         self.return_state = layer.return_state
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -1420,7 +1449,14 @@ class Bidirectional(Layer):
         self.backward_layer.build(input_shape)
         self.built = True
 
-    def call(self, inputs, initial_state=None, training=None, mask=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        initial_state: TensorLike = None,
+        training: TensorLike = None,
+        mask: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -1431,14 +1467,14 @@ class Bidirectional(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if initial_state is not None:
             half = len(initial_state) // 2
             forward_state = initial_state[:half]
             backward_state = initial_state[half:]
-        else:  # pragma: no cover
+        else:
             forward_state = None
             backward_state = None
 
@@ -1452,7 +1488,7 @@ class Bidirectional(Layer):
         if self.return_state:
             out_f, *state_f = y_forward
             out_b, *state_b = y_backward
-        else:  # pragma: no cover
+        else:
             out_f = y_forward
             out_b = y_backward
 
@@ -1467,7 +1503,7 @@ class Bidirectional(Layer):
             outputs = ops.mean(ops.stack([out_f, out_b]), axis=0)
         elif self.merge_mode == "mul":
             outputs = ops.multiply(out_f, out_b)
-        else:  # pragma: no cover
+        else:
             outputs = out_f
 
         if self.return_state:
@@ -1504,7 +1540,7 @@ class StackedRNNCells(Layer):
 
     """
 
-    def __init__(self, cells, **kwargs):
+    def __init__(self, cells: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -1515,22 +1551,28 @@ class StackedRNNCells(Layer):
         self.cells = cells
 
     @property
-    def state_size(self):
+    def state_size(self) -> TensorLike:
         """state_size function.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         sizes = []
         for c in self.cells:
             if isinstance(c.state_size, (list, tuple)):
                 sizes.extend(c.state_size)
-            else:  # pragma: no cover
+            else:
                 sizes.append(c.state_size)
         return tuple(sizes)
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -1540,7 +1582,7 @@ class StackedRNNCells(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         new_states = []
@@ -1549,13 +1591,13 @@ class StackedRNNCells(Layer):
             if isinstance(cell.state_size, (list, tuple)):
                 state = states[state_idx : state_idx + len(cell.state_size)]
                 state_idx += len(cell.state_size)
-            else:  # pragma: no cover
+            else:
                 state = states[state_idx : state_idx + 1]
                 state_idx += 1
             inputs, new_state = cell(inputs, state, training=training, **kwargs)
             if isinstance(new_state, (list, tuple)):
                 new_states.extend(new_state)
-            else:  # pragma: no cover
+            else:
                 new_states.append(new_state)
         return _wrap(inputs), tuple(_wrap(s) for s in new_states)
 
@@ -1679,26 +1721,26 @@ class ConvLSTM1D(RNN):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        data_format=None,
-        dilation_rate=1,
-        activation="tanh",
-        recurrent_activation="hard_sigmoid",
-        use_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        dropout=0.0,
-        recurrent_dropout=0.0,
-        kernel_initializer="glorot_uniform",
-        recurrent_initializer="orthogonal",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "hard_sigmoid",
+        use_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        dropout: TensorLike = 0.0,
+        recurrent_dropout: TensorLike = 0.0,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        recurrent_initializer: TensorLike = "orthogonal",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1867,26 +1909,26 @@ class ConvLSTM2D(RNN):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=(1, 1),
-        padding="valid",
-        data_format=None,
-        dilation_rate=(1, 1),
-        activation="tanh",
-        recurrent_activation="hard_sigmoid",
-        use_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        dropout=0.0,
-        recurrent_dropout=0.0,
-        kernel_initializer="glorot_uniform",
-        recurrent_initializer="orthogonal",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = (1, 1),
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = (1, 1),
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "hard_sigmoid",
+        use_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        dropout: TensorLike = 0.0,
+        recurrent_dropout: TensorLike = 0.0,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        recurrent_initializer: TensorLike = "orthogonal",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1910,23 +1952,23 @@ class ConvLSTM2D(RNN):
             bias_initializer: Description.
             kwargs: Description.
         """
-        cell = ConvLSTMCell(  # pragma: no cover
-            filters=filters,  # pragma: no cover
-            kernel_size=kernel_size,  # pragma: no cover
-            rank=2,  # pragma: no cover
-            strides=strides,  # pragma: no cover
-            padding=padding,  # pragma: no cover
-            dilation_rate=dilation_rate,  # pragma: no cover
-            activation=activation,  # pragma: no cover
-            recurrent_activation=recurrent_activation,  # pragma: no cover
-            use_bias=use_bias,  # pragma: no cover
-            kernel_initializer=kernel_initializer,  # pragma: no cover
-            recurrent_initializer=recurrent_initializer,  # pragma: no cover
-            bias_initializer=bias_initializer,  # pragma: no cover
-            dropout=dropout,  # pragma: no cover
-            recurrent_dropout=recurrent_dropout,  # pragma: no cover
-        )  # pragma: no cover
-        super().__init__(  # pragma: no cover
+        cell = ConvLSTMCell(
+            filters=filters,
+            kernel_size=kernel_size,
+            rank=2,
+            strides=strides,
+            padding=padding,
+            dilation_rate=dilation_rate,
+            activation=activation,
+            recurrent_activation=recurrent_activation,
+            use_bias=use_bias,
+            kernel_initializer=kernel_initializer,
+            recurrent_initializer=recurrent_initializer,
+            bias_initializer=bias_initializer,
+            dropout=dropout,
+            recurrent_dropout=recurrent_dropout,
+        )
+        super().__init__(
             cell,
             return_sequences=return_sequences,
             return_state=return_state,
@@ -2054,26 +2096,26 @@ class ConvLSTM3D(RNN):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=(1, 1, 1),
-        padding="valid",
-        data_format=None,
-        dilation_rate=(1, 1, 1),
-        activation="tanh",
-        recurrent_activation="hard_sigmoid",
-        use_bias=True,
-        return_sequences=False,
-        return_state=False,
-        go_backwards=False,
-        stateful=False,
-        dropout=0.0,
-        recurrent_dropout=0.0,
-        kernel_initializer="glorot_uniform",
-        recurrent_initializer="orthogonal",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = (1, 1, 1),
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = (1, 1, 1),
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "hard_sigmoid",
+        use_bias: TensorLike = True,
+        return_sequences: TensorLike = False,
+        return_state: TensorLike = False,
+        go_backwards: TensorLike = False,
+        stateful: TensorLike = False,
+        dropout: TensorLike = 0.0,
+        recurrent_dropout: TensorLike = 0.0,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        recurrent_initializer: TensorLike = "orthogonal",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2128,22 +2170,22 @@ class ConvLSTMCell(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        rank=2,
-        strides=1,
-        padding="valid",
-        dilation_rate=1,
-        activation="tanh",
-        recurrent_activation="hard_sigmoid",
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        recurrent_initializer="orthogonal",
-        bias_initializer="zeros",
-        dropout=0.0,
-        recurrent_dropout=0.0,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        rank: TensorLike = 2,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = "tanh",
+        recurrent_activation: TensorLike = "hard_sigmoid",
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        recurrent_initializer: TensorLike = "orthogonal",
+        bias_initializer: TensorLike = "zeros",
+        dropout: TensorLike = 0.0,
+        recurrent_dropout: TensorLike = 0.0,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2170,7 +2212,7 @@ class ConvLSTMCell(Layer):
         self.bias_initializer = bias_initializer
         self.dropout = dropout
         self.recurrent_dropout = recurrent_dropout
-        if isinstance(kernel_size, int):  # pragma: no branch
+        if isinstance(kernel_size, int):
             kernel_size = (kernel_size,) * rank
         self.kernel_size = kernel_size
         self.rank = rank
@@ -2189,14 +2231,14 @@ class ConvLSTMCell(Layer):
         self.recurrent_activation = activations.get(recurrent_activation)
         self.state_size = None
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -2214,13 +2256,13 @@ class ConvLSTMCell(Layer):
             initializer=self.recurrent_initializer,
             name="recurrent_kernel",
         )
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             self.bias = self.add_weight(
                 shape=(self.filters * 4,),
                 initializer=self.bias_initializer,
                 name="bias",
             )
-        else:  # pragma: no cover
+        else:
             self.bias = None
 
         out_spatial = []
@@ -2228,9 +2270,7 @@ class ConvLSTMCell(Layer):
             input_shape[1:-1],
             self.kernel_size,
             self.strides,
-            (self.padding,) * self.rank
-            if isinstance(self.padding, str)
-            else self.padding,
+            (self.padding,) * self.rank if isinstance(self.padding, str) else self.padding,
             self.dilation_rate,
         ):
             if d is None:
@@ -2239,7 +2279,7 @@ class ConvLSTMCell(Layer):
             eff_k = k + (k - 1) * (d_r - 1)
             if isinstance(self.padding, str) and self.padding.lower() == "same":
                 out_spatial.append((d + s - 1) // s)
-            else:  # pragma: no cover
+            else:
                 out_spatial.append((d - eff_k) // s + 1)
         self.state_size = (
             tuple(out_spatial) + (self.filters,),
@@ -2247,7 +2287,13 @@ class ConvLSTMCell(Layer):
         )
         self.built = True
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -2257,7 +2303,7 @@ class ConvLSTMCell(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         h_tm1, c_tm1 = states
@@ -2286,20 +2332,18 @@ class ConvLSTMCell(Layer):
 
         inputs_dropped = inputs
         if training and self.dropout > 0.0:
-            inputs_dropped = ops.dropout(inputs, rate=self.dropout)  # pragma: no cover
+            inputs_dropped = ops.dropout(inputs, rate=self.dropout)
         h_tm1_dropped = h_tm1
         if training and self.recurrent_dropout > 0.0:
-            h_tm1_dropped = ops.dropout(
-                h_tm1, rate=self.recurrent_dropout
-            )  # pragma: no cover
+            h_tm1_dropped = ops.dropout(h_tm1, rate=self.recurrent_dropout)
         z = conv_general_dilated(inputs_dropped, _to_tensor(self.kernel), config_obj)
         z_recurrent = conv_general_dilated(
             h_tm1_dropped, _to_tensor(self.recurrent_kernel), config_obj
         )
 
         z = ops.add(z, z_recurrent)
-        if self.use_bias:  # pragma: no branch
-            z = ops.add(z, _to_tensor(self.bias))  # pragma: no cover
+        if self.use_bias:
+            z = ops.add(z, _to_tensor(self.bias))
 
         z0, z1, z2, z3 = ops.split(z, 4, axis=-1)
 

@@ -1,10 +1,15 @@
+"""Module `test_missing_coverage_11` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 
 from zero_keras.callbacks import Callback, CallbackList, History
 from zero_keras.constraints import Constraint, MaxNorm, MinMaxNorm, UnitNorm
 
 
-def test_callback_model_setter():
+def test_callback_model_setter() -> TensorLike:
+    """Execute ``test_callback_model_setter``."""
     cb = Callback()
     cb.model = "model"
     assert cb._model == "model"
@@ -17,7 +22,8 @@ def test_callback_model_setter():
     cblist.model = "model3"
 
 
-def test_history_methods():
+def test_history_methods() -> TensorLike:
+    """Execute ``test_history_methods``."""
     hist = History()
     hist.on_predict_batch_begin(0)
     hist.on_predict_batch_end(0)
@@ -33,7 +39,8 @@ def test_history_methods():
     hist.on_epoch_end(0)
 
 
-def test_constraints_methods():
+def test_constraints_methods() -> TensorLike:
+    """Execute ``test_constraints_methods``."""
     c = Constraint()
     c(np.array([1]))
 

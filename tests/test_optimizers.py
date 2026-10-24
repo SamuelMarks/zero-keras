@@ -1,7 +1,10 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
 
-def test_optimizers():
+
+def test_optimizers() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler.core.dtype as dtypes
     from ml_switcheroo_compiler.ops.creation.frontend import ones
@@ -20,10 +23,11 @@ def test_optimizers():
     from ml_switcheroo_compiler.core import tensor
 
     # First, test where assign works
-    def fake_assign(self, val):
+    def fake_assign(self: TensorLike, val: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
+            self: Tensor instance.
             val: Description.
         """
 
@@ -44,7 +48,7 @@ def test_optimizers():
     adam.apply_gradients([(g, v)])
 
 
-def test_new_optimizers():
+def test_new_optimizers() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
@@ -72,7 +76,7 @@ def test_new_optimizers():
         opt.apply_gradients([(grad, var)])
 
 
-def test_other_optimizers():
+def test_other_optimizers() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
@@ -102,7 +106,7 @@ def test_other_optimizers():
     loss_scale_opt.apply_gradients([(grad, var)])
 
 
-def test_all_opts_cov():
+def test_all_opts_cov() -> TensorLike:
     """Function docstring."""
     from ml_switcheroo_compiler import ops
 
@@ -134,7 +138,7 @@ def test_all_opts_cov():
     opt.apply_gradients(zip([grad], [var]))
 
 
-def test_opt_edge_cases():
+def test_opt_edge_cases() -> TensorLike:
     """Function docstring."""
     from ml_switcheroo_compiler import ops
 
@@ -184,7 +188,7 @@ def test_opt_edge_cases():
     o.build([var])
 
 
-def test_opt_attribute_error_pass():
+def test_opt_attribute_error_pass() -> TensorLike:
     """Function docstring."""
     import warnings
 
@@ -221,11 +225,11 @@ def test_opt_attribute_error_pass():
         opt.build([var])
         try:
             opt.apply_gradients(zip([grad], [var]))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception:
+            pass
 
 
-def test_opt_assign_coverage():
+def test_opt_assign_coverage() -> TensorLike:
     """Function docstring."""
     from ml_switcheroo_compiler import ops
 
@@ -234,97 +238,123 @@ def test_opt_assign_coverage():
     class MockVar:
         """Class docstring."""
 
-        def __init__(self, t):
+        def __init__(self, t: TensorLike) -> None:
             """Function docstring.
 
             Args:
                 t: Description.
             """
             self.t = t
+            self.shape = t.shape
+            self.dtype = t.dtype
+            self.data = (
+                t.data if hasattr(t, "data") else (t._tensor.data if hasattr(t, "_tensor") else t)
+            )
 
-        def __getattr__(self, name):
-            """Function docstring.
-
-            Args:
-                name: Description.
-            """
-            if name in ["assign", "assign_add", "assign_sub"]:
-                return lambda x: None
-            return getattr(self.t, name)
-
-        def __add__(self, other):
-            """Function docstring.
+        def assign(self, val: TensorLike) -> None:
+            """Assign value to MockVar.
 
             Args:
-                other: Description.
+                val: New value.
             """
-            return self.t + getattr(other, "t", other)
+            _ = val
 
-        def __radd__(self, other):
-            """Function docstring.
+        def assign_add(self, val: TensorLike) -> None:
+            """Add value to MockVar.
 
             Args:
-                other: Description.
+                val: Value to add.
             """
-            return getattr(other, "t", other) + self.t  # pragma: no cover
+            _ = val
 
-        def __sub__(self, other):
-            """Function docstring.
+        def assign_sub(self, val: TensorLike) -> None:
+            """Subtract value from MockVar.
 
             Args:
-                other: Description.
+                val: Value to subtract.
             """
-            return self.t - getattr(other, "t", other)
+            _ = val
 
-        def __rsub__(self, other):
+        def __add__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 other: Description.
             """
-            return getattr(other, "t", other) - self.t  # pragma: no cover
+            return self.t + (other.t if hasattr(other, "t") else other)
 
-        def __mul__(self, other):
+        def __radd__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 other: Description.
             """
-            return self.t * getattr(other, "t", other)  # pragma: no cover
+            return (other.t if hasattr(other, "t") else other) + self.t
 
-        def __rmul__(self, other):
+        def __sub__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 other: Description.
             """
-            return getattr(other, "t", other) * self.t
+            return self.t - (other.t if hasattr(other, "t") else other)
 
-        def __truediv__(self, other):
+        def __rsub__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 other: Description.
             """
-            return self.t / getattr(other, "t", other)  # pragma: no cover
+            return (other.t if hasattr(other, "t") else other) - self.t
 
-        def __rtruediv__(self, other):
+        def __mul__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 other: Description.
             """
-            return getattr(other, "t", other) / self.t  # pragma: no cover
+            return self.t * (other.t if hasattr(other, "t") else other)
+
+        def __rmul__(self, other: TensorLike) -> TensorLike:
+            """Function docstring.
+
+            Args:
+                other: Description.
+            """
+            return (other.t if hasattr(other, "t") else other) * self.t
+
+        def __truediv__(self, other: TensorLike) -> TensorLike:
+            """Function docstring.
+
+            Args:
+                other: Description.
+            """
+            return self.t / (other.t if hasattr(other, "t") else other)
+
+        def __rtruediv__(self, other: TensorLike) -> TensorLike:
+            """Function docstring.
+
+            Args:
+                other: Description.
+            """
+            return (other.t if hasattr(other, "t") else other) / self.t
 
     var = MockVar(ops.asarray([1.0]))
     grad = ops.asarray([0.1])
 
     original_add_var = optimizers.Optimizer.add_variable
 
-    def mock_add_variable(self, shape, dtype="float32", initializer="zeros", name=None):
+    def mock_add_variable(
+        self: TensorLike,
+        shape: TensorLike,
+        dtype: TensorLike = "float32",
+        initializer: TensorLike = "zeros",
+        name: TensorLike = None,
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
+            self: Optimizer instance.
             shape: Description.
             dtype: Description.
             initializer: Description.
@@ -354,13 +384,13 @@ def test_opt_assign_coverage():
         opt.build([var])
         try:
             opt.apply_gradients(zip([grad], [var]))
-        except Exception as e:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception as e:
+            pass
 
     optimizers.Optimizer.add_variable = original_add_var
 
 
-def test_muon_edge_cases():
+def test_muon_edge_cases() -> TensorLike:
     """Function docstring."""
     from ml_switcheroo_compiler import ops
 
@@ -377,7 +407,7 @@ def test_muon_edge_cases():
     m.apply_gradients([(None, var)])  # hits 1779
 
 
-def test_schedules_config():
+def test_schedules_config() -> TensorLike:
     """Function docstring."""
     import json
 
@@ -399,7 +429,7 @@ def test_schedules_config():
         s_cls.from_config(cfg)
 
 
-def test_schedules_call():
+def test_schedules_call() -> TensorLike:
     """Function docstring."""
     from zero_keras.optimizers import schedules
 
@@ -418,7 +448,7 @@ def test_schedules_call():
         s(15)
 
 
-def test_schedules_coverage():
+def test_schedules_coverage() -> TensorLike:
     """Function docstring."""
     from zero_keras.optimizers import schedules
 

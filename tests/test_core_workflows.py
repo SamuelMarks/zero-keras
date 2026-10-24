@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import os
 import tempfile
 
@@ -10,39 +13,45 @@ from zero_keras.layers import Dense
 from zero_keras.models import Sequential
 
 
-def mock_dense_call(self, inputs, *args, **kwargs):
+def mock_dense_call(
+    self: TensorLike, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike
+) -> TensorLike:
     """Function docstring.
 
     Args:
+        self: Layer instance.
         inputs: Description.
         args: Description.
         kwargs: Description.
     """
-    return inputs  # pragma: no cover
+    return inputs
 
 
-def mock_train_step(self, data):
+def mock_train_step(self: TensorLike, data: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
+        self: Model instance.
         data: Description.
     """
     return {"loss": 1.0}
 
 
-def mock_test_step(self, data):
+def mock_test_step(self: TensorLike, data: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
+        self: Model instance.
         data: Description.
     """
     return {"loss": 1.0}
 
 
-def mock_predict_step(self, data):
+def mock_predict_step(self: TensorLike, data: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
+        self: Model instance.
         data: Description.
     """
     return data[0]
@@ -56,7 +65,7 @@ Sequential.predict_step = mock_predict_step
 class CountingCallback(Callback):
     """Class docstring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Function docstring."""
         super().__init__()
         self.counts = {
@@ -78,7 +87,7 @@ class CountingCallback(Callback):
             "on_predict_end": 0,
         }
 
-    def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -86,7 +95,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_train_begin"] += 1
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -95,7 +104,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_epoch_begin"] += 1
 
-    def on_train_batch_begin(self, batch, logs=None):
+    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -104,7 +113,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_train_batch_begin"] += 1
 
-    def on_batch_begin(self, batch, logs=None):
+    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -113,7 +122,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_batch_begin"] += 1
 
-    def on_train_batch_end(self, batch, logs=None):
+    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -122,7 +131,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_train_batch_end"] += 1
 
-    def on_batch_end(self, batch, logs=None):
+    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -131,7 +140,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_batch_end"] += 1
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -140,7 +149,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_epoch_end"] += 1
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -148,7 +157,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_train_end"] += 1
 
-    def on_test_begin(self, logs=None):
+    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -156,7 +165,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_test_begin"] += 1
 
-    def on_test_batch_begin(self, batch, logs=None):
+    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -165,7 +174,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_test_batch_begin"] += 1
 
-    def on_test_batch_end(self, batch, logs=None):
+    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -174,7 +183,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_test_batch_end"] += 1
 
-    def on_test_end(self, logs=None):
+    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -182,7 +191,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_test_end"] += 1
 
-    def on_predict_begin(self, logs=None):
+    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -190,7 +199,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_predict_begin"] += 1
 
-    def on_predict_batch_begin(self, batch, logs=None):
+    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -199,7 +208,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_predict_batch_begin"] += 1
 
-    def on_predict_batch_end(self, batch, logs=None):
+    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -208,7 +217,7 @@ class CountingCallback(Callback):
         """
         self.counts["on_predict_batch_end"] += 1
 
-    def on_predict_end(self, logs=None):
+    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -217,7 +226,7 @@ class CountingCallback(Callback):
         self.counts["on_predict_end"] += 1
 
 
-def test_compile_resolution():
+def test_compile_resolution() -> TensorLike:
     """Function docstring."""
     model = Sequential([Dense(2)])
     model.compile(optimizer="adam", loss="mse", metrics=["accuracy"])
@@ -228,32 +237,32 @@ def test_compile_resolution():
     )
 
     # Test callables
-    def my_loss(y, p):
+    def my_loss(y: TensorLike, p: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             y: Description.
             p: Description.
         """
-        return y - p  # pragma: no cover
+        return y - p
 
     model.compile(optimizer="adam", loss=my_loss, metrics=[my_loss])
     assert model.loss_fn == my_loss
     assert model.compiled_metrics[0] == my_loss
 
 
-def test_fit_evaluate_predict_callbacks():
+def test_fit_evaluate_predict_callbacks() -> TensorLike:
     """Function docstring."""
     model = Sequential([Dense(1)])
 
-    def dummy_loss(y, p):
+    def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             y: Description.
             p: Description.
         """
-        return p  # pragma: no cover
+        return p
 
     model.compile(optimizer="sgd", loss=dummy_loss)
     x = np.random.rand(10, 2)
@@ -288,23 +297,23 @@ def test_fit_evaluate_predict_callbacks():
     assert cb.counts["on_predict_end"] == 1
 
 
-def test_fit_evaluate_predict_iterator_callbacks():
+def test_fit_evaluate_predict_iterator_callbacks() -> TensorLike:
     """Function docstring."""
     model = Sequential([Dense(1)])
 
-    def dummy_loss(y, p):
+    def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             y: Description.
             p: Description.
         """
-        return p  # pragma: no cover
+        return p
 
     model.compile(optimizer="sgd", loss=dummy_loss)
 
     # Create simple generator
-    def data_gen():
+    def data_gen() -> TensorLike:
         """Function docstring."""
         for _ in range(2):
             yield np.random.rand(5, 2), np.random.rand(5, 1)
@@ -313,15 +322,15 @@ def test_fit_evaluate_predict_iterator_callbacks():
     class MockIterator:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.gen = data_gen()
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
             return self
 
-        def __next__(self):
+        def __next__(self) -> TensorLike:
             """Function docstring."""
             return next(self.gen)
 
@@ -344,7 +353,7 @@ def test_fit_evaluate_predict_iterator_callbacks():
     assert cb.counts["on_predict_batch_begin"] == 2
 
 
-def test_save_and_load_weights():
+def test_save_and_load_weights() -> TensorLike:
     """Function docstring."""
     model = Sequential([Dense(1)])
     model.build((None, 2))
@@ -363,18 +372,18 @@ def test_save_and_load_weights():
         np.testing.assert_allclose(w, w_new)
 
 
-def test_stop_training():
+def test_stop_training() -> TensorLike:
     """Function docstring."""
     model = Sequential([Dense(1)])
 
-    def dummy_loss(y, p):
+    def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             y: Description.
             p: Description.
         """
-        return p  # pragma: no cover
+        return p
 
     model.compile(optimizer="sgd", loss=dummy_loss)
     x = np.random.rand(10, 2)
@@ -383,7 +392,7 @@ def test_stop_training():
     class StopCb(Callback):
         """Class docstring."""
 
-        def on_epoch_end(self, epoch, logs=None):
+        def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
             """Function docstring.
 
             Args:

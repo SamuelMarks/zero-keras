@@ -1,3 +1,7 @@
+"""Module `test_utils` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from unittest import mock
 
 """Module docstring."""
@@ -12,7 +16,7 @@ from ml_switcheroo_compiler import ops
 from zero_keras import utils
 
 
-def test_to_categorical():
+def test_to_categorical() -> TensorLike:
     """Function docstring."""
     x = np.array([0, 1, 2, 1])
     y = utils.to_categorical(x, num_classes=3)
@@ -23,32 +27,28 @@ def test_to_categorical():
     assert y2 is not None
 
 
-def test_normalize():
+def test_normalize() -> TensorLike:
     """Function docstring."""
     x = np.array([[1.0, 0.0], [0.0, 2.0]])
     y = utils.normalize(x, axis=-1)
     assert y is not None
 
 
-def test_set_random_seed():
+def test_set_random_seed() -> TensorLike:
     """Function docstring."""
     utils.set_random_seed(42)
 
 
-def test_get_file():
+def test_get_file() -> TensorLike:
     """Function docstring."""
     with tempfile.TemporaryDirectory() as d:
         dummy_content = b"test content"
         dummy_url = "file://" + os.path.join(d, "origin.txt")
         with open(os.path.join(d, "origin.txt"), "wb") as f:
             f.write(dummy_content)
-        fpath = utils.get_file(
-            "test.txt", dummy_url, cache_dir=d, cache_subdir="test_subdir"
-        )
+        fpath = utils.get_file("test.txt", dummy_url, cache_dir=d, cache_subdir="test_subdir")
         assert os.path.exists(fpath)
-        fpath2 = utils.get_file(
-            "test.txt", dummy_url, cache_dir=d, cache_subdir="test_subdir"
-        )
+        fpath2 = utils.get_file("test.txt", dummy_url, cache_dir=d, cache_subdir="test_subdir")
         assert fpath2 == fpath
 
         import zipfile
@@ -80,15 +80,13 @@ def test_get_file():
         )
 
 
-def test_get_file_error():
+def test_get_file_error() -> TensorLike:
     """Function docstring."""
     with tempfile.TemporaryDirectory() as d, pytest.raises(Exception):
-        utils.get_file(
-            "test_err.txt", "http://localhost:12345/nonexistent", cache_dir=d
-        )
+        utils.get_file("test_err.txt", "http://localhost:12345/nonexistent", cache_dir=d)
 
 
-def test_progbar():
+def test_progbar() -> TensorLike:
     """Function docstring."""
     pb = utils.Progbar(10)
     pb.update(5, values=[("loss", 0.5)])
@@ -98,17 +96,21 @@ def test_progbar():
 
 
 @mock.patch("zero_keras.utils.plot_model")
-def test_plot_model(mock_plot_model):
-    """Function docstring."""
+def test_plot_model(mock_plot_model: TensorLike) -> TensorLike:
+    """Function docstring.
+
+    Args:
+        mock_plot_model: Input parameter ``mock_plot_model``.
+    """
     utils.plot_model(None)
     mock_plot_model.assert_called_once_with(None)
 
 
-def test_dataset_utils():
+def test_dataset_utils() -> TensorLike:
     """Function docstring."""
 
 
-def test_set_random_seed_no_numpy(monkeypatch):
+def test_set_random_seed_no_numpy(monkeypatch: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -121,13 +123,13 @@ def test_set_random_seed_no_numpy(monkeypatch):
     utils.set_random_seed(42)
 
 
-def test_get_file_default_cache():
+def test_get_file_default_cache() -> TensorLike:
     """Function docstring."""
     fpath = utils.get_file("test_default.txt", "file:///dev/null")
     assert fpath is not None
 
 
-def test_get_file_tar():
+def test_get_file_tar() -> TensorLike:
     """Function docstring."""
     with tempfile.TemporaryDirectory() as d:
         import tarfile
@@ -140,7 +142,7 @@ def test_get_file_tar():
         utils.get_file("test.tar", "file://" + tar_path, untar=True, cache_dir=d)
 
 
-def test_to_categorical_exceptions(monkeypatch):
+def test_to_categorical_exceptions(monkeypatch: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -150,13 +152,13 @@ def test_to_categorical_exceptions(monkeypatch):
     class BadMaxObj:
         """Class docstring."""
 
-        def max(self):
+        def max(self) -> TensorLike:
             """Function docstring."""
-            raise Exception("bad max")  # pragma: no cover
+            raise Exception("bad max")
 
     original_ops_max = ops.max
 
-    def mock_ops_max(x, *args, **kwargs):
+    def mock_ops_max(x: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -168,7 +170,7 @@ def test_to_categorical_exceptions(monkeypatch):
         class OpsMaxObj:
             """Class docstring."""
 
-            def __int__(self):
+            def __int__(self) -> TensorLike:
                 """Function docstring."""
                 return 1
 
@@ -180,7 +182,7 @@ def test_to_categorical_exceptions(monkeypatch):
         utils.to_categorical(BadMaxObj())
 
 
-def test_to_categorical_no_num_classes_tensor():
+def test_to_categorical_no_num_classes_tensor() -> TensorLike:
     """Function docstring."""
     y = utils.to_categorical(np.array([0, 1]))
     assert y is not None

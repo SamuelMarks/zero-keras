@@ -1,3 +1,7 @@
+"""Activation layers for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -21,7 +25,7 @@ class Activation(Layer):
 
     """
 
-    def __init__(self, activation, **kwargs):
+    def __init__(self, activation: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -33,7 +37,7 @@ class Activation(Layer):
 
         self.activation = get(activation)
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -41,7 +45,7 @@ class Activation(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return self.activation(inputs)
@@ -63,7 +67,7 @@ class ELU(Layer):
 
     """
 
-    def __init__(self, alpha=1.0, **kwargs):
+    def __init__(self, alpha: TensorLike = 1.0, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -73,7 +77,7 @@ class ELU(Layer):
         super().__init__(**kwargs)
         self.alpha = alpha
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -81,7 +85,7 @@ class ELU(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import activations
@@ -115,12 +119,12 @@ class PReLU(Layer):
 
     def __init__(
         self,
-        alpha_initializer="zeros",
-        alpha_regularizer=None,
-        alpha_constraint=None,
-        shared_axes=None,
-        **kwargs,
-    ):
+        alpha_initializer: TensorLike = "zeros",
+        alpha_regularizer: TensorLike = None,
+        alpha_constraint: TensorLike = None,
+        shared_axes: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -139,27 +143,27 @@ class PReLU(Layer):
 
         self._alpha_init_fn = get(alpha_initializer)
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if input_shape is not None:
             shape = input_shape[1:]
-        else:  # pragma: no cover
-            shape = ()  # pragma: no cover
+        else:
+            shape = ()
         # Actually in zero_keras we might not have variables, just return a tensor
         self.alpha = self._alpha_init_fn(shape=shape)
-        self.shared_axes = getattr(self, "shared_axes", None)
+        self.shared_axes = self.shared_axes if hasattr(self, "shared_axes") else None
         super().build(input_shape)
         self.shared_axes = self.shared_axes if hasattr(self, "shared_axes") else None
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -167,18 +171,24 @@ class PReLU(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops as backend_ops
         from zero_keras.activations import _to_tensor, _wrap
 
         inputs_t = _to_tensor(inputs)
-        alpha_t = getattr(self.alpha, "data", None) if hasattr(self, "alpha") else None
+        alpha_t = (
+            (self.alpha.data if hasattr(self.alpha, "data") else None)
+            if hasattr(self, "alpha")
+            else None
+        )
         if alpha_t is None:
-            alpha_t = 0.0  # pragma: no cover
+            alpha_t = 0.0
         alpha_t = _to_tensor(alpha_t)
-        zero_t = backend_ops.asarray(0.0, dtype=getattr(inputs_t, "dtype", "float32"))
+        zero_t = backend_ops.asarray(
+            0.0, dtype=(inputs_t.dtype if hasattr(inputs_t, "dtype") else "float32")
+        )
         pos = backend_ops.maximum(inputs_t, zero_t)
         min_t = backend_ops.minimum(inputs_t, zero_t)
         neg = backend_ops.multiply(alpha_t, min_t)
@@ -219,7 +229,13 @@ class ReLU(Layer):
 
     """
 
-    def __init__(self, max_value=None, negative_slope=0.0, threshold=0.0, **kwargs):
+    def __init__(
+        self,
+        max_value: TensorLike = None,
+        negative_slope: TensorLike = 0.0,
+        threshold: TensorLike = 0.0,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -233,7 +249,7 @@ class ReLU(Layer):
         self.negative_slope = negative_slope
         self.threshold = threshold
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -242,7 +258,7 @@ class ReLU(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import activations
@@ -287,7 +303,7 @@ class Softmax(Layer):
 
     """
 
-    def __init__(self, axis=-1, **kwargs):
+    def __init__(self, axis: TensorLike = -1, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -297,7 +313,7 @@ class Softmax(Layer):
         super().__init__(**kwargs)
         self.axis = axis
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -306,7 +322,7 @@ class Softmax(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import activations
@@ -342,7 +358,7 @@ class LeakyReLU(Layer):
 
     """
 
-    def __init__(self, negative_slope=0.3, **kwargs):
+    def __init__(self, negative_slope: TensorLike = 0.3, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -352,7 +368,7 @@ class LeakyReLU(Layer):
         super().__init__(**kwargs)
         self.negative_slope = negative_slope
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -360,10 +376,8 @@ class LeakyReLU(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
-        return _wrap(
-            ops.maximum(inputs, ops.multiply(_to_tensor(self.negative_slope), inputs))
-        )
+        return _wrap(ops.maximum(inputs, ops.multiply(_to_tensor(self.negative_slope), inputs)))

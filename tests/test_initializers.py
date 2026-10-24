@@ -1,5 +1,8 @@
 """Tests for zero_keras initializers."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 import pytest
@@ -10,21 +13,21 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed():
+def _set_seed() -> TensorLike:
     """Function docstring."""
     set_seed(42)
 
 
 def check_initializer_parity(
-    initializer_cls,
-    keras_cls,
-    shape=(500, 500),
-    dtype="float32",
-    atol=1e-5,
-    rtol=1e-5,
-    is_random=False,
-    **kwargs,
-):
+    initializer_cls: TensorLike,
+    keras_cls: TensorLike,
+    shape: TensorLike = (500, 500),
+    dtype: TensorLike = "float32",
+    atol: TensorLike = 1e-5,
+    rtol: TensorLike = 1e-5,
+    is_random: TensorLike = False,
+    **kwargs: TensorLike,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -47,7 +50,7 @@ def check_initializer_parity(
     zero_init = initializer_cls(**kwargs)
     zero_out = zero_init(shape=shape, dtype=dtype)
     if hasattr(zero_out, "numpy"):
-        zero_out = zero_out.numpy()  # pragma: no cover
+        zero_out = zero_out.numpy()
 
     if is_random:
         assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=2e-1)
@@ -56,39 +59,31 @@ def check_initializer_parity(
         assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
 
 
-def test_initializer_Constant():
+def test_initializer_Constant() -> TensorLike:
     """Function docstring."""
-    check_initializer_parity(
-        initializers.Constant, keras.initializers.Constant, value=3.14
-    )
-    check_initializer_parity(
-        initializers.constant, keras.initializers.constant, value=-1.0
-    )
+    check_initializer_parity(initializers.Constant, keras.initializers.Constant, value=3.14)
+    check_initializer_parity(initializers.constant, keras.initializers.constant, value=-1.0)
 
 
-def test_initializer_Zeros():
+def test_initializer_Zeros() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(initializers.Zeros, keras.initializers.Zeros)
     check_initializer_parity(initializers.zeros, keras.initializers.zeros)
 
 
-def test_initializer_Ones():
+def test_initializer_Ones() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(initializers.Ones, keras.initializers.Ones)
     check_initializer_parity(initializers.ones, keras.initializers.ones)
 
 
-def test_initializer_Identity():
+def test_initializer_Identity() -> TensorLike:
     """Function docstring."""
-    check_initializer_parity(
-        initializers.Identity, keras.initializers.Identity, gain=2.0
-    )
-    check_initializer_parity(
-        initializers.identity, keras.initializers.identity, gain=0.5
-    )
+    check_initializer_parity(initializers.Identity, keras.initializers.Identity, gain=2.0)
+    check_initializer_parity(initializers.identity, keras.initializers.identity, gain=0.5)
 
 
-def test_initializer_Orthogonal():
+def test_initializer_Orthogonal() -> TensorLike:
     """Function docstring."""
     # Orthogonal uses QR decomposition on random numbers, which can differ based on exact RNG sequence.
     # However, setting seed might be enough for a single matrix.
@@ -108,7 +103,7 @@ def test_initializer_Orthogonal():
     )
 
 
-def test_initializer_RandomNormal():
+def test_initializer_RandomNormal() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.RandomNormal,
@@ -128,7 +123,7 @@ def test_initializer_RandomNormal():
     )
 
 
-def test_initializer_RandomUniform():
+def test_initializer_RandomUniform() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.RandomUniform,
@@ -148,7 +143,7 @@ def test_initializer_RandomUniform():
     )
 
 
-def test_initializer_TruncatedNormal():
+def test_initializer_TruncatedNormal() -> TensorLike:
     """Function docstring."""
     shape = (500, 500)
 
@@ -157,7 +152,7 @@ def test_initializer_TruncatedNormal():
     )
     zero_out = initializers.TruncatedNormal(mean=0.0, stddev=1.0, seed=42)(shape=shape)
     if hasattr(zero_out, "numpy"):
-        zero_out = zero_out.numpy()  # pragma: no cover
+        zero_out = zero_out.numpy()
 
     assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=1e-1)
     assert np.allclose(
@@ -167,11 +162,9 @@ def test_initializer_TruncatedNormal():
     keras_out2 = np.array(
         keras.initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(shape=shape)
     )
-    zero_out2 = initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(
-        shape=shape
-    )
+    zero_out2 = initializers.truncated_normal(mean=1.0, stddev=0.5, seed=123)(shape=shape)
     if hasattr(zero_out2, "numpy"):
-        zero_out2 = zero_out2.numpy()  # pragma: no cover
+        zero_out2 = zero_out2.numpy()
 
     assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
     assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
@@ -185,7 +178,7 @@ def test_initializer_TruncatedNormal():
     )(shape=(10,))
 
 
-def test_initializer_VarianceScaling():
+def test_initializer_VarianceScaling() -> TensorLike:
     """Function docstring."""
     shape = (500, 500)
 
@@ -198,7 +191,7 @@ def test_initializer_VarianceScaling():
         scale=2.0, mode="fan_in", distribution="truncated_normal", seed=42
     )(shape=shape)
     if hasattr(zero_out, "numpy"):
-        zero_out = zero_out.numpy()  # pragma: no cover
+        zero_out = zero_out.numpy()
 
     assert np.allclose(np.mean(keras_out), np.mean(zero_out), atol=1e-1)
     assert np.allclose(np.std(keras_out), np.std(zero_out), atol=1e-1)
@@ -212,7 +205,7 @@ def test_initializer_VarianceScaling():
         scale=1.0, mode="fan_out", distribution="uniform", seed=123
     )(shape=shape)
     if hasattr(zero_out2, "numpy"):
-        zero_out2 = zero_out2.numpy()  # pragma: no cover
+        zero_out2 = zero_out2.numpy()
 
     assert np.allclose(np.mean(keras_out2), np.mean(zero_out2), atol=1e-1)
     assert np.allclose(np.std(keras_out2), np.std(zero_out2), atol=1e-1)
@@ -226,7 +219,7 @@ def test_initializer_VarianceScaling():
     )(shape=(10,))
 
 
-def test_initializer_GlorotNormal():
+def test_initializer_GlorotNormal() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.GlorotNormal,
@@ -242,7 +235,7 @@ def test_initializer_GlorotNormal():
     )
 
 
-def test_initializer_GlorotUniform():
+def test_initializer_GlorotUniform() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.GlorotUniform,
@@ -258,7 +251,7 @@ def test_initializer_GlorotUniform():
     )
 
 
-def test_initializer_HeNormal():
+def test_initializer_HeNormal() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.HeNormal, keras.initializers.HeNormal, is_random=True, seed=42
@@ -268,7 +261,7 @@ def test_initializer_HeNormal():
     )
 
 
-def test_initializer_HeUniform():
+def test_initializer_HeUniform() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.HeUniform, keras.initializers.HeUniform, is_random=True, seed=42
@@ -278,7 +271,7 @@ def test_initializer_HeUniform():
     )
 
 
-def test_initializer_LecunNormal():
+def test_initializer_LecunNormal() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.LecunNormal,
@@ -294,7 +287,7 @@ def test_initializer_LecunNormal():
     )
 
 
-def test_initializer_LecunUniform():
+def test_initializer_LecunUniform() -> TensorLike:
     """Function docstring."""
     check_initializer_parity(
         initializers.LecunUniform,
@@ -310,7 +303,7 @@ def test_initializer_LecunUniform():
     )
 
 
-def test_initializer_STFT():
+def test_initializer_STFT() -> TensorLike:
     """Function docstring."""
     # Keras doesn't have a built-in STFT initializer by default in core,
     # so we just test the zero_keras implementation independently
@@ -318,14 +311,14 @@ def test_initializer_STFT():
     assert init(shape=(2, 2)).shape == (2, 2)
 
 
-def test_initializer_Initializer():
+def test_initializer_Initializer() -> TensorLike:
     """Function docstring."""
     # Test base class fallback
     init = initializers.Initializer()
     assert init(shape=(2, 2)).shape == (2, 2)
 
 
-def test_initializers_exceptions_and_branches():
+def test_initializers_exceptions_and_branches() -> TensorLike:
     """Function docstring."""
     with pytest.raises(ValueError):
         initializers.Identity()(shape=(2, 2, 2))
@@ -334,7 +327,7 @@ def test_initializers_exceptions_and_branches():
         initializers.Orthogonal()(shape=(2,))
 
 
-def test_serialize_deserialize():
+def test_serialize_deserialize() -> TensorLike:
     """Function docstring."""
     from zero_keras import initializers
 
@@ -353,7 +346,8 @@ def test_serialize_deserialize():
     assert initializers.deserialize(init) is init
 
 
-def test_initializer_methods():
+def test_initializer_methods() -> TensorLike:
+    """Execute ``test_initializer_methods``."""
     from zero_keras.initializers import Initializer
 
     init = Initializer()

@@ -1,5 +1,8 @@
 """Tests for zero_keras activations."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 import pytest
@@ -10,48 +13,42 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed():
+def _set_seed() -> TensorLike:
     """Function docstring."""
     set_seed(42)
 
 
-def get_x():
+def get_x() -> TensorLike:
     """Function docstring."""
     return np.array([-3.0, -1.0, -0.5, 0.0, 0.5, 1.0, 3.0], dtype=np.float32)
 
 
-def get_x_glu():
+def get_x_glu() -> TensorLike:
     """Function docstring."""
     return np.array([[-1.0, 1.0, 2.0, -2.0], [0.0, 2.0, -1.0, 3.0]], dtype=np.float32)
 
 
-def test_activation_celu():
+def test_activation_celu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.celu(x), activations.celu(x))
-    assert_allclose_keras_zero(
-        keras.activations.celu(x, alpha=0.5), activations.celu(x, alpha=0.5)
-    )
+    assert_allclose_keras_zero(keras.activations.celu(x, alpha=0.5), activations.celu(x, alpha=0.5))
 
 
-def test_activation_elu():
+def test_activation_elu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.elu(x), activations.elu(x))
-    assert_allclose_keras_zero(
-        keras.activations.elu(x, alpha=0.5), activations.elu(x, alpha=0.5)
-    )
+    assert_allclose_keras_zero(keras.activations.elu(x, alpha=0.5), activations.elu(x, alpha=0.5))
 
 
-def test_activation_exponential():
+def test_activation_exponential() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.exponential(x), activations.exponential(x)
-    )
+    assert_allclose_keras_zero(keras.activations.exponential(x), activations.exponential(x))
 
 
-def test_activation_gelu():
+def test_activation_gelu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.gelu(x), activations.gelu(x))
@@ -61,99 +58,85 @@ def test_activation_gelu():
     )
 
 
-def test_activation_glu():
+def test_activation_glu() -> TensorLike:
     """Function docstring."""
     x = get_x_glu()
     assert_allclose_keras_zero(keras.activations.glu(x), activations.glu(x))
-    assert_allclose_keras_zero(
-        keras.activations.glu(x, axis=1), activations.glu(x, axis=1)
-    )
+    assert_allclose_keras_zero(keras.activations.glu(x, axis=1), activations.glu(x, axis=1))
 
 
-def test_activation_hard_shrink():
+def test_activation_hard_shrink() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.hard_shrink(x), activations.hard_shrink(x)
-    )
+    assert_allclose_keras_zero(keras.activations.hard_shrink(x), activations.hard_shrink(x))
     assert_allclose_keras_zero(
         keras.activations.hard_shrink(x, threshold=0.7),
         activations.hard_shrink(x, threshold=0.7),
     )
 
 
-def test_activation_hard_sigmoid():
+def test_activation_hard_sigmoid() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.hard_sigmoid(x), activations.hard_sigmoid(x)
-    )
+    assert_allclose_keras_zero(keras.activations.hard_sigmoid(x), activations.hard_sigmoid(x))
 
 
-def test_activation_hard_silu():
+def test_activation_hard_silu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.hard_silu(x), activations.hard_silu(x))
 
 
-def test_activation_hard_swish():
+def test_activation_hard_swish() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.hard_swish(x), activations.hard_swish(x)
-    )
+    assert_allclose_keras_zero(keras.activations.hard_swish(x), activations.hard_swish(x))
 
 
-def test_activation_hard_tanh():
+def test_activation_hard_tanh() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.hard_tanh(x), activations.hard_tanh(x))
 
 
-def test_activation_leaky_relu():
+def test_activation_leaky_relu() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.leaky_relu(x), activations.leaky_relu(x)
-    )
+    assert_allclose_keras_zero(keras.activations.leaky_relu(x), activations.leaky_relu(x))
     assert_allclose_keras_zero(
         keras.activations.leaky_relu(x, negative_slope=0.3),
         activations.leaky_relu(x, negative_slope=0.3),
     )
 
 
-def test_activation_linear():
+def test_activation_linear() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.linear(x), activations.linear(x))
 
 
-def test_activation_log_sigmoid():
+def test_activation_log_sigmoid() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.log_sigmoid(x), activations.log_sigmoid(x)
-    )
+    assert_allclose_keras_zero(keras.activations.log_sigmoid(x), activations.log_sigmoid(x))
 
 
-def test_activation_log_softmax():
+def test_activation_log_softmax() -> TensorLike:
     """Function docstring."""
     x = get_x_glu()
-    assert_allclose_keras_zero(
-        keras.activations.log_softmax(x), activations.log_softmax(x)
-    )
+    assert_allclose_keras_zero(keras.activations.log_softmax(x), activations.log_softmax(x))
     assert_allclose_keras_zero(
         keras.activations.log_softmax(x, axis=0), activations.log_softmax(x, axis=0)
     )
 
 
-def test_activation_mish():
+def test_activation_mish() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.mish(x), activations.mish(x))
 
 
-def test_activation_relu():
+def test_activation_relu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.relu(x), activations.relu(x))
@@ -169,81 +152,73 @@ def test_activation_relu():
     )
 
 
-def test_activation_relu6():
+def test_activation_relu6() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.relu6(x), activations.relu6(x))
 
 
-def test_activation_selu():
+def test_activation_selu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.selu(x), activations.selu(x))
 
 
-def test_activation_sigmoid():
+def test_activation_sigmoid() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.sigmoid(x), activations.sigmoid(x))
 
 
-def test_activation_silu():
+def test_activation_silu() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.silu(x), activations.silu(x))
 
 
-def test_activation_soft_shrink():
+def test_activation_soft_shrink() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.soft_shrink(x), activations.soft_shrink(x)
-    )
+    assert_allclose_keras_zero(keras.activations.soft_shrink(x), activations.soft_shrink(x))
     assert_allclose_keras_zero(
         keras.activations.soft_shrink(x, threshold=0.2),
         activations.soft_shrink(x, threshold=0.2),
     )
 
 
-def test_activation_softmax():
+def test_activation_softmax() -> TensorLike:
     """Function docstring."""
     x = get_x_glu()
     assert_allclose_keras_zero(keras.activations.softmax(x), activations.softmax(x))
-    assert_allclose_keras_zero(
-        keras.activations.softmax(x, axis=0), activations.softmax(x, axis=0)
-    )
+    assert_allclose_keras_zero(keras.activations.softmax(x, axis=0), activations.softmax(x, axis=0))
 
 
-def test_activation_softplus():
+def test_activation_softplus() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.softplus(x), activations.softplus(x))
 
 
-def test_activation_softsign():
+def test_activation_softsign() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.softsign(x), activations.softsign(x))
 
 
-def test_activation_sparse_plus():
+def test_activation_sparse_plus() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.sparse_plus(x), activations.sparse_plus(x)
-    )
+    assert_allclose_keras_zero(keras.activations.sparse_plus(x), activations.sparse_plus(x))
 
 
-def test_activation_sparse_sigmoid():
+def test_activation_sparse_sigmoid() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.sparse_sigmoid(x), activations.sparse_sigmoid(x)
-    )
+    assert_allclose_keras_zero(keras.activations.sparse_sigmoid(x), activations.sparse_sigmoid(x))
 
 
 @pytest.mark.xfail(raises=NotImplementedError)
-def test_activation_sparsemax():
+def test_activation_sparsemax() -> TensorLike:
     """Function docstring."""
     x = get_x_glu()
     assert_allclose_keras_zero(keras.activations.sparsemax(x), activations.sparsemax(x))
@@ -252,38 +227,32 @@ def test_activation_sparsemax():
     )
 
 
-def test_activation_squareplus():
+def test_activation_squareplus() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.squareplus(x), activations.squareplus(x)
-    )
-    assert_allclose_keras_zero(
-        keras.activations.squareplus(x, b=3), activations.squareplus(x, b=3)
-    )
+    assert_allclose_keras_zero(keras.activations.squareplus(x), activations.squareplus(x))
+    assert_allclose_keras_zero(keras.activations.squareplus(x, b=3), activations.squareplus(x, b=3))
 
 
-def test_activation_swish():
+def test_activation_swish() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.swish(x), activations.swish(x))
 
 
-def test_activation_tanh():
+def test_activation_tanh() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(keras.activations.tanh(x), activations.tanh(x))
 
 
-def test_activation_tanh_shrink():
+def test_activation_tanh_shrink() -> TensorLike:
     """Function docstring."""
     x = get_x()
-    assert_allclose_keras_zero(
-        keras.activations.tanh_shrink(x), activations.tanh_shrink(x)
-    )
+    assert_allclose_keras_zero(keras.activations.tanh_shrink(x), activations.tanh_shrink(x))
 
 
-def test_activation_threshold():
+def test_activation_threshold() -> TensorLike:
     """Function docstring."""
     x = get_x()
     assert_allclose_keras_zero(
@@ -292,19 +261,19 @@ def test_activation_threshold():
     )
 
 
-def test_deserialize():
+def test_deserialize() -> TensorLike:
     """Function docstring."""
     assert activations.deserialize("relu") == activations.relu
     assert activations.deserialize({"class_name": "relu"}) == {"class_name": "relu"}
 
 
-def test_serialize():
+def test_serialize() -> TensorLike:
     """Function docstring."""
     assert activations.serialize(activations.relu) == "relu"
     assert activations.serialize("relu") == "relu"
 
 
-def test_get():
+def test_get() -> TensorLike:
     """Function docstring."""
     assert activations.get(None) == activations.linear
     assert activations.get("relu") == activations.relu
@@ -313,13 +282,16 @@ def test_get():
     assert activations.get(123) == activations.linear
 
 
-def test_activations_coverage():
+def test_activations_coverage() -> TensorLike:
+    """Execute ``test_activations_coverage``."""
     from ml_switcheroo_compiler.core.tensor import Tensor
 
     from zero_keras import activations
 
     # Test _to_tensor branches
     class MockKerasTensor:
+        """Keras ``MockKerasTensor`` class."""
+
         data = "mock_data"
 
     x1 = MockKerasTensor()
@@ -333,6 +305,8 @@ def test_activations_coverage():
     activations._to_tensor(x2)
 
     class MockTensorWithUnderTensor:
+        """Keras ``MockTensorWithUnderTensor`` class."""
+
         _tensor = "mock_tensor"
 
     x3 = MockTensorWithUnderTensor()
@@ -340,6 +314,8 @@ def test_activations_coverage():
 
     # Test _wrap branches
     class MockBackendTensor:
+        """Keras ``MockBackendTensor`` class."""
+
         data = type("MockData", (), {"id": "123"})()
         shape = ()
         dtype = "float32"
@@ -354,9 +330,8 @@ def test_activations_coverage():
     assert activations.serialize("relu") == "relu"
 
     class MockActivationWithoutName:
+        """Keras ``MockActivationWithoutName`` class."""
+
         pass
 
-    assert (
-        activations.serialize(MockActivationWithoutName())
-        == "MockActivationWithoutName"
-    )
+    assert activations.serialize(MockActivationWithoutName()) == "MockActivationWithoutName"

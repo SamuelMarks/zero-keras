@@ -1,4 +1,11 @@
-def test_metric_methods_extra():
+"""Module `test_metrics_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+
+def test_metric_methods_extra() -> TensorLike:
+    """Execute ``test_metric_methods_extra``."""
     from zero_keras.metrics import Metric
 
     m = Metric(name="test_metric")

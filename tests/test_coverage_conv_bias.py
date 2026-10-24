@@ -1,12 +1,15 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 from ml_switcheroo_compiler.ops import asarray
 
 from zero_keras.layers import Conv1D, Conv2D, Conv3D
 
 
-def test_layers_conv_channels_first_with_bias():
+def test_layers_conv_channels_first_with_bias() -> TensorLike:
     """Function docstring."""
     # 2793->2794
     c1 = Conv1D(2, 2, data_format="channels_first", use_bias=True)

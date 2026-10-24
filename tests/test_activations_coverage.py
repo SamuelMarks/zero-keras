@@ -1,7 +1,10 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
 
-def test_activation_coverage_extra():
+
+def test_activation_coverage_extra() -> TensorLike:
     """Function docstring."""
     from zero_keras.activations import _to_tensor, _wrap, serialize
     from zero_keras.core_layers import KerasTensor
@@ -54,7 +57,7 @@ def test_activation_coverage_extra():
     assert serialize(DummyActivationObj()) == "DummyActivationObj"
 
 
-def test_activation_coverage_holes():
+def test_activation_coverage_holes() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler
 
@@ -63,25 +66,25 @@ def test_activation_coverage_holes():
     class MockTensor(ml_switcheroo_compiler.Tensor):
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
 
     try:
         t = MockTensor()
         assert _to_tensor(t) is t
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     assert get(None).__name__ == "linear"
     assert get("unknown_activation") == get("linear")
 
-    def my_custom_activation(x):
+    def my_custom_activation(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             x: Description.
         """
-        return x  # pragma: no cover
+        return x
 
     assert get(my_custom_activation) is my_custom_activation
 
@@ -98,7 +101,7 @@ def test_activation_coverage_holes():
     assert deserialize({"config": "test"}) == {"config": "test"}
 
 
-def test_coverage_for_all_callables():
+def test_coverage_for_all_callables() -> TensorLike:
     """Function docstring."""
     import numpy as np
 
@@ -140,7 +143,8 @@ def test_coverage_for_all_callables():
     activations.threshold(x, 0.5, 0.0)
 
 
-def test_get_extra():
+def test_get_extra() -> TensorLike:
+    """Execute ``test_get_extra``."""
     from zero_keras import activations
 
     # dict
@@ -148,7 +152,12 @@ def test_get_extra():
     assert isinstance(activations.get(config), dict)
 
     # callable
-    def my_act(x):
+    def my_act(x: TensorLike) -> TensorLike:
+        """Execute ``my_act``.
+
+        Args:
+            x: Input parameter ``x``.
+        """
         return x
 
     assert activations.get(my_act) == my_act
@@ -157,7 +166,8 @@ def test_get_extra():
     assert activations.get("invalid_act") == activations.linear
 
 
-def test_relu_params():
+def test_relu_params() -> TensorLike:
+    """Execute ``test_relu_params``."""
     import numpy as np
 
     from zero_keras import activations
@@ -178,7 +188,8 @@ def test_relu_params():
     out = activations.relu(x, max_value=3.0)
 
 
-def test_activations_missing():
+def test_activations_missing() -> TensorLike:
+    """Execute ``test_activations_missing``."""
     import numpy as np
 
     from zero_keras import activations

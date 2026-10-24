@@ -1,10 +1,25 @@
-"""datasets API."""
+"""Built-in benchmark datasets package for zero_keras."""
 
-from zero_keras.datasets.boston_housing import *
-from zero_keras.datasets.california_housing import *
-from zero_keras.datasets.cifar10 import *
-from zero_keras.datasets.cifar100 import *
-from zero_keras.datasets.fashion_mnist import *
-from zero_keras.datasets.imdb import *
-from zero_keras.datasets.mnist import *
-from zero_keras.datasets.reuters import *
+from __future__ import annotations
+
+from zero_keras.datasets import (
+    boston_housing,
+    california_housing,
+    cifar10,
+    cifar100,
+    fashion_mnist,
+    imdb,
+    mnist,
+    reuters,
+)
+
+__all__ = [
+    "boston_housing",
+    "california_housing",
+    "cifar10",
+    "cifar100",
+    "fashion_mnist",
+    "imdb",
+    "mnist",
+    "reuters",
+]

@@ -1,12 +1,15 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras.callbacks import Callback, EarlyStopping, ModelCheckpoint
 
 
 class MockModel:
     """Class docstring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Function docstring."""
         self.stop_training = False
 
@@ -17,7 +20,7 @@ class MockModel:
 
         self.weights = [W()]
 
-    def save(self, filepath):
+    def save(self, filepath: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -25,7 +28,7 @@ class MockModel:
         """
 
 
-def test_callbacks():
+def test_callbacks() -> TensorLike:
     """Function docstring."""
     cb = Callback()
     cb.set_model(MockModel())
@@ -63,16 +66,10 @@ def test_callbacks():
     es2.on_train_begin()
     es2.on_epoch_end(0, {"val_loss": 0.5})  # improves (wait=0) -> hits 282->exit
     es2.on_epoch_end(1, {"val_loss": 0.6})  # no improve (wait=1) -> hits 286->exit
-    es2.on_epoch_end(
-        2, {"val_loss": 0.7}
-    )  # no improve (wait=2) -> stops, hits 289->exit
+    es2.on_epoch_end(2, {"val_loss": 0.7})  # no improve (wait=2) -> stops, hits 289->exit
 
-    mc = ModelCheckpoint(
-        filepath="test.h5", monitor="val_loss", save_best_only=True, mode="min"
-    )
-    mc2 = ModelCheckpoint(
-        filepath="test2.h5", monitor="val_loss", save_best_only=False, mode="max"
-    )
+    mc = ModelCheckpoint(filepath="test.h5", monitor="val_loss", save_best_only=True, mode="min")
+    mc2 = ModelCheckpoint(filepath="test2.h5", monitor="val_loss", save_best_only=False, mode="max")
     mc.set_model(model)
     mc.on_epoch_end(0, {"val_loss": 0.5})
     mc.on_epoch_end(1, {"val_loss": 0.4})

@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 # Aliases from losses (exported)
 from zero_keras import ops
 from zero_keras.losses import (
@@ -9,7 +12,9 @@ from zero_keras.losses import (
 )
 
 
-def _filter_top_k_and_class_id(y_true, y_pred, top_k, class_id):
+def _filter_top_k_and_class_id(
+    y_true: TensorLike, y_pred: TensorLike, top_k: TensorLike, class_id: TensorLike
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -116,8 +121,13 @@ class Metric:
     """
 
     def add_variable(
-        self, shape, initializer, dtype=None, aggregation="sum", name=None
-    ):
+        self,
+        shape: TensorLike,
+        initializer: TensorLike,
+        dtype: TensorLike = None,
+        aggregation: TensorLike = "sum",
+        name: TensorLike = None,
+    ) -> TensorLike:
         """add_variable docstring.
 
         Args:
@@ -131,7 +141,13 @@ class Metric:
 
         return Variable(initializer, shape=shape, dtype=dtype, name=name)
 
-    def add_weight(self, shape=(), initializer="zeros", dtype=None, name=None):
+    def add_weight(
+        self,
+        shape: TensorLike = (),
+        initializer: TensorLike = "zeros",
+        dtype: TensorLike = None,
+        name: TensorLike = None,
+    ) -> TensorLike:
         """add_weight docstring.
 
         Args:
@@ -145,18 +161,21 @@ class Metric:
         return Variable(initializer, shape=shape, dtype=dtype, name=name)
 
     @property
-    def dtype(self):
-        """dtype docstring."""
-        return getattr(self, "_dtype", None)
+    def dtype(self) -> TensorLike:
+        """Dtype docstring."""
+        return self._dtype if hasattr(self, "_dtype") else None
 
     @dtype.setter
-    def dtype(self, value):
-        """docstring."""
+    def dtype(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._dtype = value
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -164,14 +183,14 @@ class Metric:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
-        return {"name": getattr(self, "name", None)}
+        return {"name": (self.name if hasattr(self, "name") else None)}
 
-    def stateless_reset_state(self):
+    def stateless_reset_state(self) -> TensorLike:
         """stateless_reset_state docstring."""
 
-    def stateless_result(self, *args, **kwargs):
+    def stateless_result(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """stateless_result docstring.
 
         Args:
@@ -180,7 +199,7 @@ class Metric:
         """
         return self.result()
 
-    def stateless_update_state(self, *args, **kwargs):
+    def stateless_update_state(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """stateless_update_state docstring.
 
         Args:
@@ -190,11 +209,13 @@ class Metric:
         return self.update_state(*args, **kwargs)
 
     @property
-    def variables(self):
-        """variables docstring."""
-        return getattr(self, "weights", [])
+    def variables(self) -> TensorLike:
+        """Variables docstring."""
+        return self.weights if hasattr(self, "weights") else []
 
-    def __init__(self, name=None, dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = None, dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -206,11 +227,17 @@ class Metric:
         self.dtype = dtype
         self._kwargs = kwargs
 
-    def update_state(self, *args, **kwargs):
-        """Accumulate statistics for the metric."""
-        raise NotImplementedError
+    def update_state(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Accumulate statistics for the metric.
 
-    def result(self):
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+        """
+        _ = args, kwargs
+        return None
+
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -219,7 +246,7 @@ class Metric:
         """
         return _wrap(_to_tensor(0.0))
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Reset all of the metric state variables.
 
         This function is called between epochs/steps,
@@ -230,8 +257,13 @@ class Metric:
         if hasattr(self, "count"):
             self.count = 0.0
 
-    def __call__(self, *args, **kwargs):
-        """Call self as a function."""
+    def __call__(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
         self.update_state(*args, **kwargs)
         return self.result()
 
@@ -262,7 +294,9 @@ class Mean(Metric):
 
     """
 
-    def __init__(self, name="mean", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "mean", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -274,8 +308,13 @@ class Mean(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, values, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(self, values: TensorLike, sample_weight: TensorLike = None) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            values: Input parameter ``values``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         values = _to_tensor(values)
         if sample_weight is not None:
             sample_weight = _to_tensor(sample_weight)
@@ -285,7 +324,7 @@ class Mean(Metric):
             self.count += ops.cast(ops.sum(ops.ones_like(values)), dtype="float32")
         self.total += ops.cast(ops.sum(values), dtype="float32")
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -294,7 +333,7 @@ class Mean(Metric):
         """
         return _wrap(self.total / ops.maximum(_to_tensor(self.count), 1e-7))
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Reset all of the metric state variables.
 
         This function is called between epochs/steps,
@@ -330,7 +369,9 @@ class Sum(Metric):
 
     """
 
-    def __init__(self, name="sum", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "sum", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -341,15 +382,20 @@ class Sum(Metric):
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.total = 0.0
 
-    def update_state(self, values, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(self, values: TensorLike, sample_weight: TensorLike = None) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            values: Input parameter ``values``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         values = _to_tensor(values)
         if sample_weight is not None:
             sample_weight = _to_tensor(sample_weight)
             values = ops.multiply(values, sample_weight)
         self.total += ops.cast(ops.sum(values), dtype="float32")
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -358,7 +404,7 @@ class Sum(Metric):
         """
         return _wrap(self.total)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Reset all of the metric state variables.
 
         This function is called between epochs/steps,
@@ -393,7 +439,13 @@ class MeanMetricWrapper(Mean):
 
     """
 
-    def __init__(self, fn, name=None, dtype=None, **kwargs):
+    def __init__(
+        self,
+        fn: TensorLike,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -405,8 +457,16 @@ class MeanMetricWrapper(Mean):
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.fn = fn
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         matches = self.fn(y_true, y_pred)
         super().update_state(matches, sample_weight=sample_weight)
 
@@ -448,7 +508,9 @@ class Accuracy(MeanMetricWrapper):
 
     """
 
-    def __init__(self, name="accuracy", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "accuracy", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -457,7 +519,7 @@ class Accuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def accuracy_fn(y_true, y_pred):
+        def accuracy_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """accuracy_fn function.
 
             Args:
@@ -465,12 +527,10 @@ class Accuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
-            return ops.cast(
-                ops.equal(_to_tensor(y_true), _to_tensor(y_pred)), dtype="float32"
-            )
+            return ops.cast(ops.equal(_to_tensor(y_true), _to_tensor(y_pred)), dtype="float32")
 
         super().__init__(fn=accuracy_fn, name=name, dtype=dtype, **kwargs)
 
@@ -514,7 +574,13 @@ class BinaryAccuracy(MeanMetricWrapper):
 
     """
 
-    def __init__(self, name="binary_accuracy", dtype=None, threshold=0.5, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "binary_accuracy",
+        dtype: TensorLike = None,
+        threshold: TensorLike = 0.5,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -524,7 +590,7 @@ class BinaryAccuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def binary_accuracy_fn(y_true, y_pred):
+        def binary_accuracy_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """binary_accuracy_fn function.
 
             Args:
@@ -532,7 +598,7 @@ class BinaryAccuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             y_pred = ops.cast(_to_tensor(y_pred) > threshold, dtype="float32")
@@ -588,7 +654,12 @@ class CategoricalAccuracy(MeanMetricWrapper):
 
     """
 
-    def __init__(self, name="categorical_accuracy", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "categorical_accuracy",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -597,7 +668,7 @@ class CategoricalAccuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def categorical_accuracy_fn(y_true, y_pred):
+        def categorical_accuracy_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """categorical_accuracy_fn function.
 
             Args:
@@ -605,7 +676,7 @@ class CategoricalAccuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             y_true = _to_tensor(y_true)
@@ -662,7 +733,12 @@ class SparseCategoricalAccuracy(MeanMetricWrapper):
 
     """
 
-    def __init__(self, name="sparse_categorical_accuracy", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "sparse_categorical_accuracy",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -671,7 +747,7 @@ class SparseCategoricalAccuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def sparse_categorical_accuracy_fn(y_true, y_pred):
+        def sparse_categorical_accuracy_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """sparse_categorical_accuracy_fn function.
 
             Args:
@@ -679,7 +755,7 @@ class SparseCategoricalAccuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             y_true = _to_tensor(y_true)
@@ -693,9 +769,7 @@ class SparseCategoricalAccuracy(MeanMetricWrapper):
                 dtype="float32",
             )
 
-        super().__init__(
-            fn=sparse_categorical_accuracy_fn, name=name, dtype=dtype, **kwargs
-        )
+        super().__init__(fn=sparse_categorical_accuracy_fn, name=name, dtype=dtype, **kwargs)
 
 
 class TopKCategoricalAccuracy(MeanMetricWrapper):
@@ -731,7 +805,13 @@ class TopKCategoricalAccuracy(MeanMetricWrapper):
 
     """
 
-    def __init__(self, k=5, name="top_k_categorical_accuracy", dtype=None, **kwargs):
+    def __init__(
+        self,
+        k: TensorLike = 5,
+        name: TensorLike = "top_k_categorical_accuracy",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -741,7 +821,7 @@ class TopKCategoricalAccuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def top_k_fn(y_true, y_pred):
+        def top_k_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """top_k_fn function.
 
             Args:
@@ -749,7 +829,7 @@ class TopKCategoricalAccuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             y_true = _to_tensor(y_true)
@@ -823,8 +903,12 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
     """
 
     def __init__(
-        self, k=5, name="sparse_top_k_categorical_accuracy", dtype=None, **kwargs
-    ):
+        self,
+        k: TensorLike = 5,
+        name: TensorLike = "sparse_top_k_categorical_accuracy",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -834,7 +918,7 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def sparse_top_k_fn(y_true, y_pred):
+        def sparse_top_k_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """sparse_top_k_fn function.
 
             Args:
@@ -842,7 +926,7 @@ class SparseTopKCategoricalAccuracy(MeanMetricWrapper):
             y_pred: Parameter y_pred.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             y_true = _to_tensor(y_true)
@@ -871,8 +955,13 @@ class _ConfusionMatrixMetric(Metric):
     """Class docstring."""
 
     def __init__(
-        self, thresholds=None, metric_type="FP", name=None, dtype=None, **kwargs
-    ):
+        self,
+        thresholds: TensorLike = None,
+        metric_type: TensorLike = "FP",
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -889,7 +978,9 @@ class _ConfusionMatrixMetric(Metric):
         self.metric_type = metric_type
         self.reset_state()
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -912,13 +1003,9 @@ class _ConfusionMatrixMetric(Metric):
                 elif self.metric_type == "TP":
                     val = ops.logical_and(y_true, y_pred_i)
                 elif self.metric_type == "TN":
-                    val = ops.logical_and(
-                        ops.logical_not(y_true), ops.logical_not(y_pred_i)
-                    )
+                    val = ops.logical_and(ops.logical_not(y_true), ops.logical_not(y_pred_i))
                 else:
-                    raise ValueError(
-                        f"Unknown metric_type {self.metric_type}"
-                    )  # pragma: no cover
+                    raise ValueError(f"Unknown metric_type {self.metric_type}")
 
                 val = ops.cast(val, "float32")
                 if sample_weight is not None:
@@ -937,13 +1024,9 @@ class _ConfusionMatrixMetric(Metric):
             elif self.metric_type == "TP":
                 val = ops.logical_and(y_true, y_pred_bool)
             elif self.metric_type == "TN":
-                val = ops.logical_and(
-                    ops.logical_not(y_true), ops.logical_not(y_pred_bool)
-                )
+                val = ops.logical_and(ops.logical_not(y_true), ops.logical_not(y_pred_bool))
             else:
-                raise ValueError(
-                    f"Unknown metric_type {self.metric_type}"
-                )  # pragma: no cover
+                raise ValueError(f"Unknown metric_type {self.metric_type}")
 
             val = ops.cast(val, "float32")
             if sample_weight is not None:
@@ -954,7 +1037,7 @@ class _ConfusionMatrixMetric(Metric):
             except AttributeError:
                 self.accumulator += ops.sum(val)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         if isinstance(self.accumulator, list):
             from zero_keras import ops
@@ -962,7 +1045,7 @@ class _ConfusionMatrixMetric(Metric):
             return ops.stack(self.accumulator)
         return self.accumulator
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         if isinstance(self.thresholds, (list, tuple)):
             self.accumulator = [0.0] * len(self.thresholds)
@@ -1004,7 +1087,13 @@ class FalsePositives(_ConfusionMatrixMetric):
 
     """
 
-    def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+    def __init__(
+        self,
+        thresholds: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1013,9 +1102,7 @@ class FalsePositives(_ConfusionMatrixMetric):
             dtype: Description.
             kwargs: Description.
         """
-        super().__init__(
-            thresholds=thresholds, metric_type="FP", name=name, dtype=dtype, **kwargs
-        )
+        super().__init__(thresholds=thresholds, metric_type="FP", name=name, dtype=dtype, **kwargs)
 
 
 class FalseNegatives(_ConfusionMatrixMetric):
@@ -1052,7 +1139,13 @@ class FalseNegatives(_ConfusionMatrixMetric):
 
     """
 
-    def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+    def __init__(
+        self,
+        thresholds: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1061,9 +1154,7 @@ class FalseNegatives(_ConfusionMatrixMetric):
             dtype: Description.
             kwargs: Description.
         """
-        super().__init__(
-            thresholds=thresholds, metric_type="FN", name=name, dtype=dtype, **kwargs
-        )
+        super().__init__(thresholds=thresholds, metric_type="FN", name=name, dtype=dtype, **kwargs)
 
 
 class TrueNegatives(_ConfusionMatrixMetric):
@@ -1100,7 +1191,13 @@ class TrueNegatives(_ConfusionMatrixMetric):
 
     """
 
-    def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+    def __init__(
+        self,
+        thresholds: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1109,9 +1206,7 @@ class TrueNegatives(_ConfusionMatrixMetric):
             dtype: Description.
             kwargs: Description.
         """
-        super().__init__(
-            thresholds=thresholds, metric_type="TN", name=name, dtype=dtype, **kwargs
-        )
+        super().__init__(thresholds=thresholds, metric_type="TN", name=name, dtype=dtype, **kwargs)
 
 
 class TruePositives(_ConfusionMatrixMetric):
@@ -1148,7 +1243,13 @@ class TruePositives(_ConfusionMatrixMetric):
 
     """
 
-    def __init__(self, thresholds=None, name=None, dtype=None, **kwargs):
+    def __init__(
+        self,
+        thresholds: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1157,9 +1258,7 @@ class TruePositives(_ConfusionMatrixMetric):
             dtype: Description.
             kwargs: Description.
         """
-        super().__init__(
-            thresholds=thresholds, metric_type="TP", name=name, dtype=dtype, **kwargs
-        )
+        super().__init__(thresholds=thresholds, metric_type="TP", name=name, dtype=dtype, **kwargs)
 
 
 class Precision(Metric):
@@ -1246,13 +1345,13 @@ class Precision(Metric):
 
     def __init__(
         self,
-        thresholds=None,
-        top_k=None,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        thresholds: TensorLike = None,
+        top_k: TensorLike = None,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1271,7 +1370,9 @@ class Precision(Metric):
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1282,12 +1383,12 @@ class Precision(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_positives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -1298,12 +1399,10 @@ class Precision(Metric):
         from zero_keras import ops
 
         # We need to handle list of thresholds properly if it returns an array
-        res = ops.where(
-            ops.greater(tp + fp, 0.0), ops.divide(tp, tp + fp + 1e-7), _to_tensor(0.0)
-        )
+        res = ops.where(ops.greater(tp + fp, 0.0), ops.divide(tp, tp + fp + 1e-7), _to_tensor(0.0))
         return res
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -1377,13 +1476,13 @@ class Recall(Metric):
 
     def __init__(
         self,
-        thresholds=None,
-        top_k=None,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        thresholds: TensorLike = None,
+        top_k: TensorLike = None,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1402,7 +1501,9 @@ class Recall(Metric):
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1413,23 +1514,21 @@ class Recall(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fn = self.false_negatives.result()
         from zero_keras import ops
 
-        res = ops.where(
-            ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0)
-        )
+        res = ops.where(ops.greater(tp + fn, 0.0), ops.divide(tp, tp + fn + 1e-7), _to_tensor(0.0))
         return res
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_negatives.reset_state()
@@ -1486,13 +1585,13 @@ class PrecisionAtRecall(Metric):
 
     def __init__(
         self,
-        recall,
-        num_thresholds=200,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        recall: TensorLike,
+        num_thresholds: TensorLike = 200,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1508,15 +1607,15 @@ class PrecisionAtRecall(Metric):
         self.num_thresholds = num_thresholds
         self.class_id = class_id
 
-        self.thresholds = [
-            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
-        ]
+        self.thresholds = [i / (self.num_thresholds - 1) for i in range(self.num_thresholds)]
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
         self.true_negatives = TrueNegatives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1527,14 +1626,14 @@ class PrecisionAtRecall(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_positives.update_state(y_true, y_pred, sample_weight)
         self.true_negatives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -1555,7 +1654,7 @@ class PrecisionAtRecall(Metric):
         valid_precisions = ops.where(condition, precisions, _to_tensor(0.0))
         return ops.max(valid_precisions)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -1617,13 +1716,13 @@ class RecallAtPrecision(Metric):
 
     def __init__(
         self,
-        precision,
-        num_thresholds=200,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        precision: TensorLike,
+        num_thresholds: TensorLike = 200,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1639,15 +1738,15 @@ class RecallAtPrecision(Metric):
         self.num_thresholds = num_thresholds
         self.class_id = class_id
 
-        self.thresholds = [
-            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
-        ]
+        self.thresholds = [i / (self.num_thresholds - 1) for i in range(self.num_thresholds)]
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
         self.true_negatives = TrueNegatives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1658,14 +1757,14 @@ class RecallAtPrecision(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_positives.update_state(y_true, y_pred, sample_weight)
         self.true_negatives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -1684,7 +1783,7 @@ class RecallAtPrecision(Metric):
         valid_recalls = ops.where(condition, recalls, _to_tensor(0.0))
         return ops.max(valid_recalls)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -1752,13 +1851,13 @@ class SensitivityAtSpecificity(Metric):
 
     def __init__(
         self,
-        specificity,
-        num_thresholds=200,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        specificity: TensorLike,
+        num_thresholds: TensorLike = 200,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1774,15 +1873,15 @@ class SensitivityAtSpecificity(Metric):
         self.num_thresholds = num_thresholds
         self.class_id = class_id
 
-        self.thresholds = [
-            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
-        ]
+        self.thresholds = [i / (self.num_thresholds - 1) for i in range(self.num_thresholds)]
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
         self.true_negatives = TrueNegatives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1793,14 +1892,14 @@ class SensitivityAtSpecificity(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_positives.update_state(y_true, y_pred, sample_weight)
         self.true_negatives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -1819,7 +1918,7 @@ class SensitivityAtSpecificity(Metric):
         valid_sensitivities = ops.where(condition, sensitivities, _to_tensor(0.0))
         return ops.max(valid_sensitivities)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -1887,13 +1986,13 @@ class SpecificityAtSensitivity(Metric):
 
     def __init__(
         self,
-        sensitivity,
-        num_thresholds=200,
-        class_id=None,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        sensitivity: TensorLike,
+        num_thresholds: TensorLike = 200,
+        class_id: TensorLike = None,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1909,15 +2008,15 @@ class SpecificityAtSensitivity(Metric):
         self.num_thresholds = num_thresholds
         self.class_id = class_id
 
-        self.thresholds = [
-            i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
-        ]
+        self.thresholds = [i / (self.num_thresholds - 1) for i in range(self.num_thresholds)]
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
         self.true_negatives = TrueNegatives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1928,14 +2027,14 @@ class SpecificityAtSensitivity(Metric):
         y_true = _to_tensor(y_true)
         y_pred = _to_tensor(y_pred)
         y_true, y_pred = _filter_top_k_and_class_id(
-            y_true, y_pred, getattr(self, "top_k", None), self.class_id
+            y_true, y_pred, (self.top_k if hasattr(self, "top_k") else None), self.class_id
         )
         self.true_positives.update_state(y_true, y_pred, sample_weight)
         self.false_positives.update_state(y_true, y_pred, sample_weight)
         self.true_negatives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -1954,7 +2053,7 @@ class SpecificityAtSensitivity(Metric):
         valid_specificities = ops.where(condition, specificities, _to_tensor(0.0))
         return ops.max(valid_specificities)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -2084,18 +2183,18 @@ class AUC(Metric):
 
     def __init__(
         self,
-        num_thresholds=200,
-        curve="ROC",
-        summation_method="interpolation",
-        name=None,
-        dtype=None,
-        thresholds=None,
-        multi_label=False,
-        num_labels=None,
-        label_weights=None,
-        from_logits=False,
-        **kwargs,
-    ):
+        num_thresholds: TensorLike = 200,
+        curve: TensorLike = "ROC",
+        summation_method: TensorLike = "interpolation",
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        thresholds: TensorLike = None,
+        multi_label: TensorLike = False,
+        num_labels: TensorLike = None,
+        label_weights: TensorLike = None,
+        from_logits: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2127,16 +2226,16 @@ class AUC(Metric):
         if thresholds is not None:
             self.thresholds = thresholds
         else:
-            self.thresholds = [
-                i / (self.num_thresholds - 1) for i in range(self.num_thresholds)
-            ]
+            self.thresholds = [i / (self.num_thresholds - 1) for i in range(self.num_thresholds)]
 
         self.true_positives = TruePositives(thresholds=self.thresholds)
         self.false_positives = FalsePositives(thresholds=self.thresholds)
         self.true_negatives = TrueNegatives(thresholds=self.thresholds)
         self.false_negatives = FalseNegatives(thresholds=self.thresholds)
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2154,7 +2253,7 @@ class AUC(Metric):
         self.true_negatives.update_state(y_true, y_pred, sample_weight)
         self.false_negatives.update_state(y_true, y_pred, sample_weight)
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         tp = self.true_positives.result()
         fp = self.false_positives.result()
@@ -2189,7 +2288,7 @@ class AUC(Metric):
             x = recall
             y = precision
         else:
-            raise ValueError(f"Invalid curve: {self.curve}")  # pragma: no cover
+            raise ValueError(f"Invalid curve: {self.curve}")
 
         # Riemann sum interpolation
         # area = sum( (x[i] - x[i+1]) * (y[i] + y[i+1]) / 2 )
@@ -2204,7 +2303,7 @@ class AUC(Metric):
             y_val = (y[:-1] + y[1:]) / 2.0
         return ops.sum(x_diff * y_val)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.true_positives.reset_state()
         self.false_positives.reset_state()
@@ -2258,7 +2357,9 @@ class CosineSimilarity(Metric):
 
     """
 
-    def __init__(self, name="cosinesimilarity", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "cosinesimilarity", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2270,8 +2371,16 @@ class CosineSimilarity(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2281,7 +2390,7 @@ class CosineSimilarity(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2334,7 +2443,9 @@ class MeanAbsoluteError(Metric):
 
     """
 
-    def __init__(self, name="meanabsoluteerror", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "meanabsoluteerror", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2346,8 +2457,16 @@ class MeanAbsoluteError(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2357,7 +2476,7 @@ class MeanAbsoluteError(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2410,7 +2529,12 @@ class MeanAbsolutePercentageError(Metric):
 
     """
 
-    def __init__(self, name="meanabsolutepercentageerror", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "meanabsolutepercentageerror",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2422,8 +2546,16 @@ class MeanAbsolutePercentageError(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2433,7 +2565,7 @@ class MeanAbsolutePercentageError(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2471,7 +2603,9 @@ class MeanSquaredError(Metric):
 
     """
 
-    def __init__(self, name="meansquarederror", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "meansquarederror", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2483,8 +2617,16 @@ class MeanSquaredError(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2494,7 +2636,7 @@ class MeanSquaredError(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2547,7 +2689,12 @@ class MeanSquaredLogarithmicError(Metric):
 
     """
 
-    def __init__(self, name="meansquaredlogarithmicerror", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "meansquaredlogarithmicerror",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2559,8 +2706,16 @@ class MeanSquaredLogarithmicError(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2570,7 +2725,7 @@ class MeanSquaredLogarithmicError(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2610,7 +2765,9 @@ class Hinge(Metric):
 
     """
 
-    def __init__(self, name="hinge", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "hinge", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2622,8 +2779,16 @@ class Hinge(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2633,7 +2798,7 @@ class Hinge(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2673,7 +2838,9 @@ class SquaredHinge(Metric):
 
     """
 
-    def __init__(self, name="squaredhinge", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "squaredhinge", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2685,8 +2852,16 @@ class SquaredHinge(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2696,7 +2871,7 @@ class SquaredHinge(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2733,7 +2908,9 @@ class CategoricalHinge(Metric):
 
     """
 
-    def __init__(self, name="categoricalhinge", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "categoricalhinge", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2745,8 +2922,16 @@ class CategoricalHinge(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -2756,7 +2941,7 @@ class CategoricalHinge(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2809,7 +2994,12 @@ class RootMeanSquaredError(Metric):
 
     """
 
-    def __init__(self, name="rootmeansquarederror", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "rootmeansquarederror",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2821,7 +3011,9 @@ class RootMeanSquaredError(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Accumulates root mean squared error statistics.
 
         Args:
@@ -2845,7 +3037,7 @@ class RootMeanSquaredError(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -2919,12 +3111,12 @@ class SparseCategoricalCrossentropy(MeanMetricWrapper):
 
     def __init__(
         self,
-        name="sparse_categorical_crossentropy",
-        dtype=None,
-        from_logits=False,
-        axis=-1,
-        **kwargs,
-    ):
+        name: TensorLike = "sparse_categorical_crossentropy",
+        dtype: TensorLike = None,
+        from_logits: TensorLike = False,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2935,17 +3127,14 @@ class SparseCategoricalCrossentropy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def scc_fn(y_true, y_pred):
+        def scc_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 y_true: Description.
                 y_pred: Description.
             """
-
-            return sparse_categorical_crossentropy(
-                y_true, y_pred, from_logits=from_logits
-            )
+            return sparse_categorical_crossentropy(y_true, y_pred, from_logits=from_logits)
 
         super().__init__(fn=scc_fn, name=name, dtype=dtype, **kwargs)
 
@@ -2993,12 +3182,12 @@ class BinaryCrossentropy(MeanMetricWrapper):
 
     def __init__(
         self,
-        name="binary_crossentropy",
-        dtype=None,
-        from_logits=False,
-        label_smoothing=0.0,
-        **kwargs,
-    ):
+        name: TensorLike = "binary_crossentropy",
+        dtype: TensorLike = None,
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0.0,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3009,14 +3198,13 @@ class BinaryCrossentropy(MeanMetricWrapper):
             kwargs: Description.
         """
 
-        def bce_fn(y_true, y_pred):
+        def bce_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 y_true: Description.
                 y_pred: Description.
             """
-
             return binary_crossentropy(
                 y_true, y_pred, from_logits=from_logits, label_smoothing=label_smoothing
             )
@@ -3025,8 +3213,7 @@ class BinaryCrossentropy(MeanMetricWrapper):
 
 
 class KLDivergence(Metric):
-    """Computes Kullback-Leibler divergence metric between `y_true` and
-    `y_pred`.
+    """Compute Kullback-Leibler divergence metric between `y_true` and `y_pred`.
 
     Formula:
 
@@ -3064,7 +3251,9 @@ class KLDivergence(Metric):
 
     """
 
-    def __init__(self, name="kldivergence", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "kldivergence", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3076,8 +3265,16 @@ class KLDivergence(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -3087,7 +3284,7 @@ class KLDivergence(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -3139,7 +3336,9 @@ class Poisson(Metric):
 
     """
 
-    def __init__(self, name="poisson", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "poisson", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3151,8 +3350,16 @@ class Poisson(Metric):
         self.total = 0.0
         self.count = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
-        """Accumulate statistics for the metric."""
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate statistics for the metric.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
@@ -3162,7 +3369,7 @@ class Poisson(Metric):
         self.total = ops.add(_to_tensor(self.total), val)
         self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Compute the current metric value.
 
         Returns:
@@ -3215,7 +3422,9 @@ class LogCoshError(MeanMetricWrapper):
 
     """
 
-    def __init__(self, name="logcosh", dtype=None, **kwargs):
+    def __init__(
+        self, name: TensorLike = "logcosh", dtype: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3223,7 +3432,6 @@ class LogCoshError(MeanMetricWrapper):
             dtype: Description.
             kwargs: Description.
         """
-
         super().__init__(fn=log_cosh, name=name, dtype=dtype, **kwargs)
 
 
@@ -3305,16 +3513,16 @@ class IoU(Metric):
 
     def __init__(
         self,
-        num_classes,
-        target_class_ids,
-        name=None,
-        dtype=None,
-        ignore_class=None,
-        sparse_y_true=True,
-        sparse_y_pred=True,
-        axis=-1,
-        **kwargs,
-    ):
+        num_classes: TensorLike,
+        target_class_ids: TensorLike,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        ignore_class: TensorLike = None,
+        sparse_y_true: TensorLike = True,
+        sparse_y_pred: TensorLike = True,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3337,7 +3545,9 @@ class IoU(Metric):
         self.axis = axis
         self.total_cm = 0.0
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3368,9 +3578,7 @@ class IoU(Metric):
 
         valid_mask = ops.cast(valid_mask, "float32")
         if sample_weight is not None:
-            sample_weight = ops.reshape(
-                ops.cast(_to_tensor(sample_weight), "float32"), [-1]
-            )
+            sample_weight = ops.reshape(ops.cast(_to_tensor(sample_weight), "float32"), [-1])
             valid_mask = valid_mask * sample_weight
 
         y_true_one_hot = ops.one_hot(y_true, self.num_classes)
@@ -3390,7 +3598,7 @@ class IoU(Metric):
         else:
             self.total_cm += cm
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         from zero_keras import ops
 
@@ -3429,7 +3637,7 @@ class IoU(Metric):
         # If target_class_ids is not provided, mean over all classes
         return ops.mean(iou)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         self.total_cm = 0.0
 
@@ -3504,15 +3712,15 @@ class MeanIoU(IoU):
 
     def __init__(
         self,
-        num_classes,
-        name=None,
-        dtype=None,
-        ignore_class=None,
-        sparse_y_true=True,
-        sparse_y_pred=True,
-        axis=-1,
-        **kwargs,
-    ):
+        num_classes: TensorLike,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        ignore_class: TensorLike = None,
+        sparse_y_true: TensorLike = True,
+        sparse_y_pred: TensorLike = True,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3612,12 +3820,12 @@ class BinaryIoU(IoU):
 
     def __init__(
         self,
-        target_class_ids=(0, 1),
-        threshold=0.5,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        target_class_ids: TensorLike = (0, 1),
+        threshold: TensorLike = 0.5,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3636,7 +3844,9 @@ class BinaryIoU(IoU):
         )
         self.threshold = threshold
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3732,14 +3942,14 @@ class OneHotMeanIoU(MeanIoU):
 
     def __init__(
         self,
-        num_classes,
-        name=None,
-        dtype=None,
-        ignore_class=None,
-        sparse_y_pred=False,
-        axis=-1,
-        **kwargs,
-    ):
+        num_classes: TensorLike,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        ignore_class: TensorLike = None,
+        sparse_y_pred: TensorLike = False,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3847,15 +4057,15 @@ class OneHotIoU(IoU):
 
     def __init__(
         self,
-        num_classes,
-        target_class_ids,
-        name=None,
-        dtype=None,
-        ignore_class=None,
-        sparse_y_pred=False,
-        axis=-1,
-        **kwargs,
-    ):
+        num_classes: TensorLike,
+        target_class_ids: TensorLike,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        ignore_class: TensorLike = None,
+        sparse_y_pred: TensorLike = False,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3884,7 +4094,12 @@ class OneHotIoU(IoU):
 class ConcordanceCorrelation(Metric):
     """Class docstring."""
 
-    def __init__(self, name="concordancecorrelation", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "concordancecorrelation",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3895,7 +4110,9 @@ class ConcordanceCorrelation(Metric):
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.reset_state()
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3936,7 +4153,7 @@ class ConcordanceCorrelation(Metric):
             self.sum_xy += sxy
             self.count += c
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         from zero_keras import ops
         from zero_keras.activations import _to_tensor, _wrap
@@ -3954,7 +4171,7 @@ class ConcordanceCorrelation(Metric):
         )
         return _wrap(ops.mean(ccc))
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         from zero_keras.activations import _to_tensor
 
@@ -3969,7 +4186,12 @@ class ConcordanceCorrelation(Metric):
 class PearsonCorrelation(Metric):
     """Class docstring."""
 
-    def __init__(self, name="pearsoncorrelation", dtype=None, **kwargs):
+    def __init__(
+        self,
+        name: TensorLike = "pearsoncorrelation",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3980,7 +4202,9 @@ class PearsonCorrelation(Metric):
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.reset_state()
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -4021,7 +4245,7 @@ class PearsonCorrelation(Metric):
             self.sum_xy += sxy
             self.count += c
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         from zero_keras import ops
         from zero_keras.activations import _to_tensor, _wrap
@@ -4037,7 +4261,7 @@ class PearsonCorrelation(Metric):
         pcc = cov_xy / ops.maximum(ops.sqrt(var_x * var_y), _to_tensor(1e-7))
         return _wrap(ops.mean(pcc))
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         from zero_keras.activations import _to_tensor
 
@@ -4054,13 +4278,13 @@ class FBetaScore(Metric):
 
     def __init__(
         self,
-        average=None,
-        beta=1.0,
-        threshold=None,
-        name="fbeta_score",
-        dtype=None,
-        **kwargs,
-    ):
+        average: TensorLike = None,
+        beta: TensorLike = 1.0,
+        threshold: TensorLike = None,
+        name: TensorLike = "fbeta_score",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -4072,14 +4296,16 @@ class FBetaScore(Metric):
             kwargs: Description.
         """
         if average not in (None, "micro", "macro", "weighted"):
-            raise ValueError(f"Invalid average: {average}")  # pragma: no cover
+            raise ValueError(f"Invalid average: {average}")
         super().__init__(name=name, dtype=dtype, **kwargs)
         self.average = average
         self.beta = beta
         self.threshold = threshold
         self.reset_state()
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -4096,9 +4322,7 @@ class FBetaScore(Metric):
             sample_weight = _to_tensor(sample_weight)
 
         if self.threshold is not None:
-            y_pred = ops.cast(
-                ops.greater(y_pred, _to_tensor(self.threshold)), y_true.dtype
-            )
+            y_pred = ops.cast(ops.greater(y_pred, _to_tensor(self.threshold)), y_true.dtype)
         else:
             y_pred = ops.cast(
                 ops.equal(y_pred, ops.max(y_pred, axis=-1, keepdims=True)), y_true.dtype
@@ -4124,7 +4348,7 @@ class FBetaScore(Metric):
             self.fp += fp
             self.fn += fn
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         from zero_keras import ops
         from zero_keras.activations import _to_tensor, _wrap
@@ -4133,17 +4357,14 @@ class FBetaScore(Metric):
         p = self.tp / ops.maximum(self.tp + self.fp, _to_tensor(1e-7))
         r = self.tp / ops.maximum(self.tp + self.fn, _to_tensor(1e-7))
         f_beta = (
-            (ops.add(_to_tensor(1.0), beta2))
-            * p
-            * r
-            / ops.maximum(beta2 * p + r, _to_tensor(1e-7))
+            (ops.add(_to_tensor(1.0), beta2)) * p * r / ops.maximum(beta2 * p + r, _to_tensor(1e-7))
         )
 
         if self.average == "macro":
             return _wrap(ops.mean(f_beta))
         return _wrap(f_beta)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         from zero_keras.activations import _to_tensor
 
@@ -4156,8 +4377,13 @@ class F1Score(FBetaScore):
     """Class docstring."""
 
     def __init__(
-        self, average=None, threshold=None, name="f1_score", dtype=None, **kwargs
-    ):
+        self,
+        average: TensorLike = None,
+        threshold: TensorLike = None,
+        name: TensorLike = "f1_score",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -4182,12 +4408,12 @@ class R2Score(Metric):
 
     def __init__(
         self,
-        class_aggregation="uniform_average",
-        num_regressors=0,
-        name="r2_score",
-        dtype=None,
-        **kwargs,
-    ):
+        class_aggregation: TensorLike = "uniform_average",
+        num_regressors: TensorLike = 0,
+        name: TensorLike = "r2_score",
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -4202,7 +4428,9 @@ class R2Score(Metric):
         self.num_regressors = num_regressors
         self.reset_state()
 
-    def update_state(self, y_true, y_pred, sample_weight=None):
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -4232,7 +4460,7 @@ class R2Score(Metric):
             self.res += re
             self.count += cn
 
-    def result(self):
+    def result(self) -> TensorLike:
         """Function docstring."""
         from zero_keras import ops
         from zero_keras.activations import _to_tensor, _wrap
@@ -4248,7 +4476,7 @@ class R2Score(Metric):
             return _wrap(ops.sum(r2 * weight))
         return _wrap(r2)
 
-    def reset_state(self):
+    def reset_state(self) -> TensorLike:
         """Function docstring."""
         from zero_keras.activations import _to_tensor
 
@@ -4258,50 +4486,65 @@ class R2Score(Metric):
         self.count = _to_tensor(0.0)
 
 
-def serialize(metric):
-    """Serialize a metric."""
-    if metric is None:  # pragma: no cover
-        return None  # pragma: no cover
-    if isinstance(metric, str):  # pragma: no cover
-        return metric  # pragma: no cover
-    return {  # pragma: no cover
+def serialize(metric: TensorLike) -> TensorLike:
+    """Serialize a metric.
+
+    Args:
+        metric: Input parameter ``metric``.
+    """
+    if metric is None:
+        return None
+    if isinstance(metric, str):
+        return metric
+    return {
         "class_name": metric.__class__.__name__,
         "config": metric.get_config() if hasattr(metric, "get_config") else {},
     }
 
 
-def deserialize(config, custom_objects=None):
-    """Deserialize a metric."""
+def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
+    """Deserialize a metric.
+
+    Args:
+        config: Input parameter ``config``.
+        custom_objects: Input parameter ``custom_objects``.
+    """
     if config is None:
-        return None  # pragma: no cover
+        return None
     if isinstance(config, str):
-        return get(config)  # pragma: no cover
+        return get(config)
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
         cls = globals().get(class_name)
         if cls:
-            return cls(**conf)  # pragma: no cover
+            return cls(**conf)
     return config
 
 
-def get(identifier):
-    """Retrieve a Keras metric object via an identifier."""
+def get(identifier: TensorLike) -> TensorLike:
+    """Retrieve a Keras metric object via an identifier.
+
+    Args:
+        identifier: Input parameter ``identifier``.
+    """
     if identifier is None:
-        return None  # pragma: no cover
+        return None
     if isinstance(identifier, str):
         identifier = identifier.lower()
         if identifier in ["mse", "mean_squared_error"]:
-            return MeanSquaredError()  # pragma: no cover
+            return MeanSquaredError()
         return identifier
-    return identifier  # pragma: no cover
+    return identifier
 
 
 concordance_correlation = ConcordanceCorrelation
 pearson_correlation = PearsonCorrelation
 
 
-def binary_accuracy(y_true, y_pred, threshold=0.5):
+def binary_accuracy(
+    y_true: TensorLike, y_pred: TensorLike, threshold: TensorLike = 0.5
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -4314,12 +4557,10 @@ def binary_accuracy(y_true, y_pred, threshold=0.5):
     y_true = ops.cast(y_true, y_pred.dtype)
     threshold = ops.cast(threshold, y_pred.dtype)
     y_pred_thresholded = ops.cast(y_pred > threshold, y_pred.dtype)
-    return ops.mean(
-        ops.cast(ops.equal(y_true, y_pred_thresholded), y_pred.dtype), axis=-1
-    )
+    return ops.mean(ops.cast(ops.equal(y_true, y_pred_thresholded), y_pred.dtype), axis=-1)
 
 
-def categorical_accuracy(y_true, y_pred):
+def categorical_accuracy(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -4334,7 +4575,7 @@ def categorical_accuracy(y_true, y_pred):
     )
 
 
-def sparse_categorical_accuracy(y_true, y_pred):
+def sparse_categorical_accuracy(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -4347,14 +4588,14 @@ def sparse_categorical_accuracy(y_true, y_pred):
     y_true_rank = len(y_true.shape)
     y_true = ops.squeeze(y_true, -1) if y_true_rank == y_pred_rank else y_true
     return ops.cast(
-        ops.equal(
-            ops.cast(y_true, "int32"), ops.cast(ops.argmax(y_pred, axis=-1), "int32")
-        ),
+        ops.equal(ops.cast(y_true, "int32"), ops.cast(ops.argmax(y_pred, axis=-1), "int32")),
         y_pred.dtype,
     )
 
 
-def top_k_categorical_accuracy(y_true, y_pred, k=5):
+def top_k_categorical_accuracy(
+    y_true: TensorLike, y_pred: TensorLike, k: TensorLike = 5
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -4367,7 +4608,9 @@ def top_k_categorical_accuracy(y_true, y_pred, k=5):
     return ops.top_k_categorical_accuracy(y_true, y_pred, k=k)
 
 
-def sparse_top_k_categorical_accuracy(y_true, y_pred, k=5):
+def sparse_top_k_categorical_accuracy(
+    y_true: TensorLike, y_pred: TensorLike, k: TensorLike = 5
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -4378,3 +4621,72 @@ def sparse_top_k_categorical_accuracy(y_true, y_pred, k=5):
     from zero_keras import ops
 
     return ops.sparse_top_k_categorical_accuracy(y_true, y_pred, k=k)
+
+
+class CategoricalCrossentropy(Metric):
+    """Computes the crossentropy metric between the labels and predictions."""
+
+    def __init__(
+        self,
+        name: TensorLike = "categorical_crossentropy",
+        dtype: TensorLike = None,
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0,
+        axis: TensorLike = -1,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize CategoricalCrossentropy metric.
+
+        Args:
+            name: String name of the metric instance.
+            dtype: Data type of the metric result.
+            from_logits: Whether ``y_pred`` is expected to be a logits tensor.
+            label_smoothing: Float in ``[0, 1]`` for label smoothing.
+            axis: Theigger axis along which to compute crossentropy.
+            **kwargs: Base metric keyword arguments.
+        """
+        super().__init__(name=name, dtype=dtype, **kwargs)
+        self.from_logits = bool(from_logits)
+        self.label_smoothing = float(label_smoothing)
+        self.axis = int(axis)
+        self.total = 0.0
+        self.count = 0.0
+
+    def update_state(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Accumulate categorical crossentropy statistics.
+
+        Args:
+            y_true: One-hot ground truth targets.
+            y_pred: Predicted probabilities or logits.
+            sample_weight: Optional weighting of individual examples.
+        """
+        from zero_keras import losses
+
+        yt, yp = _to_tensor(y_true), _to_tensor(y_pred)
+        val = ops.mean(
+            losses.categorical_crossentropy(
+                yt,
+                yp,
+                from_logits=self.from_logits,
+                label_smoothing=self.label_smoothing,
+            )
+        )
+        if sample_weight is not None:
+            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
+        self.total = ops.add(_to_tensor(self.total), val)
+        self.count = ops.add(_to_tensor(self.count), _to_tensor(1.0))
+
+    def result(self) -> TensorLike:
+        """Compute the current mean categorical crossentropy value.
+
+        Returns:
+            TensorLike: Scalar metric tensor.
+        """
+        return _wrap(
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
+            )
+        )

@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 from ml_switcheroo_compiler import ops
 
@@ -19,9 +22,9 @@ from zero_keras.layers import (
 )
 
 
-def test_conv_channels_first():
+def test_conv_channels_first() -> TensorLike:
     """Function docstring."""
-    original_transpose = getattr(ops, "transpose", None)
+    original_transpose = ops.transpose if hasattr(ops, "transpose") else None
     ops.transpose = lambda x, perm: x
     try:
         l1 = Conv1D(2, 2, data_format="channels_first")
@@ -39,10 +42,10 @@ def test_conv_channels_first():
         if original_transpose:
             ops.transpose = original_transpose
         else:
-            delattr(ops, "transpose")  # pragma: no cover
+            delattr(ops, "transpose")
 
 
-def test_cropping_elif():
+def test_cropping_elif() -> TensorLike:
     """Function docstring."""
     l2 = Cropping2D(cropping=(1, 2))
     l2(np.ones((1, 5, 5, 2)))
@@ -51,7 +54,7 @@ def test_cropping_elif():
     l3(np.ones((1, 5, 5, 5, 2)))
 
 
-def test_rnn_reset_states_already_built():
+def test_rnn_reset_states_already_built() -> TensorLike:
     """Function docstring."""
     srnn = SimpleRNN(10, stateful=True)
     srnn(np.ones((1, 5, 10)))  # build and init states
@@ -59,14 +62,14 @@ def test_rnn_reset_states_already_built():
     srnn.reset_states(states=(np.zeros((1, 10)),))
 
 
-def test_simplernncell_unbuilt_call():
+def test_simplernncell_unbuilt_call() -> TensorLike:
     """Function docstring."""
     c1 = SimpleRNNCell(10)
     # bypass __call__ to hit 'if not self.built:' inside call()
     c1.call(np.ones((1, 10)), states=(np.zeros((1, 10)),))
 
 
-def test_bidirectional_dense_units():
+def test_bidirectional_dense_units() -> TensorLike:
     """Function docstring."""
     try:
         Bidirectional(Dense(10))
@@ -74,13 +77,13 @@ def test_bidirectional_dense_units():
         pass
 
 
-def test_rms_norm_center():
+def test_rms_norm_center() -> TensorLike:
     """Function docstring."""
     rms = RMSNormalization(center=True, scale=False)
     rms(np.ones((1, 10)))
 
 
-def test_group_norm_build_twice_and_axis():
+def test_group_norm_build_twice_and_axis() -> TensorLike:
     """Function docstring."""
     gn = GroupNormalization(axis=1, groups=2)
     # Call build directly twice
@@ -93,7 +96,7 @@ def test_group_norm_build_twice_and_axis():
     gn(np.ones((1, 2, 10, 2)))
 
 
-def test_convlstm_padding_same_spatial():
+def test_convlstm_padding_same_spatial() -> TensorLike:
     """Function docstring."""
     cl = ConvLSTM1D(2, 2, padding="same")
     cl.build((None, 5, 10, 3))

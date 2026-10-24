@@ -1,17 +1,15 @@
 """Module docstring."""
 
-from ml_switcheroo_compiler import core as backend
-from ml_switcheroo_compiler import random
+from __future__ import annotations
+from zero_keras.types import TensorLike
 
-from zero_keras import initializers, layers, ops
+from zero_keras import backend, initializers, layers, ops, random
 from zero_keras.applications import imagenet_utils
 from zero_keras.layers import Layer
 from zero_keras.models import Functional, Sequential
 from zero_keras.utils import file_utils, generic_utils, operation_utils
 
-BASE_WEIGHTS_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/convnext/"
-)
+BASE_WEIGHTS_PATH = "https://storage.googleapis.com/tensorflow/keras-applications/convnext/"
 
 WEIGHTS_HASHES = {
     "convnext_tiny": (
@@ -152,45 +150,42 @@ class StochasticDepth(Layer):
       Tensor either with the residual path dropped or kept.
     """
 
-    def __init__(self, drop_path_rate, **kwargs):
+    def __init__(self, drop_path_rate: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
             drop_path_rate: Description.
             kwargs: Description.
         """
-        super().__init__(**kwargs)  # pragma: no cover
-        self.drop_path_rate = drop_path_rate  # pragma: no cover
+        super().__init__(**kwargs)
+        self.drop_path_rate = drop_path_rate
 
-    def call(self, x, training=None):
+    def call(self, x: TensorLike, training: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
             x: Description.
             training: Description.
         """
-        if training:  # pragma: no cover
-            keep_prob = 1 - self.drop_path_rate  # pragma: no cover
-            shape = (ops.shape(x)[0],) + (1,) * (
-                len(ops.shape(x)) - 1
-            )  # pragma: no cover
-            random_tensor = keep_prob + random.uniform(shape, 0, 1)  # pragma: no cover
-            random_tensor = ops.floor(random_tensor)  # pragma: no cover
-            return (x / keep_prob) * random_tensor  # pragma: no cover
-        return x  # pragma: no cover
+        if training:
+            keep_prob = 1.0 - float(self.drop_path_rate)  # type: ignore[arg-type]
+            shape = (ops.shape(x)[0],) + (1,) * (len(ops.shape(x)) - 1)
+            random_tensor = ops.add(keep_prob, random.uniform(shape, 0.0, 1.0))
+            random_tensor = ops.floor(random_tensor)
+            return ops.multiply(ops.divide(x, keep_prob), random_tensor)
+        return x
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """Function docstring."""
-        config = super().get_config()  # pragma: no cover
-        config.update({"drop_path_rate": self.drop_path_rate})  # pragma: no cover
-        return config  # pragma: no cover
+        config = super().get_config()
+        config.update({"drop_path_rate": self.drop_path_rate})
+        return config
 
 
 class LayerScale(Layer):
     """Layer scale module.
 
     References:
-
     - https://arxiv.org/abs/2103.17239
 
     Args:
@@ -202,7 +197,9 @@ class LayerScale(Layer):
         Tensor multiplied to the scale.
     """
 
-    def __init__(self, init_values, projection_dim, **kwargs):
+    def __init__(
+        self, init_values: TensorLike, projection_dim: TensorLike, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -214,7 +211,7 @@ class LayerScale(Layer):
         self.init_values = init_values
         self.projection_dim = projection_dim
 
-    def build(self, _):
+    def build(self, _: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -226,29 +223,32 @@ class LayerScale(Layer):
             trainable=True,
         )
 
-    def call(self, x):
+    def call(self, x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             x: Description.
         """
-        return x * self.gamma
+        return ops.multiply(x, self.gamma)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """Function docstring."""
-        config = super().get_config()  # pragma: no cover
-        config.update(  # pragma: no cover
+        config = super().get_config()
+        config.update(
             {
                 "init_values": self.init_values,
                 "projection_dim": self.projection_dim,
             }
         )
-        return config  # pragma: no cover
+        return config
 
 
 def ConvNeXtBlock(
-    projection_dim, drop_path_rate=0.0, layer_scale_init_value=1e-6, name=None
-):
+    projection_dim: TensorLike,
+    drop_path_rate: TensorLike = 0.0,
+    layer_scale_init_value: TensorLike = 1e-6,
+    name: TensorLike = None,
+) -> TensorLike:
     """ConvNeXt block.
 
     References:
@@ -273,9 +273,9 @@ def ConvNeXtBlock(
         A function representing a ConvNeXtBlock block.
     """
     if name is None:
-        name = f"prestem{backend.get_uid('prestem')!s}"  # pragma: no cover
+        name = f"prestem{backend.get_uid('prestem')!s}"
 
-    def apply(inputs):
+    def apply(inputs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -302,9 +302,7 @@ def ConvNeXtBlock(
                 name=f"{name}_layer_scale",
             )(x)
         if drop_path_rate:
-            layer = StochasticDepth(
-                drop_path_rate, name=f"{name}_stochastic_depth"
-            )  # pragma: no cover
+            layer = StochasticDepth(drop_path_rate, name=f"{name}_stochastic_depth")
         else:
             layer = layers.Activation("linear", name=f"{name}_identity")
 
@@ -313,12 +311,16 @@ def ConvNeXtBlock(
     return apply
 
 
-def PreStem(name=None):
-    """Normalizes inputs with ImageNet-1k mean and std."""
-    if name is None:
-        name = "prestem{}".format(str(backend.get_uid("prestem")))  # pragma: no cover
+def PreStem(name: TensorLike = None) -> TensorLike:
+    """Normalizes inputs with ImageNet-1k mean and std.
 
-    def apply(x):
+    Args:
+        name: Input parameter ``name``.
+    """
+    if name is None:
+        name = "prestem{}".format(str(backend.get_uid("prestem")))
+
+    def apply(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -338,7 +340,11 @@ def PreStem(name=None):
     return apply
 
 
-def Head(num_classes=1000, classifier_activation=None, name=None):
+def Head(
+    num_classes: TensorLike = 1000,
+    classifier_activation: TensorLike = None,
+    name: TensorLike = None,
+) -> TensorLike:
     """Implementation of classification head of ConvNeXt.
 
     Args:
@@ -350,9 +356,9 @@ def Head(num_classes=1000, classifier_activation=None, name=None):
         Classification head function.
     """
     if name is None:
-        name = str(backend.get_uid("head"))  # pragma: no cover
+        name = str(backend.get_uid("head"))
 
-    def apply(x):
+    def apply(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -371,25 +377,26 @@ def Head(num_classes=1000, classifier_activation=None, name=None):
 
 
 def ConvNeXt(
-    depths,
-    projection_dims,
-    drop_path_rate=0.0,
-    layer_scale_init_value=1e-6,
-    default_size=224,
-    name="convnext",
-    include_preprocessing=True,
-    include_top=True,
-    weights=None,
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    weights_name=None,
-):
+    depths: TensorLike,
+    projection_dims: TensorLike,
+    drop_path_rate: TensorLike = 0.0,
+    layer_scale_init_value: TensorLike = 1e-6,
+    default_size: TensorLike = 224,
+    name: TensorLike = "convnext",
+    include_preprocessing: TensorLike = True,
+    include_top: TensorLike = True,
+    weights: TensorLike = None,
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    weights_name: TensorLike = None,
+) -> TensorLike:
     """Instantiates ConvNeXt architecture given specific configuration.
 
     Args:
+        weights_name: Input parameter ``weights_name``.
         depths: An iterable containing depths for each individual stages.
         projection_dims: An iterable containing output number of channels of
         each individual stages.
@@ -434,13 +441,13 @@ def ConvNeXt(
         A model instance.
     """
     if backend.image_data_format() == "channels_first":
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "ConvNeXt does not support the `channels_first` image data "
             "format. Switch to `channels_last` by editing your local "
             "config file at ~/.keras/keras.json"
         )
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -448,7 +455,7 @@ def ConvNeXt(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             'If using `weights="imagenet"` with `include_top=True`, '
             "`classes` should be 1000. "
             f"Received classes={classes}"
@@ -467,16 +474,14 @@ def ConvNeXt(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)[0]  # pragma: no cover
-        x = input_tensor  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(img_input)[0]
+        x = img_input
     else:
         inputs = img_input
         x = inputs
@@ -560,24 +565,22 @@ def ConvNeXt(
         )(x)
 
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
-        x = layers.LayerNormalization(epsilon=1e-6)(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D()(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D()(x)
+        x = layers.LayerNormalization(epsilon=1e-6)(x)
 
     model = Functional(inputs=inputs, outputs=x, name=name)
 
     # Validate weights before requesting them from the API
     if weights == "imagenet":
-        expected_config = MODEL_CONFIGS[
-            weights_name.split("convnext_")[-1]
-        ]  # pragma: no cover
-        if (  # pragma: no cover
+        expected_config = MODEL_CONFIGS[weights_name.split("convnext_")[-1]]
+        if (
             depths != expected_config["depths"]
             or projection_dims != expected_config["projection_dims"]
         ):
-            raise ValueError(  # pragma: no cover
+            raise ValueError(
                 f"Architecture configuration does not match {weights_name} "
                 f"variant. When using pre-trained weights, the model "
                 f"architecture must match the pre-trained configuration "
@@ -586,8 +589,8 @@ def ConvNeXt(
                 f"{expected_config['projection_dims']}, got: {projection_dims}."
             )
 
-        if weights_name not in name:  # pragma: no cover
-            raise ValueError(  # pragma: no cover
+        if weights_name not in name:
+            raise ValueError(
                 f'Model name "{name}" does not match weights variant '
                 f'"{weights_name}". When using imagenet weights, model name '
                 f'must contain the weights variant (e.g., "convnext_'
@@ -596,22 +599,22 @@ def ConvNeXt(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            file_suffix = ".h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][0]  # pragma: no cover
+        if include_top:
+            file_suffix = ".h5"
+            file_hash = WEIGHTS_HASHES[weights_name][0]
         else:
-            file_suffix = "_notop.h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][1]  # pragma: no cover
-        file_name = name + file_suffix  # pragma: no cover
-        weights_path = generic_utils.get_file(  # pragma: no cover
+            file_suffix = "_notop.h5"
+            file_hash = WEIGHTS_HASHES[weights_name][1]
+        file_name = name + file_suffix
+        weights_path = generic_utils.get_file(
             file_name,
             BASE_WEIGHTS_PATH + file_name,
             cache_subdir="models",
             file_hash=file_hash,
         )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
@@ -620,16 +623,16 @@ def ConvNeXt(
 
 
 def ConvNeXtTiny(
-    include_top=True,
-    include_preprocessing=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="convnext_tiny",
-):
+    include_top: TensorLike = True,
+    include_preprocessing: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "convnext_tiny",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -663,16 +666,16 @@ def ConvNeXtTiny(
 
 
 def ConvNeXtSmall(
-    include_top=True,
-    include_preprocessing=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="convnext_small",
-):
+    include_top: TensorLike = True,
+    include_preprocessing: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "convnext_small",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -706,16 +709,16 @@ def ConvNeXtSmall(
 
 
 def ConvNeXtBase(
-    include_top=True,
-    include_preprocessing=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="convnext_base",
-):
+    include_top: TensorLike = True,
+    include_preprocessing: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "convnext_base",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -749,16 +752,16 @@ def ConvNeXtBase(
 
 
 def ConvNeXtLarge(
-    include_top=True,
-    include_preprocessing=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="convnext_large",
-):
+    include_top: TensorLike = True,
+    include_preprocessing: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "convnext_large",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -792,16 +795,16 @@ def ConvNeXtLarge(
 
 
 def ConvNeXtXLarge(
-    include_top=True,
-    include_preprocessing=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="convnext_xlarge",
-):
+    include_top: TensorLike = True,
+    include_preprocessing: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "convnext_xlarge",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -841,7 +844,7 @@ ConvNeXtLarge.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtLarge")
 ConvNeXtXLarge.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtXLarge")
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """A placeholder method for backward compatibility.
 
     The preprocessing logic has been included in the convnext model
@@ -859,17 +862,17 @@ def preprocess_input(x, data_format=None):
     Returns:
         Unchanged `numpy.array` or tensor.
     """
-    return x  # pragma: no cover
+    return x
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 from ml_switcheroo_compiler.core.tensor import Tensor, TensorConfig
 
@@ -10,7 +13,7 @@ from zero_keras.activations import _to_tensor
 class AssignableTensor(Tensor):
     """Class docstring."""
 
-    def assign(self, value):
+    def assign(self, value: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -18,7 +21,7 @@ class AssignableTensor(Tensor):
         """
 
 
-def test_pearson_correlation_assign():
+def test_pearson_correlation_assign() -> TensorLike:
     """Function docstring."""
     m = metrics.PearsonCorrelation()
     config = TensorConfig((), "float32", "cpu")
@@ -32,13 +35,14 @@ def test_pearson_correlation_assign():
     m.update_state(_to_tensor(np.array([1.0, 0.0])), _to_tensor(np.array([0.9, 0.1])))
 
 
-def test_accuracy_metrics_assign():
+def test_accuracy_metrics_assign() -> TensorLike:
     """Function docstring."""
 
-    def test_acc(cls, y_t, y_p):
+    def test_acc(cls: TensorLike, y_t: TensorLike, y_p: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
+            cls: Metric class.
             y_t: Description.
             y_p: Description.
         """
@@ -52,9 +56,5 @@ def test_accuracy_metrics_assign():
     test_acc(metrics.BinaryAccuracy, np.array([1]), np.array([0.9]))
     test_acc(metrics.CategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]]))
     test_acc(metrics.SparseCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]]))
-    test_acc(
-        metrics.TopKCategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]])
-    )
-    test_acc(
-        metrics.SparseTopKCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]])
-    )
+    test_acc(metrics.TopKCategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]]))
+    test_acc(metrics.SparseTopKCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]]))

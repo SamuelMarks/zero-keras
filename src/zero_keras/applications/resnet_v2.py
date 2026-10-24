@@ -1,21 +1,35 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras.applications import imagenet_utils, resnet
 
 
 def ResNet50V2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="resnet50v2",
-):
-    """Instantiates the ResNet50V2 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "resnet50v2",
+) -> TensorLike:
+    """Instantiates the ResNet50V2 architecture.
 
-    def stack_fn(x):
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
+
+    def stack_fn(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -43,18 +57,29 @@ def ResNet50V2(
 
 
 def ResNet101V2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="resnet101v2",
-):
-    """Instantiates the ResNet101V2 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "resnet101v2",
+) -> TensorLike:
+    """Instantiates the ResNet101V2 architecture.
 
-    def stack_fn(x):
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
+
+    def stack_fn(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -82,18 +107,29 @@ def ResNet101V2(
 
 
 def ResNet152V2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="resnet152v2",
-):
-    """Instantiates the ResNet152V2 architecture."""
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "resnet152v2",
+) -> TensorLike:
+    """Instantiates the ResNet152V2 architecture.
 
-    def stack_fn(x):
+    Args:
+        include_top: Input parameter ``include_top``.
+        weights: Input parameter ``weights``.
+        input_tensor: Input parameter ``input_tensor``.
+        input_shape: Input parameter ``input_shape``.
+        pooling: Input parameter ``pooling``.
+        classes: Input parameter ``classes``.
+        classifier_activation: Input parameter ``classifier_activation``.
+        name: Input parameter ``name``.
+    """
+
+    def stack_fn(x: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -120,26 +156,24 @@ def ResNet152V2(
     )
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="tf"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
@@ -204,9 +238,6 @@ Returns:
     A Model instance.
 """
 
-if ResNet50V2.__doc__ is not None:  # pragma: no branch
-    ResNet50V2.__doc__ = ResNet50V2.__doc__ + DOC
-if ResNet101V2.__doc__ is not None:  # pragma: no branch
-    ResNet101V2.__doc__ = ResNet101V2.__doc__ + DOC
-if ResNet152V2.__doc__ is not None:  # pragma: no branch
-    ResNet152V2.__doc__ = ResNet152V2.__doc__ + DOC
+ResNet50V2.__doc__ = (ResNet50V2.__doc__ or "") + DOC
+ResNet101V2.__doc__ = (ResNet101V2.__doc__ or "") + DOC
+ResNet152V2.__doc__ = (ResNet152V2.__doc__ or "") + DOC

@@ -1,4 +1,6 @@
-"""optimizers.legacy API."""  # pragma: no cover
+"""Legacy optimizer aliases (`SGD`, `Adagrad`, `Adam`, `Ftrl`, `Optimizer`, `RMSprop`) for zero_keras."""
+
+from __future__ import annotations
 
 from zero_keras.optimizers import (
     SGD,
@@ -7,13 +9,13 @@ from zero_keras.optimizers import (
     Ftrl,
     Optimizer,
     RMSprop,
-)  # pragma: no cover
+)
 
-__all__ = [  # pragma: no cover
-    "SGD",  # pragma: no cover
-    "Adagrad",  # pragma: no cover
-    "Adam",  # pragma: no cover
-    "Ftrl",  # pragma: no cover
-    "Optimizer",  # pragma: no cover
-    "RMSprop",  # pragma: no cover
-]  # pragma: no cover
+__all__ = [
+    "SGD",
+    "Adagrad",
+    "Adam",
+    "Ftrl",
+    "Optimizer",
+    "RMSprop",
+]

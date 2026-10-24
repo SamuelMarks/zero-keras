@@ -1,8 +1,13 @@
+"""Module `test_layers_merging_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 import pytest
 
 
-def test_merging_layers():
+def test_merging_layers() -> TensorLike:
+    """Execute ``test_merging_layers``."""
     from zero_keras.layers.merging import (
         Add,
         Average,
@@ -45,7 +50,8 @@ def test_merging_layers():
     res = concatenate([a, b], axis=-1)
 
 
-def test_dot_merging():
+def test_dot_merging() -> TensorLike:
+    """Execute ``test_dot_merging``."""
     from zero_keras.layers.merging import Dot, dot
 
     a = np.ones((2, 4))

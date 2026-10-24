@@ -1,18 +1,21 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import core_layers, models
 
 
-def test_model_list_outputs():
+def test_model_list_outputs() -> TensorLike:
     """Function docstring."""
     inp = core_layers.Input(shape=(2,))
 
     class ListOutputLayer(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, x):
+        def call(self, x: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -28,14 +31,14 @@ def test_model_list_outputs():
     assert isinstance(res, list)
 
 
-def test_model_dict_outputs():
+def test_model_dict_outputs() -> TensorLike:
     """Function docstring."""
     inp = core_layers.Input(shape=(2,))
 
     class DictOutputLayer(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, x):
+        def call(self, x: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:

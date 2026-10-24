@@ -1,18 +1,19 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import copy
 import math
 
-from ml_switcheroo_compiler import core as backend
+from zero_keras import backend
 
 from zero_keras import initializers, layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
 from zero_keras.utils import file_utils, generic_utils, operation_utils
 
-BASE_WEIGHTS_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/efficientnet_v2/"
-)
+BASE_WEIGHTS_PATH = "https://storage.googleapis.com/tensorflow/keras-applications/efficientnet_v2/"
 
 WEIGHTS_HASHES = {
     "b0": (
@@ -588,8 +589,20 @@ Returns:
 """
 
 
-def round_filters(filters, width_coefficient, min_depth, depth_divisor):
-    """Round number of filters based on depth multiplier."""
+def round_filters(
+    filters: TensorLike,
+    width_coefficient: TensorLike,
+    min_depth: TensorLike,
+    depth_divisor: TensorLike,
+) -> TensorLike:
+    """Round number of filters based on depth multiplier.
+
+    Args:
+        filters: Input parameter ``filters``.
+        width_coefficient: Input parameter ``width_coefficient``.
+        min_depth: Input parameter ``min_depth``.
+        depth_divisor: Input parameter ``depth_divisor``.
+    """
     filters *= width_coefficient
     minimum_depth = min_depth or depth_divisor
     new_filters = max(
@@ -599,30 +612,48 @@ def round_filters(filters, width_coefficient, min_depth, depth_divisor):
     return int(new_filters)
 
 
-def round_repeats(repeats, depth_coefficient):
-    """Round number of repeats based on depth multiplier."""
+def round_repeats(repeats: TensorLike, depth_coefficient: TensorLike) -> TensorLike:
+    """Round number of repeats based on depth multiplier.
+
+    Args:
+        repeats: Input parameter ``repeats``.
+        depth_coefficient: Input parameter ``depth_coefficient``.
+    """
     return math.ceil(depth_coefficient * repeats)
 
 
 def MBConvBlock(
-    input_filters,
-    output_filters,
-    expand_ratio=1,
-    kernel_size=3,
-    strides=1,
-    se_ratio=0.0,
-    bn_momentum=0.9,
-    activation="swish",
-    survival_probability=0.8,
-    name=None,
-):
-    """MBConv block: Mobile Inverted Residual Bottleneck."""
+    input_filters: TensorLike,
+    output_filters: TensorLike,
+    expand_ratio: TensorLike = 1,
+    kernel_size: TensorLike = 3,
+    strides: TensorLike = 1,
+    se_ratio: TensorLike = 0.0,
+    bn_momentum: TensorLike = 0.9,
+    activation: TensorLike = "swish",
+    survival_probability: TensorLike = 0.8,
+    name: TensorLike = None,
+) -> TensorLike:
+    """MBConv block: Mobile Inverted Residual Bottleneck.
+
+    Args:
+        input_filters: Input parameter ``input_filters``.
+        output_filters: Input parameter ``output_filters``.
+        expand_ratio: Input parameter ``expand_ratio``.
+        kernel_size: Input parameter ``kernel_size``.
+        strides: Input parameter ``strides``.
+        se_ratio: Input parameter ``se_ratio``.
+        bn_momentum: Input parameter ``bn_momentum``.
+        activation: Input parameter ``activation``.
+        survival_probability: Input parameter ``survival_probability``.
+        name: Input parameter ``name``.
+    """
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
     if name is None:
-        name = backend.get_uid("block0")  # pragma: no cover
+        name = backend.get_uid("block0")
 
-    def apply(inputs):
+    def apply(inputs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -648,7 +679,7 @@ def MBConvBlock(
             )(x)
             x = layers.Activation(activation, name=f"{name}expand_activation")(x)
         else:
-            x = inputs  # pragma: no cover
+            x = inputs
 
         # Depthwise conv
         x = layers.DepthwiseConv2D(
@@ -660,19 +691,14 @@ def MBConvBlock(
             use_bias=False,
             name=f"{name}dwconv2",
         )(x)
-        x = layers.BatchNormalization(
-            axis=bn_axis, momentum=bn_momentum, name=f"{name}bn"
-        )(x)
+        x = layers.BatchNormalization(axis=bn_axis, momentum=bn_momentum, name=f"{name}bn")(x)
         x = layers.Activation(activation, name=f"{name}activation")(x)
 
         # Squeeze and excite
         if 0 < se_ratio <= 1:
             filters_se = max(1, int(input_filters * se_ratio))
             se = layers.GlobalAveragePooling2D(name=f"{name}se_squeeze")(x)
-            if bn_axis == 1:
-                se_shape = (filters, 1, 1)  # pragma: no cover
-            else:
-                se_shape = (1, 1, filters)
+            se_shape = (filters, 1, 1) if bn_axis == 1 else (1, 1, filters)
             se = layers.Reshape(se_shape, name=f"{name}se_reshape")(se)
 
             se = layers.Conv2D(
@@ -705,9 +731,9 @@ def MBConvBlock(
             use_bias=False,
             name=f"{name}project_conv",
         )(x)
-        x = layers.BatchNormalization(
-            axis=bn_axis, momentum=bn_momentum, name=f"{name}project_bn"
-        )(x)
+        x = layers.BatchNormalization(axis=bn_axis, momentum=bn_momentum, name=f"{name}project_bn")(
+            x
+        )
 
         if strides == 1 and input_filters == output_filters:
             if survival_probability:
@@ -724,24 +750,37 @@ def MBConvBlock(
 
 
 def FusedMBConvBlock(
-    input_filters,
-    output_filters,
-    expand_ratio=1,
-    kernel_size=3,
-    strides=1,
-    se_ratio=0.0,
-    bn_momentum=0.9,
-    activation="swish",
-    survival_probability=0.8,
-    name=None,
-):
-    """Fuses the proj conv1x1 and depthwise_conv into a conv2d."""
+    input_filters: TensorLike,
+    output_filters: TensorLike,
+    expand_ratio: TensorLike = 1,
+    kernel_size: TensorLike = 3,
+    strides: TensorLike = 1,
+    se_ratio: TensorLike = 0.0,
+    bn_momentum: TensorLike = 0.9,
+    activation: TensorLike = "swish",
+    survival_probability: TensorLike = 0.8,
+    name: TensorLike = None,
+) -> TensorLike:
+    """Fuses the proj conv1x1 and depthwise_conv into a conv2d.
+
+    Args:
+        input_filters: Input parameter ``input_filters``.
+        output_filters: Input parameter ``output_filters``.
+        expand_ratio: Input parameter ``expand_ratio``.
+        kernel_size: Input parameter ``kernel_size``.
+        strides: Input parameter ``strides``.
+        se_ratio: Input parameter ``se_ratio``.
+        bn_momentum: Input parameter ``bn_momentum``.
+        activation: Input parameter ``activation``.
+        survival_probability: Input parameter ``survival_probability``.
+        name: Input parameter ``name``.
+    """
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
     if name is None:
-        name = backend.get_uid("block0")  # pragma: no cover
+        name = backend.get_uid("block0")
 
-    def apply(inputs):
+    def apply(inputs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -762,28 +801,18 @@ def FusedMBConvBlock(
             x = layers.BatchNormalization(
                 axis=bn_axis, momentum=bn_momentum, name=f"{name}expand_bn"
             )(x)
-            x = layers.Activation(
-                activation=activation, name=f"{name}expand_activation"
-            )(x)
+            x = layers.Activation(activation=activation, name=f"{name}expand_activation")(x)
         else:
             x = inputs
 
         # Squeeze and excite
         if 0 < se_ratio <= 1:
-            filters_se = max(1, int(input_filters * se_ratio))  # pragma: no cover
-            se = layers.GlobalAveragePooling2D(name=f"{name}se_squeeze")(
-                x
-            )  # pragma: no cover
-            if bn_axis == 1:  # pragma: no cover
-                se_shape = (filters, 1, 1)  # pragma: no cover
-            else:
-                se_shape = (1, 1, filters)  # pragma: no cover
+            filters_se = max(1, int(input_filters * se_ratio))
+            se = layers.GlobalAveragePooling2D(name=f"{name}se_squeeze")(x)
+            se_shape = (filters, 1, 1) if bn_axis == 1 else (1, 1, filters)
+            se = layers.Reshape(se_shape, name=f"{name}se_reshape")(se)
 
-            se = layers.Reshape(se_shape, name=f"{name}se_reshape")(
-                se
-            )  # pragma: no cover
-
-            se = layers.Conv2D(  # pragma: no cover
+            se = layers.Conv2D(
                 filters_se,
                 1,
                 padding="same",
@@ -791,7 +820,7 @@ def FusedMBConvBlock(
                 kernel_initializer=CONV_KERNEL_INITIALIZER,
                 name=f"{name}se_reduce",
             )(se)
-            se = layers.Conv2D(  # pragma: no cover
+            se = layers.Conv2D(
                 filters,
                 1,
                 padding="same",
@@ -800,7 +829,7 @@ def FusedMBConvBlock(
                 name=f"{name}se_expand",
             )(se)
 
-            x = layers.multiply([x, se], name=f"{name}se_excite")  # pragma: no cover
+            x = layers.multiply([x, se], name=f"{name}se_excite")
 
         # Output phase:
         x = layers.Conv2D(
@@ -812,13 +841,11 @@ def FusedMBConvBlock(
             use_bias=False,
             name=f"{name}project_conv",
         )(x)
-        x = layers.BatchNormalization(
-            axis=bn_axis, momentum=bn_momentum, name=f"{name}project_bn"
-        )(x)
+        x = layers.BatchNormalization(axis=bn_axis, momentum=bn_momentum, name=f"{name}project_bn")(
+            x
+        )
         if expand_ratio == 1:
-            x = layers.Activation(
-                activation=activation, name=f"{name}project_activation"
-            )(x)
+            x = layers.Activation(activation=activation, name=f"{name}project_activation")(x)
 
         # Residual:
         if strides == 1 and input_filters == output_filters:
@@ -835,31 +862,31 @@ def FusedMBConvBlock(
 
 
 def EfficientNetV2(
-    width_coefficient,
-    depth_coefficient,
-    default_size,
-    dropout_rate=0.2,
-    drop_connect_rate=0.2,
-    depth_divisor=8,
-    min_depth=8,
-    bn_momentum=0.9,
-    activation="swish",
-    blocks_args="default",
-    name="efficientnetv2",
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    weights_name=None,
-):
-    """Instantiates the EfficientNetV2 architecture using given scaling
-    coefficients.
+    width_coefficient: TensorLike,
+    depth_coefficient: TensorLike,
+    default_size: TensorLike,
+    dropout_rate: TensorLike = 0.2,
+    drop_connect_rate: TensorLike = 0.2,
+    depth_divisor: TensorLike = 8,
+    min_depth: TensorLike = 8,
+    bn_momentum: TensorLike = 0.9,
+    activation: TensorLike = "swish",
+    blocks_args: TensorLike = "default",
+    name: TensorLike = "efficientnetv2",
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    weights_name: TensorLike = None,
+) -> TensorLike:
+    """Instantiate the EfficientNetV2 architecture using given scaling coefficients.
 
     Args:
+        weights_name: Input parameter ``weights_name``.
         width_coefficient: float, scaling coefficient for network width.
         depth_coefficient: float, scaling coefficient for network depth.
         default_size: integer, default input image size.
@@ -902,12 +929,11 @@ def EfficientNetV2(
     Returns:
         A model instance.
     """
-
     if blocks_args == "default":
         blocks_args = DEFAULT_BLOCKS_ARGS[name]
 
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -916,9 +942,8 @@ def EfficientNetV2(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
-            'If using `weights="imagenet"` with `include_top`'
-            " as true, `classes` should be 1000"
+        raise ValueError(
+            'If using `weights="imagenet"` with `include_top` as true, `classes` should be 1000'
         )
 
     # Determine proper input shape
@@ -934,12 +959,10 @@ def EfficientNetV2(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
@@ -991,7 +1014,7 @@ def EfficientNetV2(
 
     for i, args in enumerate(blocks_args):
         if args["num_repeat"] <= 0:
-            raise ValueError(  # pragma: no cover
+            raise ValueError(
                 f"The number of repeats in `EfficientNetV2` must be > 0. "
                 f"Received: num_repeat={args['num_repeat']}"
             )
@@ -1012,9 +1035,7 @@ def EfficientNetV2(
 
         # Determine which conv type to use:
         block = {0: MBConvBlock, 1: FusedMBConvBlock}[args.pop("conv_type")]
-        repeats = round_repeats(
-            repeats=args.pop("num_repeat"), depth_coefficient=depth_coefficient
-        )
+        repeats = round_repeats(repeats=args.pop("num_repeat"), depth_coefficient=depth_coefficient)
         for j in range(repeats):
             # The first block needs to take care of stride and filter size
             # increase.
@@ -1068,15 +1089,15 @@ def EfficientNetV2(
             name="predictions",
         )(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D(name="max_pool")(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D(name="max_pool")(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -1085,37 +1106,37 @@ def EfficientNetV2(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            file_suffix = ".h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][0]  # pragma: no cover
+        if include_top:
+            file_suffix = ".h5"
+            file_hash = WEIGHTS_HASHES[weights_name][0]
         else:
-            file_suffix = "_notop.h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[weights_name][1]  # pragma: no cover
-        file_name = name + file_suffix  # pragma: no cover
-        weights_path = generic_utils.get_file(  # pragma: no cover
+            file_suffix = "_notop.h5"
+            file_hash = WEIGHTS_HASHES[weights_name][1]
+        file_name = name + file_suffix
+        weights_path = generic_utils.get_file(
             file_name,
             BASE_WEIGHTS_PATH + file_name,
             cache_subdir="models",
             file_hash=file_hash,
         )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
 def EfficientNetV2B0(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-b0",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-b0",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1147,16 +1168,16 @@ def EfficientNetV2B0(
 
 
 def EfficientNetV2B1(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-b1",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-b1",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1188,16 +1209,16 @@ def EfficientNetV2B1(
 
 
 def EfficientNetV2B2(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-b2",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-b2",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1229,16 +1250,16 @@ def EfficientNetV2B2(
 
 
 def EfficientNetV2B3(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-b3",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-b3",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1270,16 +1291,16 @@ def EfficientNetV2B3(
 
 
 def EfficientNetV2S(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-s",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-s",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1311,16 +1332,16 @@ def EfficientNetV2S(
 
 
 def EfficientNetV2M(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-m",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-m",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1352,16 +1373,16 @@ def EfficientNetV2M(
 
 
 def EfficientNetV2L(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="efficientnetv2-l",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "efficientnetv2-l",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -1401,7 +1422,7 @@ EfficientNetV2M.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2M")
 EfficientNetV2L.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2L")
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """A placeholder method for backward compatibility.
 
     The preprocessing logic has been included in the EfficientNetV2 model
@@ -1419,17 +1440,17 @@ def preprocess_input(x, data_format=None):
     Returns:
         Unchanged `numpy.array` or tensor.
     """
-    return x  # pragma: no cover
+    return x
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from unittest.mock import patch
 
 import numpy as np
@@ -8,15 +11,13 @@ from ml_switcheroo_compiler.ops import asarray
 from zero_keras import layers
 
 
-def test_convolution_aliases_missing_branches():
+def test_convolution_aliases_missing_branches() -> TensorLike:
     """Function docstring."""
     # test pre-set weights, use_bias=False, activation=None for aliases
     with (
         patch("zero_keras.layers.ops") as mock_ops,
         patch("zero_keras.core_layers.ops") as mock_ops_local,
-        patch(
-            "ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated"
-        ) as mock_cgd,
+        patch("ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated") as mock_cgd,
         patch("ml_switcheroo_compiler.ops.linalg.conv_general_dilated") as mock_cgd2,
     ):
         mock_ops.conv1d.return_value = asarray([[1.0]])
@@ -77,7 +78,7 @@ def test_convolution_aliases_missing_branches():
                     pass
 
 
-def test_activation_none_dense_conv():
+def test_activation_none_dense_conv() -> TensorLike:
     """Function docstring."""
     # specifically trigger `activation is not None` evaluates to False in Dense/Conv/EinsumDense
     with patch("zero_keras.layers.ops") as mock_ops:
@@ -107,7 +108,7 @@ def test_activation_none_dense_conv():
         layer.build((2, 4))
 
 
-def test_rnn_cells_missing_branches():
+def test_rnn_cells_missing_branches() -> TensorLike:
     """Function docstring."""
     with (
         patch("zero_keras.layers.ops") as mock_ops,
@@ -151,14 +152,12 @@ def test_rnn_cells_missing_branches():
                 pass
 
 
-def test_conv_lstm_cell_use_bias_false():
+def test_conv_lstm_cell_use_bias_false() -> TensorLike:
     """Function docstring."""
     with (
         patch("zero_keras.layers.ops") as mock_ops,
         patch("zero_keras.core_layers.ops") as mock_ops_local,
-        patch(
-            "ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated"
-        ) as mock_cgd,
+        patch("ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated") as mock_cgd,
         patch("ml_switcheroo_compiler.ops.linalg.conv_general_dilated") as mock_cgd2,
     ):
         mock_ops.add.return_value = asarray([[1.0]])
@@ -176,7 +175,7 @@ def test_conv_lstm_cell_use_bias_false():
         layer(asarray([[[[1.0]]]]), states)
 
 
-def test_wrapper_already_built():
+def test_wrapper_already_built() -> TensorLike:
     """Function docstring."""
     inner = layers.Dense(4)
     inner.build((2, 4))
@@ -184,24 +183,24 @@ def test_wrapper_already_built():
     wrapper.build((2, 4))
 
 
-def test_spectral_norm_no_kernel():
+def test_spectral_norm_no_kernel() -> TensorLike:
     """Function docstring."""
     inner = layers.Activation("relu")
     wrapper = layers.SpectralNormalization(inner)
     wrapper.build((2, 4))
 
 
-def test_spectral_norm_no_weights_attr():
+def test_spectral_norm_no_weights_attr() -> TensorLike:
     """Function docstring."""
     inner = layers.Dense(4)
     wrapper = layers.SpectralNormalization(inner)
     # mock lack of _weights
     if hasattr(wrapper, "_weights"):
-        del wrapper._weights  # pragma: no cover
+        del wrapper._weights
     wrapper.build((2, 4))
 
 
-def test_stacked_rnn_cells_built():
+def test_stacked_rnn_cells_built() -> TensorLike:
     """Function docstring."""
     cell = layers.SimpleRNNCell(4)
     cell.build((2, 4))

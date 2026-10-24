@@ -1,121 +1,97 @@
-"""Keras models."""
+"""Model classes (`Sequential`, `Model`, `Functional`), cloning, and serialization for zero_keras."""
 
+from __future__ import annotations
+
+import array
+from collections.abc import Callable, Sequence
 import json
+from pathlib import Path
+import struct
 import zipfile
 
-from zero_keras.core_layers import Functional, Model
+from ml_switcheroo_compiler.core.dtype import DType
+from ml_switcheroo_compiler.ops import asarray as _msc_asarray
+
+from zero_keras.core_layers import Functional, Input, Layer, Model, Variable, deserialize
+from zero_keras.ops import reshape
+from zero_keras.types import ConfigDict, ConfigValue, ShapeLike, TensorLike
 
 
-def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kwargs):
-    """Loads a model saved via `model.save()`.
+def _load_safetensors(data: bytes) -> list[tuple[list[float | int], tuple[int, ...], DType]]:
+    """Parse raw ``.safetensors`` bytes into ``(flat_values, shape, dtype)`` tuples.
 
     Args:
-        filepath: `str` or `pathlib.Path` object, path to the saved model file.
-        custom_objects: Optional dictionary mapping names
-            (strings) to custom classes or functions to be
-            considered during deserialization.
-        compile: Boolean, whether to compile the model after loading.
-        safe_mode: Boolean, whether to disallow unsafe `lambda` deserialization.
-            When `safe_mode=False`, loading an object has the potential to
-            trigger arbitrary code execution. This argument is only
-            applicable to the Keras v3 model format. Defaults to `True`.
+        data: Raw bytes of a ``.safetensors`` file.
 
     Returns:
-        A Keras model instance. If the original model was compiled,
-        and the argument `compile=True` is set, then the returned model
-        will be compiled. Otherwise, the model will be left uncompiled.
-
-    Example:
-    ```python
-    model = keras.Sequential([
-        keras.layers.Dense(5, input_shape=(3,)),
-        keras.layers.Softmax()])
-    model.save("model.keras")
-    loaded_model = keras.saving.load_model("model.keras")
-    x = np.random.random((10, 3))
-    assert np.allclose(model.predict(x), loaded_model.predict(x))
-    ```
-
-    Note that the model variables may have different name values
-    (`var.name` property, e.g. `"dense_1/kernel:0"`) after being reloaded.
-    It is recommended that you use layer attributes to
-    access specific variables, e.g. `model.get_layer("dense_1").kernel`.
-
+        list[tuple[list[float | int], tuple[int, ...], DType]]: Ordered weight entries.
     """
+    header_size = int(struct.unpack("<Q", data[:8])[0])
+    header_json = data[8 : 8 + header_size].decode("utf-8")
+    header = json.loads(header_json)
+    weights_dict: dict[str, tuple[list[float | int], tuple[int, ...], DType]] = {}
+    for k, v in header.items():
+        if k == "__metadata__":
+            continue
+        start, end = int(v["data_offsets"][0]), int(v["data_offsets"][1])
+        raw = data[8 + header_size + start : 8 + header_size + end]
+        dt_str = str(v["dtype"])
+        fmt = "f" if dt_str == "F32" else ("i" if dt_str == "I32" else "d")
+        arr = array.array(fmt)
+        arr.frombytes(raw)
+        shape = tuple(int(dim) for dim in v["shape"])
+        dt = (
+            DType.Float32
+            if dt_str == "F32"
+            else (DType.Int32 if dt_str == "I32" else DType.Float64)
+        )
+        weights_dict[str(k)] = (list(arr), shape, dt)
 
-    if str(filepath).endswith(".keras") or zipfile.is_zipfile(filepath):
+    return [
+        weights_dict[k] for k in sorted(weights_dict.keys(), key=lambda x: int(x.split("_")[-1]))
+    ]
+
+
+def load_model(
+    filepath: str | Path,
+    custom_objects: dict[str, ConfigValue] | None = None,
+    compile: bool = True,
+    safe_mode: bool = True,
+    **kwargs: ConfigValue,
+) -> Model:
+    """Load a model saved via ``model.save()``.
+
+    Args:
+        filepath: String or ``Path`` to the saved ``.keras`` model file.
+        custom_objects: Optional dictionary mapping names to custom classes or functions.
+        compile: Whether to compile the model after loading.
+        safe_mode: Whether to disallow unsafe ``Lambda`` deserialization.
+        **kwargs: Additional keyword options.
+
+    Returns:
+        Model: Loaded Keras model instance.
+
+    Raises:
+        ValueError: If ``safe_mode=True`` and a ``Lambda`` is encountered, or if format is unsupported.
+    """
+    _ = compile, kwargs
+    path_str = str(filepath)
+    if path_str.endswith(".keras") or zipfile.is_zipfile(filepath):
         with zipfile.ZipFile(filepath, "r") as z:
             config_str = z.read("config.json").decode("utf-8")
-
-            import json
-
-            from zero_keras.models import model_from_json
-
             config_dict = json.loads(config_str)
             if safe_mode and config_dict.get("class_name") == "Lambda":
                 raise ValueError("safe_mode is True, cannot deserialize Lambda")
 
-            model = model_from_json(
-                config_str, custom_objects=custom_objects, safe_mode=safe_mode
-            )
-
-            def _load_safetensors(data):
-                """_load_safetensors function.
-
-                Args:
-                data: Parameter data.
-
-                Returns:
-                Any: Return value.
-
-                """
-                import array
-                import json
-                import struct
-
-                from ml_switcheroo_compiler.core.dtype import DType
-
-                header_size = struct.unpack("<Q", data[:8])[0]
-                header_json = data[8 : 8 + header_size].decode("utf-8")
-                header = json.loads(header_json)
-                weights_dict = {}
-                for k, v in header.items():
-                    if k == "__metadata__":
-                        continue
-                    start, end = v["data_offsets"]
-                    raw = data[8 + header_size + start : 8 + header_size + end]
-                    dt_str = v["dtype"]
-                    fmt = "f" if dt_str == "F32" else "i" if dt_str == "I32" else "d"
-                    arr = array.array(fmt)
-                    arr.frombytes(raw)
-                    shape = tuple(v["shape"])
-                    dt = (
-                        DType.Float32
-                        if dt_str == "F32"
-                        else DType.Int32
-                        if dt_str == "I32"
-                        else DType.Float64
-                    )
-                    weights_dict[k] = (list(arr), shape, dt)
-                # Sort by key index
-                return [
-                    weights_dict[k]
-                    for k in sorted(
-                        weights_dict.keys(), key=lambda x: int(x.split("_")[-1])
-                    )
-                ]
+            model = model_from_json(config_str, custom_objects=custom_objects, safe_mode=safe_mode)
 
             if "model.safetensors" in z.namelist():
-                from ml_switcheroo_compiler.ops import asarray
-
-                from zero_keras.ops import reshape
-
                 with z.open("model.safetensors") as w:
                     data = w.read()
                     parsed = _load_safetensors(data)
-                    weights = []
+                    weights: list[TensorLike] = []
                     for flat, shape, dt in parsed:
-                        t = asarray(flat, dtype=dt)
+                        t = _msc_asarray(flat, dtype=dt)
                         t = reshape(t, shape)
                         weights.append(t)
                     if weights:
@@ -124,479 +100,449 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
                         except Exception:
                             pass
             return model
-    elif str(filepath).endswith((".h5", ".hdf5")):
+    if path_str.endswith((".h5", ".hdf5")):
         raise ValueError(
             "Legacy HDF5 format is not supported in zero_keras. Please use .keras format."
         )
-    else:
-        raise ValueError(f"File format not supported for {filepath}")
+    raise ValueError(f"File format not supported for {filepath}")
 
 
 class Sequential(Model):
-    """`Sequential` groups a linear stack of layers into a `Model`.
+    """``Sequential`` groups a linear stack of layers into a ``Model``."""
 
-    Examples:
-    ```python
-    model = keras.Sequential()
-    model.add(keras.Input(shape=(16,)))
-    model.add(keras.layers.Dense(8))
-
-    # Note that you can also omit the initial `Input`.
-    # In that case the model doesn't have any weights until the first call
-    # to a training/evaluation method (since it isn't yet built):
-    model = keras.Sequential()
-    model.add(keras.layers.Dense(8))
-    model.add(keras.layers.Dense(4))
-    # model.weights not created yet
-
-    # Whereas if you specify an `Input`, the model gets built
-    # continuously as you are adding layers:
-    model = keras.Sequential()
-    model.add(keras.Input(shape=(16,)))
-    model.add(keras.layers.Dense(8))
-    len(model.weights)  # Returns "2"
-
-    # When using the delayed-build pattern (no input shape specified), you can
-    # choose to manually build your model by calling
-    # `build(batch_input_shape)`:
-    model = keras.Sequential()
-    model.add(keras.layers.Dense(8))
-    model.add(keras.layers.Dense(4))
-    model.build((None, 16))
-    len(model.weights)  # Returns "4"
-
-    # Note that when using the delayed-build pattern (no input shape specified),
-    # the model gets built the first time you call `fit`, `eval`, or `predict`,
-    # or the first time you call the model on some input data.
-    model = keras.Sequential()
-    model.add(keras.layers.Dense(8))
-    model.add(keras.layers.Dense(1))
-    model.compile(optimizer='sgd', loss='mse')
-    # This builds the model for the first time:
-    model.fit(x, y, batch_size=32, epochs=10)
-    ```
-
-    """
-
-    def __init__(self, layers=None, name=None):
-        """Function docstring.
+    def __init__(
+        self,
+        layers: Sequence[Layer] | None = None,
+        name: str | None = None,
+    ) -> None:
+        """Initialize a Sequential model.
 
         Args:
-            layers: Description.
-            name: Description.
+            layers: Optional sequence of layers to add to the model.
+            name: Optional name for the model.
         """
-        self.layers = layers or []
+        super().__init__(name=name)
+        self.layers: list[Layer] = list(layers) if layers is not None else []
         self._name = name
         self.built = False
 
-    def add(self, layer):
-        """Adds a layer instance on top of the layer stack.
+    def add(self, layer: Layer) -> None:
+        """Add a layer instance on top of the layer stack.
 
         Args:
-            layer: layer instance.
-
+            layer: Layer instance to append.
         """
         self.layers.append(layer)
 
-    def get_config(self):
-        """Returns the config of the object.
+    def get_config(self) -> ConfigDict:
+        """Return the serializable configuration of the Sequential model.
 
-        An object config is a Python dictionary (serializable)
-        containing the information needed to re-instantiate it.
+        Returns:
+            ConfigDict: Configuration dictionary containing ``name`` and ``layers``.
         """
-        return {
-            "name": getattr(self, "name", None),
-            "layers": [
+        layer_configs: list[ConfigValue] = []
+        for layer in self.layers:
+            l_cfg = layer.get_config() if hasattr(layer, "get_config") else {}
+            layer_configs.append(
                 {
                     "class_name": layer.__class__.__name__,
-                    "config": getattr(
-                        layer, "get_config", lambda: getattr(layer, "_kwargs", {})
-                    )(),
+                    "config": l_cfg,
                 }
-                for layer in self.layers
-            ],
+            )
+        return {
+            "name": self._name,
+            "layers": layer_configs,
         }
 
     @classmethod
-    def from_config(cls, config):
-        """Creates an operation from its config.
-
-        This method is the reverse of `get_config`, capable of instantiating the
-        same operation from the config dictionary.
-
-        Note: If you override this method, you might receive a serialized dtype
-        config, which is a `dict`. You can deserialize it as follows:
-
-        ```python
-        if "dtype" in config and isinstance(config["dtype"], dict):
-            policy = dtype_policies.deserialize(config["dtype"])
-        ```
+    def from_config(cls, config: ConfigDict) -> Sequential:
+        """Reconstruct a Sequential model from its configuration dictionary.
 
         Args:
-            config: A Python dictionary, typically the output of `get_config`.
+            config: Configuration dictionary produced by ``get_config()``.
 
         Returns:
-            An operation instance.
-
+            Sequential: Reconstructed Sequential model.
         """
         layers_cfg = config.get("layers", [])
-        from zero_keras import layers
+        from zero_keras import layers as layers_module
 
-        inst = cls(name=config.get("name"))
-        for l_c in layers_cfg:
-            l_cls = getattr(layers, l_c.get("class_name"), None)
-            if l_cls:
-                inst.add(l_cls(**l_c.get("config", {})))
+        name_val = config.get("name")
+        inst = cls(name=str(name_val) if isinstance(name_val, str) else None)
+        if isinstance(layers_cfg, list):
+            for l_c in layers_cfg:
+                if isinstance(l_c, dict):
+                    cls_name = str(l_c.get("class_name", ""))
+                    if hasattr(layers_module, cls_name):
+                        l_cls = layers_module.__dict__[cls_name]
+                        sub_cfg = l_c.get("config", {})
+                        inst.add(l_cls(**sub_cfg))  # type: ignore[arg-type]
         return inst
 
     @property
-    def weights(self):
-        """List of all weight variables of the layer.
+    def weights(self) -> list[Variable]:
+        """Return list of all weight variables across child layers.
 
-        Unlike, `layer.variables` this excludes metric state and random seeds.
+        Returns:
+            list[Variable]: All model weights.
         """
-        w = []
+        w: list[Variable] = []
         for layer in self.layers:
             w.extend(layer.weights)
         return w
 
     @property
-    def trainable_weights(self):
-        """List of all trainable weight variables of the layer.
+    def trainable_weights(self) -> list[Variable]:
+        """Return list of all trainable weight variables across child layers.
 
-        These are the weights that get updated by the optimizer during training.
+        Returns:
+            list[Variable]: Trainable model weights.
         """
-        w = []
+        w: list[Variable] = []
         for layer in self.layers:
             w.extend(layer.trainable_weights)
         return w
 
     @property
-    def non_trainable_weights(self):
-        """List of all non-trainable weight variables of the layer.
+    def non_trainable_weights(self) -> list[Variable]:
+        """Return list of all non-trainable weight variables across child layers.
 
-        These are the weights that should not be updated by the optimizer during
-        training. Unlike, `layer.non_trainable_variables` this excludes metric
-        state and random seeds.
+        Returns:
+            list[Variable]: Non-trainable model weights.
         """
-        w = []
+        w: list[Variable] = []
         for layer in self.layers:
             w.extend(layer.non_trainable_weights)
         return w
 
-    def get_weights(self):
-        """Return the values of `layer.weights` as a list of NumPy arrays."""
-        w = []
+    def get_weights(self) -> list[TensorLike]:
+        """Return the values of all layer weights as a flat list.
+
+        Returns:
+            list[TensorLike]: List of weight arrays/tensors.
+        """
+        w: list[TensorLike] = []
         for layer in self.layers:
             if hasattr(layer, "get_weights"):
                 w.extend(layer.get_weights())
         return w
 
-    def set_weights(self, weights):
-        """Sets the values of `layer.weights` from a list of NumPy arrays."""
+    def set_weights(self, weights: Sequence[TensorLike]) -> None:
+        """Set the values of all layer weights from a flat sequence of arrays.
+
+        Args:
+            weights: Sequence of weight values matching ``get_weights()`` order.
+        """
         idx = 0
         for layer in self.layers:
             if hasattr(layer, "get_weights") and hasattr(layer, "set_weights"):
                 cw = layer.get_weights()
-                layer.set_weights(weights[idx : idx + len(cw)])
+                layer.set_weights(list(weights[idx : idx + len(cw)]))
                 idx += len(cw)
 
-    def build(self, input_shape):
-        """Build function.
+    def build(self, input_shape: ShapeLike | None = None) -> None:
+        """Build child layers sequentially for ``input_shape``.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        Any: Return value.
-
+            input_shape: Input shape tuple.
         """
         current_shape = input_shape
         for layer in self.layers:
-            if not getattr(layer, "built", False):
+            is_built = bool(layer.built) if hasattr(layer, "built") else False
+            if not is_built and hasattr(layer, "build"):
                 layer.build(current_shape)
             if hasattr(layer, "compute_output_shape"):
                 current_shape = layer.compute_output_shape(current_shape)
-            else:
-                raise NotImplementedError("Missing compute_output_shape")
         self.built = True
 
-    def call(self, inputs, training=None, mask=None, **kwargs):
-        """Call function.
+    def call(
+        self,
+        inputs: TensorLike,
+        training: bool | None = None,
+        mask: TensorLike | None = None,
+        **kwargs: ConfigValue,
+    ) -> TensorLike:
+        """Execute all child layers sequentially on ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        mask: Parameter mask.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            training: Optional boolean indicating training vs inference mode.
+            mask: Optional input mask tensor.
+            **kwargs: Additional keyword arguments passed to child layers.
 
         Returns:
-        Any: Return value.
-
+            TensorLike: Final output tensor.
         """
+        _ = training, mask
         out = inputs
         for layer in self.layers:
             out = layer(out, **kwargs)
         return out
 
-    def save(self, filepath, overwrite=True, save_format=None, **kwargs):
-        """Saves a model as a `.keras` file.
-
-        Note that `model.save()` is an alias for `keras.saving.save_model()`.
-
-        The saved `.keras` file contains:
-
-        - The model's configuration (architecture)
-        - The model's weights
-        - The model's optimizer's state (if any)
-
-        Thus models can be reinstantiated in the exact same state.
+    def save(
+        self,
+        filepath: str | Path,
+        overwrite: bool = True,
+        save_format: str | None = None,
+        **kwargs: ConfigValue,
+    ) -> None:
+        """Save the Sequential model to ``filepath``.
 
         Args:
-            filepath: `str` or `pathlib.Path` object.
-                The path where to save the model. Must end in `.keras`
-                (unless saving the model as an unzipped directory
-                via `zipped=False`).
-            overwrite: Whether we should overwrite any existing model at
-                the target location, or instead ask the user via
-                an interactive prompt.
-            zipped: Whether to save the model as a zipped `.keras`
-                archive (default when saving locally), or as an
-                unzipped directory (default when saving on the
-                Hugging Face Hub).
-
-        Example:
-        ```python
-        model = keras.Sequential(
-            [
-                keras.layers.Dense(5, input_shape=(3,)),
-                keras.layers.Softmax(),
-            ],
-        )
-        model.save("model.keras")
-        loaded_model = keras.saving.load_model("model.keras")
-        x = keras.random.uniform((10, 3))
-        assert np.allclose(model.predict(x), loaded_model.predict(x))
-        ```
-
+            filepath: Target ``.keras`` file path.
+            overwrite: Whether to overwrite existing files.
+            save_format: Optional format string.
+            **kwargs: Additional save options.
         """
-        from zero_keras.core_layers import Model
-
-        Model.save(
-            self, filepath, overwrite=overwrite, save_format=save_format, **kwargs
-        )
+        Model.save(self, filepath, overwrite=overwrite, save_format=save_format, **kwargs)
 
 
-def clone_model(model, input_tensors=None, clone_function=None):
-    """Clone a Functional or Sequential Model instance.
-
-    Model cloning is similar to calling a model on new inputs,
-    except that it creates new layers (and thus new weights) instead
-    of sharing the weights of the existing layers.
-
-    Note that `clone_model` will not preserve the uniqueness
-    of shared objects within the model (e.g. a single variable attached
-    to two distinct layers will be restored as two separate variables).
+def _default_clone_function(layer: Layer) -> Layer:
+    """Clone a single layer via ``from_config(layer.get_config())``.
 
     Args:
-        model: Instance of `Model` (could be a Functional model
-            or a Sequential model).
-        input_tensors: optional list of input tensors or InputLayer objects
-            to build the model upon. If not provided,
-            new `Input` objects will be created.
-        clone_function: Callable to be used to clone each layer in the target
-            model (except `Input` instances). It takes as argument the layer
-            instance to be cloned, and returns the corresponding layer
-            instance to be used in the model copy. If unspecified, this callable
-            defaults to the following serialization/deserialization function:
-            `lambda layer: layer.__class__.from_config(layer.get_config())`.
-            By passing a custom callable, you can customize your copy of the
-            model, e.g. by wrapping certain layers of interest (you might want
-            to replace all `LSTM` instances with equivalent
-            `Bidirectional(LSTM(...))` instances, for example).
-            Defaults to `None`.
+        layer: Layer instance to clone.
 
     Returns:
-        An instance of `Model` reproducing the behavior
-        of the original model, on top of new inputs tensors,
-        using newly instantiated weights.
+        Layer: Cloned layer instance.
     """
+    if hasattr(layer, "get_config"):
+        return layer.__class__.from_config(layer.get_config())
+    return layer
+
+
+def clone_model(
+    model: Model,
+    input_tensors: Sequence[TensorLike] | TensorLike | None = None,
+    clone_function: Callable[[Layer], Layer] | None = None,
+) -> Model:
+    """Clone a ``Functional`` or ``Sequential`` ``Model`` instance with fresh weights.
+
+    Args:
+        model: Instance of ``Model`` or ``Sequential`` to clone.
+        input_tensors: Optional input tensors to build the cloned model upon.
+        clone_function: Optional callable applied to clone each layer.
+
+    Returns:
+        Model: Cloned model instance.
+
+    Raises:
+        ValueError: If ``model`` is not a ``Model`` instance.
+    """
+    _ = input_tensors
     if not isinstance(model, Model):
         raise ValueError("Expected `model` argument to be a `Model` instance.")
 
-    if clone_function is None:
-
-        def default_clone_function(layer):
-            """Function docstring.
-
-            Args:
-                layer: Description.
-            """
-            if hasattr(layer, "get_config"):
-                return layer.__class__.from_config(layer.get_config())
-            return layer
-
-        clone_function = default_clone_function
+    resolved_clone_fn = clone_function if clone_function is not None else _default_clone_function
 
     if isinstance(model, Sequential):
-        cloned_model = Sequential(name=getattr(model, "name", None))
-        for layer in getattr(model, "layers", []):
-            cloned_model.add(clone_function(layer))
-        return cloned_model
+        cloned_seq = Sequential(name=model._name)
+        for layer in model.layers:
+            cloned_seq.add(resolved_clone_fn(layer))
+        return cloned_seq
 
-    from zero_keras.core_layers import Input
+    config = model.get_config()
+    layer_configs = config.get("layers", [])
 
-    if isinstance(model, Model):
-        # Full functional model cloning
-        config = model.get_config()
-        layer_configs = config.get("layers", [])
+    if not isinstance(layer_configs, list) or not layer_configs:
+        return model
 
-        if not layer_configs:
-            return model
+    created_layers: dict[str, Layer | TensorLike] = {}
+    tensor_map: dict[str, TensorLike] = {}
 
-        created_layers = {}
-        tensor_map = {}
+    for lc in layer_configs:
+        lname = str(lc.get("name", ""))  # type: ignore[union-attr]
+        cname = str(lc.get("class_name", ""))  # type: ignore[union-attr]
+        cconfig_raw = lc.get("config", {})  # type: ignore[union-attr]
+        cconfig = cconfig_raw if isinstance(cconfig_raw, dict) else {}
 
-        for lc in layer_configs:
-            lname = lc.get("name")
-            cname = lc.get("class_name")
-            cconfig = lc.get("config", {})
+        if cname == "InputLayer":
+            shape_raw = cconfig.get("batch_input_shape", (None,))
+            shape = (
+                tuple(shape_raw[1:])
+                if isinstance(shape_raw, (list, tuple))
+                and len(shape_raw) > 0
+                and shape_raw[0] is None
+                else shape_raw
+            )
+            dt_val = cconfig.get("dtype")
+            inp_tensor = Input(
+                shape=shape,  # type: ignore[arg-type]
+                name=lname,
+                dtype=str(dt_val) if isinstance(dt_val, str) else None,
+            )
+            created_layers[lname] = inp_tensor
+            tensor_map[lname] = inp_tensor
+        else:
+            orig_by_name = {lyr.name: lyr for lyr in model.layers}
+            created_layers[lname] = resolved_clone_fn(orig_by_name[lname])
 
-            if cname == "InputLayer":
-                shape = cconfig.get("batch_input_shape", (None,))
-                if shape and shape[0] is None:
-                    shape = shape[1:]
-                layer = Input(shape=shape, name=lname, dtype=cconfig.get("dtype"))
-                created_layers[lname] = layer
-                tensor_map[lname] = layer
+    for lc in layer_configs:
+        lname = str(lc.get("name", ""))  # type: ignore[union-attr]
+        inbound = lc.get("inbound_nodes", [])  # type: ignore[union-attr]
+        if not isinstance(inbound, list) or not inbound:
+            continue
+
+        layer_obj = created_layers[lname]
+        for connection_group in inbound:
+            if len(connection_group) == 1:  # type: ignore[arg-type]
+                src_layer, _node_idx, _tensor_idx, call_kwargs = connection_group[0]  # type: ignore[index]
+                inp_t = tensor_map[str(src_layer)]
+                kw = call_kwargs if isinstance(call_kwargs, dict) else {}
+                out_t = layer_obj(inp_t, **kw)  # type: ignore[operator]
             else:
-                # Find original layer
-                orig_layer = None
-                for lyr in model.layers:
-                    if lyr.name == lname:
-                        orig_layer = lyr
-                        break
-                if orig_layer:
-                    cloned_layer = clone_function(orig_layer)
-                    created_layers[lname] = cloned_layer
+                inp_ts = [tensor_map[str(c[0])] for c in connection_group]  # type: ignore[union-attr]
+                out_t = layer_obj(inp_ts)  # type: ignore[operator]
+            tensor_map[lname] = out_t
 
-        for lc in layer_configs:
-            lname = lc.get("name")
-            inbound = lc.get("inbound_nodes", [])
-            if not inbound:
-                continue
+    input_layers_raw = config.get("input_layers", [])
+    output_layers_raw = config.get("output_layers", [])
+    input_layers = input_layers_raw if isinstance(input_layers_raw, list) else []
+    output_layers = output_layers_raw if isinstance(output_layers_raw, list) else []
 
-            layer = created_layers[lname]
+    inputs_list = [tensor_map[str(il[0])] for il in input_layers if isinstance(il, (list, tuple))]
+    outputs_list = [tensor_map[str(ol[0])] for ol in output_layers if isinstance(ol, (list, tuple))]
 
-            for connection_group in inbound:
-                if len(connection_group) == 1:
-                    src_layer, _node_idx, _tensor_idx, kwargs = connection_group[0]
-                    inp_tensor = tensor_map[src_layer]
-                    out_tensor = layer(inp_tensor, **kwargs)
-                else:
-                    inp_tensors = [tensor_map[c[0]] for c in connection_group]
-                    out_tensor = layer(inp_tensors)
-                tensor_map[lname] = out_tensor
-
-        input_layers = config.get("input_layers", [])
-        output_layers = config.get("output_layers", [])
-
-        inputs = [tensor_map[il[0]] for il in input_layers]
-        outputs = [tensor_map[ol[0]] for ol in output_layers]
-
-        if len(inputs) == 1:
-            inputs = inputs[0]
-        if len(outputs) == 1:
-            outputs = outputs[0]
-
-        return Functional(inputs=inputs, outputs=outputs, name=config.get("name"))
-
-    return model
+    inputs_arg: TensorLike | list[TensorLike] = (
+        inputs_list[0] if len(inputs_list) == 1 else inputs_list
+    )
+    outputs_arg: TensorLike | list[TensorLike] = (
+        outputs_list[0] if len(outputs_list) == 1 else outputs_list
+    )
+    name_val = config.get("name")
+    return Functional(
+        inputs=inputs_arg,
+        outputs=outputs_arg,
+        name=str(name_val) if isinstance(name_val, str) else None,
+    )
 
 
-def save_model(model, filepath, overwrite=True, **kwargs):
-    """Saves a model as a `.keras` file."""
+def save_model(
+    model: Model,
+    filepath: str | Path,
+    overwrite: bool = True,
+    **kwargs: ConfigValue,
+) -> None:
+    """Save a model as a ``.keras`` file.
+
+    Args:
+        model: Model instance to save.
+        filepath: Destination file path.
+        overwrite: Whether to overwrite existing files.
+        **kwargs: Additional save options.
+    """
     if hasattr(model, "save"):
         model.save(filepath, overwrite=overwrite, **kwargs)
     else:
-        from zero_keras.core_layers import Model
-
         Model.save(model, filepath, overwrite=overwrite, **kwargs)
 
 
-def model_from_json(json_string, custom_objects=None, safe_mode=True):
-    """Function docstring.
+def model_from_json(
+    json_string: str,
+    custom_objects: dict[str, ConfigValue] | None = None,
+    safe_mode: bool = True,
+) -> Model:
+    """Reconstruct a model from a JSON configuration string.
 
     Args:
-        json_string: Description.
-        custom_objects: Description.
-        safe_mode: Description.
-    """
+        json_string: JSON-encoded model configuration.
+        custom_objects: Optional dictionary of custom classes.
+        safe_mode: Whether to disallow unsafe ``Lambda`` deserialization.
 
+    Returns:
+        Model: Reconstructed model instance.
+
+    Raises:
+        ValueError: If ``safe_mode=True`` and a ``Lambda`` layer is present.
+    """
     config = json.loads(json_string)
     class_name = config.get("class_name")
 
     if class_name == "Sequential":
-        return Sequential.from_config(config.get("config", {}))
-
-    from zero_keras.core_layers import Input, Model, deserialize
+        sub_cfg = config.get("config", {})
+        return Sequential.from_config(sub_cfg if isinstance(sub_cfg, dict) else {})
 
     if class_name in ("Functional", "Model"):
-        conf = config.get("config", {})
+        conf_raw = config.get("config", {})
+        conf = conf_raw if isinstance(conf_raw, dict) else {}
         layer_configs = conf.get("layers", [])
 
-        created_layers = {}
-        tensor_map = {}
+        created_layers: dict[str, Layer | TensorLike] = {}
+        tensor_map: dict[str, TensorLike] = {}
 
-        for lc in layer_configs:
-            lname = lc.get("name")
-            cname = lc.get("class_name")
-            cconfig = lc.get("config", {})
+        if isinstance(layer_configs, list):
+            for lc in layer_configs:
+                lname = str(lc.get("name", ""))  # type: ignore[union-attr]
+                cname = str(lc.get("class_name", ""))  # type: ignore[union-attr]
+                cconfig_raw = lc.get("config", {})  # type: ignore[union-attr]
+                cconfig = cconfig_raw if isinstance(cconfig_raw, dict) else {}
 
-            if safe_mode and cname == "Lambda":
-                raise ValueError("safe_mode is True, cannot deserialize Lambda")
+                if safe_mode and cname == "Lambda":
+                    raise ValueError("safe_mode is True, cannot deserialize Lambda")
 
-            if cname == "InputLayer":
-                shape = cconfig.get("batch_input_shape", (None,))
-                if shape and shape[0] is None:
-                    shape = shape[1:]
-                layer = Input(shape=shape, name=lname, dtype=cconfig.get("dtype"))
-                created_layers[lname] = layer
-                tensor_map[lname] = layer
-            else:
-                created_layers[lname] = deserialize(
-                    lc, custom_objects=custom_objects, safe_mode=safe_mode
-                )
-
-        for lc in layer_configs:
-            lname = lc.get("name")
-            inbound = lc.get("inbound_nodes", [])
-            if not inbound:
-                continue
-
-            layer = created_layers[lname]
-
-            for connection_group in inbound:
-                if len(connection_group) == 1:
-                    src_layer, _node_idx, _tensor_idx, kwargs = connection_group[0]
-                    inp_tensor = tensor_map[src_layer]
-                    out_tensor = layer(inp_tensor, **kwargs)
+                if cname == "InputLayer":
+                    shape_raw = cconfig.get("batch_input_shape", (None,))
+                    shape = (
+                        tuple(shape_raw[1:])
+                        if isinstance(shape_raw, (list, tuple))
+                        and len(shape_raw) > 0
+                        and shape_raw[0] is None
+                        else shape_raw
+                    )
+                    dt_val = cconfig.get("dtype")
+                    inp_t = Input(
+                        shape=shape,  # type: ignore[arg-type]
+                        name=lname,
+                        dtype=str(dt_val) if isinstance(dt_val, str) else None,
+                    )
+                    created_layers[lname] = inp_t
+                    tensor_map[lname] = inp_t
                 else:
-                    inp_tensors = [tensor_map[c[0]] for c in connection_group]
-                    out_tensor = layer(inp_tensors)
-                tensor_map[lname] = out_tensor
+                    created_layers[lname] = deserialize(
+                        lc, custom_objects=custom_objects, safe_mode=safe_mode
+                    )
 
-        input_layers = conf.get("input_layers", [])
-        output_layers = conf.get("output_layers", [])
+            for lc in layer_configs:
+                lname = str(lc.get("name", ""))  # type: ignore[union-attr]
+                inbound = lc.get("inbound_nodes", [])  # type: ignore[union-attr]
+                if not isinstance(inbound, list) or not inbound:
+                    continue
 
-        inputs = [tensor_map[il[0]] for il in input_layers]
-        outputs = [tensor_map[ol[0]] for ol in output_layers]
+                layer_obj = created_layers[lname]
+                for connection_group in inbound:
+                    if len(connection_group) == 1:  # type: ignore[arg-type]
+                        src_layer, _node_idx, _tensor_idx, call_kwargs = connection_group[0]  # type: ignore[index]
+                        inp_tensor = tensor_map[str(src_layer)]
+                        kw = call_kwargs if isinstance(call_kwargs, dict) else {}
+                        out_tensor = layer_obj(inp_tensor, **kw)  # type: ignore[operator]
+                    else:
+                        inp_tensors = [tensor_map[str(c[0])] for c in connection_group]  # type: ignore[union-attr]
+                        out_tensor = layer_obj(inp_tensors)  # type: ignore[operator]
+                    tensor_map[lname] = out_tensor
 
-        if len(inputs) == 1:
-            inputs = inputs[0]
-        if len(outputs) == 1:
-            outputs = outputs[0]
+        input_layers_raw = conf.get("input_layers", [])
+        output_layers_raw = conf.get("output_layers", [])
+        input_layers = input_layers_raw if isinstance(input_layers_raw, list) else []
+        output_layers = output_layers_raw if isinstance(output_layers_raw, list) else []
 
-        return Functional(inputs=inputs, outputs=outputs, name=conf.get("name"))
+        inputs_list = [
+            tensor_map[str(il[0])] for il in input_layers if isinstance(il, (list, tuple))
+        ]
+        outputs_list = [
+            tensor_map[str(ol[0])] for ol in output_layers if isinstance(ol, (list, tuple))
+        ]
+
+        inputs_arg: TensorLike | list[TensorLike] = (
+            inputs_list[0] if len(inputs_list) == 1 else inputs_list
+        )
+        outputs_arg: TensorLike | list[TensorLike] = (
+            outputs_list[0] if len(outputs_list) == 1 else outputs_list
+        )
+        name_val = conf.get("name")
+        return Functional(
+            inputs=inputs_arg,
+            outputs=outputs_arg,
+            name=str(name_val) if isinstance(name_val, str) else None,
+        )
 
     return Model()

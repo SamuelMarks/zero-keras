@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras.layers import (
@@ -12,20 +15,18 @@ from zero_keras.layers import (
 )
 
 
-def test_text_vectorization():
+def test_text_vectorization() -> TensorLike:
     """Function docstring."""
     tv = TextVectorization(vocabulary=["[UNK]", "hello", "world"])
     res = tv(np.array(["hello world", "hello missing", ""]))
     assert np.array_equal(res.data, [[1, 2], [1, 0], [0, 0]])
 
-    tv_mh = TextVectorization(
-        vocabulary=["[UNK]", "hello", "world"], output_mode="multi_hot"
-    )
+    tv_mh = TextVectorization(vocabulary=["[UNK]", "hello", "world"], output_mode="multi_hot")
     res_mh = tv_mh(np.array(["hello world", "hello missing", ""]))
     assert np.array_equal(res_mh.data, [[0, 1, 1], [1, 1, 0], [1, 0, 0]])
 
 
-def test_string_lookup():
+def test_string_lookup() -> TensorLike:
     """Function docstring."""
     sl = StringLookup(vocabulary=["[UNK]", "a", "b"])
     res = sl(np.array(["a", "b", "c", "a"]))
@@ -40,7 +41,7 @@ def test_string_lookup():
     assert np.array_equal(np.array(res_mh.data), [[1, 1, 0], [0, 0, 1]])
 
 
-def test_integer_lookup():
+def test_integer_lookup() -> TensorLike:
     """Function docstring."""
     il = IntegerLookup(
         vocabulary=[0, 1, 2]
@@ -49,7 +50,7 @@ def test_integer_lookup():
     assert list(np.array(res.data).flatten()) == [1, 2, 0, 1]
 
 
-def test_hashing():
+def test_hashing() -> TensorLike:
     """Function docstring."""
     h = Hashing(num_bins=4)
     res = h(np.array(["a", "b", "c", "d"]))
@@ -59,7 +60,7 @@ def test_hashing():
     assert res2.data.shape == (3,)
 
 
-def test_hashed_crossing():
+def test_hashed_crossing() -> TensorLike:
     """Function docstring."""
     hc = HashedCrossing(num_bins=10)
     res = hc([np.array([1, 2]), np.array([3, 4])])
@@ -70,7 +71,7 @@ def test_hashed_crossing():
     assert res_oh.data.shape == (2, 10)
 
 
-def test_category_encoding():
+def test_category_encoding() -> TensorLike:
     """Function docstring."""
     ce = CategoryEncoding(num_tokens=4, output_mode="one_hot")
     res = ce(np.array([1, 2]))

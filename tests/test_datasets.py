@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from unittest import mock
 
 import numpy as np
@@ -8,7 +11,7 @@ import pytest
 from zero_keras import datasets
 
 
-def test_boston_housing():
+def test_boston_housing() -> TensorLike:
     """Function docstring."""
     x_dummy = np.random.rand(100, 13)
     y_dummy = np.random.rand(100)
@@ -26,7 +29,7 @@ def test_boston_housing():
             assert y_test.shape == (20,)
 
 
-def test_cifar10():
+def test_cifar10() -> TensorLike:
     """Function docstring."""
     x_dummy = np.random.rand(10000, 3, 32, 32)
     y_dummy = np.random.rand(10000)
@@ -48,7 +51,7 @@ def test_cifar10():
             assert y_test.shape == (10000, 1)
 
 
-def test_cifar100():
+def test_cifar100() -> TensorLike:
     """Function docstring."""
     x_dummy = np.random.rand(10000, 3, 32, 32)
     y_dummy = np.random.rand(10000)
@@ -73,7 +76,7 @@ def test_cifar100():
             assert y_train.shape == (10000, 1)
 
 
-def test_cifar100_coarse():
+def test_cifar100_coarse() -> TensorLike:
     """Function docstring."""
     x_dummy = np.random.rand(10000, 3, 32, 32)
     y_dummy = np.random.rand(10000)
@@ -98,7 +101,7 @@ def test_cifar100_coarse():
         datasets.cifar100.load_data(label_mode="invalid")
 
 
-def test_mnist():
+def test_mnist() -> TensorLike:
     """Function docstring."""
     x_train_d, y_train_d = np.zeros((60000, 28, 28)), np.zeros((60000,))
     x_test_d, y_test_d = np.zeros((10000, 28, 28)), np.zeros((10000,))
@@ -121,7 +124,7 @@ def test_mnist():
             assert y_test.shape == (10000,)
 
 
-def test_cifar_load_batch():
+def test_cifar_load_batch() -> TensorLike:
     """Function docstring."""
     import os
     import pickle
@@ -143,7 +146,7 @@ def test_cifar_load_batch():
             os.remove("dummy_batch.bin")
 
 
-def test_cifar100_load_batch():
+def test_cifar100_load_batch() -> TensorLike:
     """Function docstring."""
     import os
     import pickle
@@ -165,7 +168,7 @@ def test_cifar100_load_batch():
             os.remove("dummy_batch100.bin")
 
 
-def test_fashion_mnist():
+def test_fashion_mnist() -> TensorLike:
     """Function docstring."""
     x_train_d = np.zeros(60000 * 28 * 28 + 16, dtype=np.uint8).tobytes()
     y_train_d = np.zeros(60000 + 8, dtype=np.uint8).tobytes()
@@ -200,7 +203,7 @@ def test_fashion_mnist():
             assert y_test.shape == (10000,)
 
 
-def test_imdb():
+def test_imdb() -> TensorLike:
     """Function docstring."""
     x_train_d = np.array([[1, 2, 3], [4, 5, 6], [1] * 50], dtype="object")
     y_train_d = np.array([0, 1, 1])
@@ -242,7 +245,7 @@ def test_imdb():
             assert res == {"test": 1}
 
 
-def test_reuters():
+def test_reuters() -> TensorLike:
     """Function docstring."""
     x_d = np.array([[1, 2, 3], [4, 5, 6], [1] * 50, [2] * 3], dtype="object")
     y_d = np.array([0, 1, 1, 0])
@@ -279,7 +282,7 @@ def test_reuters():
     assert len(datasets.reuters.get_label_names()) == 46
 
 
-def test_imdb_edge_cases():
+def test_imdb_edge_cases() -> TensorLike:
     """Function docstring."""
     x_train_d = np.array([[1, 2, 3]], dtype="object")
     y_train_d = np.array([0])
@@ -307,7 +310,7 @@ def test_imdb_edge_cases():
                 datasets.imdb.load_data(maxlen=1)
 
 
-def test_reuters_edge_cases():
+def test_reuters_edge_cases() -> TensorLike:
     """Function docstring."""
     x_d = np.array([[1, 2, 3]], dtype="object")
     y_d = np.array([0])
@@ -325,7 +328,7 @@ def test_reuters_edge_cases():
             assert list(x_test[0]) == [4, 5, 2]
 
 
-def test_california_housing():
+def test_california_housing() -> TensorLike:
     """Function docstring."""
     x_dummy = np.random.rand(100, 8)
     y_dummy = np.random.rand(100)
@@ -335,9 +338,7 @@ def test_california_housing():
         with mock.patch("numpy.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {"x": x_dummy, "y": y_dummy}
 
-            (x_train, y_train), (x_test, y_test) = (
-                datasets.california_housing.load_data()
-            )
+            (x_train, y_train), (x_test, y_test) = datasets.california_housing.load_data()
 
             assert x_train.shape == (80, 8)
             assert y_train.shape == (80,)

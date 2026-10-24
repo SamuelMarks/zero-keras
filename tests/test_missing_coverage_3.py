@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import core_layers, layers, models
 
 
-def test_tensorshape():
+def test_tensorshape() -> TensorLike:
     """Function docstring."""
     ts = core_layers.TensorShape(None)
     assert ts.dims == []
@@ -20,13 +23,13 @@ def test_tensorshape():
     assert ts2.is_fully_defined()
 
 
-def test_core_layers_tracing_coverage():
+def test_core_layers_tracing_coverage() -> TensorLike:
     """Function docstring."""
 
     class DummyLayer(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -41,7 +44,7 @@ def test_core_layers_tracing_coverage():
     class DummyLayerDict(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -55,7 +58,7 @@ def test_core_layers_tracing_coverage():
     class DummyLayerList(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -69,7 +72,7 @@ def test_core_layers_tracing_coverage():
     class DummyLayerTuple(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -83,7 +86,7 @@ def test_core_layers_tracing_coverage():
     class DummyLayerSingle(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -95,7 +98,7 @@ def test_core_layers_tracing_coverage():
     out5 = l5(inp)
 
 
-def test_model_compile_loss_fn():
+def test_model_compile_loss_fn() -> TensorLike:
     """Function docstring."""
     # 736: def loss_fn()
     # It must be executed. loss_fn is used by value_and_grad_wrt_vars
@@ -109,7 +112,7 @@ def test_model_compile_loss_fn():
     m.train_step((np.zeros((1, 2)), np.zeros((1, 2))))
 
 
-def test_model_compile_y_pred_dict_y_true_none():
+def test_model_compile_y_pred_dict_y_true_none() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler.ops as compiler_ops
 
@@ -131,7 +134,7 @@ def test_model_compile_y_pred_dict_y_true_none():
         pass
 
 
-def test_functional_outputs_dict():
+def test_functional_outputs_dict() -> TensorLike:
     """Function docstring."""
     # 1373-1375: elif isinstance(node.outputs, dict):
     # 1390: elif isinstance(self.outputs, dict): return {k: _get_output(v)...
@@ -141,7 +144,7 @@ def test_functional_outputs_dict():
     class DictLayer(core_layers.Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -156,7 +159,7 @@ def test_functional_outputs_dict():
     assert "out" in res
 
 
-def test_torch_dataloader_mock():
+def test_torch_dataloader_mock() -> TensorLike:
     """Function docstring."""
     import sys
     from types import ModuleType
@@ -171,7 +174,7 @@ def test_torch_dataloader_mock():
     class FakeDataloader:
         """Class docstring."""
 
-        def __init__(self, data):
+        def __init__(self, data: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -179,14 +182,14 @@ def test_torch_dataloader_mock():
             """
             self.data = data
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
             return iter(self.data)
 
     class FakeTorchTensor:
         """Class docstring."""
 
-        def __init__(self, val):
+        def __init__(self, val: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -194,7 +197,7 @@ def test_torch_dataloader_mock():
             """
             self.val = val
 
-        def numpy(self):
+        def numpy(self) -> TensorLike:
             """Function docstring."""
             return self.val
 

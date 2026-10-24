@@ -1,7 +1,11 @@
+"""Module `test_config` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import config
 
 
-def test_config():
+def test_config() -> TensorLike:
     """Test config module."""
     # Test default values
     assert config.backend() == "numpy"
@@ -54,3 +58,11 @@ def test_config():
 
     config.set_max_steps_per_epoch(100)
     assert config.max_steps_per_epoch() == 100
+
+    config.set_backend("numpy")
+    config.set_dtype_policy(None)
+    config.set_epsilon(1e-7)
+    config.set_floatx("float32")
+    config.set_image_data_format("channels_last")
+    config.set_max_epochs(None)
+    config.set_max_steps_per_epoch(None)

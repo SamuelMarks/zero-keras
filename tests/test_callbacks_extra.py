@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import csv
 import os
 import tempfile
@@ -9,7 +12,7 @@ import numpy as np
 from zero_keras.callbacks import callbacks
 
 
-def test_history():
+def test_history() -> TensorLike:
     """Function docstring."""
     hist = callbacks.History()
     hist.on_train_begin()
@@ -19,7 +22,7 @@ def test_history():
     assert hist.history == {"loss": [0.5, 0.4]}
 
 
-def test_lambda_callback():
+def test_lambda_callback() -> TensorLike:
     """Function docstring."""
     call_counts = {
         "epoch_begin": 0,
@@ -30,7 +33,7 @@ def test_lambda_callback():
         "train_end": 0,
     }
 
-    def on_epoch_begin(epoch, logs):
+    def on_epoch_begin(epoch: TensorLike, logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -39,7 +42,7 @@ def test_lambda_callback():
         """
         call_counts["epoch_begin"] += 1
 
-    def on_epoch_end(epoch, logs):
+    def on_epoch_end(epoch: TensorLike, logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -48,7 +51,7 @@ def test_lambda_callback():
         """
         call_counts["epoch_end"] += 1
 
-    def on_batch_begin(batch, logs):
+    def on_batch_begin(batch: TensorLike, logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -57,7 +60,7 @@ def test_lambda_callback():
         """
         call_counts["batch_begin"] += 1
 
-    def on_batch_end(batch, logs):
+    def on_batch_end(batch: TensorLike, logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -66,7 +69,7 @@ def test_lambda_callback():
         """
         call_counts["batch_end"] += 1
 
-    def on_train_begin(logs):
+    def on_train_begin(logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -74,7 +77,7 @@ def test_lambda_callback():
         """
         call_counts["train_begin"] += 1
 
-    def on_train_end(logs):
+    def on_train_end(logs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -100,24 +103,24 @@ def test_lambda_callback():
     assert all(v == 1 for v in call_counts.values())
 
 
-def test_learning_rate_scheduler():
+def test_learning_rate_scheduler() -> TensorLike:
     """Function docstring."""
 
     class DummyOptimizer:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.learning_rate = 0.1
 
     class DummyModel:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.optimizer = DummyOptimizer()
 
-    def schedule(epoch, lr):
+    def schedule(epoch: TensorLike, lr: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -132,18 +135,21 @@ def test_learning_rate_scheduler():
     assert cb.model.optimizer.learning_rate == 0.05
 
     # Test without optimizer
+    class DummyNoOptModel:
+        """Dummy model without an optimizer attribute."""
+
     cb2 = callbacks.LearningRateScheduler(schedule)
-    cb2.model = object()
+    cb2.model = DummyNoOptModel()
     cb2.on_epoch_begin(0)
 
 
-def test_terminate_on_nan():
+def test_terminate_on_nan() -> TensorLike:
     """Function docstring."""
 
     class DummyModel:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.stop_training = False
 
@@ -157,7 +163,7 @@ def test_terminate_on_nan():
     assert cb.model.stop_training
 
 
-def test_csv_logger():
+def test_csv_logger() -> TensorLike:
     """Function docstring."""
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as f:
         filepath = f.name
@@ -187,20 +193,20 @@ def test_csv_logger():
     os.remove(filepath)
 
 
-def test_reduce_lr_on_plateau():
+def test_reduce_lr_on_plateau() -> TensorLike:
     """Function docstring."""
 
     class DummyOptimizer:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.learning_rate = 0.1
 
     class DummyModel:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.optimizer = DummyOptimizer()
 
@@ -226,7 +232,7 @@ def test_reduce_lr_on_plateau():
     assert not cb.in_cooldown()
 
 
-def test_backup_and_restore():
+def test_backup_and_restore() -> TensorLike:
     """Function docstring."""
     with tempfile.TemporaryDirectory() as d:
         cb = callbacks.BackupAndRestore(d)
@@ -236,25 +242,25 @@ def test_backup_and_restore():
         assert not os.path.exists(d)
 
 
-def test_remote_monitor():
+def test_remote_monitor() -> TensorLike:
     """Function docstring."""
     cb = callbacks.RemoteMonitor()
     assert cb.root == "http://localhost:9000"
 
 
-def test_swap_ema_weights():
+def test_swap_ema_weights() -> TensorLike:
     """Function docstring."""
     cb = callbacks.SwapEMAWeights()
     assert not cb.swap_on_epoch
 
 
-def test_tensorboard():
+def test_tensorboard() -> TensorLike:
     """Function docstring."""
     cb = callbacks.TensorBoard()
     assert cb.log_dir == "logs"
 
 
-def test_learning_rate_scheduler_missing_lr():
+def test_learning_rate_scheduler_missing_lr() -> TensorLike:
     """Function docstring."""
 
     class DummyOptimizerMissingLR:
@@ -263,7 +269,7 @@ def test_learning_rate_scheduler_missing_lr():
     class DummyModelMissingLR:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.optimizer = DummyOptimizerMissingLR()
 
@@ -272,17 +278,17 @@ def test_learning_rate_scheduler_missing_lr():
     cb.on_epoch_begin(0)  # Should hit the second return
 
 
-def test_learning_rate_scheduler_type_error():
+def test_learning_rate_scheduler_type_error() -> TensorLike:
     """Function docstring."""
 
     class TypeErrorFloat:
         """Class docstring."""
 
-        def __float__(self):
+        def __float__(self) -> TensorLike:
             """Function docstring."""
             raise TypeError()
 
-        def __mul__(self, other):
+        def __mul__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -293,14 +299,14 @@ def test_learning_rate_scheduler_type_error():
     class DummyOptimizerTypeError:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.learning_rate = TypeErrorFloat()
 
     class DummyModelTypeError:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.optimizer = DummyOptimizerTypeError()
 
@@ -310,7 +316,7 @@ def test_learning_rate_scheduler_type_error():
     assert cb.model.optimizer.learning_rate == 0.05
 
 
-def test_csv_logger_append_new_file():
+def test_csv_logger_append_new_file() -> TensorLike:
     """Function docstring."""
     with tempfile.NamedTemporaryFile(delete=True) as f:
         filepath = f.name
@@ -323,20 +329,20 @@ def test_csv_logger_append_new_file():
     os.remove(filepath)
 
 
-def test_reduce_lr_on_plateau_max_mode():
+def test_reduce_lr_on_plateau_max_mode() -> TensorLike:
     """Function docstring."""
 
     class DummyOptimizer:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.learning_rate = 0.1
 
     class DummyModel:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self.optimizer = DummyOptimizer()
 
@@ -352,7 +358,7 @@ def test_reduce_lr_on_plateau_max_mode():
     assert cb.model.optimizer.learning_rate == 0.05
 
 
-def test_backup_and_restore_create_dir():
+def test_backup_and_restore_create_dir() -> TensorLike:
     """Function docstring."""
     with tempfile.TemporaryDirectory() as d:
         target_dir = os.path.join(d, "new_sub_dir")
@@ -362,7 +368,8 @@ def test_backup_and_restore_create_dir():
         cb.on_train_end()
 
 
-def test_callback_methods_extra():
+def test_callback_methods_extra() -> TensorLike:
+    """Execute ``test_callback_methods_extra``."""
     from zero_keras.callbacks.callbacks import (
         Callback,
         CallbackList,
@@ -393,7 +400,8 @@ def test_callback_methods_extra():
     assert es.get_monitor_value({"val_loss": 0.5}) == 0.5
 
 
-def test_lambda_callback_more():
+def test_lambda_callback_more() -> TensorLike:
+    """Execute ``test_lambda_callback_more``."""
     from zero_keras.callbacks import LambdaCallback
 
     cb = LambdaCallback(
@@ -420,50 +428,132 @@ def test_lambda_callback_more():
     cb_none.on_train_end({})
 
 
-def test_callback_list_coverage():
+def test_callback_list_coverage() -> TensorLike:
+    """Execute ``test_callback_list_coverage``."""
     from zero_keras.callbacks import Callback, CallbackList
 
     class MyCB(Callback):
-        def on_train_batch_begin(self, batch, logs=None):
+        """Keras ``MyCB`` class."""
+
+        def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_train_batch_begin``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_train_batch_end(self, batch, logs=None):
+        def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_train_batch_end``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_test_batch_begin(self, batch, logs=None):
+        def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_test_batch_begin``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_test_batch_end(self, batch, logs=None):
+        def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_test_batch_end``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_predict_batch_begin(self, batch, logs=None):
+        def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_predict_batch_begin``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_predict_batch_end(self, batch, logs=None):
+        def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_predict_batch_end``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_epoch_end(self, epoch, logs=None):
+        def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_epoch_end``.
+
+            Args:
+                epoch: Input parameter ``epoch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_train_end(self, logs=None):
+        def on_train_end(self, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_train_end``.
+
+            Args:
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_test_begin(self, logs=None):
+        def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_test_begin``.
+
+            Args:
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_test_end(self, logs=None):
+        def on_test_end(self, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_test_end``.
+
+            Args:
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_predict_begin(self, logs=None):
+        def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_predict_begin``.
+
+            Args:
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_predict_end(self, logs=None):
+        def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_predict_end``.
+
+            Args:
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_batch_begin(self, batch, logs=None):
+        def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_batch_begin``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
-        def on_batch_end(self, batch, logs=None):
+        def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+            """Execute ``on_batch_end``.
+
+            Args:
+                batch: Input parameter ``batch``.
+                logs: Input parameter ``logs``.
+            """
             pass
 
     cbl = CallbackList([MyCB()], model=None)
@@ -487,10 +577,13 @@ def test_callback_list_coverage():
     cbl.on_batch_end(0)
 
 
-def test_callback_list_coverage_more():
+def test_callback_list_coverage_more() -> TensorLike:
+    """Execute ``test_callback_list_coverage_more``."""
     from zero_keras.callbacks import Callback, CallbackList
 
     class MyEmptyCB(Callback):
+        """Keras ``MyEmptyCB`` class."""
+
         pass
 
     cbl = CallbackList([MyEmptyCB()], model=None)

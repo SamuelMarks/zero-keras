@@ -1,3 +1,7 @@
+"""Module `test_preprocessing_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from unittest import mock
 
 import numpy as np
@@ -5,28 +9,32 @@ import numpy as np
 from zero_keras import layers
 
 
-def test_discretization():
+def test_discretization() -> TensorLike:
+    """Execute ``test_discretization``."""
     layer = layers.Discretization(bin_boundaries=[0.0, 0.5, 1.0])
     x = np.random.rand(2, 5).astype(np.float32)
     out = layer(x)
     assert out.shape == (2, 5)
 
 
-def test_discretization_none():
+def test_discretization_none() -> TensorLike:
+    """Execute ``test_discretization_none``."""
     layer = layers.Discretization()
     x = np.random.rand(2, 5).astype(np.float32)
     out = layer(x)
     assert out.shape == (2, 5)
 
 
-def test_max_num_bounding_boxes():
+def test_max_num_bounding_boxes() -> TensorLike:
+    """Execute ``test_max_num_bounding_boxes``."""
     layer = layers.MaxNumBoundingBoxes(max_number=10)
     x = np.random.rand(2, 5, 4).astype(np.float32)
     out = layer(x)
     assert out.shape == (2, 5, 4)
 
 
-def test_string_lookup_memoryview():
+def test_string_lookup_memoryview() -> TensorLike:
+    """Execute ``test_string_lookup_memoryview``."""
     layer = layers.StringLookup()
     layer.adapt(["a", "b", "c"])
     x = memoryview(b"a")
@@ -34,21 +42,19 @@ def test_string_lookup_memoryview():
     assert out is not None
 
 
-def test_string_lookup_2d_and_modes():
-    layer_one_hot = layers.StringLookup(
-        vocabulary=["a", "b", "c"], output_mode="one_hot"
-    )
+def test_string_lookup_2d_and_modes() -> TensorLike:
+    """Execute ``test_string_lookup_2d_and_modes``."""
+    layer_one_hot = layers.StringLookup(vocabulary=["a", "b", "c"], output_mode="one_hot")
     x2d = np.array([["a", "d"], ["b", "c"]])
     x1d = np.array(["a", "d"])
     out = layer_one_hot(x1d)
 
-    layer_multi = layers.StringLookup(
-        vocabulary=["a", "b", "c"], output_mode="multi_hot"
-    )
+    layer_multi = layers.StringLookup(vocabulary=["a", "b", "c"], output_mode="multi_hot")
     out_multi = layer_multi(x2d)
 
 
-def test_random_flip():
+def test_random_flip() -> TensorLike:
+    """Execute ``test_random_flip``."""
     layer = layers.RandomFlip()
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -59,7 +65,8 @@ def test_random_flip():
         assert out2 is not None
 
 
-def test_random_rotation():
+def test_random_rotation() -> TensorLike:
+    """Execute ``test_random_rotation``."""
     layer = layers.RandomRotation(0.2)
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -70,7 +77,8 @@ def test_random_rotation():
         assert out2 is not None
 
 
-def test_gaussian_blur():
+def test_gaussian_blur() -> TensorLike:
+    """Execute ``test_gaussian_blur``."""
     layer = layers.RandomGaussianBlur(0.2, 3, 1.0)
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -81,7 +89,8 @@ def test_gaussian_blur():
         assert out2 is not None
 
 
-def test_random_grayscale():
+def test_random_grayscale() -> TensorLike:
+    """Execute ``test_random_grayscale``."""
     layer = layers.RandomGrayscale(0.2)
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -96,7 +105,8 @@ def test_random_grayscale():
         assert out2 is not None
 
 
-def test_random_saturation():
+def test_random_saturation() -> TensorLike:
+    """Execute ``test_random_saturation``."""
     layer = layers.RandomSaturation(0.2)
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -107,7 +117,8 @@ def test_random_saturation():
         assert out2 is not None
 
 
-def test_random_shear():
+def test_random_shear() -> TensorLike:
+    """Execute ``test_random_shear``."""
     layer = layers.RandomShear(0.2)
     x = np.random.rand(2, 5, 5, 3).astype(np.float32)
     with mock.patch("zero_keras.ops.image") as mock_image:

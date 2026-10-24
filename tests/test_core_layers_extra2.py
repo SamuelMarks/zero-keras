@@ -1,8 +1,14 @@
-def test_keras_tensor_eq_no_data2():
+"""Module `test_core_layers_extra2` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+
+def test_keras_tensor_eq_no_data2() -> TensorLike:
     """Dummy test to cover previous fail."""
 
 
-def test_root_symbols():
+def test_root_symbols() -> TensorLike:
     """Test root level symbols in zero_keras.core_layers."""
     import zero_keras
 

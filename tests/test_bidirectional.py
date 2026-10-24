@@ -1,12 +1,22 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 
 from zero_keras import layers
 
 
-def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwargs):
+def check_layer_parity(
+    layer_cls: TensorLike,
+    keras_cls: TensorLike,
+    inputs: TensorLike,
+    atol: TensorLike = 1e-5,
+    rtol: TensorLike = 1e-5,
+    **kwargs: TensorLike,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -17,26 +27,20 @@ def check_layer_parity(layer_cls, keras_cls, inputs, atol=1e-5, rtol=1e-5, **kwa
         rtol: Description.
         kwargs: Description.
     """
-    keras_layer = keras_cls(**kwargs)  # pragma: no cover
-    keras_out = keras_layer(inputs)  # pragma: no cover
-    zero_layer = layer_cls(**kwargs)  # pragma: no cover
-    kw = keras_layer.get_weights()  # pragma: no cover
-    zero_layer(inputs)  # pragma: no cover
-    zero_layer.set_weights(kw)  # pragma: no cover
-    zero_out = zero_layer(inputs)  # pragma: no cover
+    keras_layer = keras_cls(**kwargs)
+    keras_out = keras_layer(inputs)
+    zero_layer = layer_cls(**kwargs)
+    kw = keras_layer.get_weights()
+    zero_layer(inputs)
+    zero_layer.set_weights(kw)
+    zero_out = zero_layer(inputs)
 
-    keras_out_np = (  # pragma: no cover
-        keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
-    )
-    zero_out_np = (
-        zero_out.numpy() if hasattr(zero_out, "numpy") else np.array(zero_out)
-    )  # pragma: no cover
-    np.testing.assert_allclose(
-        keras_out_np, zero_out_np, atol=atol, rtol=rtol
-    )  # pragma: no cover
+    keras_out_np = keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
+    zero_out_np = zero_out.numpy() if hasattr(zero_out, "numpy") else np.array(zero_out)
+    np.testing.assert_allclose(keras_out_np, zero_out_np, atol=atol, rtol=rtol)
 
 
-def test_bidirectional():
+def test_bidirectional() -> TensorLike:
     """Function docstring."""
     x = np.random.rand(3, 5, 4).astype(np.float32)
     # create keras bidirectional
@@ -50,8 +54,6 @@ def test_bidirectional():
     zero_layer.set_weights(kw)
     zero_out = zero_layer(x)
 
-    keras_out_np = (
-        keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
-    )
+    keras_out_np = keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
     zero_out_np = zero_out.numpy() if hasattr(zero_out, "numpy") else np.array(zero_out)
     np.testing.assert_allclose(keras_out_np, zero_out_np, atol=1e-5, rtol=1e-5)

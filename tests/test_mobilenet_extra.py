@@ -1,3 +1,7 @@
+"""Module `test_mobilenet_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import pytest
 
 from zero_keras.applications.mobilenet import MobileNet
@@ -5,7 +9,8 @@ from zero_keras.applications.mobilenet_v2 import MobileNetV2
 from zero_keras.applications.mobilenet_v3 import MobileNetV3Large
 
 
-def test_mobilenet_extra():
+def test_mobilenet_extra() -> TensorLike:
+    """Execute ``test_mobilenet_extra``."""
     model = MobileNet(
         input_shape=(224, 224, 3),
         alpha=1.0,

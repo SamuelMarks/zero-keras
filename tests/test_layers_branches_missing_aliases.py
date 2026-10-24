@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import layers
 
 
-def test_conv_aliases_activation_none():
+def test_conv_aliases_activation_none() -> TensorLike:
     """Function docstring."""
     for cls, in_shape in [
         (layers.Convolution1D, (2, 5, 3)),
@@ -19,7 +22,7 @@ def test_conv_aliases_activation_none():
         l(np.random.rand(*in_shape))
 
 
-def test_conv_aliases_preset_weights():
+def test_conv_aliases_preset_weights() -> TensorLike:
     """Function docstring."""
     # 1D
     l = layers.Convolution1D(2, 2)

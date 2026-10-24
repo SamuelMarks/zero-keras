@@ -1,17 +1,22 @@
 """Test ops that were missing."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import ops
 
 
-def test_cond():
+def test_cond() -> TensorLike:
     """Test cond."""
 
-    def true_fn():
+    def true_fn() -> TensorLike:
+        """Execute ``true_fn``."""
         return ops.array(1.0)
 
-    def false_fn():
+    def false_fn() -> TensorLike:
+        """Execute ``false_fn``."""
         return ops.array(0.0)
 
     res1 = ops.cond(ops.array(True), true_fn, false_fn)
@@ -20,7 +25,7 @@ def test_cond():
     assert float(ops.convert_to_numpy(res2)) == 0.0
 
 
-def test_switch():
+def test_switch() -> TensorLike:
     """Test switch."""
     branches = {
         0: lambda: ops.array(0.0),
@@ -32,14 +37,24 @@ def test_switch():
     assert float(ops.convert_to_numpy(res1)) == 1.0
 
 
-def test_while_loop():
+def test_while_loop() -> TensorLike:
     """Test while loop."""
 
-    def cond(val):
+    def cond(val: TensorLike) -> TensorLike:
+        """Execute ``cond``.
+
+        Args:
+            val: Input parameter ``val``.
+        """
         i, _x = val
         return i < 5
 
-    def body(val):
+    def body(val: TensorLike) -> TensorLike:
+        """Execute ``body``.
+
+        Args:
+            val: Input parameter ``val``.
+        """
         i, x = val
         return i + 1, x + 1.0
 
@@ -48,10 +63,16 @@ def test_while_loop():
     assert float(ops.convert_to_numpy(x)) == 5.0
 
 
-def test_fori_loop():
+def test_fori_loop() -> TensorLike:
     """Test fori loop."""
 
-    def body(i, x):
+    def body(i: TensorLike, x: TensorLike) -> TensorLike:
+        """Execute ``body``.
+
+        Args:
+            i: Input parameter ``i``.
+            x: Input parameter ``x``.
+        """
         return x + ops.cast(i, "float32")
 
     x = ops.fori_loop(0, 5, body, ops.array(0.0))
@@ -59,32 +80,53 @@ def test_fori_loop():
     assert float(ops.convert_to_numpy(x)) == 10.0
 
 
-def test_map():
+def test_map() -> TensorLike:
     """Test map."""
 
-    def fn(x):
+    def fn(x: TensorLike) -> TensorLike:
+        """Execute ``fn``.
+
+        Args:
+            x: Input parameter ``x``.
+        """
         return x * 2.0
 
     res = ops.map(fn, ops.array([1.0, 2.0, 3.0]))
     np.testing.assert_allclose(ops.convert_to_numpy(res), [2.0, 4.0, 6.0])
 
 
-def test_vectorized_map():
+def test_vectorized_map() -> TensorLike:
     """Test vectorized map."""
 
-    def fn(x):
+    def fn(x: TensorLike) -> TensorLike:
+        """Execute ``fn``.
+
+        Args:
+            x: Input parameter ``x``.
+        """
         return x * 2.0
 
     res = ops.vectorized_map(fn, ops.array([1.0, 2.0, 3.0]))
     np.testing.assert_allclose(ops.convert_to_numpy(res), [2.0, 4.0, 6.0])
 
 
-def test_custom_gradient():
+def test_custom_gradient() -> TensorLike:
     """Test custom gradient."""
 
     @ops.custom_gradient
-    def fn(x):
-        def grad(dy):
+    def fn(x: TensorLike) -> TensorLike:
+        """Execute ``fn``.
+
+        Args:
+            x: Input parameter ``x``.
+        """
+
+        def grad(dy: TensorLike) -> TensorLike:
+            """Execute ``grad``.
+
+            Args:
+                dy: Input parameter ``dy``.
+            """
             return dy * 2.0
 
         return x * x, grad
@@ -93,38 +135,34 @@ def test_custom_gradient():
     assert float(ops.convert_to_numpy(res)) == 4.0
 
 
-def test_stop_gradient():
+def test_stop_gradient() -> TensorLike:
     """Test stop gradient."""
     x = ops.stop_gradient(ops.array(1.0))
     assert float(ops.convert_to_numpy(x)) == 1.0
 
 
-def test_fft2():
+def test_fft2() -> TensorLike:
     """Test fft2."""
     x = ops.array(np.ones((2, 2)), dtype="complex64")
-    import pytest
-
-    with pytest.raises(NotImplementedError):
-        res = ops.fft2(x)
+    res = ops.fft2(x)
+    assert res.shape == (2, 2)
 
 
-def test_ifft2():
+def test_ifft2() -> TensorLike:
     """Test ifft2."""
     x = ops.array(np.ones((2, 2)), dtype="complex64")
     res = ops.ifft2(x)
     assert res.shape == (2, 2)
 
 
-def test_irfft():
+def test_irfft() -> TensorLike:
     """Test irfft."""
     x = ops.array(np.ones((2, 2)), dtype="complex64")
-    import pytest
-
-    with pytest.raises(NotImplementedError):
-        res = ops.irfft(x)
+    res = ops.irfft(x)
+    assert res is not None
 
 
-def test_image():
+def test_image() -> TensorLike:
     """Test image operations."""
     from unittest.mock import patch
 
@@ -135,7 +173,7 @@ def test_image():
         assert res.shape == (2, 5, 5, 3)
 
 
-def test_newaxis():
+def test_newaxis() -> TensorLike:
     """Test newaxis."""
     assert ops.newaxis is None
     x = ops.array(np.ones((2, 2)))

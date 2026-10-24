@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import metrics
 
 
-def test_precision_at_recall_branches():
+def test_precision_at_recall_branches() -> TensorLike:
     """Function docstring."""
     # Test class_id
     m = metrics.PrecisionAtRecall(0.5, class_id=1)
@@ -16,7 +19,7 @@ def test_precision_at_recall_branches():
     assert res is not None
 
 
-def test_recall_at_precision_branches():
+def test_recall_at_precision_branches() -> TensorLike:
     """Function docstring."""
     m = metrics.RecallAtPrecision(0.5, class_id=1)
     y_true = np.array([[0, 1], [1, 0]])
@@ -26,7 +29,7 @@ def test_recall_at_precision_branches():
     assert res is not None
 
 
-def test_sensitivity_at_specificity_branches():
+def test_sensitivity_at_specificity_branches() -> TensorLike:
     """Function docstring."""
     m = metrics.SensitivityAtSpecificity(0.5, class_id=1)
     y_true = np.array([[0, 1], [1, 0]])
@@ -36,7 +39,7 @@ def test_sensitivity_at_specificity_branches():
     assert res is not None
 
 
-def test_specificity_at_sensitivity_branches():
+def test_specificity_at_sensitivity_branches() -> TensorLike:
     """Function docstring."""
     m = metrics.SpecificityAtSensitivity(0.5, class_id=1)
     y_true = np.array([[0, 1], [1, 0]])
@@ -46,7 +49,7 @@ def test_specificity_at_sensitivity_branches():
     assert res is not None
 
 
-def test_precision_recall_top_k():
+def test_precision_recall_top_k() -> TensorLike:
     """Function docstring."""
     m1 = metrics.Precision(top_k=2)
     m1.update_state([[0, 1, 0]], [[0.1, 0.8, 0.1]])
@@ -61,13 +64,13 @@ def test_precision_recall_top_k():
     m4.update_state([[0, 1]], [[0.1, 0.9]])
 
 
-def test_auc_branches():
+def test_auc_branches() -> TensorLike:
     """Function docstring."""
     # test summation_method minor, majoring, minoring
     try:
         m1 = metrics.AUC(summation_method="minor")
-        m1.update_state([[0, 1]], [[0.1, 0.9]])  # pragma: no cover
-        m1.result()  # pragma: no cover
+        m1.update_state([[0, 1]], [[0.1, 0.9]])
+        m1.result()
     except ValueError:
         pass
 
@@ -92,7 +95,7 @@ def test_auc_branches():
     m6.result()
 
 
-def test_fbeta_score():
+def test_fbeta_score() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1, 1, 1], [1, 0, 0], [1, 1, 0]], np.float32)
     y_pred = np.array([[0.2, 0.6, 0.7], [0.2, 0.6, 0.6], [0.6, 0.8, 0.0]], np.float32)
@@ -113,7 +116,7 @@ def test_fbeta_score():
     m3.reset_state()
 
 
-def test_r2_score():
+def test_r2_score() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1], [4], [3]], dtype=np.float32)
     y_pred = np.array([[2], [4], [4]], dtype=np.float32)
@@ -129,7 +132,7 @@ def test_r2_score():
     m1.reset_state()
 
 
-def test_pearson_correlation():
+def test_pearson_correlation() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1], [4], [3]], dtype=np.float32)
     y_pred = np.array([[2], [4], [4]], dtype=np.float32)
@@ -140,7 +143,7 @@ def test_pearson_correlation():
     m1.reset_state()
 
 
-def test_concordance_correlation():
+def test_concordance_correlation() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1], [4], [3]], dtype=np.float32)
     y_pred = np.array([[2], [4], [4]], dtype=np.float32)

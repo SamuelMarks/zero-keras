@@ -1,3 +1,7 @@
+"""Merging layers (`Add`, `Subtract`, `Multiply`, `Average`, `Maximum`, `Minimum`, `Concatenate`, `Dot`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -28,7 +32,7 @@ class Add(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -36,7 +40,7 @@ class Add(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         res = _to_tensor(inputs[0])
@@ -71,7 +75,7 @@ class Subtract(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -79,7 +83,7 @@ class Subtract(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return _wrap(ops.subtract(_to_tensor(inputs[0]), _to_tensor(inputs[1])))
@@ -110,7 +114,7 @@ class Multiply(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -118,7 +122,7 @@ class Multiply(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         res = _to_tensor(inputs[0])
@@ -152,7 +156,7 @@ class Average(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -160,7 +164,7 @@ class Average(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         res = _to_tensor(inputs[0])
@@ -196,7 +200,7 @@ class Maximum(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -204,7 +208,7 @@ class Maximum(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         res = _to_tensor(inputs[0])
@@ -238,7 +242,7 @@ class Minimum(Layer):
 
     """
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -246,7 +250,7 @@ class Minimum(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         res = _to_tensor(inputs[0])
@@ -282,7 +286,7 @@ class Concatenate(Layer):
 
     """
 
-    def __init__(self, axis=-1, **kwargs):
+    def __init__(self, axis: TensorLike = -1, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -292,7 +296,7 @@ class Concatenate(Layer):
         super().__init__(**kwargs)
         self.axis = axis
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -300,7 +304,7 @@ class Concatenate(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         tensors = tuple(_to_tensor(t) for t in inputs)
@@ -349,7 +353,9 @@ class Dot(Layer):
 
     """
 
-    def __init__(self, axes, normalize=False, **kwargs):
+    def __init__(
+        self, axes: TensorLike, normalize: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -361,7 +367,7 @@ class Dot(Layer):
         self.axes = axes
         self.normalize = normalize
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -370,30 +376,29 @@ class Dot(Layer):
         """
         a, b = _to_tensor(inputs[0]), _to_tensor(inputs[1])
         axes = self.axes
-        if isinstance(axes, int):  # pragma: no branch
+        if isinstance(axes, int):
             axes = (axes, axes)
-        # pragma: no cover
-        elif isinstance(axes, list):  # pragma: no cover
-            # pragma: no cover
-            axes = tuple(axes)  # pragma: no cover
+
+        elif isinstance(axes, list):
+            axes = tuple(axes)
 
         if self.normalize:
-            a_norm = ops.sqrt(  # pragma: no cover
+            a_norm = ops.sqrt(
                 ops.sum(
                     ops.square(a),
                     axis=axes[0],
                     keepdims=True,
                 )
             )
-            b_norm = ops.sqrt(  # pragma: no cover
+            b_norm = ops.sqrt(
                 ops.sum(
                     ops.square(b),
                     axis=axes[1],
                     keepdims=True,
                 )
             )
-            a = ops.divide(a, ops.maximum(a_norm, 1e-7))  # pragma: no cover
-            b = ops.divide(b, ops.maximum(b_norm, 1e-7))  # pragma: no cover
+            a = ops.divide(a, ops.maximum(a_norm, 1e-7))
+            b = ops.divide(b, ops.maximum(b_norm, 1e-7))
 
         import string
 
@@ -417,9 +422,9 @@ class Dot(Layer):
                 x2_chars.append(batch_char)
             elif i == ax1:
                 x2_chars.append(sum_char)
-            else:  # pragma: no cover
-                x2_chars.append(chars[fresh_start])  # pragma: no cover
-                fresh_start += 1  # pragma: no cover
+            else:
+                x2_chars.append(chars[fresh_start])
+                fresh_start += 1
 
         out_chars = [c for c in x1_chars if c != sum_char] + [
             c for c in x2_chars if c != sum_char and c != batch_char
@@ -434,7 +439,7 @@ class Dot(Layer):
         return _wrap(out)
 
 
-def add(inputs, **kwargs):
+def add(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -444,7 +449,7 @@ def add(inputs, **kwargs):
     return Add(**kwargs)(inputs)
 
 
-def subtract(inputs, **kwargs):
+def subtract(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -454,7 +459,7 @@ def subtract(inputs, **kwargs):
     return Subtract(**kwargs)(inputs)
 
 
-def multiply(inputs, **kwargs):
+def multiply(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -464,7 +469,7 @@ def multiply(inputs, **kwargs):
     return Multiply(**kwargs)(inputs)
 
 
-def average(inputs, **kwargs):
+def average(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -474,7 +479,7 @@ def average(inputs, **kwargs):
     return Average(**kwargs)(inputs)
 
 
-def maximum(inputs, **kwargs):
+def maximum(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -484,7 +489,7 @@ def maximum(inputs, **kwargs):
     return Maximum(**kwargs)(inputs)
 
 
-def minimum(inputs, **kwargs):
+def minimum(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -494,7 +499,7 @@ def minimum(inputs, **kwargs):
     return Minimum(**kwargs)(inputs)
 
 
-def concatenate(inputs, axis=-1, **kwargs):
+def concatenate(inputs: TensorLike, axis: TensorLike = -1, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -505,7 +510,9 @@ def concatenate(inputs, axis=-1, **kwargs):
     return Concatenate(axis=axis, **kwargs)(inputs)
 
 
-def dot(inputs, axes, normalize=False, **kwargs):
+def dot(
+    inputs: TensorLike, axes: TensorLike, normalize: TensorLike = False, **kwargs: TensorLike
+) -> TensorLike:
     """Function docstring.
 
     Args:

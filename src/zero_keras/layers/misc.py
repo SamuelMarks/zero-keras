@@ -1,3 +1,7 @@
+"""Miscellaneous and wrapper layers (`Embedding`, `EinsumDense`, `Identity`, `TorchModuleWrapper`, `FlaxLayer`, `JaxLayer`, `TFSMLayer`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.activations import get as get_activation
@@ -106,15 +110,15 @@ class EinsumDense(Layer):
 
     def __init__(
         self,
-        equation="",
-        output_shape=1,
-        activation=None,
-        bias_axes=None,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        *args,
-        **kwargs,
-    ):
+        equation: TensorLike = "",
+        output_shape: TensorLike = 1,
+        activation: TensorLike = None,
+        bias_axes: TensorLike = None,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        *args: TensorLike,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -137,10 +141,14 @@ class EinsumDense(Layer):
         self.kernel_initializer = kernel_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
-        """Build function."""
+    def build(self, input_shape: TensorLike) -> TensorLike:
+        """Build function.
+
+        Args:
+            input_shape: Input parameter ``input_shape``.
+        """
         if self.built:
-            return  # pragma: no cover
+            return
 
         # Parse equation (e.g. "abc,cd->abd")
         in_labels, rest = self.equation.split(",")
@@ -160,22 +168,22 @@ class EinsumDense(Layer):
 
         kernel_shape = tuple(dim_map.get(char, None) for char in weight_labels)
 
-        if getattr(self, "kernel", None) is None:
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape, initializer=self.kernel_initializer, name="kernel"
             )
-        if self.bias_axes is not None and getattr(self, "bias", None) is None:
+        if self.bias_axes is not None and (self.bias if hasattr(self, "bias") else None) is None:
             bias_shape = []
             for char in self.bias_axes:
                 bias_shape.append(dim_map[char])
-            self.bias = self.add_weight(  # pragma: no cover
+            self.bias = self.add_weight(
                 shape=tuple(bias_shape),
                 initializer=self.bias_initializer,
                 name="bias",
             )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -184,20 +192,20 @@ class EinsumDense(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
         from zero_keras import ops
 
         out = ops.einsum(self.equation, inputs, self.kernel)
-        if self.bias_axes is not None:  # pragma: no cover
-            out = ops.add(out, self.bias)  # pragma: no cover
-        if self.activation:  # pragma: no cover
-            out = self.activation(out)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        if self.bias_axes is not None:
+            out = ops.add(out, self.bias)
+        if self.activation:
+            out = self.activation(out)
+        return _wrap(out)
 
 
 class Embedding(Layer):
@@ -268,14 +276,14 @@ class Embedding(Layer):
 
     def __init__(
         self,
-        input_dim,
-        output_dim,
-        embeddings_initializer="uniform",
-        embeddings_regularizer=None,
-        embeddings_constraint=None,
-        mask_zero=False,
-        **kwargs,
-    ):
+        input_dim: TensorLike,
+        output_dim: TensorLike,
+        embeddings_initializer: TensorLike = "uniform",
+        embeddings_regularizer: TensorLike = None,
+        embeddings_constraint: TensorLike = None,
+        mask_zero: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -295,14 +303,14 @@ class Embedding(Layer):
         self.embeddings_constraint = embeddings_constraint
         self.mask_zero = mask_zero
 
-    def build(self, input_shape=None):
+    def build(self, input_shape: TensorLike = None) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -316,7 +324,7 @@ class Embedding(Layer):
         )
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -324,7 +332,7 @@ class Embedding(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops
@@ -425,7 +433,13 @@ class FlaxLayer(Layer):
 
     """
 
-    def __init__(self, module, method=None, variables=None, **kwargs):
+    def __init__(
+        self,
+        module: TensorLike,
+        method: TensorLike = None,
+        variables: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -439,7 +453,7 @@ class FlaxLayer(Layer):
         self._variables = variables
         self.method = method
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -449,13 +463,13 @@ class FlaxLayer(Layer):
         from zero_keras import ops
 
         inputs = _to_tensor(inputs)
-        if getattr(self, "method", None):
-            out = self.method(self.module, inputs.data, **kwargs)  # pragma: no cover
-        else:  # pragma: no cover
+        if self.method if hasattr(self, "method") else None:
+            out = self.method(self.module, inputs.data, **kwargs)
+        else:
             out = self.module(inputs.data, **kwargs)
-        if isinstance(out, tuple):  # pragma: no cover
-            return tuple(_wrap(ops.asarray(o)) for o in out)  # pragma: no cover
-        return _wrap(ops.asarray(out))  # pragma: no cover
+        if isinstance(out, tuple):
+            return tuple(_wrap(ops.asarray(o)) for o in out)
+        return _wrap(ops.asarray(out))
 
 
 class JaxLayer(Layer):
@@ -521,12 +535,12 @@ class JaxLayer(Layer):
     def stateful_call(params, state, rng, inputs, training):
         outputs = ...
         new_state = ...
-        return outputs, new_state  # pragma: no cover
+        return outputs, new_state
 
     def stateful_init(rng, inputs):
         initial_params = ...
         initial_state = ...
-        return initial_params, initial_state  # pragma: no cover
+        return initial_params, initial_state
     ```
 
     ## Models without non-trainable state
@@ -654,7 +668,13 @@ class JaxLayer(Layer):
 
     """
 
-    def __init__(self, call_fn, params=None, state=None, **kwargs):
+    def __init__(
+        self,
+        call_fn: TensorLike,
+        params: TensorLike = None,
+        state: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -668,23 +688,23 @@ class JaxLayer(Layer):
         self.params = params
         self.state = state
 
-    def call(self, inputs, **kwargs):
-        """Call function.
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Evaluate the wrapped JAX function on ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments passed to ``call_fn``.
 
         Returns:
-        Any: Return value.
-
+            TensorLike: Wrapped output tensor.
         """
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        from ml_switcheroo_compiler.foreign import jaxpr_to_ir  # pragma: no cover
+        from zero_keras import ops
 
-        return _wrap(  # pragma: no cover
-            jaxpr_to_ir(self.call_fn, self.params, self.state, inputs, **kwargs)
-        )
+        inputs = _to_tensor(inputs)
+        if callable(self.call_fn):
+            out = self.call_fn(self.params, inputs.data, **kwargs)
+            return _wrap(ops.asarray(out))
+        return _wrap(inputs)
 
 
 class TFSMLayer(Layer):
@@ -728,14 +748,14 @@ class TFSMLayer(Layer):
 
     def __init__(
         self,
-        filepath,
-        call_endpoint="serving_default",
-        call_training_endpoint=None,
-        trainable=True,
-        name=None,
-        dtype=None,
-        **kwargs,
-    ):
+        filepath: TensorLike,
+        call_endpoint: TensorLike = "serving_default",
+        call_training_endpoint: TensorLike = None,
+        trainable: TensorLike = True,
+        name: TensorLike = None,
+        dtype: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -748,32 +768,31 @@ class TFSMLayer(Layer):
             kwargs: Description.
         """
         if name is not None:
-            kwargs["name"] = name  # pragma: no cover
+            kwargs["name"] = name
         if dtype is not None:
-            kwargs["dtype"] = dtype  # pragma: no cover
+            kwargs["dtype"] = dtype
         kwargs["trainable"] = trainable
         super().__init__(**kwargs)
         self.filepath = filepath
         self.call_endpoint = call_endpoint
         self.call_training_endpoint = call_training_endpoint
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             inputs: Description.
             kwargs: Description.
         """
-        from zero_keras import ops  # pragma: no cover
+        from zero_keras import ops
 
-        # pragma: no cover
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        if hasattr(self, "module"):  # pragma: no cover
-            out = self.module(inputs.data, **kwargs)  # pragma: no cover
-            if isinstance(out, tuple):  # pragma: no cover
-                return tuple(_wrap(ops.asarray(o)) for o in out)  # pragma: no cover
-            return _wrap(ops.asarray(out))  # pragma: no cover
-        return _wrap(inputs)  # pragma: no cover
+        inputs = _to_tensor(inputs)
+        if hasattr(self, "module"):
+            out = self.module(inputs.data, **kwargs)
+            if isinstance(out, tuple):
+                return tuple(_wrap(ops.asarray(o)) for o in out)
+            return _wrap(ops.asarray(out))
+        return _wrap(inputs)
 
 
 class TorchModuleWrapper(Layer):
@@ -848,7 +867,7 @@ class TorchModuleWrapper(Layer):
 
     """
 
-    def __init__(self, module, name=None, **kwargs):
+    def __init__(self, module: TensorLike, name: TensorLike = None, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -857,25 +876,24 @@ class TorchModuleWrapper(Layer):
             kwargs: Description.
         """
         if name is not None:
-            kwargs["name"] = name  # pragma: no cover
+            kwargs["name"] = name
         super().__init__(**kwargs)
         self.module = module
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             inputs: Description.
             kwargs: Description.
         """
-        from zero_keras import ops  # pragma: no cover
+        from zero_keras import ops
 
-        # pragma: no cover
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        out = self.module(inputs.data, **kwargs)  # pragma: no cover
-        if isinstance(out, tuple):  # pragma: no cover
-            return tuple(_wrap(ops.asarray(o)) for o in out)  # pragma: no cover
-        return _wrap(ops.asarray(out))  # pragma: no cover
+        inputs = _to_tensor(inputs)
+        out = self.module(inputs.data, **kwargs)
+        if isinstance(out, tuple):
+            return tuple(_wrap(ops.asarray(o)) for o in out)
+        return _wrap(ops.asarray(out))
 
 
 class TimeDistributed(Wrapper):
@@ -915,7 +933,7 @@ class TimeDistributed(Wrapper):
 
     """
 
-    def __init__(self, layer, **kwargs):
+    def __init__(self, layer: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -925,14 +943,14 @@ class TimeDistributed(Wrapper):
         super().__init__(layer=layer, **kwargs)
         self.layer = layer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -940,7 +958,13 @@ class TimeDistributed(Wrapper):
         self.layer.build((input_shape[0],) + input_shape[2:])
         self.built = True
 
-    def call(self, inputs, training=None, mask=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        training: TensorLike = None,
+        mask: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -950,7 +974,7 @@ class TimeDistributed(Wrapper):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -1000,7 +1024,7 @@ class Pipeline(Layer):
 
     """
 
-    def __init__(self, layers, **kwargs):
+    def __init__(self, layers: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -1010,24 +1034,117 @@ class Pipeline(Layer):
         super().__init__(**kwargs)
         self._layers = layers
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Parameter inputs.
+            training: Input parameter ``training``.
+            **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
-
+            TensorLike: Return value.
         """
         for layer in self._layers:
             inputs = layer(inputs, training=training, **kwargs)
         return inputs
 
 
-def serialize(layer):
-    """Serialize a layer."""
+class ReversibleEmbedding(Embedding):
+    """Embedding layer capable of projecting hidden states back to vocabulary logits."""
+
+    def __init__(
+        self,
+        input_dim: TensorLike,
+        output_dim: TensorLike,
+        tie_weights: TensorLike = True,
+        embeddings_initializer: TensorLike = "uniform",
+        embeddings_regularizer: TensorLike = None,
+        embeddings_constraint: TensorLike = None,
+        mask_zero: TensorLike = False,
+        reverse_dtype: TensorLike = None,
+        logit_soft_cap: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize ReversibleEmbedding.
+
+        Args:
+            input_dim: Size of the vocabulary.
+            output_dim: Dimension of the dense embedding.
+            tie_weights: Whether to tie input embedding and output projection weights.
+            embeddings_initializer: Initializer for the embeddings matrix.
+            embeddings_regularizer: Regularizer for the embeddings matrix.
+            embeddings_constraint: Constraint for the embeddings matrix.
+            mask_zero: Whether input value 0 is a special padding value.
+            reverse_dtype: Optional dtype for the reverse projection computation.
+            logit_soft_cap: Optional soft cap value for output logits.
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(
+            input_dim=input_dim,
+            output_dim=output_dim,
+            embeddings_initializer=embeddings_initializer,
+            embeddings_regularizer=embeddings_regularizer,
+            embeddings_constraint=embeddings_constraint,
+            mask_zero=mask_zero,
+            **kwargs,
+        )
+        self.tie_weights = bool(tie_weights)
+        self.reverse_dtype = reverse_dtype
+        self.logit_soft_cap = logit_soft_cap
+
+    def call(
+        self, inputs: TensorLike, reverse: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Project token IDs to embeddings or hidden states back to logits when ``reverse=True``.
+
+        Args:
+            inputs: Token indices or hidden state tensor.
+            reverse: If True, project embeddings back to vocabulary logits.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Embedded tensor or vocabulary logits.
+        """
+        if not reverse:
+            return super().call(inputs, **kwargs)
+        from zero_keras import ops
+
+        t = _to_tensor(inputs)
+        if not self.built:
+            self.build(t.shape)
+        emb = _to_tensor(self.embeddings)
+        logits = ops.matmul(t, ops.transpose(emb))
+        if self.logit_soft_cap is not None:
+            cap = float(self.logit_soft_cap)
+            logits = ops.multiply(ops.tanh(ops.divide(logits, cap)), cap)
+        return _wrap(logits)
+
+    def get_config(self) -> TensorLike:
+        """Return serializable layer configuration.
+
+        Returns:
+            dict[str, TensorLike]: Configuration dictionary.
+        """
+        cfg = super().get_config()
+        cfg.update(
+            {
+                "tie_weights": self.tie_weights,
+                "reverse_dtype": self.reverse_dtype,
+                "logit_soft_cap": self.logit_soft_cap,
+            }
+        )
+        return cfg
+
+
+def serialize(layer: TensorLike) -> TensorLike:
+    """Serialize a layer.
+
+    Args:
+        layer: Input parameter ``layer``.
+    """
     if layer is None:
         return None
     if isinstance(layer, str):
@@ -1038,8 +1155,13 @@ def serialize(layer):
     }
 
 
-def deserialize(config, custom_objects=None):
-    """Deserialize a layer."""
+def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
+    """Deserialize a layer.
+
+    Args:
+        config: Input parameter ``config``.
+        custom_objects: Input parameter ``custom_objects``.
+    """
     if config is None:
         return None
     if isinstance(config, str):
@@ -1048,16 +1170,14 @@ def deserialize(config, custom_objects=None):
         if cls:
             return cls()
         return config
-    if isinstance(config, dict):  # pragma: no branch
+    if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
 
         # Support recursive deserialization for wrappers
         for k, v in conf.items():
             if isinstance(v, dict) and "class_name" in v and "config" in v:
-                conf[k] = deserialize(
-                    v, custom_objects=custom_objects
-                )  # pragma: no cover
+                conf[k] = deserialize(v, custom_objects=custom_objects)
 
         cls = globals().get(class_name)
         if cls:

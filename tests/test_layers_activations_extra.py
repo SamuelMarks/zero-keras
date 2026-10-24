@@ -1,8 +1,13 @@
+"""Module `test_layers_activations_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 import pytest
 
 
-def test_activations_layer():
+def test_activations_layer() -> TensorLike:
+    """Execute ``test_activations_layer``."""
     from zero_keras.layers.activations import (
         ELU,
         Activation,

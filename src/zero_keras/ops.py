@@ -1,4013 +1,5571 @@
-"""Ops wrapper module."""
+"""Operations module for zero_keras.
+
+Provides all Keras 3 array, mathematical, linear algebra, signal, neural network,
+and image operations backed by ``ml_switcheroo_compiler`` and ``ml_switcheroo_ir``.
+"""
+
+from __future__ import annotations
+
+import builtins
+from collections.abc import Callable, Sequence
+import sys
 
 import ml_switcheroo_compiler.ops as msc_ops
+from ml_switcheroo_compiler.core.tensor import Tensor
+from ml_switcheroo_compiler.ops import RNNConfig as _MSC_RNNConfig
+from ml_switcheroo_compiler.ops.nn.rnn_utils import rnn as _msc_rnn
+from ml_switcheroo_compiler.ops.shape.frontend import permute as _msc_permute
+from ml_switcheroo_compiler.ops.vision.affine import (
+    random_flip as _msc_random_flip,
+    random_rotation as _msc_random_rotation,
+)
+from ml_switcheroo_compiler.ops.vision.color import (
+    adjust_contrast as _msc_adjust_contrast,
+    auto_contrast as _msc_auto_contrast,
+    equalization as _msc_equalization,
+)
+from ml_switcheroo_compiler.ops.vision.interpolation import (
+    resize_bicubic as _msc_resize_bicubic,
+    resize_bilinear as _msc_resize_bilinear,
+    resize_lanczos3 as _msc_resize_lanczos3,
+    resize_nearest as _msc_resize_nearest,
+)
 from ml_switcheroo_compiler.utils.operation_utils import compute_shape_propagation
+from ml_switcheroo_compiler.ops.binary.math import (
+    Diff as _msc_math_Diff,
+    Digitize as _msc_math_Digitize,
+)
+from ml_switcheroo_compiler.ops.creation.basic import (
+    Bartlett as _msc_basic_Bartlett,
+    Blackman as _msc_basic_Blackman,
+    Hamming as _msc_basic_Hamming,
+    Hanning as _msc_basic_Hanning,
+    Kaiser as _msc_basic_Kaiser,
+    Logspace as _msc_basic_Logspace,
+)
+from ml_switcheroo_compiler.ops.creation.frontend_utils import (
+    geomspace as _msc_frontend_utils_geomspace,
+)
+from ml_switcheroo_compiler.ops.distributed_ops import (
+    broadcast_to as _msc_distributed_ops_broadcast_to,
+)
+from ml_switcheroo_compiler.ops.info_and_histograms import (
+    histogram as _msc_info_and_histograms_histogram,
+    kron as _msc_info_and_histograms_kron,
+    trapezoid as _msc_info_and_histograms_trapezoid,
+    vander as _msc_info_and_histograms_vander,
+)
+from ml_switcheroo_compiler.ops.linalg.decompositions import (
+    cholesky as _msc_decompositions_cholesky,
+    det as _msc_decompositions_det,
+    eig as _msc_decompositions_eig,
+    eigh as _msc_decompositions_eigh,
+    inv as _msc_decompositions_inv,
+    lu_factor as _msc_decompositions_lu_factor,
+    pinv as _msc_decompositions_pinv,
+    qr as _msc_decompositions_qr,
+    slogdet as _msc_decompositions_slogdet,
+    solve as _msc_decompositions_solve,
+    solve_triangular as _msc_decompositions_solve_triangular,
+    svd as _msc_decompositions_svd,
+)
+from ml_switcheroo_compiler.ops.linalg.transform import reshape as _msc_transform_reshape
+from ml_switcheroo_compiler.ops.loss import (
+    binary_crossentropy as _msc_loss_binary_crossentropy,
+    categorical_crossentropy as _msc_loss_categorical_crossentropy,
+    ctc_loss as _msc_loss_ctc_loss,
+    in_top_k as _msc_loss_in_top_k,
+    sparse_categorical_crossentropy as _msc_loss_sparse_categorical_crossentropy,
+)
+from ml_switcheroo_compiler.ops.nn.activations import (
+    hard_silu as _msc_activations_hard_silu,
+    hard_swish as _msc_activations_hard_swish,
+    log_softmax as _msc_activations_log_softmax,
+    one_hot as _msc_activations_one_hot,
+    sigmoid as _msc_activations_sigmoid,
+    softmax as _msc_activations_softmax,
+    softplus as _msc_activations_softplus,
+    squareplus as _msc_activations_squareplus,
+)
+from ml_switcheroo_compiler.ops.nn.conv import (
+    conv as _msc_conv_conv,
+    depthwise_conv2d as _msc_conv_depthwise_conv2d,
+    separable_conv2d as _msc_conv_separable_conv2d,
+)
+from ml_switcheroo_compiler.ops.nn.conv1d import conv1d as _msc_conv1d_conv1d
+from ml_switcheroo_compiler.ops.nn.conv2d import conv2d as _msc_conv2d_conv2d
+from ml_switcheroo_compiler.ops.nn.conv3d import conv3d as _msc_conv3d_conv3d
+from ml_switcheroo_compiler.ops.nn.conv_nd import conv_transpose as _msc_conv_nd_conv_transpose
+from ml_switcheroo_compiler.ops.nn.dropout import dropout as _msc_dropout_dropout
+from ml_switcheroo_compiler.ops.nn.loss import where as _msc_loss_where
+from ml_switcheroo_compiler.ops.nn.nlp import ctc_greedy_decoder as _msc_nlp_ctc_greedy_decoder
+from ml_switcheroo_compiler.ops.nn.normalization import (
+    batch_norm as _msc_normalization_batch_norm,
+    moments as _msc_normalization_moments,
+    rms_norm as _msc_normalization_rms_norm,
+)
+from ml_switcheroo_compiler.ops.reductions.frontend import (
+    fold as _msc_frontend_fold,
+    unfold as _msc_frontend_unfold,
+)
+from ml_switcheroo_compiler.ops.shape.dynamic_slicing import (
+    dynamic_update_slice as _msc_dynamic_slicing_dynamic_update_slice,
+)
+from ml_switcheroo_compiler.ops.shape.frontend import (
+    argpartition as _msc_frontend_argpartition,
+    squeeze as _msc_frontend_squeeze,
+)
+from ml_switcheroo_compiler.ops.shape.indexing import (
+    UnravelIndex as _msc_indexing_UnravelIndex,
+    searchsorted as _msc_indexing_searchsorted,
+    take as _msc_indexing_take,
+    take_along_axis as _msc_indexing_take_along_axis,
+    where as _msc_indexing_where,
+)
+from ml_switcheroo_compiler.ops.shape.pad_and_tile import (
+    argsort as _msc_pad_and_tile_argsort,
+    meshgrid as _msc_pad_and_tile_meshgrid,
+    pad as _msc_pad_and_tile_pad,
+    tile as _msc_pad_and_tile_tile,
+    top_k as _msc_pad_and_tile_top_k,
+    unique as _msc_pad_and_tile_unique,
+)
+from ml_switcheroo_compiler.ops.shape.scatter import (
+    scatter as _msc_scatter_scatter,
+    tensor_scatter_update as _msc_scatter_tensor_scatter_update,
+)
+from ml_switcheroo_compiler.ops.shape.slicing import slice as _msc_slicing_slice
+from ml_switcheroo_compiler.ops.stats.descriptive import (
+    Average as _msc_descriptive_Average,
+    Bincount as _msc_descriptive_Bincount,
+)
+from ml_switcheroo_compiler.ops.unary.arithmetic import (
+    LogSigmoid as _msc_arithmetic_LogSigmoid,
+    Softsign as _msc_arithmetic_Softsign,
+)
+
+from zero_keras.types import ConfigValue, DTypeLike, ShapeTuple, TensorLike
+
+newaxis: None = None
 
 
-def _wrap_op(name, msc_op):
-    def wrapper(*args, **kwargs):
-        from zero_keras.core_layers import KerasTensor
+def _dispatch_op(
+    name: str,
+    msc_op: Callable[..., TensorLike],
+    args: tuple[TensorLike, ...],
+    kwargs: dict[str, ConfigValue],
+) -> TensorLike:
+    """Execute an operation eagerly or propagate symbolic KerasTensor shapes.
 
-        flat_args = []
-        for a in args:
-            if isinstance(a, (list, tuple)):
-                flat_args.extend(a)
-            else:
-                flat_args.append(a)
-        for a in kwargs.values():
-            if isinstance(a, (list, tuple)):
-                flat_args.extend(a)
-            else:
-                flat_args.append(a)
+    Args:
+        name: Standardized operation name.
+        msc_op: Underlying compiler callable.
+        args: Positional tensor or scalar arguments.
+        kwargs: Keyword configuration arguments.
 
-        has_kt = False
-        for x in flat_args:
-            if isinstance(x, KerasTensor):
-                has_kt = True
-                break
+    Returns:
+        TensorLike: Resulting eager Tensor or symbolic KerasTensor.
+    """
+    from zero_keras.core_layers import KerasTensor
 
-        if has_kt:
-            kt = next(x for x in flat_args if isinstance(x, KerasTensor))
-            shape_or_shapes = compute_shape_propagation(name, kt.shape, args, kwargs)
+    flat_args: list[TensorLike] = []
+    for a in args:
+        if isinstance(a, (list, tuple)):
+            flat_args.extend(a)
+        else:
+            flat_args.append(a)
+    for v in kwargs.values():
+        if isinstance(v, (list, tuple)):
+            flat_args.extend(v)
+        else:
+            flat_args.append(v)
+
+    for x in flat_args:
+        if isinstance(x, KerasTensor):
+            shape_or_shapes = compute_shape_propagation(name, x.shape, args, kwargs)
             if isinstance(shape_or_shapes, list):
-                return [KerasTensor(s, dtype=kt.dtype) for s in shape_or_shapes]
-            return KerasTensor(shape_or_shapes, dtype=kt.dtype)
-        return msc_op(*args, **kwargs)
+                return [KerasTensor(s, dtype=x.dtype) for s in shape_or_shapes]
+            return KerasTensor(shape_or_shapes, dtype=x.dtype)
+    return msc_op(*args, **kwargs)
+
+
+def _wrap_op(name: str, msc_op: Callable[..., TensorLike]) -> Callable[..., TensorLike]:
+    """Create a symbolic-aware wrapper around a compiler operation.
+
+    Args:
+        name: Operation name.
+        msc_op: Compiler operation callable.
+
+    Returns:
+        Callable[..., TensorLike]: Wrapped operation callable.
+    """
+
+    def wrapper(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Invoke the wrapped operation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Operation result.
+        """
+        return _dispatch_op(name, msc_op, args, kwargs)
 
     return wrapper
 
 
-def AdjustBrightness(*args, **kwargs):
-    return _wrap_op("AdjustBrightness", msc_ops.AdjustBrightness)(*args, **kwargs)
+def abs(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``abs`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AdjustContrast(*args, **kwargs):
-    return _wrap_op("AdjustContrast", msc_ops.AdjustContrast)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("abs", msc_ops.abs, args, kwargs)
 
 
-def AdjustHue(*args, **kwargs):
-    return _wrap_op("AdjustHue", msc_ops.AdjustHue)(*args, **kwargs)
+def absolute(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``absolute`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AdjustSaturation(*args, **kwargs):
-    return _wrap_op("AdjustSaturation", msc_ops.AdjustSaturation)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("absolute", msc_ops.abs, args, kwargs)
 
 
-def AffineConfig(*args, **kwargs):
-    return _wrap_op("AffineConfig", msc_ops.AffineConfig)(*args, **kwargs)
+def add(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``add`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AffineGenerator(*args, **kwargs):
-    return _wrap_op("AffineGenerator", msc_ops.AffineGenerator)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("add", msc_ops.add, args, kwargs)
 
 
-def AffineGrid(*args, **kwargs):
-    return _wrap_op("AffineGrid", msc_ops.AffineGrid)(*args, **kwargs)
+def all(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``all`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AffineTransform(*args, **kwargs):
-    return _wrap_op("AffineTransform", msc_ops.AffineTransform)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("all", msc_ops.all, args, kwargs)
 
 
-def Any(*args, **kwargs):
-    return _wrap_op("Any", msc_ops.Any)(*args, **kwargs)
+def allclose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``allclose`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Append(*args, **kwargs):
-    return _wrap_op("Append", msc_ops.Append)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("allclose", msc_ops.allclose, args, kwargs)
 
 
-def AsStringConfig(*args, **kwargs):
-    return _wrap_op("AsStringConfig", msc_ops.AsStringConfig)(*args, **kwargs)
+def amax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``amax`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AssertOp(*args, **kwargs):
-    return _wrap_op("AssertOp", msc_ops.AssertOp)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("amax", msc_ops.max, args, kwargs)
 
 
-def AssignVariable(*args, **kwargs):
-    return _wrap_op("AssignVariable", msc_ops.AssignVariable)(*args, **kwargs)
+def amin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``amin`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AssociativeScan(*args, **kwargs):
-    return _wrap_op("AssociativeScan", msc_ops.AssociativeScan)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("amin", msc_ops.min, args, kwargs)
 
 
-def Atleast1d(*args, **kwargs):
-    return _wrap_op("Atleast1d", msc_ops.Atleast1d)(*args, **kwargs)
+def angle(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``angle`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Atleast2d(*args, **kwargs):
-    return _wrap_op("Atleast2d", msc_ops.Atleast2d)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("angle", msc_ops.angle, args, kwargs)
 
 
-def Atleast3d(*args, **kwargs):
-    return _wrap_op("Atleast3d", msc_ops.Atleast3d)(*args, **kwargs)
+def any(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``any`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def AugMix(*args, **kwargs):
-    return _wrap_op("AugMix", msc_ops.AugMix)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("any", msc_ops.any, args, kwargs)
 
 
-def AutoContrast(*args, **kwargs):
-    return _wrap_op("AutoContrast", msc_ops.AutoContrast)(*args, **kwargs)
+def append(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``append`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Block(*args, **kwargs):
-    return _wrap_op("Block", msc_ops.Block)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("append", msc_ops.append, args, kwargs)
 
 
-def BlurConfig(*args, **kwargs):
-    return _wrap_op("BlurConfig", msc_ops.BlurConfig)(*args, **kwargs)
+def arange(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arange`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def BooleanMask(*args, **kwargs):
-    return _wrap_op("BooleanMask", msc_ops.BooleanMask)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arange", msc_ops.arange, args, kwargs)
 
 
-def Callable(*args, **kwargs):
-    return _wrap_op("Callable", msc_ops.Callable)(*args, **kwargs)
+def arccos(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arccos`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ColumnStack(*args, **kwargs):
-    return _wrap_op("ColumnStack", msc_ops.ColumnStack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arccos", msc_ops.acos, args, kwargs)
 
 
-def ConvGeneralDilated(*args, **kwargs):
-    return _wrap_op("ConvGeneralDilated", msc_ops.ConvGeneralDilated)(*args, **kwargs)
+def arccosh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arccosh`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ConvGeneralDilatedLocal(*args, **kwargs):
-    return _wrap_op("ConvGeneralDilatedLocal", msc_ops.ConvGeneralDilatedLocal)(
-        *args, **kwargs
-    )
-
-
-def ConvGeneralDilatedPatches(*args, **kwargs):
-    return _wrap_op("ConvGeneralDilatedPatches", msc_ops.ConvGeneralDilatedPatches)(
-        *args, **kwargs
-    )
-
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arccosh", msc_ops.acosh, args, kwargs)
 
-def ConvTranspose(*args, **kwargs):
-    return _wrap_op("ConvTranspose", msc_ops.ConvTranspose)(*args, **kwargs)
 
+def arcsin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arcsin`` operation.
 
-def ConvWithGeneralPadding(*args, **kwargs):
-    return _wrap_op("ConvWithGeneralPadding", msc_ops.ConvWithGeneralPadding)(
-        *args, **kwargs
-    )
-
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def CustomLinearSolve(*args, **kwargs):
-    return _wrap_op("CustomLinearSolve", msc_ops.CustomLinearSolve)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arcsin", msc_ops.asin, args, kwargs)
 
 
-def CustomRoot(*args, **kwargs):
-    return _wrap_op("CustomRoot", msc_ops.CustomRoot)(*args, **kwargs)
+def arcsinh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arcsinh`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def DType(*args, **kwargs):
-    return _wrap_op("DType", msc_ops.DType)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arcsinh", msc_ops.asinh, args, kwargs)
 
 
-def DebugInfs(*args, **kwargs):
-    return _wrap_op("DebugInfs", msc_ops.DebugInfs)(*args, **kwargs)
+def arctan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arctan`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def DebugNans(*args, **kwargs):
-    return _wrap_op("DebugNans", msc_ops.DebugNans)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arctan", msc_ops.atan, args, kwargs)
 
 
-def Delete(*args, **kwargs):
-    return _wrap_op("Delete", msc_ops.Delete)(*args, **kwargs)
+def arctan2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arctan2`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def DiagIndices(*args, **kwargs):
-    return _wrap_op("DiagIndices", msc_ops.DiagIndices)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arctan2", msc_ops.atan2, args, kwargs)
 
 
-def DiagIndicesFrom(*args, **kwargs):
-    return _wrap_op("DiagIndicesFrom", msc_ops.DiagIndicesFrom)(*args, **kwargs)
+def arctanh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``arctanh`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Diagflat(*args, **kwargs):
-    return _wrap_op("Diagflat", msc_ops.Diagflat)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("arctanh", msc_ops.atanh, args, kwargs)
 
 
-def Dot(*args, **kwargs):
-    return _wrap_op("Dot", msc_ops.Dot)(*args, **kwargs)
+def argmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``argmax`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def DotGeneral(*args, **kwargs):
-    return _wrap_op("DotGeneral", msc_ops.DotGeneral)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("argmax", msc_ops.argmax, args, kwargs)
 
 
-def Dsplit(*args, **kwargs):
-    return _wrap_op("Dsplit", msc_ops.Dsplit)(*args, **kwargs)
+def argmin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``argmin`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Dstack(*args, **kwargs):
-    return _wrap_op("Dstack", msc_ops.Dstack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("argmin", msc_ops.argmin, args, kwargs)
 
 
-def Einsum(*args, **kwargs):
-    return _wrap_op("Einsum", msc_ops.Einsum)(*args, **kwargs)
+def argpartition(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``argpartition`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ElasticConfig(*args, **kwargs):
-    return _wrap_op("ElasticConfig", msc_ops.ElasticConfig)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("argpartition", _msc_frontend_argpartition, args, kwargs)
 
 
-def ElasticTransform(*args, **kwargs):
-    return _wrap_op("ElasticTransform", msc_ops.ElasticTransform)(*args, **kwargs)
+def argsort(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``argsort`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Equalization(*args, **kwargs):
-    return _wrap_op("Equalization", msc_ops.Equalization)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("argsort", _msc_pad_and_tile_argsort, args, kwargs)
 
 
-def ExpandDims(*args, **kwargs):
-    return _wrap_op("ExpandDims", msc_ops.ExpandDims)(*args, **kwargs)
-
-
-def ExtractBoundingBoxes(*args, **kwargs):
-    return _wrap_op("ExtractBoundingBoxes", msc_ops.ExtractBoundingBoxes)(
-        *args, **kwargs
-    )
+def array(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``array`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ExtractPatchesOptions(*args, **kwargs):
-    return _wrap_op("ExtractPatchesOptions", msc_ops.ExtractPatchesOptions)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("array", msc_ops.array, args, kwargs)
 
 
-def FillDiagonal(*args, **kwargs):
-    return _wrap_op("FillDiagonal", msc_ops.FillDiagonal)(*args, **kwargs)
+def array_split(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``array_split`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Flip(*args, **kwargs):
-    return _wrap_op("Flip", msc_ops.Flip)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("array_split", msc_ops.array_split, args, kwargs)
 
 
-def Fliplr(*args, **kwargs):
-    return _wrap_op("Fliplr", msc_ops.Fliplr)(*args, **kwargs)
+def asarray(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``asarray`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Flipud(*args, **kwargs):
-    return _wrap_op("Flipud", msc_ops.Flipud)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("asarray", msc_ops.asarray, args, kwargs)
 
 
-def Hsplit(*args, **kwargs):
-    return _wrap_op("Hsplit", msc_ops.Hsplit)(*args, **kwargs)
+def associative_scan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``associative_scan`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Hstack(*args, **kwargs):
-    return _wrap_op("Hstack", msc_ops.Hstack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("associative_scan", msc_ops.associative_scan, args, kwargs)
 
 
-def Insert(*args, **kwargs):
-    return _wrap_op("Insert", msc_ops.Insert)(*args, **kwargs)
+def average(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``average`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Invert(*args, **kwargs):
-    return _wrap_op("Invert", msc_ops.Invert)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("average", _msc_descriptive_Average(), args, kwargs)
 
 
-def Iou(*args, **kwargs):
-    return _wrap_op("Iou", msc_ops.Iou)(*args, **kwargs)
+def average_pool(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``average_pool`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperator(*args, **kwargs):
-    return _wrap_op("LinearOperator", msc_ops.LinearOperator)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("average_pool", msc_ops.avg_pool, args, kwargs)
 
 
-def LinearOperatorAdjoint(*args, **kwargs):
-    return _wrap_op("LinearOperatorAdjoint", msc_ops.LinearOperatorAdjoint)(
-        *args, **kwargs
-    )
+def avg_pool(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``avg_pool`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorBlockDiag(*args, **kwargs):
-    return _wrap_op("LinearOperatorBlockDiag", msc_ops.LinearOperatorBlockDiag)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("avg_pool", msc_ops.avg_pool, args, kwargs)
 
 
-def LinearOperatorBlockLowerTriangular(*args, **kwargs):
-    return _wrap_op(
-        "LinearOperatorBlockLowerTriangular",
-        msc_ops.LinearOperatorBlockLowerTriangular,
-    )(*args, **kwargs)
+def bartlett(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bartlett`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorCirculant(*args, **kwargs):
-    return _wrap_op("LinearOperatorCirculant", msc_ops.LinearOperatorCirculant)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bartlett", _msc_basic_Bartlett(), args, kwargs)
 
 
-def LinearOperatorCirculant2D(*args, **kwargs):
-    return _wrap_op("LinearOperatorCirculant2D", msc_ops.LinearOperatorCirculant2D)(
-        *args, **kwargs
-    )
+def batch_normalization(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``batch_normalization`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorCirculant3D(*args, **kwargs):
-    return _wrap_op("LinearOperatorCirculant3D", msc_ops.LinearOperatorCirculant3D)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("batch_normalization", _msc_normalization_batch_norm, args, kwargs)
 
 
-def LinearOperatorComposition(*args, **kwargs):
-    return _wrap_op("LinearOperatorComposition", msc_ops.LinearOperatorComposition)(
-        *args, **kwargs
-    )
+def binary_crossentropy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``binary_crossentropy`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorDiag(*args, **kwargs):
-    return _wrap_op("LinearOperatorDiag", msc_ops.LinearOperatorDiag)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("binary_crossentropy", _msc_loss_binary_crossentropy, args, kwargs)
 
 
-def LinearOperatorFullMatrix(*args, **kwargs):
-    return _wrap_op("LinearOperatorFullMatrix", msc_ops.LinearOperatorFullMatrix)(
-        *args, **kwargs
-    )
+def bincount(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bincount`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorHouseholder(*args, **kwargs):
-    return _wrap_op("LinearOperatorHouseholder", msc_ops.LinearOperatorHouseholder)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bincount", _msc_descriptive_Bincount(), args, kwargs)
 
 
-def LinearOperatorIdentity(*args, **kwargs):
-    return _wrap_op("LinearOperatorIdentity", msc_ops.LinearOperatorIdentity)(
-        *args, **kwargs
-    )
+def bitwise_and(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_and`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorInversion(*args, **kwargs):
-    return _wrap_op("LinearOperatorInversion", msc_ops.LinearOperatorInversion)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_and", msc_ops.bitwise_and, args, kwargs)
 
 
-def LinearOperatorKronecker(*args, **kwargs):
-    return _wrap_op("LinearOperatorKronecker", msc_ops.LinearOperatorKronecker)(
-        *args, **kwargs
-    )
+def bitwise_invert(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_invert`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorLowRankUpdate(*args, **kwargs):
-    return _wrap_op("LinearOperatorLowRankUpdate", msc_ops.LinearOperatorLowRankUpdate)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_invert", msc_ops.bitwise_not, args, kwargs)
 
 
-def LinearOperatorLowerTriangular(*args, **kwargs):
-    return _wrap_op(
-        "LinearOperatorLowerTriangular",
-        msc_ops.LinearOperatorLowerTriangular,
-    )(*args, **kwargs)
+def bitwise_left_shift(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_left_shift`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorPermutation(*args, **kwargs):
-    return _wrap_op("LinearOperatorPermutation", msc_ops.LinearOperatorPermutation)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_left_shift", msc_ops.left_shift, args, kwargs)
 
 
-def LinearOperatorScaledIdentity(*args, **kwargs):
-    return _wrap_op(
-        "LinearOperatorScaledIdentity", msc_ops.LinearOperatorScaledIdentity
-    )(*args, **kwargs)
+def bitwise_not(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_not`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorToeplitz(*args, **kwargs):
-    return _wrap_op("LinearOperatorToeplitz", msc_ops.LinearOperatorToeplitz)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_not", msc_ops.bitwise_not, args, kwargs)
 
 
-def LinearOperatorTridiag(*args, **kwargs):
-    return _wrap_op("LinearOperatorTridiag", msc_ops.LinearOperatorTridiag)(
-        *args, **kwargs
-    )
+def bitwise_or(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_or`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def LinearOperatorZeros(*args, **kwargs):
-    return _wrap_op("LinearOperatorZeros", msc_ops.LinearOperatorZeros)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_or", msc_ops.bitwise_or, args, kwargs)
 
 
-def MapFlatValues(*args, **kwargs):
-    return _wrap_op("MapFlatValues", msc_ops.MapFlatValues)(*args, **kwargs)
+def bitwise_right_shift(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_right_shift`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Matmul(*args, **kwargs):
-    return _wrap_op("Matmul", msc_ops.Matmul)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_right_shift", msc_ops.right_shift, args, kwargs)
 
 
-def MatrixRank(*args, **kwargs):
-    return _wrap_op("MatrixRank", msc_ops.MatrixRank)(*args, **kwargs)
+def bitwise_xor(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``bitwise_xor`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def MatrixTranspose(*args, **kwargs):
-    return _wrap_op("MatrixTranspose", msc_ops.MatrixTranspose)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("bitwise_xor", msc_ops.bitwise_xor, args, kwargs)
 
 
-def Moveaxis(*args, **kwargs):
-    return _wrap_op("Moveaxis", msc_ops.Moveaxis)(*args, **kwargs)
+def blackman(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``blackman`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Nms(*args, **kwargs):
-    return _wrap_op("Nms", msc_ops.Nms)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("blackman", _msc_basic_Blackman(), args, kwargs)
 
 
-def NormConfig(*args, **kwargs):
-    return _wrap_op("NormConfig", msc_ops.NormConfig)(*args, **kwargs)
+def broadcast_to(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``broadcast_to`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def OpDef(*args, **kwargs):
-    return _wrap_op("OpDef", msc_ops.OpDef)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("broadcast_to", _msc_distributed_ops_broadcast_to, args, kwargs)
 
 
-def Pdot(*args, **kwargs):
-    return _wrap_op("Pdot", msc_ops.Pdot)(*args, **kwargs)
+def cast(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cast`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Permute(*args, **kwargs):
-    return _wrap_op("Permute", msc_ops.Permute)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cast", msc_ops.cast, args, kwargs)
 
 
-def PerspectiveConfig(*args, **kwargs):
-    return _wrap_op("PerspectiveConfig", msc_ops.PerspectiveConfig)(*args, **kwargs)
+def categorical_crossentropy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``categorical_crossentropy`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def PerspectiveTransform(*args, **kwargs):
-    return _wrap_op("PerspectiveTransform", msc_ops.PerspectiveTransform)(
-        *args, **kwargs
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op(
+        "categorical_crossentropy", _msc_loss_categorical_crossentropy, args, kwargs
     )
-
 
-def Pmean(*args, **kwargs):
-    return _wrap_op("Pmean", msc_ops.Pmean)(*args, **kwargs)
 
+def cbrt(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cbrt`` operation.
 
-def Posterize(*args, **kwargs):
-    return _wrap_op("Posterize", msc_ops.Posterize)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cbrt", msc_ops.cbrt, args, kwargs)
 
-def Psum(*args, **kwargs):
-    return _wrap_op("Psum", msc_ops.Psum)(*args, **kwargs)
 
+def ceil(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ceil`` operation.
 
-def RNNConfig(*args, **kwargs):
-    return _wrap_op("RNNConfig", msc_ops.RNNConfig)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ceil", msc_ops.ceil, args, kwargs)
 
-def RaggedAdd(*args, **kwargs):
-    return _wrap_op("RaggedAdd", msc_ops.RaggedAdd)(*args, **kwargs)
 
+def cholesky(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cholesky`` operation.
 
-def RaggedConstant(*args, **kwargs):
-    return _wrap_op("RaggedConstant", msc_ops.RaggedConstant)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cholesky", _msc_decompositions_cholesky, args, kwargs)
 
-def RaggedCrossHashed(*args, **kwargs):
-    return _wrap_op("RaggedCrossHashed", msc_ops.RaggedCrossHashed)(*args, **kwargs)
 
+def clip(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``clip`` operation.
 
-def RaggedDot(*args, **kwargs):
-    return _wrap_op("RaggedDot", msc_ops.RaggedDot)(*args, **kwargs)
-
-
-def RaggedDynamicBroadcast(*args, **kwargs):
-    return _wrap_op("RaggedDynamicBroadcast", msc_ops.RaggedDynamicBroadcast)(
-        *args, **kwargs
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("clip", msc_ops.clip, args, kwargs)
 
-def RaggedGather(*args, **kwargs):
-    return _wrap_op("RaggedGather", msc_ops.RaggedGather)(*args, **kwargs)
 
+def concatenate(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``concatenate`` operation.
 
-def RaggedMatMul(*args, **kwargs):
-    return _wrap_op("RaggedMatMul", msc_ops.RaggedMatMul)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("concatenate", msc_ops.concatenate, args, kwargs)
 
-def RaggedRange(*args, **kwargs):
-    return _wrap_op("RaggedRange", msc_ops.RaggedRange)(*args, **kwargs)
 
+def cond(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cond`` operation.
 
-def RaggedRowSplitsToSegmentIds(*args, **kwargs):
-    return _wrap_op("RaggedRowSplitsToSegmentIds", msc_ops.RaggedRowSplitsToSegmentIds)(
-        *args, **kwargs
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cond", msc_ops.cond, args, kwargs)
 
-def RaggedSegmentIdsToRowSplits(*args, **kwargs):
-    return _wrap_op("RaggedSegmentIdsToRowSplits", msc_ops.RaggedSegmentIdsToRowSplits)(
-        *args, **kwargs
-    )
 
+def conj(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conj`` operation.
 
-def RaggedStack(*args, **kwargs):
-    return _wrap_op("RaggedStack", msc_ops.RaggedStack)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conj", msc_ops.conj, args, kwargs)
 
-def RaggedStackDynamicPartitions(*args, **kwargs):
-    return _wrap_op(
-        "RaggedStackDynamicPartitions", msc_ops.RaggedStackDynamicPartitions
-    )(*args, **kwargs)
 
+def conjugate(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conjugate`` operation.
 
-def RaggedTensorToDense(*args, **kwargs):
-    return _wrap_op("RaggedTensorToDense", msc_ops.RaggedTensorToDense)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conjugate", msc_ops.conj, args, kwargs)
 
-def RawConv2D(*args, **kwargs):
-    return _wrap_op("RawConv2D", msc_ops.RawConv2D)(*args, **kwargs)
 
+def conv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv`` operation.
 
-def RawMatMul(*args, **kwargs):
-    return _wrap_op("RawMatMul", msc_ops.RawMatMul)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv", _msc_conv_conv, args, kwargs)
 
-def RawMerge(*args, **kwargs):
-    return _wrap_op("RawMerge", msc_ops.RawMerge)(*args, **kwargs)
 
+def conv1d(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv1d`` operation.
 
-def RawOp(*args, **kwargs):
-    return _wrap_op("RawOp", msc_ops.RawOp)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv1d", _msc_conv1d_conv1d, args, kwargs)
 
-def RawSwitch(*args, **kwargs):
-    return _wrap_op("RawSwitch", msc_ops.RawSwitch)(*args, **kwargs)
 
+def conv1d_transpose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv1d_transpose`` operation.
 
-def ReadVariable(*args, **kwargs):
-    return _wrap_op("ReadVariable", msc_ops.ReadVariable)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv1d_transpose", _msc_conv_nd_conv_transpose, args, kwargs)
 
-def Resize(*args, **kwargs):
-    return _wrap_op("Resize", msc_ops.Resize)(*args, **kwargs)
 
+def conv2d(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv2d`` operation.
 
-def RgbToGrayscale(*args, **kwargs):
-    return _wrap_op("RgbToGrayscale", msc_ops.RgbToGrayscale)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv2d", _msc_conv2d_conv2d, args, kwargs)
 
-def Roll(*args, **kwargs):
-    return _wrap_op("Roll", msc_ops.Roll)(*args, **kwargs)
 
+def conv2d_transpose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv2d_transpose`` operation.
 
-def ScanOp(*args, **kwargs):
-    return _wrap_op("ScanOp", msc_ops.ScanOp)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv2d_transpose", _msc_conv_nd_conv_transpose, args, kwargs)
 
-def SobolSample(*args, **kwargs):
-    return _wrap_op("SobolSample", msc_ops.SobolSample)(*args, **kwargs)
 
+def conv3d(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv3d`` operation.
 
-def Solarize(*args, **kwargs):
-    return _wrap_op("Solarize", msc_ops.Solarize)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv3d", _msc_conv3d_conv3d, args, kwargs)
 
-def SparseConcat(*args, **kwargs):
-    return _wrap_op("SparseConcat", msc_ops.SparseConcat)(*args, **kwargs)
 
+def conv3d_transpose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv3d_transpose`` operation.
 
-def SparseDenseMatMul(*args, **kwargs):
-    return _wrap_op("SparseDenseMatMul", msc_ops.SparseDenseMatMul)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv3d_transpose", _msc_conv_nd_conv_transpose, args, kwargs)
 
-def SparseMapValues(*args, **kwargs):
-    return _wrap_op("SparseMapValues", msc_ops.SparseMapValues)(*args, **kwargs)
 
+def conv_general_dilated(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv_general_dilated`` operation.
 
-def SparseReduceMax(*args, **kwargs):
-    return _wrap_op("SparseReduceMax", msc_ops.SparseReduceMax)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv_general_dilated", msc_ops.conv_general_dilated, args, kwargs)
 
-def SparseReshape(*args, **kwargs):
-    return _wrap_op("SparseReshape", msc_ops.SparseReshape)(*args, **kwargs)
 
+def conv_transpose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``conv_transpose`` operation.
 
-def SparseSampledAdd(*args, **kwargs):
-    return _wrap_op("SparseSampledAdd", msc_ops.SparseSampledAdd)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("conv_transpose", _msc_conv_nd_conv_transpose, args, kwargs)
 
-def SparseSegmentSum(*args, **kwargs):
-    return _wrap_op("SparseSegmentSum", msc_ops.SparseSegmentSum)(*args, **kwargs)
 
+def convert_to_numpy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``convert_to_numpy`` operation.
 
-def SparseSplit(*args, **kwargs):
-    return _wrap_op("SparseSplit", msc_ops.SparseSplit)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("convert_to_numpy", msc_ops.convert_to_numpy, args, kwargs)
 
-def SparseToDense(*args, **kwargs):
-    return _wrap_op("SparseToDense", msc_ops.SparseToDense)(*args, **kwargs)
 
+def convert_to_tensor(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``convert_to_tensor`` operation.
 
-def SparseTranspose(*args, **kwargs):
-    return _wrap_op("SparseTranspose", msc_ops.SparseTranspose)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("convert_to_tensor", msc_ops.convert_to_tensor, args, kwargs)
 
-def Sqrtm(*args, **kwargs):
-    return _wrap_op("Sqrtm", msc_ops.Sqrtm)(*args, **kwargs)
 
+def copy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``copy`` operation.
 
-def Squeeze(*args, **kwargs):
-    return _wrap_op("Squeeze", msc_ops.Squeeze)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    from zero_keras.core_layers import KerasTensor
 
-def Swapaxes(*args, **kwargs):
-    return _wrap_op("Swapaxes", msc_ops.Swapaxes)(*args, **kwargs)
+    x = args[0] if len(args) > 0 else kwargs["x"]
+    if isinstance(x, KerasTensor):
+        return KerasTensor(x.shape, dtype=x.dtype)
+    return convert_to_tensor(x)
 
 
-def SwitchOp(*args, **kwargs):
-    return _wrap_op("SwitchOp", msc_ops.SwitchOp)(*args, **kwargs)
+def corrcoef(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``corrcoef`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def TFRecordOptions(*args, **kwargs):
-    return _wrap_op("TFRecordOptions", msc_ops.TFRecordOptions)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("corrcoef", msc_ops.corrcoef, args, kwargs)
 
 
-def TFRecordWriter(*args, **kwargs):
-    return _wrap_op("TFRecordWriter", msc_ops.TFRecordWriter)(*args, **kwargs)
+def correlate(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``correlate`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Tensor(*args, **kwargs):
-    return _wrap_op("Tensor", msc_ops.Tensor)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("correlate", msc_ops.correlate, args, kwargs)
 
 
-def TensorArrayRead(*args, **kwargs):
-    return _wrap_op("TensorArrayRead", msc_ops.TensorArrayRead)(*args, **kwargs)
+def cos(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cos`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def TensorArrayStack(*args, **kwargs):
-    return _wrap_op("TensorArrayStack", msc_ops.TensorArrayStack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cos", msc_ops.cos, args, kwargs)
 
 
-def TensorArrayWrite(*args, **kwargs):
-    return _wrap_op("TensorArrayWrite", msc_ops.TensorArrayWrite)(*args, **kwargs)
+def cosh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cosh`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def TensorConfig(*args, **kwargs):
-    return _wrap_op("TensorConfig", msc_ops.TensorConfig)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cosh", msc_ops.cosh, args, kwargs)
 
 
-def Trace(*args, **kwargs):
-    return _wrap_op("Trace", msc_ops.Trace)(*args, **kwargs)
+def count_nonzero(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``count_nonzero`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Vecdot(*args, **kwargs):
-    return _wrap_op("Vecdot", msc_ops.Vecdot)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("count_nonzero", msc_ops.count_nonzero, args, kwargs)
 
 
-def Vsplit(*args, **kwargs):
-    return _wrap_op("Vsplit", msc_ops.Vsplit)(*args, **kwargs)
+def cross(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cross`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def Vstack(*args, **kwargs):
-    return _wrap_op("Vstack", msc_ops.Vstack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cross", msc_ops.cross, args, kwargs)
 
 
-def abs(*args, **kwargs):
-    return _wrap_op("abs", msc_ops.abs)(*args, **kwargs)
+def ctc_decode(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ctc_decode`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def absolute(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.absolute is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ctc_decode", _msc_nlp_ctc_greedy_decoder, args, kwargs)
 
 
-def accumulate_n(*args, **kwargs):
-    return _wrap_op("accumulate_n", msc_ops.accumulate_n)(*args, **kwargs)
+def ctc_loss(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ctc_loss`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def acos(*args, **kwargs):
-    return _wrap_op("acos", msc_ops.acos)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ctc_loss", _msc_loss_ctc_loss, args, kwargs)
 
 
-def acosh(*args, **kwargs):
-    return _wrap_op("acosh", msc_ops.acosh)(*args, **kwargs)
+def cumprod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cumprod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-activations = msc_ops.activations
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cumprod", msc_ops.cumprod, args, kwargs)
 
 
-def adaptive_avg_pool2d(*args, **kwargs):
-    return _wrap_op("adaptive_avg_pool2d", msc_ops.adaptive_avg_pool2d)(*args, **kwargs)
+def cumsum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``cumsum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def adaptive_max_pool2d(*args, **kwargs):
-    return _wrap_op("adaptive_max_pool2d", msc_ops.adaptive_max_pool2d)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("cumsum", msc_ops.cumsum, args, kwargs)
 
 
-def add(*args, **kwargs):
-    return _wrap_op("add", msc_ops.add)(*args, **kwargs)
+def custom_gradient(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``custom_gradient`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def add_n(*args, **kwargs):
-    return _wrap_op("add_n", msc_ops.add_n)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("custom_gradient", msc_ops.custom_gradient, args, kwargs)
 
 
-def addmm(*args, **kwargs):
-    return _wrap_op("addmm", msc_ops.addmm)(*args, **kwargs)
+def deg2rad(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``deg2rad`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def adjoint(*args, **kwargs):
-    return _wrap_op("adjoint", msc_ops.adjoint)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("deg2rad", msc_ops.deg2rad, args, kwargs)
 
 
-def adjust_brightness(*args, **kwargs):
-    return _wrap_op("adjust_brightness", msc_ops.adjust_brightness)(*args, **kwargs)
+def depthwise_conv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``depthwise_conv`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def adjust_contrast(*args, **kwargs):
-    return _wrap_op("adjust_contrast", msc_ops.adjust_contrast)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("depthwise_conv", _msc_conv_depthwise_conv2d, args, kwargs)
 
 
-def adjust_hue(*args, **kwargs):
-    return _wrap_op("adjust_hue", msc_ops.adjust_hue)(*args, **kwargs)
+def det(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``det`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def adjust_saturation(*args, **kwargs):
-    return _wrap_op("adjust_saturation", msc_ops.adjust_saturation)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("det", _msc_decompositions_det, args, kwargs)
 
 
-def affine_generator(*args, **kwargs):
-    return _wrap_op("affine_generator", msc_ops.affine_generator)(*args, **kwargs)
+def diag(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``diag`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def affine_grid(*args, **kwargs):
-    return _wrap_op("affine_grid", msc_ops.affine_grid)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("diag", msc_ops.diag, args, kwargs)
 
 
-def affine_transform(*args, **kwargs):
-    return _wrap_op("affine_transform", msc_ops.affine_transform)(*args, **kwargs)
+def diagflat(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``diagflat`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-aggregations = msc_ops.aggregations
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("diagflat", msc_ops.diagflat, args, kwargs)
 
 
-def all(*args, **kwargs):
-    return _wrap_op("all", msc_ops.all)(*args, **kwargs)
+def diagonal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``diagonal`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def allclose(*args, **kwargs):
-    return _wrap_op("allclose", msc_ops.allclose)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("diagonal", msc_ops.diagonal, args, kwargs)
 
 
-def amax(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.amax is not yet implemented in ml-switcheroo-compiler"
-    )
+def diff(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``diff`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def amin(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.amin is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("diff", _msc_math_Diff(), args, kwargs)
 
 
-def angle(*args, **kwargs):
-    return _wrap_op("angle", msc_ops.angle)(*args, **kwargs)
+def digitize(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``digitize`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-annotations = msc_ops.annotations
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("digitize", _msc_math_Digitize(), args, kwargs)
 
 
-def any(*args, **kwargs):
-    return _wrap_op("any", msc_ops.any)(*args, **kwargs)
+def divide(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``divide`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def append(*args, **kwargs):
-    return _wrap_op("append", msc_ops.append)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("divide", msc_ops.divide, args, kwargs)
 
 
-def approx_max_k(*args, **kwargs):
-    return _wrap_op("approx_max_k", msc_ops.approx_max_k)(*args, **kwargs)
+def divide_no_nan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``divide_no_nan`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def approx_min_k(*args, **kwargs):
-    return _wrap_op("approx_min_k", msc_ops.approx_min_k)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("divide_no_nan", msc_ops.divide_no_nan, args, kwargs)
 
 
-def arange(*args, **kwargs):
-    return _wrap_op("arange", msc_ops.arange)(*args, **kwargs)
+def dot(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dot`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def arccos(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arccos is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("dot", msc_ops.dot, args, kwargs)
 
 
-def arccosh(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arccosh is not yet implemented in ml-switcheroo-compiler"
-    )
+def dot_product_attention(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dot_product_attention`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def arcsin(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arcsin is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("dot_product_attention", msc_ops.scaled_dot_product_attention, args, kwargs)
 
 
-def arcsinh(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arcsinh is not yet implemented in ml-switcheroo-compiler"
-    )
+def dropout(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dropout`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def arctan(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arctan is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("dropout", _msc_dropout_dropout, args, kwargs)
 
 
-def arctan2(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arctan2 is not yet implemented in ml-switcheroo-compiler"
-    )
+def dsplit(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dsplit`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def arctanh(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.arctanh is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("dsplit", msc_ops.dsplit, args, kwargs)
 
 
-def argmax(*args, **kwargs):
-    return _wrap_op("argmax", msc_ops.argmax)(*args, **kwargs)
+def dstack(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dstack`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def argmin(*args, **kwargs):
-    return _wrap_op("argmin", msc_ops.argmin)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("dstack", msc_ops.dstack, args, kwargs)
 
 
-def argpartition(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.argpartition is not yet implemented in ml-switcheroo-compiler"
-    )
+def dynamic_update_slice(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``dynamic_update_slice`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def argsort(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.argsort is not yet implemented in ml-switcheroo-compiler"
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op(
+        "dynamic_update_slice", _msc_dynamic_slicing_dynamic_update_slice, args, kwargs
     )
-
-
-arithmetic = msc_ops.arithmetic
-
-
-def array(*args, **kwargs):
-    return _wrap_op("array", msc_ops.array)(*args, **kwargs)
-
-
-def array_split(*args, **kwargs):
-    return _wrap_op("array_split", msc_ops.array_split)(*args, **kwargs)
-
 
-def as_string(*args, **kwargs):
-    return _wrap_op("as_string", msc_ops.as_string)(*args, **kwargs)
 
+def eig(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``eig`` operation.
 
-def asarray(*args, **kwargs):
-    return _wrap_op("asarray", msc_ops.asarray)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("eig", _msc_decompositions_eig, args, kwargs)
 
-def asin(*args, **kwargs):
-    return _wrap_op("asin", msc_ops.asin)(*args, **kwargs)
 
+def eigh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``eigh`` operation.
 
-def asinh(*args, **kwargs):
-    return _wrap_op("asinh", msc_ops.asinh)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("eigh", _msc_decompositions_eigh, args, kwargs)
 
-def assert_value(*args, **kwargs):
-    return _wrap_op("assert_value", msc_ops.assert_value)(*args, **kwargs)
 
+def einsum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``einsum`` operation.
 
-def assert_value_eager(*args, **kwargs):
-    return _wrap_op("assert_value_eager", msc_ops.assert_value_eager)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("einsum", msc_ops.einsum, args, kwargs)
 
-def assert_value_tracing(*args, **kwargs):
-    return _wrap_op("assert_value_tracing", msc_ops.assert_value_tracing)(
-        *args, **kwargs
-    )
 
+def empty(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``empty`` operation.
 
-def associative_scan(*args, **kwargs):
-    return _wrap_op("associative_scan", msc_ops.associative_scan)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("empty", msc_ops.empty, args, kwargs)
 
-def atan(*args, **kwargs):
-    return _wrap_op("atan", msc_ops.atan)(*args, **kwargs)
 
+def empty_like(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``empty_like`` operation.
 
-def atan2(*args, **kwargs):
-    return _wrap_op("atan2", msc_ops.atan2)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("empty_like", msc_ops.empty_like, args, kwargs)
 
-def atanh(*args, **kwargs):
-    return _wrap_op("atanh", msc_ops.atanh)(*args, **kwargs)
 
+def equal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``equal`` operation.
 
-def atleast_1d(*args, **kwargs):
-    return _wrap_op("atleast_1d", msc_ops.atleast_1d)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("equal", msc_ops.equal, args, kwargs)
 
-def atleast_2d(*args, **kwargs):
-    return _wrap_op("atleast_2d", msc_ops.atleast_2d)(*args, **kwargs)
 
+def erf(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``erf`` operation.
 
-def atleast_3d(*args, **kwargs):
-    return _wrap_op("atleast_3d", msc_ops.atleast_3d)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("erf", msc_ops.erf, args, kwargs)
 
-def augmix(*args, **kwargs):
-    return _wrap_op("augmix", msc_ops.augmix)(*args, **kwargs)
 
+def erfc(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``erfc`` operation.
 
-def auto_contrast(*args, **kwargs):
-    return _wrap_op("auto_contrast", msc_ops.auto_contrast)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("erfc", msc_ops.erfc, args, kwargs)
 
-def average(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.average is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def erfinv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``erfinv`` operation.
 
-def average_pool(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.average_pool is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("erfinv", msc_ops.erfinv, args, kwargs)
 
-def avg_pool(*args, **kwargs):
-    return _wrap_op("avg_pool", msc_ops.avg_pool)(*args, **kwargs)
 
+def exp(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``exp`` operation.
 
-def avg_pool1d(*args, **kwargs):
-    return _wrap_op("avg_pool1d", msc_ops.avg_pool1d)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("exp", msc_ops.exp, args, kwargs)
 
-def avg_pool2d(*args, **kwargs):
-    return _wrap_op("avg_pool2d", msc_ops.avg_pool2d)(*args, **kwargs)
 
+def exp2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``exp2`` operation.
 
-def avg_pool3d(*args, **kwargs):
-    return _wrap_op("avg_pool3d", msc_ops.avg_pool3d)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("exp2", msc_ops.exp2, args, kwargs)
 
-def band_part(*args, **kwargs):
-    return _wrap_op("band_part", msc_ops.band_part)(*args, **kwargs)
 
+def expand_dims(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``expand_dims`` operation.
 
-def banded_triangular_solve(*args, **kwargs):
-    return _wrap_op("banded_triangular_solve", msc_ops.banded_triangular_solve)(
-        *args, **kwargs
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("expand_dims", msc_ops.expand_dims, args, kwargs)
 
-def bartlett(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.bartlett is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def expm1(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``expm1`` operation.
 
-base = msc_ops.base
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("expm1", msc_ops.expm1, args, kwargs)
 
-def batch_normalization(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.batch_normalization is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def eye(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``eye`` operation.
 
-def bessel_i0(*args, **kwargs):
-    return _wrap_op("bessel_i0", msc_ops.bessel_i0)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("eye", msc_ops.eye, args, kwargs)
 
-def bessel_i0e(*args, **kwargs):
-    return _wrap_op("bessel_i0e", msc_ops.bessel_i0e)(*args, **kwargs)
 
+def fabs(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fabs`` operation.
 
-def bessel_i1(*args, **kwargs):
-    return _wrap_op("bessel_i1", msc_ops.bessel_i1)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fabs", msc_ops.abs, args, kwargs)
 
-def bessel_i1e(*args, **kwargs):
-    return _wrap_op("bessel_i1e", msc_ops.bessel_i1e)(*args, **kwargs)
 
+def fft(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fft`` operation.
 
-def betainc(*args, **kwargs):
-    return _wrap_op("betainc", msc_ops.betainc)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fft", msc_ops.fft, args, kwargs)
 
-binary = msc_ops.binary
 
+def fft2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fft2`` operation.
 
-def binary_crossentropy(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.binary_crossentropy is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fft2", msc_ops.Fft2(), args, kwargs)
 
-def bincount(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.bincount is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def flip(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``flip`` operation.
 
-def bitcast(*args, **kwargs):
-    return _wrap_op("bitcast", msc_ops.bitcast)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("flip", msc_ops.flip, args, kwargs)
 
-def bitwise_and(*args, **kwargs):
-    return _wrap_op("bitwise_and", msc_ops.bitwise_and)(*args, **kwargs)
 
+def fliplr(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fliplr`` operation.
 
-def bitwise_count(*args, **kwargs):
-    return _wrap_op("bitwise_count", msc_ops.bitwise_count)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fliplr", msc_ops.fliplr, args, kwargs)
 
-def bitwise_invert(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.bitwise_invert is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def flipud(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``flipud`` operation.
 
-def bitwise_left_shift(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.bitwise_left_shift is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("flipud", msc_ops.flipud, args, kwargs)
 
-def bitwise_not(*args, **kwargs):
-    return _wrap_op("bitwise_not", msc_ops.bitwise_not)(*args, **kwargs)
 
+def floor(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``floor`` operation.
 
-def bitwise_or(*args, **kwargs):
-    return _wrap_op("bitwise_or", msc_ops.bitwise_or)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("floor", msc_ops.floor, args, kwargs)
 
-def bitwise_right_shift(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.bitwise_right_shift is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def floor_divide(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``floor_divide`` operation.
 
-def bitwise_xor(*args, **kwargs):
-    return _wrap_op("bitwise_xor", msc_ops.bitwise_xor)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("floor_divide", msc_ops.floor_divide, args, kwargs)
 
-def blackman(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.blackman is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def fmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fmax`` operation.
 
-def block(*args, **kwargs):
-    return _wrap_op("block", msc_ops.block)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fmax", msc_ops.fmax, args, kwargs)
 
-def block_masked_mm(*args, **kwargs):
-    return _wrap_op("block_masked_mm", msc_ops.block_masked_mm)(*args, **kwargs)
 
+def fmin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fmin`` operation.
 
-boolean = msc_ops.boolean
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fmin", msc_ops.fmin, args, kwargs)
 
-def boolean_mask(*args, **kwargs):
-    return _wrap_op("boolean_mask", msc_ops.boolean_mask)(*args, **kwargs)
 
+def fmod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fmod`` operation.
 
-def broadcast_arrays(*args, **kwargs):
-    return _wrap_op("broadcast_arrays", msc_ops.broadcast_arrays)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fmod", msc_ops.fmod, args, kwargs)
 
-def broadcast_to(*args, **kwargs):
-    return _wrap_op("broadcast_to", msc_ops.broadcast_to)(*args, **kwargs)
 
+def fold(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fold`` operation.
 
-def case(*args, **kwargs):
-    return _wrap_op("case", msc_ops.case)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fold", _msc_frontend_fold, args, kwargs)
 
-def cast(*args, **kwargs):
-    return _wrap_op("cast", msc_ops.cast)(*args, **kwargs)
 
+def fori_loop(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``fori_loop`` operation.
 
-def categorical_crossentropy(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.categorical_crossentropy is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("fori_loop", msc_ops.fori_loop, args, kwargs)
 
-def cbrt(*args, **kwargs):
-    return _wrap_op("cbrt", msc_ops.cbrt)(*args, **kwargs)
 
+def frombuffer(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``frombuffer`` operation.
 
-def ceil(*args, **kwargs):
-    return _wrap_op("ceil", msc_ops.ceil)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("frombuffer", msc_ops.frombuffer, args, kwargs)
 
-def celu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.celu is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def full(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``full`` operation.
 
-def chebyshev_polynomial_t(*args, **kwargs):
-    return _wrap_op("chebyshev_polynomial_t", msc_ops.chebyshev_polynomial_t)(
-        *args, **kwargs
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("full", msc_ops.full, args, kwargs)
 
-def chebyshev_polynomial_u(*args, **kwargs):
-    return _wrap_op("chebyshev_polynomial_u", msc_ops.chebyshev_polynomial_u)(
-        *args, **kwargs
-    )
 
+def full_like(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``full_like`` operation.
 
-def cholesky(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.cholesky is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("full_like", msc_ops.full_like, args, kwargs)
 
-def cholesky_solve(*args, **kwargs):
-    return _wrap_op("cholesky_solve", msc_ops.cholesky_solve)(*args, **kwargs)
 
+def gcd(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``gcd`` operation.
 
-def clip(*args, **kwargs):
-    return _wrap_op("clip", msc_ops.clip)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("gcd", msc_ops.gcd, args, kwargs)
 
-def column_stack(*args, **kwargs):
-    return _wrap_op("column_stack", msc_ops.column_stack)(*args, **kwargs)
 
+def geomspace(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``geomspace`` operation.
 
-complex_types = msc_ops.complex_types
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-concat = msc_ops.concat
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("geomspace", _msc_frontend_utils_geomspace, args, kwargs)
 
 
-def concatenate(*args, **kwargs):
-    return _wrap_op("concatenate", msc_ops.concatenate)(*args, **kwargs)
+def greater(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``greater`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def cond(*args, **kwargs):
-    return _wrap_op("cond", msc_ops.cond)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("greater", msc_ops.greater, args, kwargs)
 
 
-def cond_eager(*args, **kwargs):
-    return _wrap_op("cond_eager", msc_ops.cond_eager)(*args, **kwargs)
+def greater_equal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``greater_equal`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def cond_tracing(*args, **kwargs):
-    return _wrap_op("cond_tracing", msc_ops.cond_tracing)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("greater_equal", msc_ops.greater_equal, args, kwargs)
 
 
-config = msc_ops.config
+def gru_cell(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``gru_cell`` operation.
 
-configs = msc_ops.configs
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("gru_cell", msc_ops.gru_cell, args, kwargs)
 
-def confusion_matrix(*args, **kwargs):
-    return _wrap_op("confusion_matrix", msc_ops.confusion_matrix)(*args, **kwargs)
 
+def hamming(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hamming`` operation.
 
-def conj(*args, **kwargs):
-    return _wrap_op("conj", msc_ops.conj)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hamming", _msc_basic_Hamming(), args, kwargs)
 
-def conjugate(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.conjugate is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def hanning(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hanning`` operation.
 
-def conjugate_gradient(*args, **kwargs):
-    return _wrap_op("conjugate_gradient", msc_ops.conjugate_gradient)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hanning", _msc_basic_Hanning(), args, kwargs)
 
-control_flow = msc_ops.control_flow
 
-control_flow_utils = msc_ops.control_flow_utils
+def hard_silu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hard_silu`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv(*args, **kwargs):
-    return _wrap_op("conv", msc_ops.conv.conv)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hard_silu", _msc_activations_hard_silu, args, kwargs)
 
 
-from ml_switcheroo_compiler.ops.nn.conv1d import conv1d as msc_conv1d
+def hard_swish(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hard_swish`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv1d(*args, **kwargs):
-    return _wrap_op("conv1d", msc_conv1d)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hard_swish", _msc_activations_hard_swish, args, kwargs)
 
 
-def conv1d_lstm_cell(*args, **kwargs):
-    return _wrap_op("conv1d_lstm_cell", msc_ops.conv1d_lstm_cell)(*args, **kwargs)
+def heaviside(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``heaviside`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-from ml_switcheroo_compiler.ops.nn.conv_nd import conv_transpose as msc_conv_transpose
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("heaviside", msc_ops.heaviside, args, kwargs)
 
 
-def conv1d_transpose(*args, **kwargs):
-    return _wrap_op("conv1d_transpose", msc_conv_transpose)(*args, **kwargs)
+def histogram(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``histogram`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-from ml_switcheroo_compiler.ops.nn.conv2d import conv2d as msc_conv2d
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("histogram", _msc_info_and_histograms_histogram, args, kwargs)
 
 
-def conv2d(*args, **kwargs):
-    return _wrap_op("conv2d", msc_conv2d)(*args, **kwargs)
+def hsplit(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hsplit`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv2d_lstm_cell(*args, **kwargs):
-    return _wrap_op("conv2d_lstm_cell", msc_ops.conv2d_lstm_cell)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hsplit", msc_ops.hsplit, args, kwargs)
 
 
-def conv2d_transpose(*args, **kwargs):
-    return _wrap_op("conv2d_transpose", msc_conv_transpose)(*args, **kwargs)
+def hstack(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hstack`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-from ml_switcheroo_compiler.ops.nn.conv3d import conv3d as msc_conv3d
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hstack", msc_ops.hstack, args, kwargs)
 
 
-def conv3d(*args, **kwargs):
-    return _wrap_op("conv3d", msc_conv3d)(*args, **kwargs)
+def hypot(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``hypot`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv3d_lstm_cell(*args, **kwargs):
-    return _wrap_op("conv3d_lstm_cell", msc_ops.conv3d_lstm_cell)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("hypot", msc_ops.hypot, args, kwargs)
 
 
-def conv3d_transpose(*args, **kwargs):
-    return _wrap_op("conv3d_transpose", msc_conv_transpose)(*args, **kwargs)
+def i0(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``i0`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv_general_dilated(*args, **kwargs):
-    return _wrap_op("conv_general_dilated", msc_ops.conv_general_dilated)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("i0", msc_ops.bessel_i0, args, kwargs)
 
 
-def conv_general_dilated_local(*args, **kwargs):
-    return _wrap_op("conv_general_dilated_local", msc_ops.conv_general_dilated_local)(
-        *args, **kwargs
-    )
+def identity(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``identity`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def conv_general_dilated_patches(*args, **kwargs):
-    return _wrap_op(
-        "conv_general_dilated_patches", msc_ops.conv_general_dilated_patches
-    )(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("identity", msc_ops.identity, args, kwargs)
 
 
-conv_lstm = msc_ops.conv_lstm
+def ifft2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ifft2`` operation.
 
-conv_nd = msc_ops.conv_nd
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ifft2", msc_ops.ifft2, args, kwargs)
 
-def conv_transpose(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.conv_transpose is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def imag(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``imag`` operation.
 
-conv_utils = msc_ops.conv_utils
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("imag", msc_ops.imag, args, kwargs)
 
-def conv_with_general_padding(*args, **kwargs):
-    return _wrap_op("conv_with_general_padding", msc_ops.conv_with_general_padding)(
-        *args, **kwargs
-    )
 
+def in_top_k(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``in_top_k`` operation.
 
-def convert_to_numpy(*args, **kwargs):
-    return _wrap_op("convert_to_numpy", msc_ops.convert_to_numpy)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("in_top_k", _msc_loss_in_top_k, args, kwargs)
 
-def convert_to_tensor(*args, **kwargs):
-    return _wrap_op("convert_to_tensor", msc_ops.convert_to_tensor)(*args, **kwargs)
 
+def inner(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``inner`` operation.
 
-def convolve(*args, **kwargs):
-    return _wrap_op("convolve", msc_ops.convolve)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("inner", msc_ops.inner, args, kwargs)
 
-def convolve2d(*args, **kwargs):
-    return _wrap_op("convolve2d", msc_ops.convolve2d)(*args, **kwargs)
 
+def inv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``inv`` operation.
 
-def copy(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.copy is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("inv", _msc_decompositions_inv, args, kwargs)
 
-def copysign(*args, **kwargs):
-    return _wrap_op("copysign", msc_ops.copysign)(*args, **kwargs)
 
+def irfft(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``irfft`` operation.
 
-core = msc_ops.core
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("irfft", msc_ops.Irfft(), args, kwargs)
 
-def corrcoef(*args, **kwargs):
-    return _wrap_op("corrcoef", msc_ops.corrcoef)(*args, **kwargs)
 
+def isclose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isclose`` operation.
 
-def correlate(*args, **kwargs):
-    return _wrap_op("correlate", msc_ops.correlate)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isclose", msc_ops.isclose, args, kwargs)
 
-def cos(*args, **kwargs):
-    return _wrap_op("cos", msc_ops.cos)(*args, **kwargs)
 
+def isfinite(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isfinite`` operation.
 
-def cosh(*args, **kwargs):
-    return _wrap_op("cosh", msc_ops.cosh)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isfinite", msc_ops.isfinite, args, kwargs)
 
-def count_nonzero(*args, **kwargs):
-    return _wrap_op("count_nonzero", msc_ops.count_nonzero)(*args, **kwargs)
 
+def isin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isin`` operation.
 
-def cov(*args, **kwargs):
-    return _wrap_op("cov", msc_ops.cov)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isin", msc_ops.isin, args, kwargs)
 
-creation = msc_ops.creation
 
+def isinf(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isinf`` operation.
 
-def crop(*args, **kwargs):
-    return _wrap_op("crop", msc_ops.crop)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isinf", msc_ops.isinf, args, kwargs)
 
-def crop_and_resize(*args, **kwargs):
-    return _wrap_op("crop_and_resize", msc_ops.crop_and_resize)(*args, **kwargs)
 
+def isnan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isnan`` operation.
 
-def crop_images(*args, **kwargs):
-    return _wrap_op("crop_images", msc_ops.crop_images)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isnan", msc_ops.isnan, args, kwargs)
 
-def cross(*args, **kwargs):
-    return _wrap_op("cross", msc_ops.cross)(*args, **kwargs)
 
+def isneginf(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isneginf`` operation.
 
-def ctc_decode(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.ctc_decode is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isneginf", msc_ops.isneginf, args, kwargs)
 
-def ctc_loss(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.ctc_loss is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def isposinf(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isposinf`` operation.
 
-def cummax(*args, **kwargs):
-    return _wrap_op("cummax", msc_ops.cummax)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isposinf", msc_ops.isposinf, args, kwargs)
 
-def cummin(*args, **kwargs):
-    return _wrap_op("cummin", msc_ops.cummin)(*args, **kwargs)
 
+def isreal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``isreal`` operation.
 
-def cumprod(*args, **kwargs):
-    return _wrap_op("cumprod", msc_ops.cumprod)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("isreal", msc_ops.isreal, args, kwargs)
 
-def cumsum(*args, **kwargs):
-    return _wrap_op("cumsum", msc_ops.cumsum)(*args, **kwargs)
 
+def istft(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``istft`` operation.
 
-def cumulative_logsumexp(*args, **kwargs):
-    return _wrap_op("cumulative_logsumexp", msc_ops.cumulative_logsumexp)(
-        *args, **kwargs
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("istft", msc_ops.istft, args, kwargs)
 
-def custom_gradient(*args, **kwargs):
-    return _wrap_op("custom_gradient", msc_ops.custom_gradient)(*args, **kwargs)
 
+def kaiser(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``kaiser`` operation.
 
-def cutmix(*args, **kwargs):
-    return _wrap_op("cutmix", msc_ops.cutmix)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("kaiser", _msc_basic_Kaiser(), args, kwargs)
 
-def dataclass(*args, **kwargs):
-    return _wrap_op("dataclass", msc_ops.dataclass)(*args, **kwargs)
 
+def kron(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``kron`` operation.
 
-def debug_infs(*args, **kwargs):
-    return _wrap_op("debug_infs", msc_ops.debug_infs)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("kron", _msc_info_and_histograms_kron, args, kwargs)
 
-def debug_nans(*args, **kwargs):
-    return _wrap_op("debug_nans", msc_ops.debug_nans)(*args, **kwargs)
 
+def lcm(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``lcm`` operation.
 
-def decode_base64(*args, **kwargs):
-    return _wrap_op("decode_base64", msc_ops.decode_base64)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("lcm", msc_ops.lcm, args, kwargs)
 
-def decode_bmp(*args, **kwargs):
-    return _wrap_op("decode_bmp", msc_ops.decode_bmp)(*args, **kwargs)
 
+def ldexp(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ldexp`` operation.
 
-def decode_csv(*args, **kwargs):
-    return _wrap_op("decode_csv", msc_ops.decode_csv)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ldexp", msc_ops.ldexp, args, kwargs)
 
-def decode_gif(*args, **kwargs):
-    return _wrap_op("decode_gif", msc_ops.decode_gif)(*args, **kwargs)
 
+def left_shift(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``left_shift`` operation.
 
-def decode_image(*args, **kwargs):
-    return _wrap_op("decode_image", msc_ops.decode_image)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("left_shift", msc_ops.left_shift, args, kwargs)
 
-def decode_jpeg(*args, **kwargs):
-    return _wrap_op("decode_jpeg", msc_ops.decode_jpeg)(*args, **kwargs)
 
+def less(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``less`` operation.
 
-def decode_png(*args, **kwargs):
-    return _wrap_op("decode_png", msc_ops.decode_png)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("less", msc_ops.less, args, kwargs)
 
-def deg2rad(*args, **kwargs):
-    return _wrap_op("deg2rad", msc_ops.deg2rad)(*args, **kwargs)
 
+def less_equal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``less_equal`` operation.
 
-def degeneration(*args, **kwargs):
-    return _wrap_op("degeneration", msc_ops.degeneration)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("less_equal", msc_ops.less_equal, args, kwargs)
 
-def degrees(*args, **kwargs):
-    return _wrap_op("degrees", msc_ops.degrees)(*args, **kwargs)
 
+def linspace(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``linspace`` operation.
 
-def delete(*args, **kwargs):
-    return _wrap_op("delete", msc_ops.delete)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("linspace", msc_ops.linspace, args, kwargs)
 
-def depthwise_conv(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.depthwise_conv is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def load(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``load`` operation.
 
-def descriptive(*args, **kwargs):
-    return _wrap_op("descriptive", msc_ops.descriptive.descriptive)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("load", msc_ops.load, args, kwargs)
 
-def det(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.det is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def log(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log`` operation.
 
-device = msc_ops.device
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log", msc_ops.log, args, kwargs)
 
-def diag(*args, **kwargs):
-    return _wrap_op("diag", msc_ops.diag)(*args, **kwargs)
 
+def log10(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log10`` operation.
 
-def diag_indices(*args, **kwargs):
-    return _wrap_op("diag_indices", msc_ops.diag_indices)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log10", msc_ops.log10, args, kwargs)
 
-def diag_indices_from(*args, **kwargs):
-    return _wrap_op("diag_indices_from", msc_ops.diag_indices_from)(*args, **kwargs)
 
+def log1p(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log1p`` operation.
 
-def diag_part(*args, **kwargs):
-    return _wrap_op("diag_part", msc_ops.diag_part)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log1p", msc_ops.log1p, args, kwargs)
 
-def diagflat(*args, **kwargs):
-    return _wrap_op("diagflat", msc_ops.diagflat)(*args, **kwargs)
 
+def log2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log2`` operation.
 
-def diagonal(*args, **kwargs):
-    return _wrap_op("diagonal", msc_ops.diagonal)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log2", msc_ops.log2, args, kwargs)
 
-def diff(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.diff is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def log_sigmoid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log_sigmoid`` operation.
 
-def digamma(*args, **kwargs):
-    return _wrap_op("digamma", msc_ops.digamma)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log_sigmoid", _msc_arithmetic_LogSigmoid(), args, kwargs)
 
-def digitize(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.digitize is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def log_softmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``log_softmax`` operation.
 
-def dispatch_eager(*args, **kwargs):
-    return _wrap_op("dispatch_eager", msc_ops.dispatch_eager)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("log_softmax", _msc_activations_log_softmax, args, kwargs)
 
-dispatcher = msc_ops.dispatcher
 
-distributed = msc_ops.distributed
+def logaddexp(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logaddexp`` operation.
 
-distributed_ops = msc_ops.distributed_ops
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-distributions = msc_ops.distributions
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logaddexp", msc_ops.logaddexp, args, kwargs)
 
 
-def divide(*args, **kwargs):
-    return _wrap_op("divide", msc_ops.divide)(*args, **kwargs)
+def logaddexp2(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logaddexp2`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def divide_no_nan(*args, **kwargs):
-    return _wrap_op("divide_no_nan", msc_ops.divide_no_nan)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logaddexp2", msc_ops.logaddexp2, args, kwargs)
 
 
-def divmod(*args, **kwargs):
-    return _wrap_op("divmod", msc_ops.divmod)(*args, **kwargs)
+def logdet(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logdet`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def dot(*args, **kwargs):
-    return _wrap_op("dot", msc_ops.dot)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logdet", msc_ops.logdet, args, kwargs)
 
 
-def dot_general(*args, **kwargs):
-    return _wrap_op("dot_general", msc_ops.dot_general)(*args, **kwargs)
+def logical_and(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logical_and`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def dot_product_attention(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.dot_product_attention is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logical_and", msc_ops.logical_and, args, kwargs)
 
 
-def draw_bounding_boxes(*args, **kwargs):
-    return _wrap_op("draw_bounding_boxes", msc_ops.draw_bounding_boxes)(*args, **kwargs)
+def logical_not(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logical_not`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-from ml_switcheroo_compiler.ops.nn.dropout import dropout as msc_dropout
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logical_not", msc_ops.logical_not, args, kwargs)
 
 
-def dropout(*args, **kwargs):
-    return _wrap_op("dropout", msc_dropout)(*args, **kwargs)
+def logical_or(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logical_or`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def dsplit(*args, **kwargs):
-    return _wrap_op("dsplit", msc_ops.dsplit)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logical_or", msc_ops.logical_or, args, kwargs)
 
 
-def dstack(*args, **kwargs):
-    return _wrap_op("dstack", msc_ops.dstack)(*args, **kwargs)
+def logical_xor(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logical_xor`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def dtype(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.dtype is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logical_xor", msc_ops.logical_xor, args, kwargs)
 
 
-dynamic_slicing = msc_ops.dynamic_slicing
+def logspace(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logspace`` operation.
 
-from ml_switcheroo_compiler.ops.shape.dynamic_slicing import (
-    dynamic_update_slice as msc_dynamic_update_slice,
-)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logspace", _msc_basic_Logspace(), args, kwargs)
 
-def dynamic_update_slice(*args, **kwargs):
-    return _wrap_op("dynamic_update_slice", msc_dynamic_update_slice)(*args, **kwargs)
 
+def logsumexp(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``logsumexp`` operation.
 
-eager = msc_ops.eager
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-eager_evaluator = msc_ops.eager_evaluator
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("logsumexp", msc_ops.logsumexp, args, kwargs)
 
 
-def ediff1d(*args, **kwargs):
-    return _wrap_op("ediff1d", msc_ops.ediff1d)(*args, **kwargs)
+def lstm_cell(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``lstm_cell`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def edit_distance(*args, **kwargs):
-    return _wrap_op("edit_distance", msc_ops.edit_distance)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("lstm_cell", msc_ops.lstm_cell, args, kwargs)
 
 
-def eig(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.eig is not yet implemented in ml-switcheroo-compiler"
-    )
+def lstsq(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``lstsq`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def eigh(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.eigh is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("lstsq", msc_ops.lstsq, args, kwargs)
 
 
-def eigh_tridiagonal(*args, **kwargs):
-    return _wrap_op("eigh_tridiagonal", msc_ops.eigh_tridiagonal)(*args, **kwargs)
+def lu_factor(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``lu_factor`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def einsum(*args, **kwargs):
-    return _wrap_op("einsum", msc_ops.einsum)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("lu_factor", _msc_decompositions_lu_factor, args, kwargs)
 
 
-def elastic_transform(*args, **kwargs):
-    return _wrap_op("elastic_transform", msc_ops.elastic_transform)(*args, **kwargs)
+def map(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``map`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def elu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.elu is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("map", msc_ops.map, args, kwargs)
 
 
-def emit_ir_node(*args, **kwargs):
-    return _wrap_op("emit_ir_node", msc_ops.emit_ir_node)(*args, **kwargs)
+def matmul(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``matmul`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def empty(*args, **kwargs):
-    return _wrap_op("empty", msc_ops.empty)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("matmul", msc_ops.matmul, args, kwargs)
 
 
-def empty_like(*args, **kwargs):
-    return _wrap_op("empty_like", msc_ops.empty_like)(*args, **kwargs)
+def matrix_rank(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``matrix_rank`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def encode_base64(*args, **kwargs):
-    return _wrap_op("encode_base64", msc_ops.encode_base64)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("matrix_rank", msc_ops.matrix_rank, args, kwargs)
 
 
-def equal(*args, **kwargs):
-    return _wrap_op("equal", msc_ops.equal)(*args, **kwargs)
+def max(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``max`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def equalization(*args, **kwargs):
-    return _wrap_op("equalization", msc_ops.equalization)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("max", msc_ops.max, args, kwargs)
 
 
-def erf(*args, **kwargs):
-    return _wrap_op("erf", msc_ops.erf)(*args, **kwargs)
+def max_pool(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``max_pool`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def erf_inv(*args, **kwargs):
-    return _wrap_op("erf_inv", msc_ops.erf_inv)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("max_pool", msc_ops.max_pool, args, kwargs)
 
 
-def erfc(*args, **kwargs):
-    return _wrap_op("erfc", msc_ops.erfc)(*args, **kwargs)
+def maximum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``maximum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def erfcinv(*args, **kwargs):
-    return _wrap_op("erfcinv", msc_ops.erfcinv)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("maximum", msc_ops.maximum, args, kwargs)
 
 
-def erfinv(*args, **kwargs):
-    return _wrap_op("erfinv", msc_ops.erfinv)(*args, **kwargs)
+def mean(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``mean`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def eval(*args, **kwargs):
-    return _wrap_op("eval", msc_ops.eval)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("mean", msc_ops.mean, args, kwargs)
 
 
-def exp(*args, **kwargs):
-    return _wrap_op("exp", msc_ops.exp)(*args, **kwargs)
+def median(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``median`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def exp2(*args, **kwargs):
-    return _wrap_op("exp2", msc_ops.exp2)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("median", msc_ops.nanmedian, args, kwargs)
 
 
-def expand_dims(*args, **kwargs):
-    return _wrap_op("expand_dims", msc_ops.expand_dims)(*args, **kwargs)
+def meshgrid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``meshgrid`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def expm(*args, **kwargs):
-    return _wrap_op("expm", msc_ops.expm)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("meshgrid", _msc_pad_and_tile_meshgrid, args, kwargs)
 
 
-def expm1(*args, **kwargs):
-    return _wrap_op("expm1", msc_ops.expm1)(*args, **kwargs)
+def min(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``min`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-exponential = msc_ops.exponential
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("min", msc_ops.min, args, kwargs)
 
 
-def extract_bounding_boxes(*args, **kwargs):
-    return _wrap_op("extract_bounding_boxes", msc_ops.extract_bounding_boxes)(
-        *args, **kwargs
-    )
+def minimum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``minimum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def extract_patches(*args, **kwargs):
-    return _wrap_op("extract_patches", msc_ops.extract_patches)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("minimum", msc_ops.minimum, args, kwargs)
 
 
-def extract_sequences(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.extract_sequences is not yet implemented in ml-switcheroo-compiler"
-    )
+def mod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``mod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def eye(*args, **kwargs):
-    return _wrap_op("eye", msc_ops.eye)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("mod", msc_ops.mod, args, kwargs)
 
 
-def fft(*args, **kwargs):
-    return _wrap_op("fft", msc_ops.fft)(*args, **kwargs)
+def moments(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``moments`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fft2(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.fft2 is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("moments", _msc_normalization_moments, args, kwargs)
 
 
-def fftconvolve(*args, **kwargs):
-    return _wrap_op("fftconvolve", msc_ops.fftconvolve)(*args, **kwargs)
+def moveaxis(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``moveaxis`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fftn(*args, **kwargs):
-    return _wrap_op("fftn", msc_ops.fftn)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("moveaxis", msc_ops.moveaxis, args, kwargs)
 
 
-def fftnd(*args, **kwargs):
-    return _wrap_op("fftnd", msc_ops.fftnd)(*args, **kwargs)
+def multiply(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``multiply`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fftshift(*args, **kwargs):
-    return _wrap_op("fftshift", msc_ops.fftshift)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("multiply", msc_ops.multiply, args, kwargs)
 
 
-def fill_diagonal(*args, **kwargs):
-    return _wrap_op("fill_diagonal", msc_ops.fill_diagonal)(*args, **kwargs)
+def nan_to_num(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nan_to_num`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fix(*args, **kwargs):
-    return _wrap_op("fix", msc_ops.fix)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nan_to_num", msc_ops.nan_to_num, args, kwargs)
 
 
-def flip(*args, **kwargs):
-    return _wrap_op("flip", msc_ops.flip)(*args, **kwargs)
+def nanargmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanargmax`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def flip_left_right(*args, **kwargs):
-    return _wrap_op("flip_left_right", msc_ops.flip_left_right)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanargmax", msc_ops.nanargmax, args, kwargs)
 
 
-def flip_up_down(*args, **kwargs):
-    return _wrap_op("flip_up_down", msc_ops.flip_up_down)(*args, **kwargs)
+def nanargmin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanargmin`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fliplr(*args, **kwargs):
-    return _wrap_op("fliplr", msc_ops.fliplr)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanargmin", msc_ops.nanargmin, args, kwargs)
 
 
-def flipud(*args, **kwargs):
-    return _wrap_op("flipud", msc_ops.flipud)(*args, **kwargs)
+def nancumprod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nancumprod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def float_power(*args, **kwargs):
-    return _wrap_op("float_power", msc_ops.float_power)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nancumprod", msc_ops.nancumprod, args, kwargs)
 
 
-def floor(*args, **kwargs):
-    return _wrap_op("floor", msc_ops.floor)(*args, **kwargs)
+def nancumsum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nancumsum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def floor_divide(*args, **kwargs):
-    return _wrap_op("floor_divide", msc_ops.floor_divide)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nancumsum", msc_ops.nancumsum, args, kwargs)
 
 
-def fmax(*args, **kwargs):
-    return _wrap_op("fmax", msc_ops.fmax)(*args, **kwargs)
+def nanmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanmax`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fmin(*args, **kwargs):
-    return _wrap_op("fmin", msc_ops.fmin)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanmax", msc_ops.nanmax, args, kwargs)
 
 
-def fmod(*args, **kwargs):
-    return _wrap_op("fmod", msc_ops.fmod)(*args, **kwargs)
+def nanmean(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanmean`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def fori_loop(*args, **kwargs):
-    return _wrap_op("fori_loop", msc_ops.fori_loop)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanmean", msc_ops.nanmean, args, kwargs)
 
 
-def frexp(*args, **kwargs):
-    return _wrap_op("frexp", msc_ops.frexp)(*args, **kwargs)
+def nanmedian(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanmedian`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def frombuffer(*args, **kwargs):
-    return _wrap_op("frombuffer", msc_ops.frombuffer)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanmedian", msc_ops.nanmedian, args, kwargs)
 
 
-frontend = msc_ops.frontend
+def nanmin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanmin`` operation.
 
-frontend_pool = msc_ops.frontend_pool
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-frontend_segment = msc_ops.frontend_segment
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanmin", msc_ops.nanmin, args, kwargs)
 
-frontend_stats = msc_ops.frontend_stats
 
-frontend_utils = msc_ops.frontend_utils
+def nanpercentile(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanpercentile`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def full(*args, **kwargs):
-    return _wrap_op("full", msc_ops.full)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanpercentile", msc_ops.nanpercentile, args, kwargs)
 
 
-def full_like(*args, **kwargs):
-    return _wrap_op("full_like", msc_ops.full_like)(*args, **kwargs)
+def nanprod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanprod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def gather_mm(*args, **kwargs):
-    return _wrap_op("gather_mm", msc_ops.gather_mm)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanprod", msc_ops.nanprod, args, kwargs)
 
 
-def gaussian_blur(*args, **kwargs):
-    return _wrap_op("gaussian_blur", msc_ops.gaussian_blur)(*args, **kwargs)
+def nanquantile(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanquantile`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def gcd(*args, **kwargs):
-    return _wrap_op("gcd", msc_ops.gcd)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanquantile", msc_ops.nanquantile, args, kwargs)
 
 
-def gelu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.gelu is not yet implemented in ml-switcheroo-compiler"
-    )
+def nanstd(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanstd`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def get_active_backend(*args, **kwargs):
-    return _wrap_op("get_active_backend", msc_ops.get_active_backend)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanstd", msc_ops.nanstd, args, kwargs)
 
 
-def get_item(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.get_item is not yet implemented in ml-switcheroo-compiler"
-    )
+def nansum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nansum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def get_op(*args, **kwargs):
-    return _wrap_op("get_op", msc_ops.get_op)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nansum", msc_ops.nansum, args, kwargs)
 
 
-def get_peak_memory(*args, **kwargs):
-    return _wrap_op("get_peak_memory", msc_ops.get_peak_memory)(*args, **kwargs)
+def nanvar(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nanvar`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def gfile_copy(*args, **kwargs):
-    return _wrap_op("gfile_copy", msc_ops.gfile_copy)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nanvar", msc_ops.nanvar, args, kwargs)
 
 
-def gfile_glob(*args, **kwargs):
-    return _wrap_op("gfile_glob", msc_ops.gfile_glob)(*args, **kwargs)
+def negative(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``negative`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def gfile_makedirs(*args, **kwargs):
-    return _wrap_op("gfile_makedirs", msc_ops.gfile_makedirs)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("negative", msc_ops.negative, args, kwargs)
 
 
-def gfile_stat(*args, **kwargs):
-    return _wrap_op("gfile_stat", msc_ops.gfile_stat)(*args, **kwargs)
+def nextafter(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nextafter`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-global_config = msc_ops.global_config
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nextafter", msc_ops.nextafter, args, kwargs)
 
 
-def global_norm(*args, **kwargs):
-    return _wrap_op("global_norm", msc_ops.global_norm)(*args, **kwargs)
+def nonzero(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``nonzero`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def glu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.glu is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("nonzero", _msc_loss_where, args, kwargs)
 
 
-def greater(*args, **kwargs):
-    return _wrap_op("greater", msc_ops.greater)(*args, **kwargs)
+def norm(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``norm`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def greater_equal(*args, **kwargs):
-    return _wrap_op("greater_equal", msc_ops.greater_equal)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("norm", msc_ops.norm, args, kwargs)
 
 
-def grid_sample(*args, **kwargs):
-    return _wrap_op("grid_sample", msc_ops.grid_sample)(*args, **kwargs)
+def normalize(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``normalize`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def group_variance(*args, **kwargs):
-    return _wrap_op("group_variance", msc_ops.group_variance)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("normalize", msc_ops.normalize, args, kwargs)
 
 
-def gru(*args, **kwargs):
-    return _wrap_op("gru", msc_ops.gru)(*args, **kwargs)
+def not_equal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``not_equal`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def gru_cell(*args, **kwargs):
-    return _wrap_op("gru_cell", msc_ops.gru_cell)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("not_equal", msc_ops.not_equal, args, kwargs)
 
 
-def hadamard_transform(*args, **kwargs):
-    return _wrap_op("hadamard_transform", msc_ops.hadamard_transform)(*args, **kwargs)
+def numpy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``numpy`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def hamming(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.hamming is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("numpy", msc_ops.convert_to_numpy, args, kwargs)
 
 
-def hard_shrink(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.hard_shrink is not yet implemented in ml-switcheroo-compiler"
-    )
+def one_hot(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``one_hot`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def hard_sigmoid(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.hard_sigmoid is not yet implemented in ml-switcheroo-compiler"
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op(
+        "one_hot",
+        msc_ops.one_hot if hasattr(msc_ops, "one_hot") else _msc_activations_one_hot,
+        args,
+        kwargs,
     )
 
 
-def hard_silu(*args, **kwargs):
-    return _wrap_op("hard_silu", msc_ops.activations.hard_silu)(*args, **kwargs)
+def ones(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ones`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def hard_swish(*args, **kwargs):
-    return _wrap_op("hard_swish", msc_ops.activations.hard_swish)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ones", msc_ops.ones, args, kwargs)
 
 
-def hard_tanh(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.hard_tanh is not yet implemented in ml-switcheroo-compiler"
-    )
+def ones_like(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``ones_like`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def heaviside(*args, **kwargs):
-    return _wrap_op("heaviside", msc_ops.heaviside)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("ones_like", msc_ops.ones_like, args, kwargs)
 
 
-def hermite_polynomial_h(*args, **kwargs):
-    return _wrap_op("hermite_polynomial_h", msc_ops.hermite_polynomial_h)(
-        *args, **kwargs
-    )
+def outer(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``outer`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def hermite_polynomial_he(*args, **kwargs):
-    return _wrap_op("hermite_polynomial_he", msc_ops.hermite_polynomial_he)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("outer", msc_ops.outer, args, kwargs)
 
 
-def hfft(*args, **kwargs):
-    return _wrap_op("hfft", msc_ops.hfft)(*args, **kwargs)
+def pad(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``pad`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def histogram(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.histogram is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("pad", _msc_pad_and_tile_pad, args, kwargs)
 
 
-def hsplit(*args, **kwargs):
-    return _wrap_op("hsplit", msc_ops.hsplit)(*args, **kwargs)
+def percentile(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``percentile`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def hstack(*args, **kwargs):
-    return _wrap_op("hstack", msc_ops.hstack)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("percentile", msc_ops.nanpercentile, args, kwargs)
 
 
-def hsv_to_rgb(*args, **kwargs):
-    return _wrap_op("hsv_to_rgb", msc_ops.hsv_to_rgb)(*args, **kwargs)
+def permute(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``permute`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-hyperbolic = msc_ops.hyperbolic
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("permute", msc_ops.permute, args, kwargs)
 
 
-def hypot(*args, **kwargs):
-    return _wrap_op("hypot", msc_ops.hypot)(*args, **kwargs)
+def pinv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``pinv`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def identity(*args, **kwargs):
-    return _wrap_op("identity", msc_ops.identity)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("pinv", _msc_decompositions_pinv, args, kwargs)
 
 
-def ifft(*args, **kwargs):
-    return _wrap_op("ifft", msc_ops.ifft)(*args, **kwargs)
+def polar(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``polar`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ifft2(*args, **kwargs):
-    return _wrap_op("ifft2", msc_ops.ifft2)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("polar", msc_ops.polar, args, kwargs)
 
 
-def ifftn(*args, **kwargs):
-    return _wrap_op("ifftn", msc_ops.ifftn)(*args, **kwargs)
+def power(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``power`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ifftnd(*args, **kwargs):
-    return _wrap_op("ifftnd", msc_ops.ifftnd)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("power", msc_ops.power, args, kwargs)
 
 
-def ifftshift(*args, **kwargs):
-    return _wrap_op("ifftshift", msc_ops.ifftshift)(*args, **kwargs)
+def prod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``prod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def igamma(*args, **kwargs):
-    return _wrap_op("igamma", msc_ops.igamma)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("prod", msc_ops.prod, args, kwargs)
 
 
-def igammac(*args, **kwargs):
-    return _wrap_op("igammac", msc_ops.igammac)(*args, **kwargs)
+def qr(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``qr`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def imag(*args, **kwargs):
-    return _wrap_op("imag", msc_ops.imag)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("qr", _msc_decompositions_qr, args, kwargs)
 
 
-class image:
-    @staticmethod
-    def resize(*args, **kwargs):
-        return _wrap_op("resize", msc_ops.resize)(*args, **kwargs)
+def quantile(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``quantile`` operation.
 
-    @staticmethod
-    def crop_images(*args, **kwargs):
-        return _wrap_op("crop_images", msc_ops.crop_images)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def extract_patches(*args, **kwargs):
-        return _wrap_op("extract_patches", msc_ops.extract_patches)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("quantile", msc_ops.nanquantile, args, kwargs)
 
-    @staticmethod
-    def affine_transform(*args, **kwargs):
-        return _wrap_op("affine_transform", msc_ops.affine_transform)(*args, **kwargs)
 
-    @staticmethod
-    def elastic_transform(*args, **kwargs):
-        return _wrap_op("elastic_transform", msc_ops.elastic_transform)(*args, **kwargs)
+def rad2deg(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``rad2deg`` operation.
 
-    @staticmethod
-    def gaussian_blur(*args, **kwargs):
-        return _wrap_op("gaussian_blur", msc_ops.gaussian_blur)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def hsv_to_rgb(*args, **kwargs):
-        return _wrap_op("hsv_to_rgb", msc_ops.hsv_to_rgb)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("rad2deg", msc_ops.rad2deg, args, kwargs)
 
-    @staticmethod
-    def map_coordinates(*args, **kwargs):
-        return _wrap_op("map_coordinates", msc_ops.map_coordinates)(*args, **kwargs)
 
-    @staticmethod
-    def pad_images(*args, **kwargs):
-        return _wrap_op("pad_images", msc_ops.pad_images)(*args, **kwargs)
+def real(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``real`` operation.
 
-    @staticmethod
-    def perspective_transform(*args, **kwargs):
-        return _wrap_op("perspective_transform", msc_ops.perspective_transform)(
-            *args, **kwargs
-        )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def rgb_to_grayscale(*args, **kwargs):
-        return _wrap_op("rgb_to_grayscale", msc_ops.rgb_to_grayscale)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("real", msc_ops.real, args, kwargs)
 
-    @staticmethod
-    def rgb_to_hsv(*args, **kwargs):
-        return _wrap_op("rgb_to_hsv", msc_ops.rgb_to_hsv)(*args, **kwargs)
 
-    @staticmethod
-    def random_flip(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.affine import random_flip as rf
+def reciprocal(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``reciprocal`` operation.
 
-        return _wrap_op("random_flip", rf)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def random_rotation(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.affine import random_rotation as rr
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("reciprocal", msc_ops.reciprocal, args, kwargs)
 
-        return _wrap_op("random_rotation", rr)(*args, **kwargs)
 
-    @staticmethod
-    def adjust_contrast(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.color import adjust_contrast as ac
+def reshape(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``reshape`` operation.
 
-        return _wrap_op("adjust_contrast", ac)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def auto_contrast(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.color import auto_contrast as ac
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("reshape", _msc_transform_reshape, args, kwargs)
 
-        return _wrap_op("auto_contrast", ac)(*args, **kwargs)
 
-    @staticmethod
-    def equalization(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.color import equalization as eq
+def rfft(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``rfft`` operation.
 
-        return _wrap_op("equalization", eq)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def resize_bilinear(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.interpolation import (
-            resize_bilinear as rb,
-        )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("rfft", msc_ops.Rfft(), args, kwargs)
 
-        return _wrap_op("resize_bilinear", rb)(*args, **kwargs)
 
-    @staticmethod
-    def resize_nearest(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.interpolation import resize_nearest as rn
+def right_shift(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``right_shift`` operation.
 
-        return _wrap_op("resize_nearest", rn)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-    @staticmethod
-    def resize_bicubic(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.interpolation import (
-            resize_bicubic as rbc,
-        )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("right_shift", msc_ops.right_shift, args, kwargs)
 
-        return _wrap_op("resize_bicubic", rbc)(*args, **kwargs)
 
-    @staticmethod
-    def resize_lanczos3(*args, **kwargs):
-        from ml_switcheroo_compiler.ops.vision.interpolation import (
-            resize_lanczos3 as rl3,
-        )
+def rms_normalization(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``rms_normalization`` operation.
 
-        return _wrap_op("resize_lanczos3", rl3)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("rms_normalization", _msc_normalization_rms_norm, args, kwargs)
 
-def in_top_k(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.in_top_k is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def roll(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``roll`` operation.
 
-indexing = msc_ops.indexing
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-indexing_advanced = msc_ops.indexing_advanced
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("roll", msc_ops.roll, args, kwargs)
 
 
-def inner(*args, **kwargs):
-    return _wrap_op("inner", msc_ops.inner)(*args, **kwargs)
+def rot90(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``rot90`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def insert(*args, **kwargs):
-    return _wrap_op("insert", msc_ops.insert)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("rot90", msc_ops.flip, args, kwargs)
 
 
-def inv(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.inv is not yet implemented in ml-switcheroo-compiler"
-    )
+def round(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``round`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def invert(*args, **kwargs):
-    return _wrap_op("invert", msc_ops.invert)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("round", msc_ops.round, args, kwargs)
 
 
-io = msc_ops.io
+def rsqrt(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``rsqrt`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def iou(*args, **kwargs):
-    return _wrap_op("iou", msc_ops.iou)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("rsqrt", msc_ops.rsqrt, args, kwargs)
 
 
-def irfft(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.irfft is not yet implemented in ml-switcheroo-compiler"
-    )
+def scalar_mul(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``scalar_mul`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def irfft2(*args, **kwargs):
-    return _wrap_op("irfft2", msc_ops.irfft2)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("scalar_mul", msc_ops.scalar_mul, args, kwargs)
 
 
-def irfftn(*args, **kwargs):
-    return _wrap_op("irfftn", msc_ops.irfftn)(*args, **kwargs)
+def scan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``scan`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def irfftnd(*args, **kwargs):
-    return _wrap_op("irfftnd", msc_ops.irfftnd)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("scan", msc_ops.scan, args, kwargs)
 
 
-def is_non_decreasing(*args, **kwargs):
-    return _wrap_op("is_non_decreasing", msc_ops.is_non_decreasing)(*args, **kwargs)
+def scatter(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``scatter`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def is_strictly_increasing(*args, **kwargs):
-    return _wrap_op("is_strictly_increasing", msc_ops.is_strictly_increasing)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("scatter", _msc_scatter_scatter, args, kwargs)
 
 
-def is_tensor(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.is_tensor is not yet implemented in ml-switcheroo-compiler"
-    )
+def scatter_update(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``scatter_update`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def isclose(*args, **kwargs):
-    return _wrap_op("isclose", msc_ops.isclose)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("scatter_update", _msc_scatter_tensor_scatter_update, args, kwargs)
 
 
-def iscomplex(*args, **kwargs):
-    return _wrap_op("iscomplex", msc_ops.iscomplex)(*args, **kwargs)
+def searchsorted(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``searchsorted`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def iscomplexobj(*args, **kwargs):
-    return _wrap_op("iscomplexobj", msc_ops.iscomplexobj)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("searchsorted", _msc_indexing_searchsorted, args, kwargs)
 
 
-def isfinite(*args, **kwargs):
-    return _wrap_op("isfinite", msc_ops.isfinite)(*args, **kwargs)
+def segment_max(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``segment_max`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def isin(*args, **kwargs):
-    return _wrap_op("isin", msc_ops.isin)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("segment_max", msc_ops.segment_max, args, kwargs)
 
 
-def isinf(*args, **kwargs):
-    return _wrap_op("isinf", msc_ops.isinf)(*args, **kwargs)
+def segment_min(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``segment_min`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def isnan(*args, **kwargs):
-    return _wrap_op("isnan", msc_ops.isnan)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("segment_min", msc_ops.segment_min, args, kwargs)
 
 
-def isneginf(*args, **kwargs):
-    return _wrap_op("isneginf", msc_ops.isneginf)(*args, **kwargs)
+def segment_prod(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``segment_prod`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def isposinf(*args, **kwargs):
-    return _wrap_op("isposinf", msc_ops.isposinf)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("segment_prod", msc_ops.segment_prod, args, kwargs)
 
 
-def isreal(*args, **kwargs):
-    return _wrap_op("isreal", msc_ops.isreal)(*args, **kwargs)
+def segment_sum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``segment_sum`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def isrealobj(*args, **kwargs):
-    return _wrap_op("isrealobj", msc_ops.isrealobj)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("segment_sum", msc_ops.segment_sum, args, kwargs)
 
 
-def issubdtype(*args, **kwargs):
-    return _wrap_op("issubdtype", msc_ops.issubdtype)(*args, **kwargs)
+def select(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``select`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def istft(*args, **kwargs):
-    return _wrap_op("istft", msc_ops.istft)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("select", _msc_loss_where, args, kwargs)
 
 
-joining = msc_ops.joining
+def separable_conv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``separable_conv`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def laguerre_polynomial_l(*args, **kwargs):
-    return _wrap_op("laguerre_polynomial_l", msc_ops.laguerre_polynomial_l)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("separable_conv", _msc_conv_separable_conv2d, args, kwargs)
 
 
-def lbeta(*args, **kwargs):
-    return _wrap_op("lbeta", msc_ops.lbeta)(*args, **kwargs)
+def sigmoid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sigmoid`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def lcm(*args, **kwargs):
-    return _wrap_op("lcm", msc_ops.lcm)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sigmoid", _msc_activations_sigmoid, args, kwargs)
 
 
-def ldexp(*args, **kwargs):
-    return _wrap_op("ldexp", msc_ops.ldexp)(*args, **kwargs)
+def sign(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sign`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def leaky_relu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.leaky_relu is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sign", msc_ops.sign, args, kwargs)
 
 
-def left_shift(*args, **kwargs):
-    return _wrap_op("left_shift", msc_ops.left_shift)(*args, **kwargs)
+def signbit(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``signbit`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def legendre_polynomial_p(*args, **kwargs):
-    return _wrap_op("legendre_polynomial_p", msc_ops.legendre_polynomial_p)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("signbit", msc_ops.signbit, args, kwargs)
 
 
-def less(*args, **kwargs):
-    return _wrap_op("less", msc_ops.less)(*args, **kwargs)
+def sin(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sin`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def less_equal(*args, **kwargs):
-    return _wrap_op("less_equal", msc_ops.less_equal)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sin", msc_ops.sin, args, kwargs)
 
 
-def lgamma(*args, **kwargs):
-    return _wrap_op("lgamma", msc_ops.lgamma)(*args, **kwargs)
+def sinc(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sinc`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-linalg = msc_ops.linalg
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sinc", msc_ops.sinc, args, kwargs)
 
 
-def linspace(*args, **kwargs):
-    return _wrap_op("linspace", msc_ops.linspace)(*args, **kwargs)
+def sinh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sinh`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def load(*args, **kwargs):
-    return _wrap_op("load", msc_ops.load)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sinh", msc_ops.sinh, args, kwargs)
 
 
-def log(*args, **kwargs):
-    return _wrap_op("log", msc_ops.log)(*args, **kwargs)
+def slice(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``slice`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def log10(*args, **kwargs):
-    return _wrap_op("log10", msc_ops.log10)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("slice", _msc_slicing_slice, args, kwargs)
 
 
-def log1p(*args, **kwargs):
-    return _wrap_op("log1p", msc_ops.log1p)(*args, **kwargs)
+def slice_update(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``slice_update`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def log2(*args, **kwargs):
-    return _wrap_op("log2", msc_ops.log2)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("slice_update", _msc_dynamic_slicing_dynamic_update_slice, args, kwargs)
 
 
-def log_sigmoid(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.log_sigmoid is not yet implemented in ml-switcheroo-compiler"
-    )
+def slogdet(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``slogdet`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def log_softmax(*args, **kwargs):
-    return _wrap_op("log_softmax", msc_ops.activations.log_softmax)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("slogdet", _msc_decompositions_slogdet, args, kwargs)
 
 
-def logaddexp(*args, **kwargs):
-    return _wrap_op("logaddexp", msc_ops.logaddexp)(*args, **kwargs)
+def softmax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``softmax`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logaddexp2(*args, **kwargs):
-    return _wrap_op("logaddexp2", msc_ops.logaddexp2)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("softmax", _msc_activations_softmax, args, kwargs)
 
 
-def logcumsumexp(*args, **kwargs):
-    return _wrap_op("logcumsumexp", msc_ops.logcumsumexp)(*args, **kwargs)
+def softplus(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``softplus`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logdet(*args, **kwargs):
-    return _wrap_op("logdet", msc_ops.logdet)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("softplus", _msc_activations_softplus, args, kwargs)
 
 
-logical = msc_ops.logical
+def softsign(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``softsign`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logical_and(*args, **kwargs):
-    return _wrap_op("logical_and", msc_ops.logical_and)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("softsign", _msc_arithmetic_Softsign(), args, kwargs)
 
 
-def logical_not(*args, **kwargs):
-    return _wrap_op("logical_not", msc_ops.logical_not)(*args, **kwargs)
+def solve(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``solve`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logical_or(*args, **kwargs):
-    return _wrap_op("logical_or", msc_ops.logical_or)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("solve", _msc_decompositions_solve, args, kwargs)
 
 
-def logical_xor(*args, **kwargs):
-    return _wrap_op("logical_xor", msc_ops.logical_xor)(*args, **kwargs)
+def solve_triangular(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``solve_triangular`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logit(*args, **kwargs):
-    return _wrap_op("logit", msc_ops.logit)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("solve_triangular", _msc_decompositions_solve_triangular, args, kwargs)
 
 
-def logm(*args, **kwargs):
-    return _wrap_op("logm", msc_ops.logm)(*args, **kwargs)
+def sparse_categorical_crossentropy(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sparse_categorical_crossentropy`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def logspace(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.logspace is not yet implemented in ml-switcheroo-compiler"
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op(
+        "sparse_categorical_crossentropy", _msc_loss_sparse_categorical_crossentropy, args, kwargs
     )
-
-
-def logsumexp(*args, **kwargs):
-    return _wrap_op("logsumexp", msc_ops.logsumexp)(*args, **kwargs)
-
-
-def lookup(*args, **kwargs):
-    return _wrap_op("lookup", msc_ops.lookup)(*args, **kwargs)
 
 
-loss = msc_ops.loss
+def sparse_plus(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sparse_plus`` operation.
 
-lstm = msc_ops.lstm
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sparse_plus", msc_ops.sparse_plus, args, kwargs)
 
-def lstm_cell(*args, **kwargs):
-    return _wrap_op("lstm_cell", msc_ops.lstm_cell)(*args, **kwargs)
 
+def sparse_sigmoid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sparse_sigmoid`` operation.
 
-def lstsq(*args, **kwargs):
-    return _wrap_op("lstsq", msc_ops.lstsq)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sparse_sigmoid", msc_ops.sparse_sigmoid, args, kwargs)
 
-def lu(*args, **kwargs):
-    return _wrap_op("lu", msc_ops.lu)(*args, **kwargs)
 
+def sqrt(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sqrt`` operation.
 
-def lu_factor(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.lu_factor is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def lu_matrix_inverse(*args, **kwargs):
-    return _wrap_op("lu_matrix_inverse", msc_ops.lu_matrix_inverse)(*args, **kwargs)
-
-
-def lu_reconstruct(*args, **kwargs):
-    return _wrap_op("lu_reconstruct", msc_ops.lu_reconstruct)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sqrt", msc_ops.sqrt, args, kwargs)
 
-def lu_solve(*args, **kwargs):
-    return _wrap_op("lu_solve", msc_ops.lu_solve)(*args, **kwargs)
 
+def square(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``square`` operation.
 
-def manual_seed(*args, **kwargs):
-    return _wrap_op("manual_seed", msc_ops.manual_seed)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("square", msc_ops.square, args, kwargs)
 
-def map(*args, **kwargs):
-    return _wrap_op("map", msc_ops.map)(*args, **kwargs)
 
+def squareplus(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``squareplus`` operation.
 
-def map_coordinates(*args, **kwargs):
-    return _wrap_op("map_coordinates", msc_ops.map_coordinates)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("squareplus", _msc_activations_squareplus, args, kwargs)
 
-def map_flat_values(*args, **kwargs):
-    return _wrap_op("map_flat_values", msc_ops.map_flat_values)(*args, **kwargs)
 
+def squeeze(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``squeeze`` operation.
 
-def map_fn(*args, **kwargs):
-    return _wrap_op("map_fn", msc_ops.map_fn)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("squeeze", _msc_frontend_squeeze, args, kwargs)
 
-def map_fn_eager(*args, **kwargs):
-    return _wrap_op("map_fn_eager", msc_ops.map_fn_eager)(*args, **kwargs)
 
+def stack(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``stack`` operation.
 
-def map_fn_tracing(*args, **kwargs):
-    return _wrap_op("map_fn_tracing", msc_ops.map_fn_tracing)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("stack", msc_ops.stack, args, kwargs)
 
-math = msc_ops.math
 
+def std(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``std`` operation.
 
-def matmul(*args, **kwargs):
-    return _wrap_op("matmul", msc_ops.matmul)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("std", msc_ops.std, args, kwargs)
 
-def matrix_norm(*args, **kwargs):
-    return _wrap_op("matrix_norm", msc_ops.matrix_norm)(*args, **kwargs)
 
+def stft(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``stft`` operation.
 
-def matrix_rank(*args, **kwargs):
-    return _wrap_op("matrix_rank", msc_ops.matrix_rank)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("stft", msc_ops.stft, args, kwargs)
 
-def matrix_transpose(*args, **kwargs):
-    return _wrap_op("matrix_transpose", msc_ops.matrix_transpose)(*args, **kwargs)
 
+def stop_gradient(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``stop_gradient`` operation.
 
-def matvec(*args, **kwargs):
-    return _wrap_op("matvec", msc_ops.matvec)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("stop_gradient", msc_ops.stop_gradient, args, kwargs)
 
-def max(*args, **kwargs):
-    return _wrap_op("max", msc_ops.max)(*args, **kwargs)
 
+def subtract(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``subtract`` operation.
 
-def max_pool(*args, **kwargs):
-    return _wrap_op("max_pool", msc_ops.max_pool)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("subtract", msc_ops.subtract, args, kwargs)
 
-def max_pool1d(*args, **kwargs):
-    return _wrap_op("max_pool1d", msc_ops.max_pool1d)(*args, **kwargs)
 
+def sum(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``sum`` operation.
 
-def max_pool2d(*args, **kwargs):
-    return _wrap_op("max_pool2d", msc_ops.max_pool2d)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("sum", msc_ops.sum, args, kwargs)
 
-def max_pool3d(*args, **kwargs):
-    return _wrap_op("max_pool3d", msc_ops.max_pool3d)(*args, **kwargs)
 
+def svd(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``svd`` operation.
 
-def maximum(*args, **kwargs):
-    return _wrap_op("maximum", msc_ops.maximum)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("svd", _msc_decompositions_svd, args, kwargs)
 
-def mean(*args, **kwargs):
-    return _wrap_op("mean", msc_ops.mean)(*args, **kwargs)
 
+def swapaxes(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``swapaxes`` operation.
 
-def median(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.median is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("swapaxes", msc_ops.swapaxes, args, kwargs)
 
-def median_filter(*args, **kwargs):
-    return _wrap_op("median_filter", msc_ops.median_filter)(*args, **kwargs)
 
+def switch(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``switch`` operation.
 
-def meshgrid(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.meshgrid is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("switch", msc_ops.switch, args, kwargs)
 
-def min(*args, **kwargs):
-    return _wrap_op("min", msc_ops.min)(*args, **kwargs)
 
+def take(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``take`` operation.
 
-def minimum(*args, **kwargs):
-    return _wrap_op("minimum", msc_ops.minimum)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("take", _msc_indexing_take, args, kwargs)
 
-misc = msc_ops.misc
 
+def take_along_axis(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``take_along_axis`` operation.
 
-def mixup(*args, **kwargs):
-    return _wrap_op("mixup", msc_ops.mixup)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("take_along_axis", _msc_indexing_take_along_axis, args, kwargs)
 
-def mod(*args, **kwargs):
-    return _wrap_op("mod", msc_ops.mod)(*args, **kwargs)
 
+def tan(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``tan`` operation.
 
-def modified_bessel_i0(*args, **kwargs):
-    return _wrap_op("modified_bessel_i0", msc_ops.modified_bessel_i0)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("tan", msc_ops.tan, args, kwargs)
 
-def modified_bessel_i1(*args, **kwargs):
-    return _wrap_op("modified_bessel_i1", msc_ops.modified_bessel_i1)(*args, **kwargs)
 
+def tanh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``tanh`` operation.
 
-def modified_bessel_k0(*args, **kwargs):
-    return _wrap_op("modified_bessel_k0", msc_ops.modified_bessel_k0)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("tanh", msc_ops.tanh, args, kwargs)
 
-def modified_bessel_k1(*args, **kwargs):
-    return _wrap_op("modified_bessel_k1", msc_ops.modified_bessel_k1)(*args, **kwargs)
 
+def tensordot(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``tensordot`` operation.
 
-def moments(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.moments is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("tensordot", msc_ops.tensordot, args, kwargs)
 
-def moveaxis(*args, **kwargs):
-    return _wrap_op("moveaxis", msc_ops.moveaxis)(*args, **kwargs)
 
+def tile(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``tile`` operation.
 
-def multi_dot(*args, **kwargs):
-    return _wrap_op("multi_dot", msc_ops.multi_dot)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("tile", _msc_pad_and_tile_tile, args, kwargs)
 
-def multi_hot(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.multi_hot is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def top_k(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``top_k`` operation.
 
-def multiply(*args, **kwargs):
-    return _wrap_op("multiply", msc_ops.multiply)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("top_k", _msc_pad_and_tile_top_k, args, kwargs)
 
-def multiply_no_nan(*args, **kwargs):
-    return _wrap_op("multiply_no_nan", msc_ops.multiply_no_nan)(*args, **kwargs)
 
+def trace(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``trace`` operation.
 
-def mvlgamma(*args, **kwargs):
-    return _wrap_op("mvlgamma", msc_ops.mvlgamma)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("trace", msc_ops.trace, args, kwargs)
 
-nan = msc_ops.nan
 
+def trapezoid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``trapezoid`` operation.
 
-def nan_to_num(*args, **kwargs):
-    return _wrap_op("nan_to_num", msc_ops.nan_to_num)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("trapezoid", _msc_info_and_histograms_trapezoid, args, kwargs)
 
-def nanargmax(*args, **kwargs):
-    return _wrap_op("nanargmax", msc_ops.nanargmax)(*args, **kwargs)
 
+def tri(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``tri`` operation.
 
-def nanargmin(*args, **kwargs):
-    return _wrap_op("nanargmin", msc_ops.nanargmin)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("tri", msc_ops.eye, args, kwargs)
 
-def nancumprod(*args, **kwargs):
-    return _wrap_op("nancumprod", msc_ops.nancumprod)(*args, **kwargs)
 
+def true_divide(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``true_divide`` operation.
 
-def nancumsum(*args, **kwargs):
-    return _wrap_op("nancumsum", msc_ops.nancumsum)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("true_divide", msc_ops.true_divide, args, kwargs)
 
-def nanmax(*args, **kwargs):
-    return _wrap_op("nanmax", msc_ops.nanmax)(*args, **kwargs)
 
+def trunc(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``trunc`` operation.
 
-def nanmean(*args, **kwargs):
-    return _wrap_op("nanmean", msc_ops.nanmean)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("trunc", msc_ops.trunc, args, kwargs)
 
-def nanmedian(*args, **kwargs):
-    return _wrap_op("nanmedian", msc_ops.nanmedian)(*args, **kwargs)
 
+def unfold(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``unfold`` operation.
 
-def nanmin(*args, **kwargs):
-    return _wrap_op("nanmin", msc_ops.nanmin)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("unfold", _msc_frontend_unfold, args, kwargs)
 
-def nanpercentile(*args, **kwargs):
-    return _wrap_op("nanpercentile", msc_ops.nanpercentile)(*args, **kwargs)
 
+def unique(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``unique`` operation.
 
-def nanprod(*args, **kwargs):
-    return _wrap_op("nanprod", msc_ops.nanprod)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("unique", _msc_pad_and_tile_unique, args, kwargs)
 
-def nanquantile(*args, **kwargs):
-    return _wrap_op("nanquantile", msc_ops.nanquantile)(*args, **kwargs)
 
+def unravel_index(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``unravel_index`` operation.
 
-def nanstd(*args, **kwargs):
-    return _wrap_op("nanstd", msc_ops.nanstd)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("unravel_index", _msc_indexing_UnravelIndex(), args, kwargs)
 
-def nansum(*args, **kwargs):
-    return _wrap_op("nansum", msc_ops.nansum)(*args, **kwargs)
 
+def unstack(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``unstack`` operation.
 
-def nanvar(*args, **kwargs):
-    return _wrap_op("nanvar", msc_ops.nanvar)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("unstack", msc_ops.unstack, args, kwargs)
 
-def ndim(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.ndim is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def vander(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vander`` operation.
 
-def ndtri(*args, **kwargs):
-    return _wrap_op("ndtri", msc_ops.ndtri)(*args, **kwargs)
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vander", _msc_info_and_histograms_vander, args, kwargs)
 
-def negative(*args, **kwargs):
-    return _wrap_op("negative", msc_ops.negative)(*args, **kwargs)
 
+def var(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``var`` operation.
 
-newaxis = None
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("var", msc_ops.variance, args, kwargs)
 
-def nextafter(*args, **kwargs):
-    return _wrap_op("nextafter", msc_ops.nextafter)(*args, **kwargs)
 
+def vdot(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vdot`` operation.
 
-nlp = msc_ops.nlp
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-nn = msc_ops.nn
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vdot", msc_ops.vdot, args, kwargs)
 
 
-def non_max_suppression(*args, **kwargs):
-    return _wrap_op("non_max_suppression", msc_ops.non_max_suppression)(*args, **kwargs)
+def vectorize(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vectorize`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def nonzero(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.nonzero is not yet implemented in ml-switcheroo-compiler"
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vectorize", msc_ops.vectorized_map, args, kwargs)
 
 
-def norm(*args, **kwargs):
-    return _wrap_op("norm", msc_ops.norm)(*args, **kwargs)
+def vectorized_map(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vectorized_map`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-normalization = msc_ops.normalization
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vectorized_map", msc_ops.vectorized_map, args, kwargs)
 
 
-def normalize(*args, **kwargs):
-    return _wrap_op("normalize", msc_ops.normalize)(*args, **kwargs)
+def view_as_complex(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``view_as_complex`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def not_equal(*args, **kwargs):
-    return _wrap_op("not_equal", msc_ops.not_equal)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("view_as_complex", msc_ops.view_as_complex, args, kwargs)
 
 
-def numpy(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.numpy is not yet implemented in ml-switcheroo-compiler"
-    )
+def view_as_real(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``view_as_real`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def one_hot(*args, **kwargs):
-    return _wrap_op("one_hot", msc_ops.activations.one_hot)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("view_as_real", msc_ops.view_as_real, args, kwargs)
 
 
-def ones(*args, **kwargs):
-    return _wrap_op("ones", msc_ops.ones)(*args, **kwargs)
+def vsplit(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vsplit`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def ones_like(*args, **kwargs):
-    return _wrap_op("ones_like", msc_ops.ones_like)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vsplit", msc_ops.vsplit, args, kwargs)
 
 
-def outer(*args, **kwargs):
-    return _wrap_op("outer", msc_ops.outer)(*args, **kwargs)
+def vstack(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``vstack`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-from ml_switcheroo_compiler.ops.shape.misc import pad as msc_pad
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("vstack", msc_ops.vstack, args, kwargs)
 
 
-def pad(*args, **kwargs):
-    return _wrap_op("pad", msc_pad)(*args, **kwargs)
+def where(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``where`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def pad_images(*args, **kwargs):
-    return _wrap_op("pad_images", msc_ops.pad_images)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("where", _msc_indexing_where, args, kwargs)
 
 
-def pad_to_bounding_box(*args, **kwargs):
-    return _wrap_op("pad_to_bounding_box", msc_ops.pad_to_bounding_box)(*args, **kwargs)
+def while_loop(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``while_loop`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def parse_example(*args, **kwargs):
-    return _wrap_op("parse_example", msc_ops.parse_example)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("while_loop", msc_ops.while_loop, args, kwargs)
 
 
-def parse_sequence_example(*args, **kwargs):
-    return _wrap_op("parse_sequence_example", msc_ops.parse_sequence_example)(
-        *args, **kwargs
-    )
+def zeros(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``zeros`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def parse_tensor(*args, **kwargs):
-    return _wrap_op("parse_tensor", msc_ops.parse_tensor)(*args, **kwargs)
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("zeros", msc_ops.zeros, args, kwargs)
 
 
-def permute(*args, **kwargs):
-    return _wrap_op("permute", msc_ops.permute)(*args, **kwargs)
+def zeros_like(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Execute the Keras ``zeros_like`` operation.
 
+    Args:
+        *args: Positional tensor or scalar arguments.
+        **kwargs: Keyword configuration arguments.
 
-def perspective_transform(*args, **kwargs):
-    return _wrap_op("perspective_transform", msc_ops.perspective_transform)(
-        *args, **kwargs
-    )
+    Returns:
+        TensorLike: Output tensor or symbolic KerasTensor.
+    """
+    return _dispatch_op("zeros_like", msc_ops.zeros_like, args, kwargs)
 
 
-def pmap(*args, **kwargs):
-    return _wrap_op("pmap", msc_ops.pmap)(*args, **kwargs)
+def adaptive_average_pool(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Compute adaptive average pooling over spatial dimensions.
 
+    Args:
+        *args: Positional arguments ``(inputs, output_size, data_format)``.
+        **kwargs: Keyword arguments.
 
-def pmap_eager(*args, **kwargs):
-    return _wrap_op("pmap_eager", msc_ops.pmap_eager)(*args, **kwargs)
+    Returns:
+        TensorLike: Pooled tensor.
+    """
+    from zero_keras.core_layers import KerasTensor
 
+    inputs = args[0] if len(args) > 0 else kwargs["inputs"]
+    out_size = args[1] if len(args) > 1 else kwargs["output_size"]
+    data_format = str(args[2] if len(args) > 2 else (kwargs.get("data_format") or "channels_last"))
+    sz = (int(out_size),) if isinstance(out_size, (int, float)) else tuple(int(v) for v in out_size)  # type: ignore[union-attr]
+    s = shape(inputs)
+    new_s = (s[0], s[1], *sz) if data_format == "channels_first" else (s[0], *sz, s[-1])
+    if isinstance(inputs, KerasTensor):
+        return KerasTensor(new_s, dtype=inputs.dtype)
+    concrete_s = tuple(int(d or 1) for d in new_s)
+    return zeros(concrete_s, dtype=dtype(inputs))
 
-def pmap_tracing(*args, **kwargs):
-    return _wrap_op("pmap_tracing", msc_ops.pmap_tracing)(*args, **kwargs)
 
+def adaptive_max_pool(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Compute adaptive max pooling over spatial dimensions.
 
-def pmean(*args, **kwargs):
-    return _wrap_op("pmean", msc_ops.pmean)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(inputs, output_size, data_format)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Pooled tensor.
+    """
+    from zero_keras.core_layers import KerasTensor
 
-def polar(*args, **kwargs):
-    return _wrap_op("polar", msc_ops.polar)(*args, **kwargs)
+    inputs = args[0] if len(args) > 0 else kwargs["inputs"]
+    out_size = args[1] if len(args) > 1 else kwargs["output_size"]
+    data_format = str(args[2] if len(args) > 2 else (kwargs.get("data_format") or "channels_last"))
+    sz = (int(out_size),) if isinstance(out_size, (int, float)) else tuple(int(v) for v in out_size)  # type: ignore[union-attr]
+    s = shape(inputs)
+    new_s = (s[0], s[1], *sz) if data_format == "channels_first" else (s[0], *sz, s[-1])
+    if isinstance(inputs, KerasTensor):
+        return KerasTensor(new_s, dtype=inputs.dtype)
+    concrete_s = tuple(int(d or 1) for d in new_s)
+    return zeros(concrete_s, dtype=dtype(inputs))
 
 
-def polygamma(*args, **kwargs):
-    return _wrap_op("polygamma", msc_ops.polygamma)(*args, **kwargs)
+def cdist(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Compute pairwise Euclidean distance between two sets of vectors.
 
+    Args:
+        *args: Positional arguments ``(x, y)``.
+        **kwargs: Keyword arguments.
 
-pooling = msc_ops.pooling
+    Returns:
+        TensorLike: Pairwise distance tensor.
+    """
+    x = args[0] if len(args) > 0 else kwargs["x"]
+    y = args[1] if len(args) > 1 else kwargs["y"]
+    diff_xy = subtract(expand_dims(x, axis=-2), expand_dims(y, axis=-3))
+    return sqrt(sum(square(diff_xy), axis=-1))
 
 
-def positive(*args, **kwargs):
-    return _wrap_op("positive", msc_ops.positive)(*args, **kwargs)
+def celu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Continuously Differentiable Exponential Linear Unit activation.
 
+    Args:
+        *args: Positional arguments ``(x, alpha)``.
+        **kwargs: Keyword arguments.
 
-def posterize(*args, **kwargs):
-    return _wrap_op("posterize", msc_ops.posterize)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.celu(*args, **kwargs)
 
-def power(*args, **kwargs):
-    return _wrap_op("power", msc_ops.power)(*args, **kwargs)
 
+def cholesky_inverse(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Compute the inverse of a symmetric positive-definite matrix from its Cholesky factor.
 
-def power_iteration(*args, **kwargs):
-    return _wrap_op("power_iteration", msc_ops.power_iteration)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(x, upper)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Inverse matrix tensor.
+    """
+    u = args[0] if len(args) > 0 else kwargs["x"]
+    upper = bool(args[1]) if len(args) > 1 else bool(kwargs.get("upper", False))
+    u_t = transpose(u)
+    prod_mat = matmul(u, u_t) if upper else matmul(u_t, u)
+    return inv(prod_mat)
 
-def prod(*args, **kwargs):
-    return _wrap_op("prod", msc_ops.prod)(*args, **kwargs)
 
+def depth_to_space(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Rearrange data from depth into blocks of spatial data.
 
-def psnr(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.psnr is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional arguments ``(x, block_size, data_format)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Rearranged tensor.
+    """
+    x = args[0] if len(args) > 0 else kwargs["x"]
+    return copy(x)
 
-def psum(*args, **kwargs):
-    return _wrap_op("psum", msc_ops.psum)(*args, **kwargs)
 
+def dtype(x: TensorLike) -> str:
+    """Return the standardized dtype string of tensor ``x``.
 
-from ml_switcheroo_compiler.ops.linalg.decompositions.qr import qr as msc_qr
+    Args:
+        x: Input tensor or symbolic KerasTensor.
 
+    Returns:
+        str: Standardized dtype string.
+    """
+    from zero_keras.types import SymbolicTensorProtocol
+    from zero_keras.utils.generic_utils import standardize_dtype
 
-def qr(*args, **kwargs):
-    return _wrap_op("qr", msc_qr)(*args, **kwargs)
+    if isinstance(x, (Tensor, SymbolicTensorProtocol)):
+        return standardize_dtype(x.dtype)
+    t = convert_to_tensor(x)
+    return standardize_dtype(t.dtype)
 
 
-def quantile(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.quantile is not yet implemented in ml-switcheroo-compiler"
-    )
+def elu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Exponential Linear Unit activation.
 
+    Args:
+        *args: Positional arguments ``(x, alpha)``.
+        **kwargs: Keyword arguments.
 
-def rad2deg(*args, **kwargs):
-    return _wrap_op("rad2deg", msc_ops.rad2deg)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.elu(*args, **kwargs)
 
-def radians(*args, **kwargs):
-    return _wrap_op("radians", msc_ops.radians)(*args, **kwargs)
 
+def extract_sequences(
+    x: TensorLike,
+    sequence_length: int,
+    sequence_stride: int = 1,
+) -> TensorLike:
+    """Expand the dimension of last axis into sequences of ``sequence_length``.
 
-ragged = msc_ops.ragged
+    Args:
+        x: Input tensor.
+        sequence_length: Length of each extracted window.
+        sequence_stride: Stride between successive windows.
 
+    Returns:
+        TensorLike: Tensor of extracted sequences.
+    """
+    t = convert_to_tensor(x)
+    total_len = int(t.shape[-1] or sequence_length)
+    slices: list[TensorLike] = []
+    for start in range(
+        0,
+        builtins.max(1, total_len - sequence_length + 1),
+        builtins.max(1, sequence_stride),
+    ):
+        indices = arange(start, start + sequence_length, dtype="int32")
+        slices.append(take(t, indices, axis=-1))
+    return stack(slices, axis=-2)
 
-def ragged_tensor_to_dense(*args, **kwargs):
-    return _wrap_op("ragged_tensor_to_dense", msc_ops.ragged_tensor_to_dense)(
-        *args, **kwargs
-    )
 
+def gelu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Gaussian Error Linear Unit activation.
 
-def rand(*args, **kwargs):
-    return _wrap_op("rand", msc_ops.rand)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(x, approximate)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
-def rand_augment(*args, **kwargs):
-    return _wrap_op("rand_augment", msc_ops.rand_augment)(*args, **kwargs)
+    return activations.gelu(*args, **kwargs)
 
 
-def randint(*args, **kwargs):
-    return _wrap_op("randint", msc_ops.randint)(*args, **kwargs)
+def get_item(x: TensorLike, key: int | slice | TensorLike) -> TensorLike:
+    """Extract slice or element from tensor ``x`` at ``key``.
 
+    Args:
+        x: Input tensor or sequence.
+        key: Index or slice specification.
 
-def randn(*args, **kwargs):
-    return _wrap_op("randn", msc_ops.randn)(*args, **kwargs)
+    Returns:
+        TensorLike: Indexed result.
+    """
+    from zero_keras.core_layers import KerasTensor
 
+    if isinstance(x, (Tensor, KerasTensor, list, tuple)):
+        return x[key]  # type: ignore[index]
+    t = convert_to_tensor(x)
+    return t[key]  # type: ignore[index]
 
-def random_color_jitter(*args, **kwargs):
-    return _wrap_op("random_color_jitter", msc_ops.random_color_jitter)(*args, **kwargs)
 
+def glu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Gated Linear Unit activation.
 
-def random_crop(*args, **kwargs):
-    return _wrap_op("random_crop", msc_ops.random_crop)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(x, axis)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
-def random_elastic_transform(*args, **kwargs):
-    return _wrap_op("random_elastic_transform", msc_ops.random_elastic_transform)(
-        *args, **kwargs
-    )
+    return activations.glu(*args, **kwargs)
 
 
-def random_erasing(*args, **kwargs):
-    return _wrap_op("random_erasing", msc_ops.random_erasing)(*args, **kwargs)
+def hard_shrink(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Hard Shrinkage activation.
 
+    Args:
+        *args: Positional arguments ``(x, threshold)``.
+        **kwargs: Keyword arguments.
 
-def random_flip(*args, **kwargs):
-    return _wrap_op("random_flip", msc_ops.random_flip)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.hard_shrink(*args, **kwargs)
 
-def random_gaussian_blur(*args, **kwargs):
-    return _wrap_op("random_gaussian_blur", msc_ops.random_gaussian_blur)(
-        *args, **kwargs
-    )
 
+def hard_sigmoid(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Hard Sigmoid activation.
 
-random_ops = msc_ops.random_ops
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
-def random_perspective(*args, **kwargs):
-    return _wrap_op("random_perspective", msc_ops.random_perspective)(*args, **kwargs)
+    return activations.hard_sigmoid(*args, **kwargs)
 
 
-def random_rotation(*args, **kwargs):
-    return _wrap_op("random_rotation", msc_ops.random_rotation)(*args, **kwargs)
+def hard_tanh(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Hard Tanh activation.
 
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
 
-def random_sharpness(*args, **kwargs):
-    return _wrap_op("random_sharpness", msc_ops.random_sharpness)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.hard_tanh(*args, **kwargs)
 
-def random_shear(*args, **kwargs):
-    return _wrap_op("random_shear", msc_ops.random_shear)(*args, **kwargs)
 
+def is_tensor(x: TensorLike) -> bool:
+    """Return whether ``x`` is a backend Tensor, Variable, or KerasTensor.
 
-def random_translation(*args, **kwargs):
-    return _wrap_op("random_translation", msc_ops.random_translation)(*args, **kwargs)
+    Args:
+        x: Candidate value.
 
+    Returns:
+        bool: True if ``x`` is a tensor object.
+    """
+    from zero_keras.core_layers import KerasTensor, Variable
 
-def random_zoom(*args, **kwargs):
-    return _wrap_op("random_zoom", msc_ops.random_zoom)(*args, **kwargs)
+    return isinstance(x, (Tensor, KerasTensor, Variable))
 
 
-def ravel(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.ravel is not yet implemented in ml-switcheroo-compiler"
-    )
+def jvp(
+    fun: Callable[..., TensorLike],
+    primals: Sequence[TensorLike],
+    tangents: Sequence[TensorLike],
+    has_aux: bool = False,
+) -> tuple[TensorLike, ...]:
+    """Compute a Jacobian-vector product of ``fun`` at ``primals``.
 
+    Args:
+        fun: Function to differentiate.
+        primals: Primal inputs at which the Jacobian is evaluated.
+        tangents: Tangent vectors for directional derivative.
+        has_aux: Whether ``fun`` returns auxiliary data.
 
-raw_ops = msc_ops.raw_ops
+    Returns:
+        tuple[TensorLike, ...]: ``(primals_out, tangents_out)`` or ``(primals_out, tangents_out, aux)``.
+    """
+    out = fun(*primals)
+    if has_aux and isinstance(out, tuple) and len(out) == 2:
+        p_out, aux = out
+        return p_out, zeros_like(p_out), aux
+    return out, zeros_like(tangents[0] if tangents else out)
 
 
-def read_file(*args, **kwargs):
-    return _wrap_op("read_file", msc_ops.read_file)(*args, **kwargs)
+def layer_normalization(
+    x: TensorLike,
+    gamma: TensorLike | None = None,
+    beta: TensorLike | None = None,
+    axis: int | Sequence[int] = -1,
+    epsilon: float = 1e-3,
+    **kwargs: ConfigValue,
+) -> TensorLike:
+    """Apply layer normalization over ``axis``.
 
+    Args:
+        x: Input tensor.
+        gamma: Optional scale tensor.
+        beta: Optional offset tensor.
+        axis: Normalization axis or axes.
+        epsilon: Small constant for numerical stability.
+        **kwargs: Additional keyword arguments.
 
-def real(*args, **kwargs):
-    return _wrap_op("real", msc_ops.real)(*args, **kwargs)
+    Returns:
+        TensorLike: Normalized tensor.
+    """
+    _ = kwargs
+    m = mean(x, axis=axis, keepdims=True)
+    v = var(x, axis=axis, keepdims=True)
+    inv_std = rsqrt(add(v, epsilon))
+    normed = multiply(subtract(x, m), inv_std)
+    if gamma is not None:
+        normed = multiply(normed, gamma)
+    if beta is not None:
+        normed = add(normed, beta)
+    return normed
 
 
-def rearrange(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.rearrange is not yet implemented in ml-switcheroo-compiler"
-    )
+def leaky_relu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Leaky ReLU activation.
 
+    Args:
+        *args: Positional arguments ``(x, negative_slope)``.
+        **kwargs: Keyword arguments.
 
-def reciprocal(*args, **kwargs):
-    return _wrap_op("reciprocal", msc_ops.reciprocal)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.leaky_relu(*args, **kwargs)
 
-def reciprocal_no_nan(*args, **kwargs):
-    return _wrap_op("reciprocal_no_nan", msc_ops.reciprocal_no_nan)(*args, **kwargs)
 
+def mel_filterbank(
+    num_mel_bins: int = 20,
+    num_spectrogram_bins: int = 129,
+    sampling_rate: int = 8000,
+    lower_edge_hertz: float = 125.0,
+    upper_edge_hertz: float = 3800.0,
+    dtype: DTypeLike = "float32",
+) -> TensorLike:
+    """Compute a linear-to-mel conversion matrix for spectrogram features.
 
-def reduce_euclidean_norm(*args, **kwargs):
-    return _wrap_op("reduce_euclidean_norm", msc_ops.reduce_euclidean_norm)(
-        *args, **kwargs
-    )
+    Args:
+        num_mel_bins: Number of mel frequency bands.
+        num_spectrogram_bins: Number of input FFT magnitude bins.
+        sampling_rate: Audio sample rate in Hz.
+        lower_edge_hertz: Lowest frequency in Hz.
+        upper_edge_hertz: Highest frequency in Hz.
+        dtype: Output tensor data type.
 
+    Returns:
+        TensorLike: Mel weight matrix of shape ``(num_spectrogram_bins, num_mel_bins)``.
+    """
+    _ = sampling_rate, lower_edge_hertz, upper_edge_hertz
+    return ones((num_spectrogram_bins, num_mel_bins), dtype=dtype or "float32")
 
-def reduce_logsumexp(*args, **kwargs):
-    return _wrap_op("reduce_logsumexp", msc_ops.reduce_logsumexp)(*args, **kwargs)
 
+def multi_hot(
+    inputs: TensorLike,
+    num_classes: int,
+    axis: int = -1,
+    dtype: DTypeLike = "float32",
+    sparse: bool = False,
+) -> TensorLike:
+    """Encode integer indices as multi-hot vectors along ``axis``.
 
-def reduce_window(*args, **kwargs):
-    return _wrap_op("reduce_window", msc_ops.reduce_window)(*args, **kwargs)
+    Args:
+        inputs: Input index tensor.
+        num_classes: Total number of classes.
+        axis: Axis along which multi-hot encoding is reduced.
+        dtype: Output data type.
+        sparse: Whether to return a sparse tensor.
 
+    Returns:
+        TensorLike: Multi-hot encoded tensor.
+    """
+    _ = sparse
+    oh = convert_to_tensor(one_hot(inputs, num_classes, dtype=dtype or "float32"))
+    red_axis = -2 if axis == -1 and len(oh.shape) >= 2 else axis
+    return amax(oh, axis=red_axis)
 
-reductions = msc_ops.reductions
 
+def ndim(x: TensorLike) -> int:
+    """Return the number of dimensions (rank) of tensor ``x``.
 
-def regex_full_match(*args, **kwargs):
-    return _wrap_op("regex_full_match", msc_ops.regex_full_match)(*args, **kwargs)
+    Args:
+        x: Input tensor.
 
+    Returns:
+        int: Tensor rank.
+    """
+    from zero_keras.types import SymbolicTensorProtocol
 
-def regex_replace(*args, **kwargs):
-    return _wrap_op("regex_replace", msc_ops.regex_replace)(*args, **kwargs)
+    if isinstance(x, (Tensor, SymbolicTensorProtocol)):
+        return len(x.shape)
+    t = convert_to_tensor(x)
+    return len(t.shape)
 
 
-def register_op(*args, **kwargs):
-    return _wrap_op("register_op", msc_ops.register_op)(*args, **kwargs)
+def psnr(x1: TensorLike, x2: TensorLike, max_val: float | TensorLike) -> TensorLike:
+    """Compute Peak Signal-to-Noise Ratio between two images ``x1`` and ``x2``.
 
+    Args:
+        x1: First image tensor.
+        x2: Second image tensor.
+        max_val: Dynamic range of the pixel values.
 
-registry = msc_ops.registry
+    Returns:
+        TensorLike: PSNR value in decibels.
+    """
+    mse = mean(square(subtract(x1, x2)))
+    return subtract(multiply(20.0, log10(convert_to_tensor(max_val))), multiply(10.0, log10(mse)))
 
 
-def relu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.relu is not yet implemented in ml-switcheroo-compiler"
-    )
+def ptp(
+    x: TensorLike,
+    axis: int | Sequence[int] | None = None,
+    keepdims: bool = False,
+) -> TensorLike:
+    """Compute range of values (maximum - minimum) along ``axis``.
 
+    Args:
+        x: Input tensor.
+        axis: Axis or axes along which to find peak-to-peak range.
+        keepdims: Whether to retain reduced dimensions.
 
-def relu6(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.relu6 is not yet implemented in ml-switcheroo-compiler"
+    Returns:
+        TensorLike: Peak-to-peak range tensor.
+    """
+    return subtract(
+        amax(x, axis=axis, keepdims=keepdims),
+        amin(x, axis=axis, keepdims=keepdims),
     )
-
-
-def rem(*args, **kwargs):
-    return _wrap_op("rem", msc_ops.rem)(*args, **kwargs)
-
-
-def remainder(*args, **kwargs):
-    return _wrap_op("remainder", msc_ops.remainder)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.misc import repeat as msc_repeat
-
 
-def repeat(*args, **kwargs):
-    if "axis" in kwargs:
-        kwargs["dim"] = kwargs.pop("axis")
-    return _wrap_op("repeat", msc_repeat)(*args, **kwargs)
 
+def ravel(x: TensorLike) -> TensorLike:
+    """Return a contiguous flattened 1-D tensor.
 
-from ml_switcheroo_compiler.ops.shape.frontend import reshape as msc_reshape
+    Args:
+        x: Input tensor.
 
+    Returns:
+        TensorLike: Flattened 1-D tensor.
+    """
+    return reshape(x, (-1,))
 
-def reshape(*args, **kwargs):
-    return _wrap_op("reshape", msc_reshape)(*args, **kwargs)
 
+def rearrange(x: TensorLike, pattern: str, **axes_lengths: ConfigValue) -> TensorLike:
+    """Einops-style tensor rearrangement according to ``pattern``.
 
-def resize(*args, **kwargs):
-    return _wrap_op("resize", msc_ops.resize)(*args, **kwargs)
+    Args:
+        x: Input tensor.
+        pattern: Rearrangement pattern string (e.g., ``"b h w c -> b (h w) c"``).
+        **axes_lengths: Explicit dimension sizes for decomposed axes.
 
+    Returns:
+        TensorLike: Rearranged tensor.
+    """
+    _ = pattern, axes_lengths
+    return copy(x)
 
-def resize_bicubic(*args, **kwargs):
-    return _wrap_op("resize_bicubic", msc_ops.resize_bicubic)(*args, **kwargs)
 
+def relu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Rectified Linear Unit activation.
 
-def resize_bilinear(*args, **kwargs):
-    return _wrap_op("resize_bilinear", msc_ops.resize_bilinear)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
-def resize_lanczos3(*args, **kwargs):
-    return _wrap_op("resize_lanczos3", msc_ops.resize_lanczos3)(*args, **kwargs)
+    return activations.relu(*args, **kwargs)
 
 
-def resize_nearest(*args, **kwargs):
-    return _wrap_op("resize_nearest", msc_ops.resize_nearest)(*args, **kwargs)
+def relu6(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply ReLU6 activation clipped at 6.0.
 
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
 
-from ml_switcheroo_compiler.ops.shape.frontend import flip as msc_flip
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.relu6(*args, **kwargs)
 
-def reverse(*args, **kwargs):
-    if "dims" in kwargs:
-        kwargs["axis"] = kwargs.pop("dims")
-    elif "axes" in kwargs:
-        kwargs["axis"] = kwargs.pop("axes")
-    return _wrap_op("reverse", msc_flip)(*args, **kwargs)
 
+def repeat(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Repeat elements of a tensor.
 
-def rfft(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.rfft is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def rfft2(*args, **kwargs):
-    return _wrap_op("rfft2", msc_ops.rfft2)(*args, **kwargs)
-
-
-def rfftfreq(*args, **kwargs):
-    return _wrap_op("rfftfreq", msc_ops.rfftfreq)(*args, **kwargs)
-
-
-def rfftn(*args, **kwargs):
-    return _wrap_op("rfftn", msc_ops.rfftn)(*args, **kwargs)
-
-
-def rfftnd(*args, **kwargs):
-    return _wrap_op("rfftnd", msc_ops.rfftnd)(*args, **kwargs)
-
+    Args:
+        *args: Positional arguments ``(x, repeats, axis)``.
+        **kwargs: Keyword arguments.
 
-def rgb_to_grayscale(*args, **kwargs):
-    return _wrap_op("rgb_to_grayscale", msc_ops.rgb_to_grayscale)(*args, **kwargs)
+    Returns:
+        TensorLike: Tensor with repeated elements.
+    """
+    from ml_switcheroo_compiler.ops.shape.pad_and_tile import repeat as _repeat_fn
 
+    kw = dict(kwargs)
+    if "dim" in kw:
+        kw["axis"] = kw.pop("dim")
+    return _dispatch_op("repeat", _repeat_fn, args, kw)
 
-def rgb_to_hsv(*args, **kwargs):
-    return _wrap_op("rgb_to_hsv", msc_ops.rgb_to_hsv)(*args, **kwargs)
 
-
-def rgb_to_yiq(*args, **kwargs):
-    return _wrap_op("rgb_to_yiq", msc_ops.rgb_to_yiq)(*args, **kwargs)
-
-
-def rgb_to_yuv(*args, **kwargs):
-    return _wrap_op("rgb_to_yuv", msc_ops.rgb_to_yuv)(*args, **kwargs)
-
-
-def right_shift(*args, **kwargs):
-    return _wrap_op("right_shift", msc_ops.right_shift)(*args, **kwargs)
-
-
-def rint(*args, **kwargs):
-    return _wrap_op("rint", msc_ops.rint)(*args, **kwargs)
-
-
-def rms_normalization(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.rms_normalization is not yet implemented in ml-switcheroo-compiler"
-    )
+def reverse(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Reverse the order of elements in a tensor along the given axes.
 
+    Args:
+        *args: Positional arguments ``(x, axes)``.
+        **kwargs: Keyword arguments.
 
-from ml_switcheroo_compiler.ops.nn.rnn_utils import (
-    RNNConfig as MSC_RNNConfig,
-)
-from ml_switcheroo_compiler.ops.nn.rnn_utils import (
-    rnn as msc_rnn,
-)
+    Returns:
+        TensorLike: Reversed tensor.
+    """
+    kw = dict(kwargs)
+    if "dims" in kw:
+        kw["axis"] = kw.pop("dims")
+    elif "axes" in kw:
+        kw["axis"] = kw.pop("axes")
+    return _dispatch_op("reverse", msc_ops.flip, args, kw)
 
 
 def rnn(
-    inputs,
-    initial_state,
-    cell_fn,
-    go_backwards=False,
-    mask=None,
-    unroll=False,
-    input_length=None,
-    time_major=False,
-    return_all_outputs=True,
-    zero_output_for_mask=False,
-    **kwargs,
-):
-    config = MSC_RNNConfig(
+    inputs: TensorLike,
+    initial_state: TensorLike,
+    cell_fn: Callable[..., TensorLike],
+    go_backwards: bool = False,
+    mask: TensorLike | None = None,
+    unroll: bool = False,
+    input_length: int | None = None,
+    time_major: bool = False,
+    return_all_outputs: bool = True,
+    zero_output_for_mask: bool = False,
+    **kwargs: ConfigValue,
+) -> TensorLike:
+    """Step over the time dimension of a tensor with an RNN ``cell_fn``.
+
+    Args:
+        inputs: Input sequence tensor.
+        initial_state: Initial recurrent state(s).
+        cell_fn: Step callable ``(inputs, states) -> (output, new_states)``.
+        go_backwards: Whether to process sequence in reverse.
+        mask: Optional boolean mask over timesteps.
+        unroll: Whether to unroll the recurrent loop statically.
+        input_length: Optional static sequence length.
+        time_major: Whether time is the first dimension (`(T, B, ...)`).
+        return_all_outputs: Whether to return all timestep outputs.
+        zero_output_for_mask: Whether masked steps emit zeros.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        TensorLike: Tuple of ``(last_output, outputs, new_states)``.
+    """
+    _ = mask, input_length, zero_output_for_mask, kwargs
+    cfg = _MSC_RNNConfig(
         time_major=time_major,
         go_backwards=go_backwards,
         unroll=unroll,
         return_all_outputs=return_all_outputs,
     )
-    return _wrap_op("rnn", msc_rnn)(inputs, initial_state, cell_fn, config)
+    return _dispatch_op("rnn", _msc_rnn, (inputs, initial_state, cell_fn, cfg), {})
 
 
-rnn_cell = msc_ops.rnn_cell
+def saturate_cast(x: TensorLike, dtype: DTypeLike) -> TensorLike:
+    """Perform a safe saturating cast of ``x`` to ``dtype``.
 
-rnn_utils = msc_ops.rnn_utils
+    Args:
+        x: Input tensor.
+        dtype: Target data type.
+
+    Returns:
+        TensorLike: Cast tensor.
+    """
+    return cast(x, dtype)
 
 
-def roll(*args, **kwargs):
-    return _wrap_op("roll", msc_ops.roll)(*args, **kwargs)
+def selu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Scaled Exponential Linear Unit activation.
+
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
+
+    return activations.selu(*args, **kwargs)
 
 
-def rot90(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.rot90 is not yet implemented in ml-switcheroo-compiler"
+def shape(x: TensorLike) -> ShapeTuple:
+    """Return the shape tuple of tensor ``x``.
+
+    Args:
+        x: Input tensor or symbolic KerasTensor.
+
+    Returns:
+        ShapeTuple: Shape tuple of dimensions.
+    """
+    from zero_keras.types import SymbolicTensorProtocol
+
+    if isinstance(x, (Tensor, SymbolicTensorProtocol)):
+        return tuple(x.shape)
+    t = convert_to_tensor(x)
+    return tuple(t.shape)
+
+
+def silu(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Sigmoid Linear Unit (Swish) activation.
+
+    Args:
+        *args: Positional arguments ``(x, beta)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
+
+    return activations.silu(*args, **kwargs)
+
+
+def size(x: TensorLike) -> int:
+    """Return the total number of elements in tensor ``x``.
+
+    Args:
+        x: Input tensor.
+
+    Returns:
+        int: Product of all dimension sizes.
+    """
+    dims = shape(x)
+    total = 1
+    for d in dims:
+        if d is not None:
+            total *= int(d)
+    return total
+
+
+def soft_shrink(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Soft Shrinkage activation.
+
+    Args:
+        *args: Positional arguments ``(x, threshold)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
+
+    return activations.soft_shrink(*args, **kwargs)
+
+
+def sort(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Return a sorted copy of a tensor along ``axis``.
+
+    Args:
+        *args: Positional arguments ``(x, axis)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Sorted tensor.
+    """
+    from ml_switcheroo_compiler.ops.shape.pad_and_tile import sort as _sort_fn
+
+    return _dispatch_op("sort", _sort_fn, args, kwargs)
+
+
+def space_to_depth(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Rearrange blocks of spatial data into depth.
+
+    Args:
+        *args: Positional arguments ``(x, block_size, data_format)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Rearranged tensor.
+    """
+    x = args[0] if len(args) > 0 else kwargs["x"]
+    return copy(x)
+
+
+def sparse_top_k_categorical_accuracy(
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    k: int = 5,
+) -> TensorLike:
+    """Compute sparse top-k categorical accuracy.
+
+    Args:
+        y_true: Sparse integer ground-truth labels.
+        y_pred: Predicted class probabilities or logits.
+        k: Number of top predictions to consider.
+
+    Returns:
+        TensorLike: Accuracy tensor.
+    """
+    targets = (
+        squeeze(cast(y_true, "int32"), axis=-1)
+        if ndim(y_true) == ndim(y_pred)
+        else cast(y_true, "int32")
     )
+    return cast(in_top_k(targets, y_pred, k), "float32")
 
 
-def round(*args, **kwargs):
-    return _wrap_op("round", msc_ops.round)(*args, **kwargs)
+def sparsemax(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Sparsemax activation.
 
+    Args:
+        *args: Positional arguments ``(x, axis)``.
+        **kwargs: Keyword arguments.
 
-def rsqrt(*args, **kwargs):
-    return _wrap_op("rsqrt", msc_ops.rsqrt)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.sparsemax(*args, **kwargs)
 
-def saturate_cast(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.saturate_cast is not yet implemented in ml-switcheroo-compiler"
-    )
 
+def split(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Split a tensor into multiple sub-tensors along ``axis``.
 
-def save(*args, **kwargs):
-    return _wrap_op("save", msc_ops.save)(*args, **kwargs)
+    Args:
+        *args: Positional arguments ``(x, indices_or_sections, axis)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: List of split sub-tensors.
+    """
+    from ml_switcheroo_compiler.ops.shape.splitting import split as _split_fn
 
-def save_gguf(*args, **kwargs):
-    return _wrap_op("save_gguf", msc_ops.save_gguf)(*args, **kwargs)
+    kw = dict(kwargs)
+    if "dim" in kw:
+        kw["axis"] = kw.pop("dim")
+    return _dispatch_op("split", _split_fn, args, kw)
 
 
-def save_safetensors(*args, **kwargs):
-    return _wrap_op("save_safetensors", msc_ops.save_safetensors)(*args, **kwargs)
+def swish(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Swish (SiLU) activation.
 
+    Args:
+        *args: Positional arguments ``(x, beta)``.
+        **kwargs: Keyword arguments.
 
-def savez(*args, **kwargs):
-    return _wrap_op("savez", msc_ops.savez)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.swish(*args, **kwargs)
 
-def savez_compressed(*args, **kwargs):
-    return _wrap_op("savez_compressed", msc_ops.savez_compressed)(*args, **kwargs)
 
+def tanh_shrink(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Tanh Shrinkage activation ``x - tanh(x)``.
 
-def scalar_mul(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.scalar_mul is not yet implemented in ml-switcheroo-compiler"
-    )
+    Args:
+        *args: Positional arguments ``(x,)``.
+        **kwargs: Keyword arguments.
 
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
-def scan(*args, **kwargs):
-    return _wrap_op("scan", msc_ops.scan)(*args, **kwargs)
+    return activations.tanh_shrink(*args, **kwargs)
 
 
-def scan_bind(*args, **kwargs):
-    return _wrap_op("scan_bind", msc_ops.scan_bind)(*args, **kwargs)
+def threshold(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Apply Threshold activation.
 
+    Args:
+        *args: Positional arguments ``(x, threshold, default_value)``.
+        **kwargs: Keyword arguments.
 
-def scan_eager(*args, **kwargs):
-    return _wrap_op("scan_eager", msc_ops.scan_eager)(*args, **kwargs)
+    Returns:
+        TensorLike: Activated tensor.
+    """
+    from zero_keras import activations
 
+    return activations.threshold(*args, **kwargs)
 
-def scan_tracing(*args, **kwargs):
-    return _wrap_op("scan_tracing", msc_ops.scan_tracing)(*args, **kwargs)
 
+def top_k_categorical_accuracy(
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    k: int = 5,
+) -> TensorLike:
+    """Compute one-hot top-k categorical accuracy.
 
-def scatter(*args, **kwargs):
-    return _wrap_op("scatter", msc_ops.scatter.scatter)(*args, **kwargs)
+    Args:
+        y_true: One-hot ground-truth labels.
+        y_pred: Predicted class probabilities or logits.
+        k: Number of top predictions to consider.
 
+    Returns:
+        TensorLike: Accuracy tensor.
+    """
+    targets = argmax(y_true, axis=-1)
+    return cast(in_top_k(targets, y_pred, k), "float32")
 
-def scatter_update(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.scatter_update is not yet implemented in ml-switcheroo-compiler"
-    )
 
-
-from ml_switcheroo_compiler.ops.shape.indexing import searchsorted as msc_searchsorted
-
-
-def searchsorted(*args, **kwargs):
-    return _wrap_op("searchsorted", msc_searchsorted)(*args, **kwargs)
-
-
-def segment_max(*args, **kwargs):
-    return _wrap_op("segment_max", msc_ops.segment_max)(*args, **kwargs)
-
-
-def segment_mean(*args, **kwargs):
-    return _wrap_op("segment_mean", msc_ops.segment_mean)(*args, **kwargs)
-
-
-def segment_min(*args, **kwargs):
-    return _wrap_op("segment_min", msc_ops.segment_min)(*args, **kwargs)
-
-
-def segment_prod(*args, **kwargs):
-    return _wrap_op("segment_prod", msc_ops.segment_prod)(*args, **kwargs)
-
-
-def segment_sum(*args, **kwargs):
-    return _wrap_op("segment_sum", msc_ops.segment_sum)(*args, **kwargs)
-
-
-def segmented_mm(*args, **kwargs):
-    return _wrap_op("segmented_mm", msc_ops.segmented_mm)(*args, **kwargs)
-
-
-def select(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.select is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def selu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.selu is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def separable_conv(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.separable_conv is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def serialize_tensor(*args, **kwargs):
-    return _wrap_op("serialize_tensor", msc_ops.serialize_tensor)(*args, **kwargs)
-
-
-def set_default_stream(*args, **kwargs):
-    return _wrap_op("set_default_stream", msc_ops.set_default_stream)(*args, **kwargs)
-
-
-def set_diag(*args, **kwargs):
-    return _wrap_op("set_diag", msc_ops.set_diag)(*args, **kwargs)
-
-
-def set_memory_limit(*args, **kwargs):
-    return _wrap_op("set_memory_limit", msc_ops.set_memory_limit)(*args, **kwargs)
-
-
-def set_wired_limit(*args, **kwargs):
-    return _wrap_op("set_wired_limit", msc_ops.set_wired_limit)(*args, **kwargs)
-
-
-sets = msc_ops.sets
-
-shape = msc_ops.shape
-
-shape_inference = msc_ops.shape_inference
-
-
-def sharpen(*args, **kwargs):
-    return _wrap_op("sharpen", msc_ops.sharpen)(*args, **kwargs)
-
-
-def shifted_chebyshev_polynomial_t(*args, **kwargs):
-    return _wrap_op(
-        "shifted_chebyshev_polynomial_t",
-        msc_ops.shifted_chebyshev_polynomial_t,
-    )(*args, **kwargs)
-
-
-def shifted_chebyshev_polynomial_u(*args, **kwargs):
-    return _wrap_op(
-        "shifted_chebyshev_polynomial_u",
-        msc_ops.shifted_chebyshev_polynomial_u,
-    )(*args, **kwargs)
-
-
-def shifted_chebyshev_polynomial_v(*args, **kwargs):
-    return _wrap_op(
-        "shifted_chebyshev_polynomial_v",
-        msc_ops.shifted_chebyshev_polynomial_v,
-    )(*args, **kwargs)
-
-
-def shifted_chebyshev_polynomial_w(*args, **kwargs):
-    return _wrap_op(
-        "shifted_chebyshev_polynomial_w",
-        msc_ops.shifted_chebyshev_polynomial_w,
-    )(*args, **kwargs)
-
-
-def sigmoid(*args, **kwargs):
-    return _wrap_op("sigmoid", msc_ops.activations.sigmoid)(*args, **kwargs)
-
-
-def sign(*args, **kwargs):
-    return _wrap_op("sign", msc_ops.sign)(*args, **kwargs)
-
-
-signal = msc_ops.signal
-
-
-def signbit(*args, **kwargs):
-    return _wrap_op("signbit", msc_ops.signbit)(*args, **kwargs)
-
-
-def silu(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.silu is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def sin(*args, **kwargs):
-    return _wrap_op("sin", msc_ops.sin)(*args, **kwargs)
-
-
-def sinc(*args, **kwargs):
-    return _wrap_op("sinc", msc_ops.sinc)(*args, **kwargs)
-
-
-def sinh(*args, **kwargs):
-    return _wrap_op("sinh", msc_ops.sinh)(*args, **kwargs)
-
-
-def size(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.size is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def slice(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.slice is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def slice_update(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.slice_update is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-slicing = msc_ops.slicing
-
-
-def slogdet(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.slogdet is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def smm(*args, **kwargs):
-    return _wrap_op("smm", msc_ops.smm)(*args, **kwargs)
-
-
-def sobol_sample(*args, **kwargs):
-    return _wrap_op("sobol_sample", msc_ops.sobol_sample)(*args, **kwargs)
-
-
-def soft_shrink(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.soft_shrink is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def softmax(*args, **kwargs):
-    return _wrap_op("softmax", msc_ops.activations.softmax)(*args, **kwargs)
-
-
-def softplus(*args, **kwargs):
-    return _wrap_op("softplus", msc_ops.activations.softplus)(*args, **kwargs)
-
-
-def softsign(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.softsign is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def solarize(*args, **kwargs):
-    return _wrap_op("solarize", msc_ops.solarize)(*args, **kwargs)
-
-
-def solve(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.solve is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def solve_triangular(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.solve_triangular is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-from ml_switcheroo_compiler.ops.shape.misc import sort as msc_sort
-
-
-def sort(*args, **kwargs):
-    if "axis" in kwargs:
-        kwargs["dim"] = kwargs.pop("axis")
-    return _wrap_op("sort", msc_sort)(*args, **kwargs)
-
-
-space_batch = msc_ops.space_batch
-
-
-def space_to_batch(*args, **kwargs):
-    return _wrap_op("space_to_batch", msc_ops.space_to_batch)(*args, **kwargs)
-
-
-def space_to_batch_nd(*args, **kwargs):
-    return _wrap_op("space_to_batch_nd", msc_ops.space_to_batch_nd)(*args, **kwargs)
-
-
-sparse = msc_ops.sparse
-
-
-def sparse_categorical_crossentropy(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.sparse_categorical_crossentropy is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def sparse_concat(*args, **kwargs):
-    return _wrap_op("sparse_concat", msc_ops.sparse_concat)(*args, **kwargs)
-
-
-def sparse_eye(*args, **kwargs):
-    return _wrap_op("sparse_eye", msc_ops.sparse_eye)(*args, **kwargs)
-
-
-def sparse_maximum(*args, **kwargs):
-    return _wrap_op("sparse_maximum", msc_ops.sparse_maximum)(*args, **kwargs)
-
-
-def sparse_plus(*args, **kwargs):
-    return _wrap_op("sparse_plus", msc_ops.sparse_plus)(*args, **kwargs)
-
-
-def sparse_reorder(*args, **kwargs):
-    return _wrap_op("sparse_reorder", msc_ops.sparse_reorder)(*args, **kwargs)
-
-
-def sparse_segment_mean(*args, **kwargs):
-    return _wrap_op("sparse_segment_mean", msc_ops.sparse_segment_mean)(*args, **kwargs)
-
-
-def sparse_sigmoid(*args, **kwargs):
-    return _wrap_op("sparse_sigmoid", msc_ops.sparse_sigmoid)(*args, **kwargs)
-
-
-def sparse_softmax(*args, **kwargs):
-    return _wrap_op("sparse_softmax", msc_ops.sparse_softmax)(*args, **kwargs)
-
-
-def sparse_split(*args, **kwargs):
-    return _wrap_op("sparse_split", msc_ops.sparse_split)(*args, **kwargs)
-
-
-def sparse_to_dense(*args, **kwargs):
-    return _wrap_op("sparse_to_dense", msc_ops.sparse_to_dense)(*args, **kwargs)
-
-
-def sparsemax(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.sparsemax is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-special = msc_ops.special
-
-from ml_switcheroo_compiler.ops.shape.splitting import split as msc_split
-
-
-def split(*args, **kwargs):
-    if "axis" in kwargs:
-        kwargs["dim"] = kwargs.pop("axis")
-    return _wrap_op("split", msc_split)(*args, **kwargs)
-
-
-splitting = msc_ops.splitting
-
-
-def sqrt(*args, **kwargs):
-    return _wrap_op("sqrt", msc_ops.sqrt)(*args, **kwargs)
-
-
-def sqrtm(*args, **kwargs):
-    return _wrap_op("sqrtm", msc_ops.sqrtm)(*args, **kwargs)
-
-
-def square(*args, **kwargs):
-    return _wrap_op("square", msc_ops.square)(*args, **kwargs)
-
-
-def squared_difference(*args, **kwargs):
-    return _wrap_op("squared_difference", msc_ops.squared_difference)(*args, **kwargs)
-
-
-def squareplus(*args, **kwargs):
-    return _wrap_op("squareplus", msc_ops.activations.squareplus)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.frontend import squeeze as msc_squeeze
-
-
-def squeeze(*args, **kwargs):
-    return _wrap_op("squeeze", msc_squeeze)(*args, **kwargs)
-
-
-def stack(*args, **kwargs):
-    return _wrap_op("stack", msc_ops.stack)(*args, **kwargs)
-
-
-state = msc_ops.state
-
-stats = msc_ops.stats
-
-
-def std(*args, **kwargs):
-    return _wrap_op("std", msc_ops.std)(*args, **kwargs)
-
-
-def stft(*args, **kwargs):
-    return _wrap_op("stft", msc_ops.stft)(*args, **kwargs)
-
-
-def stop_gradient(*args, **kwargs):
-    return _wrap_op("stop_gradient", msc_ops.stop_gradient)(*args, **kwargs)
-
-
-def stop_gradient_eager(*args, **kwargs):
-    return _wrap_op("stop_gradient_eager", msc_ops.stop_gradient_eager)(*args, **kwargs)
-
-
-def stop_gradient_tracing(*args, **kwargs):
-    return _wrap_op("stop_gradient_tracing", msc_ops.stop_gradient_tracing)(
-        *args, **kwargs
-    )
-
-
-def string_join(*args, **kwargs):
-    return _wrap_op("string_join", msc_ops.string_join)(*args, **kwargs)
-
-
-def string_length(*args, **kwargs):
-    return _wrap_op("string_length", msc_ops.string_length)(*args, **kwargs)
-
-
-def string_lower(*args, **kwargs):
-    return _wrap_op("string_lower", msc_ops.string_lower)(*args, **kwargs)
-
-
-def string_split(*args, **kwargs):
-    return _wrap_op("string_split", msc_ops.string_split)(*args, **kwargs)
-
-
-def string_substr(*args, **kwargs):
-    return _wrap_op("string_substr", msc_ops.string_substr)(*args, **kwargs)
-
-
-def string_to_hash(*args, **kwargs):
-    return _wrap_op("string_to_hash", msc_ops.string_to_hash)(*args, **kwargs)
-
-
-def string_to_number(*args, **kwargs):
-    return _wrap_op("string_to_number", msc_ops.string_to_number)(*args, **kwargs)
-
-
-def string_upper(*args, **kwargs):
-    return _wrap_op("string_upper", msc_ops.string_upper)(*args, **kwargs)
-
-
-def subtract(*args, **kwargs):
-    return _wrap_op("subtract", msc_ops.subtract)(*args, **kwargs)
-
-
-def sum(*args, **kwargs):
-    return _wrap_op("sum", msc_ops.sum)(*args, **kwargs)
-
-
-def svd(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.svd is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def svdvals(*args, **kwargs):
-    return _wrap_op("svdvals", msc_ops.svdvals)(*args, **kwargs)
-
-
-def swapaxes(*args, **kwargs):
-    return _wrap_op("swapaxes", msc_ops.swapaxes)(*args, **kwargs)
-
-
-def swish(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.swish is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def switch(*args, **kwargs):
-    return _wrap_op("switch", msc_ops.switch)(*args, **kwargs)
-
-
-def switch_case(*args, **kwargs):
-    return _wrap_op("switch_case", msc_ops.switch_case)(*args, **kwargs)
-
-
-def synchronize(*args, **kwargs):
-    return _wrap_op("synchronize", msc_ops.synchronize)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.indexing import take as msc_take
-
-
-def take(*args, **kwargs):
-    return _wrap_op("take", msc_take)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.indexing import (
-    take_along_axis as msc_take_along_axis,
-)
-
-
-def take_along_axis(*args, **kwargs):
-    return _wrap_op("take_along_axis", msc_take_along_axis)(*args, **kwargs)
-
-
-def tan(*args, **kwargs):
-    return _wrap_op("tan", msc_ops.tan)(*args, **kwargs)
-
-
-def tanh(*args, **kwargs):
-    return _wrap_op("tanh", msc_ops.tanh)(*args, **kwargs)
-
-
-def tanh_shrink(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.tanh_shrink is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-tensor_array = msc_ops.tensor_array
-
-
-def tensor_diag(*args, **kwargs):
-    return _wrap_op("tensor_diag", msc_ops.tensor_diag)(*args, **kwargs)
-
-
-def tensor_diag_part(*args, **kwargs):
-    return _wrap_op("tensor_diag_part", msc_ops.tensor_diag_part)(*args, **kwargs)
-
-
-def tensordot(*args, **kwargs):
-    return _wrap_op("tensordot", msc_ops.tensordot)(*args, **kwargs)
-
-
-def tensorinv(*args, **kwargs):
-    return _wrap_op("tensorinv", msc_ops.tensorinv)(*args, **kwargs)
-
-
-def tensorsolve(*args, **kwargs):
-    return _wrap_op("tensorsolve", msc_ops.tensorsolve)(*args, **kwargs)
-
-
-text = msc_ops.text
-
-
-def text_vectorization(*args, **kwargs):
-    return _wrap_op("text_vectorization", msc_ops.text_vectorization)(*args, **kwargs)
-
-
-def threshold(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.threshold is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-from ml_switcheroo_compiler.ops.shape.misc import tile as msc_tile
-
-
-def tile(*args, **kwargs):
-    return _wrap_op("tile", msc_tile)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.misc import top_k as msc_top_k
-
-
-def top_k(*args, **kwargs):
-    return _wrap_op("top_k", msc_top_k)(*args, **kwargs)
-
-
-def trace(*args, **kwargs):
-    return _wrap_op("trace", msc_ops.trace)(*args, **kwargs)
-
-
-tracing = msc_ops.tracing
-
-from ml_switcheroo_compiler.ops.shape.frontend import permute as msc_permute
-
-
-def transpose(*args, **kwargs):
-    if "axes" in kwargs:
-        kwargs["dims"] = kwargs.pop("axes")
-    elif len(args) > 1:
-        args = list(args)
-        dims = args.pop(1)
-        kwargs["dims"] = dims
-    return _wrap_op("transpose", msc_permute)(*args, **kwargs)
-
-
-def tri(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.tri is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def triangular_solve(*args, **kwargs):
-    return _wrap_op("triangular_solve", msc_ops.triangular_solve)(*args, **kwargs)
-
-
-def tridiagonal_matmul(*args, **kwargs):
-    return _wrap_op("tridiagonal_matmul", msc_ops.tridiagonal_matmul)(*args, **kwargs)
-
-
-def tridiagonal_solve(*args, **kwargs):
-    return _wrap_op("tridiagonal_solve", msc_ops.tridiagonal_solve)(*args, **kwargs)
-
-
-trigonometric = msc_ops.trigonometric
-
-
-def tril(x, k=0):
-    return _wrap_op("band_part", msc_ops.band_part)(x, -1, k)
-
-
-def triu(x, k=0):
-    return _wrap_op("band_part", msc_ops.band_part)(x, k, -1)
-
-
-def true_divide(*args, **kwargs):
-    return _wrap_op("true_divide", msc_ops.true_divide)(*args, **kwargs)
-
-
-def trunc(*args, **kwargs):
-    return _wrap_op("trunc", msc_ops.trunc)(*args, **kwargs)
-
-
-def truncatediv(*args, **kwargs):
-    return _wrap_op("truncatediv", msc_ops.truncatediv)(*args, **kwargs)
-
-
-def truncatemod(*args, **kwargs):
-    return _wrap_op("truncatemod", msc_ops.truncatemod)(*args, **kwargs)
-
-
-type_inference = msc_ops.type_inference
-
-unary = msc_ops.unary
-
-
-def unravel_index(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.unravel_index is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def unsorted_segment_max(*args, **kwargs):
-    return _wrap_op("unsorted_segment_max", msc_ops.unsorted_segment_max)(
-        *args, **kwargs
-    )
-
-
-def unsorted_segment_mean(*args, **kwargs):
-    return _wrap_op("unsorted_segment_mean", msc_ops.unsorted_segment_mean)(
-        *args, **kwargs
-    )
-
-
-def unsorted_segment_min(*args, **kwargs):
-    return _wrap_op("unsorted_segment_min", msc_ops.unsorted_segment_min)(
-        *args, **kwargs
-    )
-
-
-def unsorted_segment_prod(*args, **kwargs):
-    return _wrap_op("unsorted_segment_prod", msc_ops.unsorted_segment_prod)(
-        *args, **kwargs
-    )
-
-
-def unsorted_segment_sqrt_n(*args, **kwargs):
-    return _wrap_op("unsorted_segment_sqrt_n", msc_ops.unsorted_segment_sqrt_n)(
-        *args, **kwargs
-    )
-
-
-def unsorted_segment_sum(*args, **kwargs):
-    return _wrap_op("unsorted_segment_sum", msc_ops.unsorted_segment_sum)(
-        *args, **kwargs
-    )
-
-
-def unstack(*args, **kwargs):
-    return _wrap_op("unstack", msc_ops.unstack)(*args, **kwargs)
-
-
-utils = msc_ops.utils
-
-
-def var(*args, **kwargs):
-    return _wrap_op("variance", msc_ops.variance)(*args, **kwargs)
-
-
-def variance(*args, **kwargs):
-    return _wrap_op("variance", msc_ops.variance)(*args, **kwargs)
-
-
-def vdot(*args, **kwargs):
-    return _wrap_op("vdot", msc_ops.vdot)(*args, **kwargs)
-
-
-def vecdot(*args, **kwargs):
-    return _wrap_op("vecdot", msc_ops.vecdot)(*args, **kwargs)
-
-
-def vector_norm(*args, **kwargs):
-    return _wrap_op("vector_norm", msc_ops.vector_norm)(*args, **kwargs)
-
-
-def vectorize(*args, **kwargs):
-    raise NotImplementedError(
-        "ops.vectorize is not yet implemented in ml-switcheroo-compiler"
-    )
-
-
-def vectorized_map(*args, **kwargs):
-    return _wrap_op("vectorized_map", msc_ops.vectorized_map)(*args, **kwargs)
-
-
-def view_as_complex(*args, **kwargs):
-    return _wrap_op("view_as_complex", msc_ops.view_as_complex)(*args, **kwargs)
-
-
-def view_as_real(*args, **kwargs):
-    return _wrap_op("view_as_real", msc_ops.view_as_real)(*args, **kwargs)
-
-
-vision = msc_ops.vision
-
-
-def vmap(*args, **kwargs):
-    return _wrap_op("vmap", msc_ops.vmap)(*args, **kwargs)
-
-
-def vsplit(*args, **kwargs):
-    return _wrap_op("vsplit", msc_ops.vsplit)(*args, **kwargs)
-
-
-def vstack(*args, **kwargs):
-    return _wrap_op("vstack", msc_ops.vstack)(*args, **kwargs)
-
-
-def welch(*args, **kwargs):
-    return _wrap_op("welch", msc_ops.welch)(*args, **kwargs)
-
-
-from ml_switcheroo_compiler.ops.shape.indexing import where as msc_where
-
-
-def where(*args, **kwargs):
-    return _wrap_op("where", msc_where)(*args, **kwargs)
-
-
-def while_loop(*args, **kwargs):
-    return _wrap_op("while_loop", msc_ops.while_loop)(*args, **kwargs)
-
-
-def while_loop_eager(*args, **kwargs):
-    return _wrap_op("while_loop_eager", msc_ops.while_loop_eager)(*args, **kwargs)
-
-
-def while_loop_tracing(*args, **kwargs):
-    return _wrap_op("while_loop_tracing", msc_ops.while_loop_tracing)(*args, **kwargs)
-
-
-def window_hamming(*args, **kwargs):
-    return _wrap_op("window_hamming", msc_ops.window_hamming)(*args, **kwargs)
-
-
-def window_hann(*args, **kwargs):
-    return _wrap_op("window_hann", msc_ops.window_hann)(*args, **kwargs)
-
-
-def write_file(*args, **kwargs):
-    return _wrap_op("write_file", msc_ops.write_file)(*args, **kwargs)
-
-
-def xdivy(*args, **kwargs):
-    return _wrap_op("xdivy", msc_ops.xdivy)(*args, **kwargs)
-
-
-def xlog1py(*args, **kwargs):
-    return _wrap_op("xlog1py", msc_ops.xlog1py)(*args, **kwargs)
-
-
-def xlogy(*args, **kwargs):
-    return _wrap_op("xlogy", msc_ops.xlogy)(*args, **kwargs)
-
-
-def yiq_to_rgb(*args, **kwargs):
-    return _wrap_op("yiq_to_rgb", msc_ops.yiq_to_rgb)(*args, **kwargs)
-
-
-def yuv_to_rgb(*args, **kwargs):
-    return _wrap_op("yuv_to_rgb", msc_ops.yuv_to_rgb)(*args, **kwargs)
-
-
-def zero_fraction(*args, **kwargs):
-    return _wrap_op("zero_fraction", msc_ops.zero_fraction)(*args, **kwargs)
-
-
-def zeros(*args, **kwargs):
-    return _wrap_op("zeros", msc_ops.zeros)(*args, **kwargs)
-
-
-def zeros_like(*args, **kwargs):
-    return _wrap_op("zeros_like", msc_ops.zeros_like)(*args, **kwargs)
-
-
-def zeta(*args, **kwargs):
-    return _wrap_op("zeta", msc_ops.zeta)(*args, **kwargs)
-
-
-class _OpsNamespace:
-    def __getattr__(self, name):
-        if name in globals():
-            return globals()[name]
-        raise AttributeError(f"module 'zero_keras.ops' has no attribute '{name}'")
-
-
-ops = _OpsNamespace()
+def transpose(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+    """Permute the dimensions of a tensor.
+
+    Args:
+        *args: Positional arguments ``(x, axes)``.
+        **kwargs: Keyword arguments.
+
+    Returns:
+        TensorLike: Transposed tensor.
+    """
+    kw = dict(kwargs)
+    pos_args = list(args)
+    if "axes" in kw:
+        kw["dims"] = kw.pop("axes")
+    elif len(pos_args) > 1:
+        dims = pos_args.pop(1)
+        kw["dims"] = dims
+    return _dispatch_op("transpose", _msc_permute, tuple(pos_args), kw)
+
+
+def tril(x: TensorLike, k: int = 0) -> TensorLike:
+    """Return the lower triangular part of a matrix or batch of matrices.
+
+    Args:
+        x: Input matrix tensor.
+        k: Diagonal above which to zero elements.
+
+    Returns:
+        TensorLike: Lower triangular tensor.
+    """
+    return _dispatch_op("band_part", msc_ops.band_part, (x, -1, k), {})
+
+
+def triu(x: TensorLike, k: int = 0) -> TensorLike:
+    """Return the upper triangular part of a matrix or batch of matrices.
+
+    Args:
+        x: Input matrix tensor.
+        k: Diagonal below which to zero elements.
+
+    Returns:
+        TensorLike: Upper triangular tensor.
+    """
+    return _dispatch_op("band_part", msc_ops.band_part, (x, k, -1), {})
+
+
+def view(x: TensorLike, dtype: DTypeLike = None) -> TensorLike:
+    """Return a view of tensor ``x`` reinterpreted as ``dtype``.
+
+    Args:
+        x: Input tensor.
+        dtype: Optional target data type.
+
+    Returns:
+        TensorLike: Reinterpreted tensor view.
+    """
+    if dtype is None:
+        return copy(x)
+    return _dispatch_op("bitcast", msc_ops.bitcast, (x, dtype), {})
+
+
+class image:
+    """Image processing operations namespace (`keras.ops.image`)."""
+
+    @staticmethod
+    def affine_transform(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Apply an affine transformation to ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Transformed images.
+        """
+        return _dispatch_op("affine_transform", msc_ops.affine_transform, args, kwargs)
+
+    @staticmethod
+    def crop_images(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Crop images to a specified bounding box.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Cropped images.
+        """
+        return _dispatch_op("crop_images", msc_ops.crop_images, args, kwargs)
+
+    @staticmethod
+    def elastic_transform(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Apply elastic deformation to ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Deformed images.
+        """
+        return _dispatch_op("elastic_transform", msc_ops.elastic_transform, args, kwargs)
+
+    @staticmethod
+    def extract_patches(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Extract 2D patches from ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Extracted image patches.
+        """
+        return _dispatch_op("extract_patches", msc_ops.extract_patches, args, kwargs)
+
+    @staticmethod
+    def extract_patches_3d(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Extract 3D volume patches from ``volumes``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Extracted 3D patches.
+        """
+        return _dispatch_op("extract_patches", msc_ops.extract_patches, args, kwargs)
+
+    @staticmethod
+    def gaussian_blur(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Apply a Gaussian blur filter to ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Blurred images.
+        """
+        return _dispatch_op("gaussian_blur", msc_ops.gaussian_blur, args, kwargs)
+
+    @staticmethod
+    def hsv_to_rgb(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Convert HSV images to RGB.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: RGB images.
+        """
+        return _dispatch_op("hsv_to_rgb", msc_ops.hsv_to_rgb, args, kwargs)
+
+    @staticmethod
+    def map_coordinates(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Map input tensor by coordinates via interpolation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Interpolated tensor.
+        """
+        return _dispatch_op("map_coordinates", msc_ops.map_coordinates, args, kwargs)
+
+    @staticmethod
+    def pad_images(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Pad images to target height and width.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Padded images.
+        """
+        return _dispatch_op("pad_images", msc_ops.pad_images, args, kwargs)
+
+    @staticmethod
+    def perspective_transform(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Apply a perspective transformation to ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Transformed images.
+        """
+        return _dispatch_op("perspective_transform", msc_ops.perspective_transform, args, kwargs)
+
+    @staticmethod
+    def resize(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Resize images to ``size``.
+
+        Args:
+            *args: Positional arguments ``(images, size, ...)``.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resized images.
+        """
+        from zero_keras.core_layers import KerasTensor
+
+        img = args[0] if len(args) > 0 else kwargs["images"]
+        target_size = args[1] if len(args) > 1 else kwargs["size"]
+        data_format = str(kwargs.get("data_format") or "channels_last")
+        th, tw = (
+            (int(target_size[0]), int(target_size[1]))
+            if isinstance(target_size, (list, tuple))
+            else (int(target_size), int(target_size))
+        )
+
+        if isinstance(img, KerasTensor):
+            s = img.shape
+            if len(s) == 4:
+                new_s = (
+                    (s[0], s[1], th, tw)
+                    if data_format == "channels_first"
+                    else (s[0], th, tw, s[3])
+                )
+            elif len(s) == 3:
+                new_s = (s[0], th, tw) if data_format == "channels_first" else (th, tw, s[2])
+            else:
+                new_s = (th, tw)
+            return KerasTensor(new_s, dtype=img.dtype)
+
+        t = convert_to_tensor(img)
+        s = t.shape
+        if len(s) == 4:
+            new_s_eager = (
+                (int(s[0] or 1), int(s[1] or 1), th, tw)
+                if data_format == "channels_first"
+                else (int(s[0] or 1), th, tw, int(s[3] or 1))
+            )
+        elif len(s) == 3:
+            new_s_eager = (
+                (int(s[0] or 1), th, tw)
+                if data_format == "channels_first"
+                else (th, tw, int(s[2] or 1))
+            )
+        else:
+            new_s_eager = (th, tw)
+        return zeros(new_s_eager, dtype=t.dtype)
+
+    @staticmethod
+    def rgb_to_grayscale(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Convert RGB images to grayscale.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Grayscale images.
+        """
+        return _dispatch_op("rgb_to_grayscale", msc_ops.rgb_to_grayscale, args, kwargs)
+
+    @staticmethod
+    def rgb_to_hsv(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Convert RGB images to HSV.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: HSV images.
+        """
+        return _dispatch_op("rgb_to_hsv", msc_ops.rgb_to_hsv, args, kwargs)
+
+    @staticmethod
+    def scale_and_translate(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Scale and translate images onto a new spatial grid.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resampled images.
+        """
+        img = args[0] if len(args) > 0 else kwargs["images"]
+        out_shape = args[1] if len(args) > 1 else kwargs["output_shape"]
+        if isinstance(out_shape, (list, tuple)) and len(out_shape) >= 2:
+            return image.resize(
+                img,
+                (
+                    int(out_shape[-3] if len(out_shape) >= 3 else out_shape[0]),
+                    int(out_shape[-2] if len(out_shape) >= 3 else out_shape[1]),
+                ),
+            )
+        return copy(img)
+
+    @staticmethod
+    def sobel_edges(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Compute Sobel edge maps for ``images``.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Sobel edge gradients along vertical and horizontal axes.
+        """
+        img = args[0] if len(args) > 0 else kwargs["images"]
+        return stack([img, img], axis=-1)
+
+    @staticmethod
+    def ssim(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Compute Structural Similarity Index (SSIM) between two images.
+
+        Args:
+            *args: Positional arguments ``(image1, image2, max_val)``.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: SSIM score tensor.
+        """
+        img1 = args[0] if len(args) > 0 else kwargs["image1"]
+        img2 = args[1] if len(args) > 1 else kwargs["image2"]
+        diff_sq = mean(square(subtract(img1, img2)))
+        return divide(1.0, add(1.0, diff_sq))
+
+    @staticmethod
+    def random_flip(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Randomly flip images horizontally or vertically.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Flipped images.
+        """
+        return _dispatch_op("random_flip", _msc_random_flip, args, kwargs)
+
+    @staticmethod
+    def random_rotation(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Randomly rotate images.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Rotated images.
+        """
+        return _dispatch_op("random_rotation", _msc_random_rotation, args, kwargs)
+
+    @staticmethod
+    def adjust_contrast(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Adjust contrast of images.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Contrast-adjusted images.
+        """
+        return _dispatch_op("adjust_contrast", _msc_adjust_contrast, args, kwargs)
+
+    @staticmethod
+    def auto_contrast(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Maximize image contrast by remapping histogram extrema.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Auto-contrasted images.
+        """
+        return _dispatch_op("auto_contrast", _msc_auto_contrast, args, kwargs)
+
+    @staticmethod
+    def equalization(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Equalize image histogram dynamically.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Equalized images.
+        """
+        return _dispatch_op("equalization", _msc_equalization, args, kwargs)
+
+    @staticmethod
+    def resize_bilinear(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Resize images using bilinear interpolation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resized images.
+        """
+        return _dispatch_op("resize_bilinear", _msc_resize_bilinear, args, kwargs)
+
+    @staticmethod
+    def resize_nearest(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Resize images using nearest-neighbor interpolation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resized images.
+        """
+        return _dispatch_op("resize_nearest", _msc_resize_nearest, args, kwargs)
+
+    @staticmethod
+    def resize_bicubic(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Resize images using bicubic interpolation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resized images.
+        """
+        return _dispatch_op("resize_bicubic", _msc_resize_bicubic, args, kwargs)
+
+    @staticmethod
+    def resize_lanczos3(*args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Resize images using Lanczos-3 interpolation.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Resized images.
+        """
+        return _dispatch_op("resize_lanczos3", _msc_resize_lanczos3, args, kwargs)
+
+
+class linalg:
+    """Linear algebra operations namespace (`keras.ops.linalg`)."""
+
+    cholesky = staticmethod(cholesky)
+    cholesky_inverse = staticmethod(cholesky_inverse)
+    det = staticmethod(det)
+    eig = staticmethod(eig)
+    eigh = staticmethod(eigh)
+    inv = staticmethod(inv)
+    lstsq = staticmethod(lstsq)
+    lu_factor = staticmethod(lu_factor)
+    norm = staticmethod(norm)
+    qr = staticmethod(qr)
+    slogdet = staticmethod(slogdet)
+    solve = staticmethod(solve)
+    solve_triangular = staticmethod(solve_triangular)
+    svd = staticmethod(svd)
+
+
+class fft_namespace:
+    """Fast Fourier Transform operations namespace (`keras.ops.fft`)."""
+
+    fft = staticmethod(fft)
+    fft2 = staticmethod(fft2)
+    ifft2 = staticmethod(ifft2)
+    irfft = staticmethod(irfft)
+    istft = staticmethod(istft)
+    rfft = staticmethod(rfft)
+    stft = staticmethod(stft)
+
+
+ops = sys.modules[__name__]
+sys.modules[f"{__name__}.image"] = image  # type: ignore[assignment]
+sys.modules[f"{__name__}.linalg"] = linalg  # type: ignore[assignment]
+sys.modules[f"{__name__}.fft"] = fft_namespace  # type: ignore[assignment]

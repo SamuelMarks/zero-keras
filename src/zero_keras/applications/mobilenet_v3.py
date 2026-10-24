@@ -1,17 +1,18 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import warnings
 
-from ml_switcheroo_compiler import core as backend
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
 from zero_keras.models import Functional
 from zero_keras.utils import file_utils, generic_utils, operation_utils
 
-BASE_WEIGHT_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/mobilenet_v3/"
-)
+BASE_WEIGHT_PATH = "https://storage.googleapis.com/tensorflow/keras-applications/mobilenet_v3/"
 WEIGHTS_HASHES = {
     "large_224_0.75_float": (
         "765b44a33ad4005b3ac83185abf1d0eb",
@@ -152,22 +153,22 @@ Returns:
 
 
 def MobileNetV3(
-    stack_fn,
-    last_point_ch,
-    input_shape=None,
-    alpha=1.0,
-    model_type="large",
-    minimalistic=False,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    classes=1000,
-    pooling=None,
-    dropout_rate=0.2,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name=None,
-):
+    stack_fn: TensorLike,
+    last_point_ch: TensorLike,
+    input_shape: TensorLike = None,
+    alpha: TensorLike = 1.0,
+    model_type: TensorLike = "large",
+    minimalistic: TensorLike = False,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    classes: TensorLike = 1000,
+    pooling: TensorLike = None,
+    dropout_rate: TensorLike = 0.2,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = None,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -188,7 +189,7 @@ def MobileNetV3(
         name: Description.
     """
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -197,7 +198,7 @@ def MobileNetV3(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             'If using `weights="imagenet"` with `include_top` '
             "as true, `classes` should be 1000.  "
             f"Received classes={classes}"
@@ -206,103 +207,63 @@ def MobileNetV3(
     # Determine proper input shape and default size.
     # If both input_shape and input_tensor are used, they should match
     if input_shape is not None and input_tensor is not None:
-        try:  # pragma: no cover
-            is_input_t_tensor = backend.is_keras_tensor(
-                input_tensor
-            )  # pragma: no cover
-        except ValueError:  # pragma: no cover
-            try:  # pragma: no cover
-                is_input_t_tensor = backend.is_keras_tensor(  # pragma: no cover
-                    operation_utils.get_source_inputs(input_tensor)
-                )
-            except ValueError:  # pragma: no cover
-                raise ValueError(  # pragma: no cover
-                    "input_tensor: ",
-                    input_tensor,
-                    "is not type input_tensor.  "
-                    f"Received type(input_tensor)={type(input_tensor)}",
-                )
-        if is_input_t_tensor:  # pragma: no cover
-            if backend.image_data_format() == "channels_first":  # pragma: no cover
-                if input_tensor.shape[1] != input_shape[1]:  # pragma: no cover
-                    raise ValueError(  # pragma: no cover
-                        "When backend.image_data_format()=channels_first, "
-                        "input_shape[1] must equal "
-                        "input_tensor.shape[1].  Received "
-                        f"input_shape={input_shape}, "
-                        "input_tensor.shape="
-                        f"{input_tensor.shape}"
-                    )
-            else:
-                if input_tensor.shape[2] != input_shape[1]:  # pragma: no cover
-                    raise ValueError(  # pragma: no cover
-                        "input_shape[1] must equal "
-                        "input_tensor.shape[2].  Received "
-                        f"input_shape={input_shape}, "
-                        "input_tensor.shape="
-                        f"{input_tensor.shape}"
-                    )
-        else:
-            raise ValueError(  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            raise ValueError(
                 "input_tensor specified: ",
                 input_tensor,
                 "is not a keras tensor",
             )
+        if input_tensor.shape[2] != input_shape[1]:
+            raise ValueError(
+                "input_shape[1] must equal "
+                "input_tensor.shape[2].  Received "
+                f"input_shape={input_shape}, "
+                "input_tensor.shape="
+                f"{input_tensor.shape}"
+            )
 
     # If input_shape is None, infer shape from input_tensor
     if input_shape is None and input_tensor is not None:
-        try:  # pragma: no cover
-            backend.is_keras_tensor(input_tensor)  # pragma: no cover
-        except ValueError:  # pragma: no cover
-            raise ValueError(  # pragma: no cover
-                "input_tensor: ",
-                input_tensor,
-                "is type: ",
-                type(input_tensor),
-                "which is not a valid type",
-            )
-
-        if backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            if backend.image_data_format() == "channels_first":  # pragma: no cover
-                rows = input_tensor.shape[2]  # pragma: no cover
-                cols = input_tensor.shape[3]  # pragma: no cover
-                input_shape = (3, cols, rows)  # pragma: no cover
+        if backend.is_keras_tensor(input_tensor):
+            if backend.image_data_format() == "channels_first":
+                rows = input_tensor.shape[2]
+                cols = input_tensor.shape[3]
+                input_shape = (3, cols, rows)
             else:
-                rows = input_tensor.shape[1]  # pragma: no cover
-                cols = input_tensor.shape[2]  # pragma: no cover
-                input_shape = (cols, rows, 3)  # pragma: no cover
-    # If input_shape is None and input_tensor is None using standard shape
-    if input_shape is None and input_tensor is None:  # pragma: no branch
-        if backend.image_data_format() == "channels_last":  # pragma: no branch
-            input_shape = (None, None, 3)
+                rows = input_tensor.shape[1]
+                cols = input_tensor.shape[2]
+                input_shape = (cols, rows, 3)
         else:
-            input_shape = (3, None, None)  # pragma: no cover
+            input_shape = (
+                (3, None, None)
+                if backend.image_data_format() == "channels_first"
+                else (None, None, 3)
+            )
+    # If input_shape is None and input_tensor is None using standard shape
+    elif input_shape is None:
+        if backend.image_data_format() == "channels_last":
+            input_shape = (224, 224, 3)
+        else:
+            input_shape = (3, 224, 224)
 
-    if backend.image_data_format() == "channels_last":  # pragma: no branch
+    if backend.image_data_format() == "channels_last":
         row_axis, col_axis = (0, 1)
     else:
-        row_axis, col_axis = (1, 2)  # pragma: no cover
+        row_axis, col_axis = (1, 2)
     rows = input_shape[row_axis]
     cols = input_shape[col_axis]
     if rows and cols and (rows < 32 or cols < 32):
-        raise ValueError(  # pragma: no cover
-            f"Input size must be at least 32x32; Received `input_shape={input_shape}`"
-        )
+        raise ValueError(f"Input size must be at least 32x32; Received `input_shape={input_shape}`")
     if weights == "imagenet":
-        if (  # pragma: no cover
-            not minimalistic
-            and alpha not in [0.75, 1.0]
-            or minimalistic
-            and alpha != 1.0
-        ):
-            raise ValueError(  # pragma: no cover
+        if not minimalistic and alpha not in [0.75, 1.0] or minimalistic and alpha != 1.0:
+            raise ValueError(
                 "If imagenet weights are being loaded, "
                 "alpha can be one of `0.75`, `1.0` for non minimalistic "
                 "or `1.0` for minimalistic only."
             )
 
-        if rows != cols or rows != 224:  # pragma: no cover
-            warnings.warn(  # pragma: no cover
+        if rows != cols or rows != 224:
+            warnings.warn(
                 "`input_shape` is undefined or non-square, "
                 "or `rows` is not 224. "
                 "Weights for input shape (224, 224) will be "
@@ -313,26 +274,25 @@ def MobileNetV3(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     channel_axis = 1 if backend.image_data_format() == "channels_first" else -1
 
     if minimalistic:
-        kernel = 3  # pragma: no cover
-        activation = relu  # pragma: no cover
-        se_ratio = None  # pragma: no cover
+        kernel = 3
+        activation = relu
+        se_ratio = None
     else:
         kernel = 5
         activation = hard_swish
         se_ratio = 0.25
 
+    df = backend.image_data_format()
     x = img_input
-    if include_preprocessing:  # pragma: no branch
+    if include_preprocessing:
         x = layers.Rescaling(scale=1.0 / 127.5, offset=-1.0)(x)
     x = layers.Conv2D(
         16,
@@ -340,26 +300,28 @@ def MobileNetV3(
         strides=(2, 2),
         padding="same",
         use_bias=False,
+        data_format=df,
         name="conv",
     )(x)
-    x = layers.BatchNormalization(
-        axis=channel_axis, epsilon=1e-3, momentum=0.999, name="conv_bn"
-    )(x)
+    x = layers.BatchNormalization(axis=channel_axis, epsilon=1e-3, momentum=0.999, name="conv_bn")(
+        x
+    )
     x = activation(x)
 
     x = stack_fn(x, kernel, activation, se_ratio)
 
-    last_conv_ch = _depth(x.shape[channel_axis] * 6)
+    last_conv_ch = _depth((x.shape[channel_axis] or 16) * 6)
 
     # if the width multiplier is greater than 1 we
     # increase the number of output channels
     if alpha > 1.0:
-        last_point_ch = _depth(last_point_ch * alpha)  # pragma: no cover
+        last_point_ch = _depth(last_point_ch * alpha)
     x = layers.Conv2D(
         last_conv_ch,
         kernel_size=1,
         padding="same",
         use_bias=False,
+        data_format=df,
         name="conv_1",
     )(x)
     x = layers.BatchNormalization(
@@ -377,21 +339,21 @@ def MobileNetV3(
         )(x)
         x = activation(x)
 
-        if dropout_rate > 0:  # pragma: no branch
+        if dropout_rate > 0:
             x = layers.Dropout(dropout_rate)(x)
         x = layers.Conv2D(classes, kernel_size=1, padding="same", name="logits")(x)
         x = layers.Flatten()(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
         x = layers.Activation(activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover  # pragma: no cover
-            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover  # pragma: no cover
-            x = layers.GlobalMaxPooling2D(name="max_pool")(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D(name="max_pool")(x)
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -400,44 +362,42 @@ def MobileNetV3(
 
     # Load weights.
     if weights == "imagenet":
-        model_name = "{}{}_224_{}_float".format(  # pragma: no cover
+        model_name = "{}{}_224_{}_float".format(
             model_type, "_minimalistic" if minimalistic else "", str(alpha)
         )
-        if include_top:  # pragma: no cover
-            file_name = f"weights_mobilenet_v3_{model_name}.h5"  # pragma: no cover
-            file_hash = WEIGHTS_HASHES[model_name][0]  # pragma: no cover
+        if include_top:
+            file_name = f"weights_mobilenet_v3_{model_name}.h5"
+            file_hash = WEIGHTS_HASHES[model_name][0]
         else:
-            file_name = (
-                f"weights_mobilenet_v3_{model_name}_no_top_v2.h5"  # pragma: no cover
-            )
-            file_hash = WEIGHTS_HASHES[model_name][1]  # pragma: no cover
-        weights_path = generic_utils.get_file(  # pragma: no cover
+            file_name = f"weights_mobilenet_v3_{model_name}_no_top_v2.h5"
+            file_hash = WEIGHTS_HASHES[model_name][1]
+        weights_path = generic_utils.get_file(
             file_name,
             BASE_WEIGHT_PATH + file_name,
             cache_subdir="models",
             file_hash=file_hash,
         )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
 def MobileNetV3Small(
-    input_shape=None,
-    alpha=1.0,
-    minimalistic=False,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    classes=1000,
-    pooling=None,
-    dropout_rate=0.2,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="MobileNetV3Small",
-):
+    input_shape: TensorLike = None,
+    alpha: TensorLike = 1.0,
+    minimalistic: TensorLike = False,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    classes: TensorLike = 1000,
+    pooling: TensorLike = None,
+    dropout_rate: TensorLike = 0.2,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "MobileNetV3Small",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -455,7 +415,9 @@ def MobileNetV3Small(
         name: Description.
     """
 
-    def stack_fn(x, kernel, activation, se_ratio):
+    def stack_fn(
+        x: TensorLike, kernel: TensorLike, activation: TensorLike, se_ratio: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -465,7 +427,7 @@ def MobileNetV3Small(
             se_ratio: Description.
         """
 
-        def depth(d):
+        def depth(d: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -506,19 +468,19 @@ def MobileNetV3Small(
 
 
 def MobileNetV3Large(
-    input_shape=None,
-    alpha=1.0,
-    minimalistic=False,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    classes=1000,
-    pooling=None,
-    dropout_rate=0.2,
-    classifier_activation="softmax",
-    include_preprocessing=True,
-    name="MobileNetV3Large",
-):
+    input_shape: TensorLike = None,
+    alpha: TensorLike = 1.0,
+    minimalistic: TensorLike = False,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    classes: TensorLike = 1000,
+    pooling: TensorLike = None,
+    dropout_rate: TensorLike = 0.2,
+    classifier_activation: TensorLike = "softmax",
+    include_preprocessing: TensorLike = True,
+    name: TensorLike = "MobileNetV3Large",
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -536,7 +498,9 @@ def MobileNetV3Large(
         name: Description.
     """
 
-    def stack_fn(x, kernel, activation, se_ratio):
+    def stack_fn(
+        x: TensorLike, kernel: TensorLike, activation: TensorLike, se_ratio: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -546,7 +510,7 @@ def MobileNetV3Large(
             se_ratio: Description.
         """
 
-        def depth(d):
+        def depth(d: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -594,7 +558,7 @@ MobileNetV3Small.__doc__ = BASE_DOCSTRING.format(name="MobileNetV3Small")
 MobileNetV3Large.__doc__ = BASE_DOCSTRING.format(name="MobileNetV3Large")
 
 
-def relu(x):
+def relu(x: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -603,7 +567,7 @@ def relu(x):
     return layers.ReLU()(x)
 
 
-def hard_sigmoid(x):
+def hard_sigmoid(x: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -612,7 +576,7 @@ def hard_sigmoid(x):
     return layers.ReLU(6.0)(x + 3.0) * (1.0 / 6.0)
 
 
-def hard_swish(x):
+def hard_swish(x: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -628,7 +592,7 @@ def hard_swish(x):
 # slim/nets/mobilenet/mobilenet.py
 
 
-def _depth(v, divisor=8, min_value=None):
+def _depth(v: TensorLike, divisor: TensorLike = 8, min_value: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -636,16 +600,17 @@ def _depth(v, divisor=8, min_value=None):
         divisor: Description.
         min_value: Description.
     """
-    if min_value is None:  # pragma: no branch
-        min_value = divisor
-    new_v = max(min_value, int(v + divisor / 2) // divisor * divisor)
+    resolved_min = divisor if min_value is None else min_value
+    new_v = max(resolved_min, int(v + divisor / 2) // divisor * divisor)
     # Make sure that round down does not go down by more than 10%.
-    if new_v < 0.9 * v:  # pragma: no cover
-        new_v += divisor  # pragma: no cover
+    if new_v < 0.9 * v:
+        new_v += divisor
     return new_v
 
 
-def _se_block(inputs, filters, se_ratio, prefix):
+def _se_block(
+    inputs: TensorLike, filters: TensorLike, se_ratio: TensorLike, prefix: TensorLike
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -654,13 +619,15 @@ def _se_block(inputs, filters, se_ratio, prefix):
         se_ratio: Description.
         prefix: Description.
     """
+    df = backend.image_data_format()
     x = layers.GlobalAveragePooling2D(
-        keepdims=True, name=f"{prefix}squeeze_excite_avg_pool"
+        data_format=df, keepdims=True, name=f"{prefix}squeeze_excite_avg_pool"
     )(inputs)
     x = layers.Conv2D(
         _depth(filters * se_ratio),
         kernel_size=1,
         padding="same",
+        data_format=df,
         name=f"{prefix}squeeze_excite_conv",
     )(x)
     x = layers.ReLU(name=f"{prefix}squeeze_excite_relu")(x)
@@ -668,6 +635,7 @@ def _se_block(inputs, filters, se_ratio, prefix):
         filters,
         kernel_size=1,
         padding="same",
+        data_format=df,
         name=f"{prefix}squeeze_excite_conv_1",
     )(x)
     x = hard_sigmoid(x)
@@ -676,8 +644,15 @@ def _se_block(inputs, filters, se_ratio, prefix):
 
 
 def _inverted_res_block(
-    x, expansion, filters, kernel_size, stride, se_ratio, activation, block_id
-):
+    x: TensorLike,
+    expansion: TensorLike,
+    filters: TensorLike,
+    kernel_size: TensorLike,
+    stride: TensorLike,
+    se_ratio: TensorLike,
+    activation: TensorLike,
+    block_id: TensorLike,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -690,10 +665,11 @@ def _inverted_res_block(
         activation: Description.
         block_id: Description.
     """
-    channel_axis = 1 if backend.image_data_format() == "channels_first" else -1
+    df = backend.image_data_format()
+    channel_axis = 1 if df == "channels_first" else -1
     shortcut = x
     prefix = "expanded_conv_"
-    infilters = x.shape[channel_axis]
+    infilters = x.shape[channel_axis] or 16
     if block_id:
         # Expand
         prefix = f"expanded_conv_{block_id}_"
@@ -702,6 +678,7 @@ def _inverted_res_block(
             kernel_size=1,
             padding="same",
             use_bias=False,
+            data_format=df,
             name=f"{prefix}expand",
         )(x)
         x = layers.BatchNormalization(
@@ -712,16 +689,12 @@ def _inverted_res_block(
         )(x)
         x = activation(x)
 
-    if stride == 2:
-        x = layers.ZeroPadding2D(
-            padding=imagenet_utils.correct_pad(x, kernel_size),
-            name=f"{prefix}depthwise_pad",
-        )(x)
     x = layers.DepthwiseConv2D(
         kernel_size,
         strides=stride,
         padding="same" if stride == 1 else "valid",
         use_bias=False,
+        data_format=df,
         name=f"{prefix}depthwise",
     )(x)
     x = layers.BatchNormalization(
@@ -740,6 +713,7 @@ def _inverted_res_block(
         kernel_size=1,
         padding="same",
         use_bias=False,
+        data_format=df,
         name=f"{prefix}project",
     )(x)
     x = layers.BatchNormalization(
@@ -749,12 +723,12 @@ def _inverted_res_block(
         name=f"{prefix}project_bn",
     )(x)
 
-    if stride == 1 and infilters == filters:
-        x = layers.Add(name=f"{prefix}add")([shortcut, x])  # pragma: no cover
+    if stride == 1 and shortcut.shape[channel_axis] == filters:
+        x = layers.Add(name=f"{prefix}add")([shortcut, x])
     return x
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """A placeholder method for backward compatibility.
 
     The preprocessing logic has been included in the mobilenet_v3 model
@@ -773,17 +747,17 @@ def preprocess_input(x, data_format=None):
     Returns:
         Unchanged `numpy.array` or tensor.
     """
-    return x  # pragma: no cover
+    return x
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

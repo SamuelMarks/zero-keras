@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import ml_switcheroo_compiler.ops as cops
 import numpy as np
 
@@ -9,7 +12,7 @@ from zero_keras import metrics
 class DummyArray(np.ndarray):
     """Class docstring."""
 
-    def assign(self, value):
+    def assign(self, value: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -17,7 +20,7 @@ class DummyArray(np.ndarray):
         """
 
 
-def make_dummy(*args, **kwargs):
+def make_dummy(*args: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -28,10 +31,10 @@ def make_dummy(*args, **kwargs):
     return arr.view(DummyArray)
 
 
-def test_remaining_assigns():
+def test_remaining_assigns() -> TensorLike:
     """Function docstring."""
-    old_add = getattr(cops, "add", None)
-    old_sum = getattr(cops, "sum", None)
+    old_add = cops.add if hasattr(cops, "add") else None
+    old_sum = cops.sum if hasattr(cops, "sum") else None
     cops.add = make_dummy
     cops.sum = make_dummy
     try:
@@ -45,8 +48,8 @@ def test_remaining_assigns():
         m.count = make_dummy()
         try:
             m.update_state(np.array([1.0, 0.0]), np.array([0.9, 0.1]))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception:
+            pass
 
         # PearsonCorrelation
         m = metrics.PearsonCorrelation()
@@ -58,8 +61,8 @@ def test_remaining_assigns():
         m.count = make_dummy()
         try:
             m.update_state(np.array([1.0, 0.0]), np.array([0.9, 0.1]))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception:
+            pass
 
         # FBetaScore / F1Score
         m = metrics.FBetaScore()
@@ -72,8 +75,8 @@ def test_remaining_assigns():
                 np.array([[0.9, 0.1]]),
                 sample_weight=np.array([1.0]),
             )
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception:
+            pass
 
         # R2Score
         m = metrics.R2Score()
@@ -83,18 +86,18 @@ def test_remaining_assigns():
         m.count = make_dummy()
         try:
             m.update_state(np.array([1.0, 0.0]), np.array([0.9, 0.1]))
-        except Exception:  # pragma: no cover
-            pass  # pragma: no cover
+        except Exception:
+            pass
 
     finally:
         for k, v in zip(["add", "sum"], [old_add, old_sum]):
             if v is not None:
                 setattr(cops, k, v)
-            elif hasattr(cops, k):  # pragma: no cover
-                delattr(cops, k)  # pragma: no cover
+            elif hasattr(cops, k):
+                delattr(cops, k)
 
 
-def test_r2_result():
+def test_r2_result() -> TensorLike:
     """Function docstring."""
     m = metrics.R2Score()
     m.update_state(np.array([1.0, 0.0]), np.array([0.9, 0.1]))
@@ -109,17 +112,23 @@ def test_r2_result():
     m3.result()
 
 
-def test_free_accuracy_functions():
+def test_free_accuracy_functions() -> TensorLike:
     """Function docstring."""
     from zero_keras import ops
 
-    old_cast = getattr(ops, "cast", None)
-    old_mean = getattr(ops, "mean", None)
-    old_equal = getattr(ops, "equal", None)
-    old_argmax = getattr(ops, "argmax", None)
-    old_squeeze = getattr(ops, "squeeze", None)
-    old_topk = getattr(ops, "top_k_categorical_accuracy", None)
-    old_stopk = getattr(ops, "sparse_top_k_categorical_accuracy", None)
+    old_cast = ops.cast if hasattr(ops, "cast") else None
+    old_mean = ops.mean if hasattr(ops, "mean") else None
+    old_equal = ops.equal if hasattr(ops, "equal") else None
+    old_argmax = ops.argmax if hasattr(ops, "argmax") else None
+    old_squeeze = ops.squeeze if hasattr(ops, "squeeze") else None
+    old_topk = (
+        ops.top_k_categorical_accuracy if hasattr(ops, "top_k_categorical_accuracy") else None
+    )
+    old_stopk = (
+        ops.sparse_top_k_categorical_accuracy
+        if hasattr(ops, "sparse_top_k_categorical_accuracy")
+        else None
+    )
 
     ops.cast = make_dummy
     ops.mean = make_dummy
@@ -141,12 +150,8 @@ def test_free_accuracy_functions():
         y_true = np.array([0]).astype("float32")
         metrics.sparse_categorical_accuracy(y_true, y_pred)
 
-        metrics.top_k_categorical_accuracy(
-            np.array([[1.0, 0.0]]), np.array([[0.9, 0.1]]), k=1
-        )
-        metrics.sparse_top_k_categorical_accuracy(
-            np.array([0]), np.array([[0.9, 0.1]]), k=1
-        )
+        metrics.top_k_categorical_accuracy(np.array([[1.0, 0.0]]), np.array([[0.9, 0.1]]), k=1)
+        metrics.sparse_top_k_categorical_accuracy(np.array([0]), np.array([[0.9, 0.1]]), k=1)
     finally:
         for k, v in zip(
             [
@@ -174,7 +179,7 @@ def test_free_accuracy_functions():
                 delattr(ops, k)
 
 
-def test_get_metrics_config_fallback():
+def test_get_metrics_config_fallback() -> TensorLike:
     """Function docstring."""
     # 3644: deserialize or get fallback
     assert metrics.deserialize({"class_name": "UnknownMetricForDeserialize"}) == {

@@ -2,39 +2,41 @@
 
 from __future__ import annotations
 
+from zero_keras.types import TensorLike
+
 from zero_keras import ops
 
 
 class TensorShape(tuple):
     """TensorShape class."""
 
-    def __new__(cls, dims):
+    def __new__(cls, dims: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             dims: Description.
         """
-        if dims is None:  # pragma: no branch
+        if dims is None:
             return super().__new__(cls, ())
-        if isinstance(dims, int):  # pragma: no branch
+        if isinstance(dims, int):
             dims = (dims,)
         return super().__new__(cls, tuple(dims))
 
     @property
-    def dims(self):
+    def dims(self) -> TensorLike:
         """Function docstring."""
         return list(self)
 
     @property
-    def rank(self):
+    def rank(self) -> TensorLike:
         """Function docstring."""
         return len(self)
 
-    def as_list(self):
+    def as_list(self) -> TensorLike:
         """Function docstring."""
         return list(self)
 
-    def is_fully_defined(self):
+    def is_fully_defined(self) -> TensorLike:
         """Function docstring."""
         return all(d is not None for d in self)
 
@@ -43,13 +45,11 @@ from zero_keras.activations import _to_tensor
 
 """Core layers module."""
 
-from typing import Any
-
 
 class _GraphNode:
     """Class docstring."""
 
-    def __init__(self, layer, inputs, outputs):
+    def __init__(self, layer: TensorLike, inputs: TensorLike, outputs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -65,7 +65,13 @@ class _GraphNode:
 class KerasTensor:
     """docstring."""
 
-    def __init__(self, shape: Any, dtype: str = "float32", name: Any = None, data=None):
+    def __init__(
+        self,
+        shape: TensorLike,
+        dtype: str = "float32",
+        name: TensorLike = None,
+        data: TensorLike = None,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -88,22 +94,22 @@ class KerasTensor:
             except Exception:
                 self.data = None
 
-    def __iter__(self):
+    def __iter__(self) -> TensorLike:
         """__iter__ docstring."""
         raise TypeError("KerasTensor is not iterable")
 
     @property
-    def ndim(self):
-        """ndim docstring."""
+    def ndim(self) -> TensorLike:
+        """Ndim docstring."""
         return len(self.shape) if self.shape is not None else None
 
     @property
-    def ragged(self):
-        """ragged docstring."""
+    def ragged(self) -> TensorLike:
+        """Ragged docstring."""
         return False
 
-    def reshape(self, shape):
-        """reshape docstring.
+    def reshape(self, shape: TensorLike) -> TensorLike:
+        """Reshape docstring.
 
         Args:
             shape: Shape.
@@ -111,12 +117,12 @@ class KerasTensor:
         return KerasTensor(shape=shape, dtype=self.dtype, name=self.name)
 
     @property
-    def sparse(self):
-        """sparse docstring."""
+    def sparse(self) -> TensorLike:
+        """Sparse docstring."""
         return False
 
-    def squeeze(self, axis=None):
-        """squeeze docstring.
+    def squeeze(self, axis: TensorLike = None) -> TensorLike:
+        """Squeeze docstring.
 
         Args:
             axis: Axis.
@@ -136,7 +142,7 @@ class KerasTensor:
         )
         return KerasTensor(shape=new_shape, dtype=self.dtype, name=self.name)
 
-    def __call__(self, x, *args, **kwargs):
+    def __call__(self, x: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -146,177 +152,171 @@ class KerasTensor:
         """
         return x
 
-    def __add__(self, other: Any) -> Any:
+    def __add__(self, other: TensorLike) -> TensorLike:
         """__add__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            import ml_switcheroo_compiler.ops as msc_ops  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            import ml_switcheroo_compiler.ops as msc_ops
 
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.activations import _to_tensor
 
-            return msc_ops.add(
-                _to_tensor(self.data), _to_tensor(other)
-            )  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return msc_ops.add(_to_tensor(self.data), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __sub__(self, other: Any) -> Any:
+    def __sub__(self, other: TensorLike) -> TensorLike:
         """__sub__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
+        if (self.data if hasattr(self, "data") else None) is not None:
             import ml_switcheroo_compiler.ops as msc_ops
 
             from zero_keras.activations import _to_tensor
 
             return msc_ops.subtract(_to_tensor(self.data), _to_tensor(other))
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
-    def __mul__(self, other: Any) -> Any:
+    def __mul__(self, other: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             other: Description.
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            from zero_keras import ops  # pragma: no cover
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            from zero_keras import ops
+            from zero_keras.activations import _to_tensor
 
-            return ops.multiply(_to_tensor(self), _to_tensor(other))  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return ops.multiply(_to_tensor(self), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __rmul__(self, other: Any) -> Any:
+    def __rmul__(self, other: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             other: Description.
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            from zero_keras import ops  # pragma: no cover
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            from zero_keras import ops
+            from zero_keras.activations import _to_tensor
 
-            return ops.multiply(_to_tensor(self), _to_tensor(other))  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return ops.multiply(_to_tensor(self), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __rtruediv__(self, other: Any) -> Any:
+    def __rtruediv__(self, other: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             other: Description.
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            from zero_keras import ops  # pragma: no cover
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            from zero_keras import ops
+            from zero_keras.activations import _to_tensor
 
-            return ops.true_divide(
-                _to_tensor(self), _to_tensor(other)
-            )  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return ops.true_divide(_to_tensor(self), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __neg__(self) -> Any:
+    def __neg__(self) -> TensorLike:
         """Function docstring."""
         return KerasTensor(self.shape, self.dtype)
 
-    def __radd__(self, other: Any) -> Any:
+    def __radd__(self, other: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
             other: Description.
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            from zero_keras import ops  # pragma: no cover
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            from zero_keras import ops
+            from zero_keras.activations import _to_tensor
 
-            return ops.add(_to_tensor(self), _to_tensor(other))  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return ops.add(_to_tensor(self), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __rsub__(self, other: Any) -> Any:
+    def __rsub__(self, other: TensorLike) -> TensorLike:
         """__mul__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+        return KerasTensor(self.shape, self.dtype)
 
-    def __truediv__(self, other: Any) -> Any:
+    def __truediv__(self, other: TensorLike) -> TensorLike:
         """__truediv__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if getattr(self, "data", None) is not None:  # pragma: no branch
-            import ml_switcheroo_compiler.ops as msc_ops  # pragma: no cover
+        if (self.data if hasattr(self, "data") else None) is not None:
+            import ml_switcheroo_compiler.ops as msc_ops
 
-            from zero_keras.activations import _to_tensor  # pragma: no cover
+            from zero_keras.activations import _to_tensor
 
-            return msc_ops.true_divide(
-                _to_tensor(self.data), _to_tensor(other)
-            )  # pragma: no cover
-        return KerasTensor(self.shape, self.dtype)  # pragma: no cover
+            return msc_ops.true_divide(_to_tensor(self.data), _to_tensor(other))
+        return KerasTensor(self.shape, self.dtype)
 
-    def __pow__(self, other: Any) -> Any:
+    def __pow__(self, other: TensorLike) -> TensorLike:
         """__pow__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return KerasTensor(self.shape, self.dtype)
 
-    def __eq__(self, other):
+    def __eq__(self, other: TensorLike) -> TensorLike:
         """__eq__ function.
 
         Args:
         other: Parameter other.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.data is not None:
             return self.data == other
         safe_shape = (
-            tuple(1 if x is None else x for x in self.shape)
-            if self.shape is not None
-            else ()
+            tuple(1 if x is None else x for x in self.shape) if self.shape is not None else ()
         )
         import ml_switcheroo_compiler.ops as backend_ops
 
         return backend_ops.ones(safe_shape)
 
-    def __bool__(self):
+    def __bool__(self) -> TensorLike:
         """__bool__ function.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from ml_switcheroo_compiler.core import config
 
-        if getattr(config, "eager_mode", False) and self.data is not None:
+        if (
+            config.eager_mode if hasattr(config, "eager_mode") else False
+        ) and self.data is not None:
             try:
                 return bool(self.data)
             except Exception:
@@ -325,16 +325,16 @@ class KerasTensor:
             "Using a KerasTensor as a Python bool is not allowed. Use ops.cond or ops.where for data-dependent control flow, or enable eager execution."
         )
 
-    def numpy(self):
+    def numpy(self) -> TensorLike:
         """Numpy function.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return self.data
 
-    def __array__(self, dtype=None, copy=None):
+    def __array__(self, dtype: TensorLike = None, copy: TensorLike = None) -> TensorLike:
         """__array__ function.
 
         Args:
@@ -342,7 +342,7 @@ class KerasTensor:
         copy: Parameter copy.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops
@@ -350,9 +350,7 @@ class KerasTensor:
         if self.data is not None:
             arr = self.data
         else:
-            shape = (
-                [d if d is not None else 1 for d in self.shape] if self.shape else [0]
-            )
+            shape = [d if d is not None else 1 for d in self.shape] if self.shape else [0]
             arr = ops.zeros(shape)
 
         arr = ops.convert_to_tensor(arr).numpy()
@@ -364,25 +362,31 @@ class KerasTensor:
 
         return arr
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: TensorLike) -> TensorLike:
         """__getitem__ function.
 
         Args:
         key: Parameter key.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.data is not None:
             return self.data[key]
-        return 0.0  # pragma: no cover
+        return 0.0
 
 
 class Node:
     """docstring."""
 
-    def __init__(self, operation=None, call_args=None, call_kwargs=None, outputs=None):
+    def __init__(
+        self,
+        operation: TensorLike = None,
+        call_args: TensorLike = None,
+        call_kwargs: TensorLike = None,
+        outputs: TensorLike = None,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -406,7 +410,7 @@ class Node:
             outputs._keras_history = self
 
 
-def Input(shape: Any, name: Any = None, **kwargs) -> Any:
+def Input(shape: TensorLike = None, name: TensorLike = None, **kwargs: TensorLike) -> TensorLike:
     """Used to instantiate a Keras tensor.
 
     A Keras tensor is a symbolic tensor-like object, which we augment with
@@ -418,6 +422,7 @@ def Input(shape: Any, name: Any = None, **kwargs) -> Any:
     `model = Model(input=[a, b], output=c)`
 
     Args:
+        kwargs: Input parameter ``kwargs``.
         shape: A shape tuple (tuple of integers or `None` objects),
             not including the batch size.
             For instance, `shape=(32,)` indicates that the expected input
@@ -458,14 +463,17 @@ def Input(shape: Any, name: Any = None, **kwargs) -> Any:
     y = Dense(16, activation='softmax')(x)
     model = Model(x, y)
     ```
-
     """
     batch_shape = kwargs.get("batch_shape")
     if batch_shape is None:
         batch_size = kwargs.get("batch_size")
-        batch_shape = (
-            (batch_size,) + tuple(shape) if shape is not None else (batch_size,)
-        )
+        t_arg = kwargs.get("tensor")
+        if shape is not None:
+            batch_shape = (batch_size,) + tuple(shape)
+        elif t_arg is not None and hasattr(t_arg, "shape"):
+            batch_shape = tuple(t_arg.shape)
+        else:
+            batch_shape = (batch_size,)
     kt = KerasTensor(
         batch_shape,
         dtype=kwargs.get("dtype", "float32"),
@@ -626,7 +634,9 @@ class Layer:
 
     """
 
-    def add_metric(self, value, name=None, **kwargs):
+    def add_metric(
+        self, value: TensorLike, name: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """add_metric docstring.
 
         Args:
@@ -641,7 +651,14 @@ class Layer:
         else:
             self._metrics.append(value)
 
-    def add_variable(self, shape, initializer, dtype=None, trainable=True, name=None):
+    def add_variable(
+        self,
+        shape: TensorLike,
+        initializer: TensorLike,
+        dtype: TensorLike = None,
+        trainable: TensorLike = True,
+        name: TensorLike = None,
+    ) -> TensorLike:
         """add_variable docstring.
 
         Args:
@@ -651,11 +668,9 @@ class Layer:
             trainable: Trainable.
             name: Name.
         """
-        return Variable(
-            initializer, shape=shape, dtype=dtype, trainable=trainable, name=name
-        )
+        return Variable(initializer, shape=shape, dtype=dtype, trainable=trainable, name=name)
 
-    def build_from_config(self, config):
+    def build_from_config(self, config: TensorLike) -> TensorLike:
         """build_from_config docstring.
 
         Args:
@@ -664,11 +679,11 @@ class Layer:
         self.build(config.get("input_shape"))
 
     @property
-    def compute_dtype(self):
+    def compute_dtype(self) -> TensorLike:
         """compute_dtype docstring."""
-        return getattr(self, "_compute_dtype", None)
+        return self._compute_dtype if hasattr(self, "_compute_dtype") else None
 
-    def compute_mask(self, inputs, mask=None):
+    def compute_mask(self, inputs: TensorLike, mask: TensorLike = None) -> TensorLike:
         """compute_mask docstring.
 
         Args:
@@ -677,7 +692,7 @@ class Layer:
         """
         return mask
 
-    def compute_output_spec(self, *args, **kwargs):
+    def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """compute_output_spec docstring.
 
         Args:
@@ -688,35 +703,35 @@ class Layer:
             return self.compute_output_shape(*args, **kwargs)
         from zero_keras.core_layers import KerasTensor
 
-        return KerasTensor(shape=None, dtype=getattr(self, "dtype", "float32"))
+        return KerasTensor(shape=None, dtype=(self.dtype if hasattr(self, "dtype") else "float32"))
 
-    def count_params(self):
+    def count_params(self) -> TensorLike:
         """count_params docstring."""
         return 0
 
     @property
-    def dtype(self):
-        """dtype docstring."""
-        return getattr(self, "_dtype", None)
+    def dtype(self) -> TensorLike:
+        """Dtype docstring."""
+        return self._dtype if hasattr(self, "_dtype") else None
 
     @property
-    def dtype_policy(self):
+    def dtype_policy(self) -> TensorLike:
         """dtype_policy docstring."""
-        return getattr(self, "_dtype_policy", None)
+        return self._dtype_policy if hasattr(self, "_dtype_policy") else None
 
-    def get_build_config(self):
+    def get_build_config(self) -> TensorLike:
         """get_build_config docstring."""
         if hasattr(self, "_build_config"):
             return self._build_config
         return {"input_shape": None}
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         return {"name": self.name}
 
     @property
-    def input(self):
-        """input docstring."""
+    def input(self) -> TensorLike:
+        """Input docstring."""
         return (
             self._inbound_nodes[0].input_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -724,22 +739,11 @@ class Layer:
         )
 
     @property
-    def input_dtype(self):
+    def input_dtype(self) -> TensorLike:
         """input_dtype docstring."""
-        return getattr(self, "dtype", None)
+        return self.dtype if hasattr(self, "dtype") else None
 
-    @property
-    def input_spec(self):
-        """input_spec docstring."""
-        return getattr(self, "_input_spec", None)  # pragma: no cover
-
-    @input_spec.setter
-    def input_spec(self, value):
-        """docstring."""
-
-        self._input_spec = value  # pragma: no cover
-
-    def load_own_variables(self, store):
+    def load_own_variables(self, store: TensorLike) -> TensorLike:
         """load_own_variables docstring.
 
         Args:
@@ -752,25 +756,29 @@ class Layer:
                 var.assign(store[str(i)])
 
     @property
-    def metrics(self):
-        """metrics docstring."""
-        return getattr(self, "_metrics", [])
+    def metrics(self) -> TensorLike:
+        """Metrics docstring."""
+        return self._metrics if hasattr(self, "_metrics") else []
 
     @property
-    def metrics_variables(self):
+    def metrics_variables(self) -> TensorLike:
         """metrics_variables docstring."""
         return []
 
     @property
-    def non_trainable_variables(self):
+    def non_trainable_variables(self) -> TensorLike:
         """non_trainable_variables docstring."""
-        return getattr(
-            self, "non_trainable_weights", getattr(self, "_non_trainable_weights", [])
+        return (
+            self.non_trainable_weights
+            if hasattr(self, "non_trainable_weights")
+            else self._non_trainable_weights
+            if hasattr(self, "_non_trainable_weights")
+            else []
         )
 
     @property
-    def output(self):
-        """output docstring."""
+    def output(self) -> TensorLike:
+        """Output docstring."""
         return (
             self._inbound_nodes[0].output_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -778,17 +786,17 @@ class Layer:
         )
 
     @property
-    def path(self):
-        """path docstring."""
-        return getattr(self, "name", None)
+    def path(self) -> TensorLike:
+        """Path docstring."""
+        return self.name if hasattr(self, "name") else None
 
     @property
-    def quantization_mode(self):
+    def quantization_mode(self) -> TensorLike:
         """quantization_mode docstring."""
-        return getattr(self, "_quantization_mode", None)
+        return self._quantization_mode if hasattr(self, "_quantization_mode") else None
 
-    def quantize(self, mode):
-        """quantize docstring.
+    def quantize(self, mode: TensorLike) -> TensorLike:
+        """Quantize docstring.
 
         Args:
             mode: Mode.
@@ -796,7 +804,7 @@ class Layer:
         self._quantization_mode = mode
         return self
 
-    def quantized_build(self, input_shape):
+    def quantized_build(self, input_shape: TensorLike) -> TensorLike:
         """quantized_build docstring.
 
         Args:
@@ -804,7 +812,7 @@ class Layer:
         """
         self.build(input_shape)
 
-    def quantized_call(self, *args, **kwargs):
+    def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """quantized_call docstring.
 
         Args:
@@ -813,7 +821,7 @@ class Layer:
         """
         return self.call(*args, **kwargs)
 
-    def rematerialized_call(self, *args, **kwargs):
+    def rematerialized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """rematerialized_call docstring.
 
         Args:
@@ -822,7 +830,7 @@ class Layer:
         """
         return self.call(*args, **kwargs)
 
-    def save_own_variables(self, store):
+    def save_own_variables(self, store: TensorLike) -> TensorLike:
         """save_own_variables docstring.
 
         Args:
@@ -834,8 +842,12 @@ class Layer:
             store[str(i)] = var.numpy()
 
     def stateless_call(
-        self, trainable_variables, non_trainable_variables, *args, **kwargs
-    ):
+        self,
+        trainable_variables: TensorLike,
+        non_trainable_variables: TensorLike,
+        *args: TensorLike,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """stateless_call docstring.
 
         Args:
@@ -846,18 +858,7 @@ class Layer:
         """
         return self.call(*args, **kwargs)
 
-    @property
-    def supports_masking(self):
-        """supports_masking docstring."""
-        return getattr(self, "_supports_masking", False)  # pragma: no cover
-
-    @supports_masking.setter
-    def supports_masking(self, value):
-        """docstring."""
-
-        self._supports_masking = value  # pragma: no cover
-
-    def symbolic_call(self, *args, **kwargs):
+    def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """symbolic_call docstring.
 
         Args:
@@ -867,100 +868,69 @@ class Layer:
         return self.call(*args, **kwargs)
 
     @property
-    def trainable(self):
-        """trainable docstring."""
-        return getattr(self, "_trainable", True)  # pragma: no cover
-
-    @trainable.setter
-    def trainable(self, value):
-        """docstring."""
-
-        self._trainable = value  # pragma: no cover
-
-    @property
-    def trainable_variables(self):
+    def trainable_variables(self) -> TensorLike:
         """trainable_variables docstring."""
-        return getattr(
-            self, "trainable_weights", getattr(self, "_trainable_weights", [])
+        return (
+            self.trainable_weights
+            if hasattr(self, "trainable_weights")
+            else self._trainable_weights
+            if hasattr(self, "_trainable_weights")
+            else []
         )
 
     @property
-    def variable_dtype(self):
+    def variable_dtype(self) -> TensorLike:
         """variable_dtype docstring."""
-        return getattr(self, "dtype", None)
+        return self.dtype if hasattr(self, "dtype") else None
 
     @property
-    def variables(self):
-        """variables docstring."""
-        return getattr(self, "weights", [])
+    def variables(self) -> TensorLike:
+        """Variables docstring."""
+        return self.weights if hasattr(self, "weights") else []
 
     @property
-    def input_spec(self):
+    def input_spec(self) -> TensorLike:
         """input_spec docstring."""
-        return getattr(self, "_input_spec", None)  # pragma: no cover
+        return self._input_spec if hasattr(self, "_input_spec") else None
 
     @input_spec.setter
-    def input_spec(self, value):
-        """docstring."""
+    def input_spec(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-        self._input_spec = value  # pragma: no cover
+        Args:
+            value: Input parameter ``value``.
+        """
+        self._input_spec = value
 
     @property
-    def supports_masking(self):
+    def supports_masking(self) -> TensorLike:
         """supports_masking docstring."""
-        return getattr(self, "_supports_masking", False)  # pragma: no cover
+        return self._supports_masking if hasattr(self, "_supports_masking") else False
 
     @supports_masking.setter
-    def supports_masking(self, value):
-        """docstring."""
+    def supports_masking(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-        self._supports_masking = value  # pragma: no cover
-
-    @property
-    def trainable(self):
-        """trainable docstring."""
-        return getattr(self, "_trainable", True)  # pragma: no cover
-
-    @trainable.setter
-    def trainable(self, value):
-        """docstring."""
-
-        self._trainable = value  # pragma: no cover
-
-    @property
-    def input_spec(self):
-        """input_spec docstring."""
-        return getattr(self, "_input_spec", None)
-
-    @input_spec.setter
-    def input_spec(self, value):
-        """docstring."""
-
-        self._input_spec = value  # pragma: no cover
-
-    @property
-    def supports_masking(self):
-        """supports_masking docstring."""
-        return getattr(self, "_supports_masking", False)
-
-    @supports_masking.setter
-    def supports_masking(self, value):
-        """docstring."""
-
+        Args:
+            value: Input parameter ``value``.
+        """
         self._supports_masking = value
 
     @property
-    def trainable(self):
-        """trainable docstring."""
-        return getattr(self, "_trainable", True)
+    def trainable(self) -> TensorLike:
+        """Trainable docstring."""
+        return self._trainable if hasattr(self, "_trainable") else True
 
     @trainable.setter
-    def trainable(self, value):
-        """docstring."""
+    def trainable(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._trainable = value
 
-    def __init__(self, **kwargs: Any):
+    def __init__(self, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -975,13 +945,13 @@ class Layer:
         """Name function.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return self._name or "layer"
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -989,7 +959,7 @@ class Layer:
         """
         return cls(**config)
 
-    def add_loss(self, loss):
+    def add_loss(self, loss: TensorLike) -> TensorLike:
         """Can be called inside of the `call()` method to add a scalar loss.
 
         Example:
@@ -1001,33 +971,35 @@ class Layer:
                 return x
         ```
 
+        Args:
+            loss: Input parameter ``loss``.
         """
         if not hasattr(self, "_losses"):
             self._losses = []
         self._losses.append(loss)
 
     @property
-    def losses(self):
+    def losses(self) -> TensorLike:
         """List of scalar losses from `add_loss`, regularizers and sublayers."""
-        losses_list = list(getattr(self, "_losses", []))
+        losses_list = list((self._losses if hasattr(self, "_losses") else []))
         for v in self.__dict__.values():
             if isinstance(v, Layer):
-                losses_list.extend(v.losses)  # pragma: no cover
+                losses_list.extend(v.losses)
             elif isinstance(v, list):
                 for item in v:
                     if hasattr(item, "losses"):
                         losses_list.extend(item.losses)
             elif isinstance(v, tuple):
-                for item in v:  # pragma: no cover
-                    if hasattr(item, "losses"):  # pragma: no cover
-                        losses_list.extend(item.losses)  # pragma: no cover
+                for item in v:
+                    if hasattr(item, "losses"):
+                        losses_list.extend(item.losses)
             elif isinstance(v, dict):
                 for item in v.values():
                     if hasattr(item, "losses"):
-                        losses_list.extend(item.losses)  # pragma: no cover
+                        losses_list.extend(item.losses)
         return losses_list
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
         """compute_output_shape docstring.
 
         Args:
@@ -1045,38 +1017,39 @@ class Layer:
         try:
             out = self.call(inputs)
             if isinstance(out, list):
-                return [getattr(x, "shape", None) for x in out]
+                return [(x.shape if hasattr(x, "shape") else None) for x in out]
             elif isinstance(out, tuple):
-                return tuple(getattr(x, "shape", None) for x in out)
-            return getattr(out, "shape", None)
+                return tuple((x.shape if hasattr(x, "shape") else None) for x in out)
+            return out.shape if hasattr(out, "shape") else None
         except Exception:
             return input_shape
 
-    def build(self, input_shape: Any) -> None:
+    def build(self, input_shape: TensorLike) -> None:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.built = True
 
     def add_weight(
         self,
-        shape,
-        initializer="zeros",
-        trainable=True,
-        name=None,
-        regularizer=None,
-        constraint=None,
-        **kwargs,
-    ):
+        shape: TensorLike,
+        initializer: TensorLike = "zeros",
+        trainable: TensorLike = True,
+        name: TensorLike = None,
+        regularizer: TensorLike = None,
+        constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Add a weight variable to the layer.
 
         Args:
+            kwargs: Input parameter ``kwargs``.
             shape: Shape tuple for the variable. Must be fully-defined
                 (no `None` entries). Defaults to `()` (scalar) if unspecified.
             initializer: Initializer object to use to populate the initial
@@ -1107,7 +1080,6 @@ class Layer:
                 with the computed gradient. This is useful for float8 training.
                 Defaults to `False`.
             name: String name of the variable. Useful for debugging purposes.
-
         """
         from zero_keras.initializers import get as get_initializer
 
@@ -1119,12 +1091,12 @@ class Layer:
         return weight
 
     @property
-    def weights(self):
+    def weights(self) -> TensorLike:
         """List of all weight variables of the layer.
 
         Unlike, `layer.variables` this excludes metric state and random seeds.
         """
-        w = list(getattr(self, "_weights", []))
+        w = list((self._weights if hasattr(self, "_weights") else []))
         for v in self.__dict__.values():
             if isinstance(v, Layer):
                 w.extend(v.weights)
@@ -1143,7 +1115,7 @@ class Layer:
         return res
 
     @property
-    def trainable_weights(self):
+    def trainable_weights(self) -> TensorLike:
         """List of all trainable weight variables of the layer.
 
         These are the weights that get updated by the optimizer during training.
@@ -1151,7 +1123,7 @@ class Layer:
         return self.weights
 
     @property
-    def non_trainable_weights(self):
+    def non_trainable_weights(self) -> TensorLike:
         """List of all non-trainable weight variables of the layer.
 
         These are the weights that should not be updated by the optimizer during
@@ -1160,18 +1132,20 @@ class Layer:
         """
         return []
 
-    def get_weights(self):
+    def get_weights(self) -> TensorLike:
         """Return the values of `layer.weights` as a list of NumPy arrays."""
         from ml_switcheroo_compiler.serialization import to_numpy
 
         return [to_numpy(w) for w in self.weights]
 
-    def set_weights(self, weights):
-        """Sets the values of `layer.weights` from a list of NumPy arrays."""
+    def set_weights(self, weights: TensorLike) -> TensorLike:
+        """Sets the values of `layer.weights` from a list of NumPy arrays.
+
+        Args:
+            weights: Input parameter ``weights``.
+        """
         if len(weights) != len(self.weights):
-            raise ValueError(
-                f"Expected {len(self.weights)} weights, got {len(weights)}"
-            )
+            raise ValueError(f"Expected {len(self.weights)} weights, got {len(weights)}")
         from ml_switcheroo_compiler.ops import asarray
 
         for w, new_w in zip(self.weights, weights):
@@ -1182,7 +1156,7 @@ class Layer:
             else:
                 w[:] = new_w
 
-    def call(self, inputs: Any, *args: Any, **kwargs: Any) -> Any:
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1191,20 +1165,26 @@ class Layer:
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         return inputs
 
-    def __call__(self, inputs: Any, *args: Any, **kwargs: Any) -> Any:
-        """Call self as a function."""
+    def __call__(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
         if not self.built:
-            self.build(getattr(inputs, "shape", None))
+            self.build((inputs.shape if hasattr(inputs, "shape") else None))
 
         # Simple tracing
         is_tracing = False
 
-        def check_tracing(x):
+        def check_tracing(x: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -1232,25 +1212,21 @@ class Layer:
         if is_tracing:
             node = _GraphNode(self, inputs, outputs)
 
-            def wrap_output(x):
+            def wrap_output(x: TensorLike) -> TensorLike:
                 """Function docstring.
 
                 Args:
                     x: Description.
                 """
-                if (
-                    hasattr(x, "shape")
-                    and hasattr(x, "dtype")
-                    and not isinstance(x, KerasTensor)
-                ):
-                    res = KerasTensor(x.shape, x.dtype, data=x)  # pragma: no cover
-                    res._keras_history = node  # pragma: no cover
-                    return res  # pragma: no cover
+                if hasattr(x, "shape") and hasattr(x, "dtype") and not isinstance(x, KerasTensor):
+                    res = KerasTensor(x.shape, x.dtype, data=x)
+                    res._keras_history = node
+                    return res
                 elif isinstance(x, KerasTensor):
                     res = KerasTensor(x.shape, x.dtype, data=x.data)
                     res._keras_history = node
                     return res
-                return x  # pragma: no cover
+                return x
 
             if isinstance(outputs, list):
                 outputs = [wrap_output(x) for x in outputs]
@@ -1269,7 +1245,7 @@ class Layer:
 class Model(Layer):
     """docstring."""
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1280,7 +1256,13 @@ class Model(Layer):
             return Functional(*args, **kwargs)
         return super().__new__(cls)
 
-    def compute_loss(self, x=None, y=None, y_pred=None, sample_weight=None):
+    def compute_loss(
+        self,
+        x: TensorLike = None,
+        y: TensorLike = None,
+        y_pred: TensorLike = None,
+        sample_weight: TensorLike = None,
+    ) -> TensorLike:
         """compute_loss function.
 
         Args:
@@ -1290,19 +1272,22 @@ class Model(Layer):
         sample_weight: Parameter sample_weight.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-
-        if getattr(self, "loss_fn", None) is not None and callable(self.loss_fn):
+        if (self.loss_fn if hasattr(self, "loss_fn") else None) is not None and callable(
+            self.loss_fn
+        ):
             loss = self.loss_fn(y, y_pred)
         else:
             loss = ops.mean(ops.square(y - y_pred))
-        for reg_loss in getattr(self, "losses", []):
+        for reg_loss in self.losses if hasattr(self, "losses") else []:
             loss = loss + reg_loss
         return loss
 
-    def compute_metrics(self, x, y, y_pred, sample_weight=None):
+    def compute_metrics(
+        self, x: TensorLike, y: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """compute_metrics function.
 
         Args:
@@ -1312,24 +1297,24 @@ class Model(Layer):
         sample_weight: Parameter sample_weight.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         metrics_dict = {}
-        if getattr(self, "compiled_metrics", None):  # pragma: no branch
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
             for m in self.compiled_metrics:
                 m.update_state(y, y_pred)
                 metrics_dict[m.name] = m.result()
         return metrics_dict
 
-    def train_step(self, data):
+    def train_step(self, data: TensorLike) -> TensorLike:
         """train_step function.
 
         Args:
         data: Parameter data.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from ml_switcheroo_compiler.grad import (
@@ -1341,11 +1326,11 @@ class Model(Layer):
         else:
             x, y = data, None
 
-        def loss_fn():
+        def loss_fn() -> TensorLike:
             """loss_fn function.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             try:
@@ -1359,11 +1344,11 @@ class Model(Layer):
 
         trainable_vars = self.trainable_weights
         if (
-            hasattr(getattr(self, "optimizer", None), "apply_gradients")
+            hasattr((self.optimizer if hasattr(self, "optimizer") else None), "apply_gradients")
             and trainable_vars
         ):
             grads_list = [
-                grads_dict.get(getattr(v, "id", id(v)), None) for v in trainable_vars
+                grads_dict.get((v.id if hasattr(v, "id") else id(v)), None) for v in trainable_vars
             ]
             self.optimizer.apply_gradients(zip(grads_list, trainable_vars))
 
@@ -1375,14 +1360,14 @@ class Model(Layer):
         metrics["loss"] = loss
         return metrics
 
-    def test_step(self, data):
+    def test_step(self, data: TensorLike) -> TensorLike:
         """test_step function.
 
         Args:
         data: Parameter data.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if isinstance(data, tuple) and len(data) == 2:
@@ -1398,14 +1383,14 @@ class Model(Layer):
         metrics["loss"] = loss
         return metrics
 
-    def predict_step(self, data):
+    def predict_step(self, data: TensorLike) -> TensorLike:
         """predict_step function.
 
         Args:
         data: Parameter data.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         x = data[0] if isinstance(data, (tuple, list)) else data
@@ -1414,7 +1399,7 @@ class Model(Layer):
         except TypeError:
             return self(x)
 
-    def compile_from_config(self, config):
+    def compile_from_config(self, config: TensorLike) -> TensorLike:
         """compile_from_config docstring.
 
         Args:
@@ -1426,33 +1411,22 @@ class Model(Layer):
         self.compile(optimizer=optimizer, loss=loss, metrics=metrics)
 
     @property
-    def compiled_loss(self):
+    def compiled_loss(self) -> TensorLike:
         """compiled_loss docstring."""
-        return getattr(self, "loss", None)
+        return self.loss if hasattr(self, "loss") else None
 
     @property
-    def compiled_metrics(self):
-        """compiled_metrics docstring."""
-        return getattr(self, "_compiled_metrics", None)  # pragma: no cover
-
-    @compiled_metrics.setter
-    def compiled_metrics(self, value):
-        """docstring."""
-
-        self._compiled_metrics = value  # pragma: no cover
-
-    @property
-    def distribute_reduction_method(self):
+    def distribute_reduction_method(self) -> TensorLike:
         """distribute_reduction_method docstring."""
         return "auto"
 
     @property
-    def distribute_strategy(self):
+    def distribute_strategy(self) -> TensorLike:
         """distribute_strategy docstring."""
         return "auto"
 
-    def export(self, filepath):
-        """export docstring.
+    def export(self, filepath: TensorLike) -> TensorLike:
+        """Export docstring.
 
         Args:
             filepath: Filepath.
@@ -1463,22 +1437,22 @@ class Model(Layer):
         archive.track(self)
         archive.write_out(filepath)
 
-    def get_compile_config(self):
+    def get_compile_config(self) -> TensorLike:
         """get_compile_config docstring."""
         from zero_keras.losses import serialize as serialize_loss
         from zero_keras.optimizers import serialize as serialize_opt
 
         config = {}
-        if getattr(self, "optimizer", None):
+        if self.optimizer if hasattr(self, "optimizer") else None:
             config["optimizer"] = serialize_opt(self.optimizer)
-        if getattr(self, "loss", None):
+        if self.loss if hasattr(self, "loss") else None:
             config["loss"] = serialize_loss(self.loss)
-        if getattr(self, "compiled_metrics", None):
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
             # A simplified metrics serialization
             config["metrics"] = [m.name for m in self.compiled_metrics]
         return config
 
-    def get_layer(self, name=None, index=None):
+    def get_layer(self, name: TensorLike = None, index: TensorLike = None) -> TensorLike:
         """get_layer docstring.
 
         Args:
@@ -1486,105 +1460,75 @@ class Model(Layer):
             index: Index.
         """
         if index is not None:
-            return getattr(self, "layers", [])[index]
+            return (self.layers if hasattr(self, "layers") else [])[index]
         if name is not None:
-            for layer in getattr(self, "layers", []):
+            for layer in self.layers if hasattr(self, "layers") else []:
                 if layer.name == name:
                     return layer
         raise ValueError(f"No such layer: {name}.")
 
-    def get_metrics_result(self):
+    def get_metrics_result(self) -> TensorLike:
         """get_metrics_result docstring."""
         results = {}
-        if getattr(self, "compiled_metrics", None):
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
             for m in self.compiled_metrics:
                 results[m.name] = m.result()
         return results
 
-    def get_state_tree(self):
+    def get_state_tree(self) -> TensorLike:
         """get_state_tree docstring."""
-        return {"variables": getattr(self, "variables", [])}
+        return {"variables": (self.variables if hasattr(self, "variables") else [])}
 
     @property
-    def jit_compile(self):
+    def jit_compile(self) -> TensorLike:
         """jit_compile docstring."""
-        return getattr(self, "_jit_compile", False)  # pragma: no cover
+        return self._jit_compile if hasattr(self, "_jit_compile") else False
 
     @jit_compile.setter
-    def jit_compile(self, value):
-        """docstring."""
-        self._jit_compile = value  # pragma: no cover
+    def jit_compile(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-    @property
-    def layers(self):
-        """layers docstring."""
-        return getattr(self, "_layers", [])  # pragma: no cover
+        Args:
+            value: Input parameter ``value``.
+        """
+        self._jit_compile = value
 
-    @layers.setter
-    def layers(self, value):
-        """docstring."""
-
-        self._layers = value  # pragma: no cover
-
-    @layers.setter
-    def layers(self, value):
-        """docstring."""
-
-        self._layers = value  # pragma: no cover
-
-    @layers.setter
-    def layers(self, value):
-        """docstring."""
-
-        self._layers = value  # pragma: no cover
-
-    @property
-    def loss(self):
-        """loss docstring."""
-        return getattr(self, "_loss", None)  # pragma: no cover
-
-    @loss.setter
-    def loss(self, value):
-        """docstring."""
-
-        self._loss = value  # pragma: no cover
-
-    def make_predict_function(self, force=False):
+    def make_predict_function(self, force: TensorLike = False) -> TensorLike:
         """make_predict_function docstring.
 
         Args:
             force: Force.
         """
-        if getattr(self, "predict_function", None) is None or force:
+        if (self.predict_function if hasattr(self, "predict_function") else None) is None or force:
             self.predict_function = self.predict_step
         return self.predict_function
 
-    def make_test_function(self, force=False):
+    def make_test_function(self, force: TensorLike = False) -> TensorLike:
         """make_test_function docstring.
 
         Args:
             force: Force.
         """
-        if getattr(self, "test_function", None) is None or force:
+        if (self.test_function if hasattr(self, "test_function") else None) is None or force:
             self.test_function = self.test_step
         return self.test_function
 
-    def make_train_function(self, force=False):
+    def make_train_function(self, force: TensorLike = False) -> TensorLike:
         """make_train_function docstring.
 
         Args:
             force: Force.
         """
-        if getattr(self, "train_function", None) is None or force:
+        if (self.train_function if hasattr(self, "train_function") else None) is None or force:
             self.train_function = self.train_step
         return self.train_function
 
     @property
-    def metrics_names(self):
+    def metrics_names(self) -> TensorLike:
         """metrics_names docstring."""
         return []
 
-    def predict_on_batch(self, x):
+    def predict_on_batch(self, x: TensorLike) -> TensorLike:
         """predict_on_batch docstring.
 
         Args:
@@ -1592,24 +1536,13 @@ class Model(Layer):
         """
         return self.predict_step(x)
 
-    def reset_metrics(self):
+    def reset_metrics(self) -> TensorLike:
         """reset_metrics docstring."""
-        if getattr(self, "compiled_metrics", None):
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
             for m in self.compiled_metrics:
                 m.reset_state()
 
-    @property
-    def run_eagerly(self):
-        """run_eagerly docstring."""
-        return getattr(self, "_run_eagerly", False)  # pragma: no cover
-
-    @run_eagerly.setter
-    def run_eagerly(self, value):
-        """docstring."""
-
-        self._run_eagerly = value  # pragma: no cover
-
-    def set_state_tree(self, state_tree):
+    def set_state_tree(self, state_tree: TensorLike) -> TensorLike:
         """set_state_tree docstring.
 
         Args:
@@ -1619,17 +1552,23 @@ class Model(Layer):
             for v_self, v_tree in zip(self.variables, state_tree["variables"]):
                 v_self.assign(v_tree)
 
-    def stateless_compute_loss(self, x, y, y_pred, sample_weight=None):
+    def stateless_compute_loss(
+        self, x: TensorLike, y: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
         """stateless_compute_loss docstring.
 
         Args:
+            x: Input parameter ``x``.
+            y: Input parameter ``y``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
             *args: Args.
             **kwargs: Kwargs.
         """
         return self.compute_loss(x, y, y_pred, sample_weight=sample_weight)
 
-    def summary(self, *args, **kwargs):
-        """summary docstring.
+    def summary(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Summary docstring.
 
         Args:
             *args: Args.
@@ -1641,10 +1580,20 @@ class Model(Layer):
         print_fn("Total params: 0")
         print_fn("=================================================================")
 
-    def test_on_batch(self, x, y=None, sample_weight=None, return_dict=False):
+    def test_on_batch(
+        self,
+        x: TensorLike,
+        y: TensorLike = None,
+        sample_weight: TensorLike = None,
+        return_dict: TensorLike = False,
+    ) -> TensorLike:
         """test_on_batch docstring.
 
         Args:
+            x: Input parameter ``x``.
+            y: Input parameter ``y``.
+            sample_weight: Input parameter ``sample_weight``.
+            return_dict: Input parameter ``return_dict``.
             *args: Args.
             **kwargs: Kwargs.
         """
@@ -1653,18 +1602,28 @@ class Model(Layer):
         batch = pack_x_y_sample_weight(x, y, sample_weight)
         return self.test_step(batch)
 
-    def to_json(self):
+    def to_json(self) -> TensorLike:
         """to_json docstring."""
         import json
 
         return json.dumps(self.get_config())
 
     def train_on_batch(
-        self, x, y=None, sample_weight=None, class_weight=None, return_dict=False
-    ):
+        self,
+        x: TensorLike,
+        y: TensorLike = None,
+        sample_weight: TensorLike = None,
+        class_weight: TensorLike = None,
+        return_dict: TensorLike = False,
+    ) -> TensorLike:
         """train_on_batch docstring.
 
         Args:
+            x: Input parameter ``x``.
+            y: Input parameter ``y``.
+            sample_weight: Input parameter ``sample_weight``.
+            class_weight: Input parameter ``class_weight``.
+            return_dict: Input parameter ``return_dict``.
             *args: Args.
             **kwargs: Kwargs.
         """
@@ -1674,100 +1633,64 @@ class Model(Layer):
         return self.train_step(batch)
 
     @property
-    def compiled_metrics(self):
+    def compiled_metrics(self) -> TensorLike:
         """compiled_metrics docstring."""
-        return getattr(self, "_compiled_metrics", None)  # pragma: no cover
+        return self._compiled_metrics if hasattr(self, "_compiled_metrics") else None
 
     @compiled_metrics.setter
-    def compiled_metrics(self, value):
-        """docstring."""
+    def compiled_metrics(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-        self._compiled_metrics = value  # pragma: no cover
-
-    @property
-    def layers(self):
-        """layers docstring."""
-        return getattr(self, "_layers", [])  # pragma: no cover
-
-    @layers.setter
-    def layers(self, value):
-        """docstring."""
-
-        self._layers = value  # pragma: no cover
-
-    @layers.setter
-    def layers(self, value):
-        """docstring."""
-
-        self._layers = value  # pragma: no cover
-
-    @property
-    def loss(self):
-        """loss docstring."""
-        return getattr(self, "_loss", None)  # pragma: no cover
-
-    @loss.setter
-    def loss(self, value):
-        """docstring."""
-
-        self._loss = value  # pragma: no cover
-
-    @property
-    def run_eagerly(self):
-        """run_eagerly docstring."""
-        return getattr(self, "_run_eagerly", False)  # pragma: no cover
-
-    @run_eagerly.setter
-    def run_eagerly(self, value):
-        """docstring."""
-
-        self._run_eagerly = value  # pragma: no cover
-
-    @property
-    def compiled_metrics(self):
-        """compiled_metrics docstring."""
-        return getattr(self, "_compiled_metrics", None)
-
-    @compiled_metrics.setter
-    def compiled_metrics(self, value):
-        """docstring."""
-
+        Args:
+            value: Input parameter ``value``.
+        """
         self._compiled_metrics = value
 
     @property
-    def layers(self):
-        """layers docstring."""
-        return getattr(self, "_layers", [])
+    def layers(self) -> TensorLike:
+        """Layers docstring."""
+        return self._layers if hasattr(self, "_layers") else []
 
     @layers.setter
-    def layers(self, value):
-        """docstring."""
+    def layers(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._layers = value
 
     @property
-    def loss(self):
-        """loss docstring."""
-        return getattr(self, "_loss", None)
+    def loss(self) -> TensorLike:
+        """Loss docstring."""
+        return self._loss if hasattr(self, "_loss") else None
 
     @loss.setter
-    def loss(self, value):
-        """docstring."""
+    def loss(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._loss = value
 
     @property
-    def run_eagerly(self):
+    def run_eagerly(self) -> TensorLike:
         """run_eagerly docstring."""
-        return getattr(self, "_run_eagerly", False)
+        return self._run_eagerly if hasattr(self, "_run_eagerly") else False
 
     @run_eagerly.setter
-    def run_eagerly(self, value):
-        """docstring."""
+    def run_eagerly(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._run_eagerly = value
 
-    def __init__(self, inputs: Any = None, outputs: Any = None, **kwargs: Any):
+    def __init__(
+        self, inputs: TensorLike = None, outputs: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1780,7 +1703,13 @@ class Model(Layer):
         self.outputs = outputs
         self._compiled = False
 
-    def compile(self, optimizer="adam", loss="mse", metrics=None, **kwargs) -> None:
+    def compile(
+        self,
+        optimizer: TensorLike = "adam",
+        loss: TensorLike = "mse",
+        metrics: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Compile function.
 
         Args:
@@ -1790,7 +1719,7 @@ class Model(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self._compiled = True
@@ -1800,7 +1729,7 @@ class Model(Layer):
 
             self.optimizer = get_opt(optimizer)
         else:
-            self.optimizer = optimizer  # pragma: no cover
+            self.optimizer = optimizer
 
         if isinstance(loss, str):
             from zero_keras.losses import get as get_loss
@@ -1809,31 +1738,33 @@ class Model(Layer):
             self.loss_fn = get_loss(loss)
         else:
             self.loss = loss
-            self.loss_fn = loss if callable(loss) else getattr(loss, "call", None)
+            self.loss_fn = (
+                loss if callable(loss) else (loss.call if hasattr(loss, "call") else None)
+            )
 
         self.compiled_metrics = []
-        if metrics is not None:  # pragma: no branch
-            if not isinstance(metrics, (list, tuple)):  # pragma: no branch
-                metrics = [metrics]  # pragma: no cover
+        if metrics is not None:
+            if not isinstance(metrics, (list, tuple)):
+                metrics = [metrics]
             from zero_keras.metrics import get as get_metric
 
             for m in metrics:
-                if isinstance(m, str):  # pragma: no branch
-                    self.compiled_metrics.append(get_metric(m))  # pragma: no cover
+                if isinstance(m, str):
+                    self.compiled_metrics.append(get_metric(m))
                 else:
                     self.compiled_metrics.append(m)
 
-    def _is_iterator(self, data):
+    def _is_iterator(self, data: TensorLike) -> TensorLike:
         """_is_iterator function.
 
         Args:
         data: Parameter data.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if (  # pragma: no branch
+        if (
             hasattr(data, "__iter__")
             and not hasattr(data, "shape")
             and not isinstance(data, (list, tuple, dict))
@@ -1844,7 +1775,7 @@ class Model(Layer):
             or type(data).__module__.startswith("torch.utils.data")
         )
 
-    def _unpack_iterator(self, data, is_train=True):
+    def _unpack_iterator(self, data: TensorLike, is_train: TensorLike = True) -> TensorLike:
         """_unpack_iterator function.
 
         Args:
@@ -1852,7 +1783,7 @@ class Model(Layer):
         is_train: Parameter is_train.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import inspect
@@ -1865,18 +1796,13 @@ class Model(Layer):
             # torch DataLoader
             for batch in data:
                 # convert torch tensors to numpy/ops
-                if isinstance(batch, (list, tuple)):  # pragma: no branch
+                if isinstance(batch, (list, tuple)):
                     yield tuple(b.numpy() if hasattr(b, "numpy") else b for b in batch)
-                elif isinstance(batch, dict):  # pragma: no cover
-                    yield {
-                        k: v.numpy() if hasattr(v, "numpy") else v
-                        for k, v in batch.items()
-                    }
+                elif isinstance(batch, dict):
+                    yield {k: v.numpy() if hasattr(v, "numpy") else v for k, v in batch.items()}
                 else:
                     yield batch.numpy() if hasattr(batch, "numpy") else batch
-        elif inspect.isgenerator(data) or isinstance(
-            data, type(x for x in [])
-        ):  # pragma: no branch
+        elif inspect.isgenerator(data) or isinstance(data, type(x for x in [])):
             # python generator
             for batch in data:
                 yield batch
@@ -1886,8 +1812,13 @@ class Model(Layer):
                 yield batch
 
     def fit(
-        self, x: Any, y: Any = None, epochs: int = 1, batch_size: int = 32, **kwargs
-    ) -> Any:
+        self,
+        x: TensorLike,
+        y: TensorLike = None,
+        epochs: int = 1,
+        batch_size: int = 32,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Fit function.
 
         Args:
@@ -1898,7 +1829,7 @@ class Model(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import math
@@ -1912,18 +1843,18 @@ class Model(Layer):
         from zero_keras.callbacks import callbacks as cb_module
 
         callbacks = kwargs.get("callbacks", [])
-        if not isinstance(callbacks, cb_module.CallbackList):  # pragma: no branch
+        if not isinstance(callbacks, cb_module.CallbackList):
             callbacks = cb_module.CallbackList(callbacks, model=self)
 
         callbacks.on_train_begin()
 
-        history: dict[str, Any] = {"loss": []}
+        history: dict[str] = {"loss": []}
 
         for epoch in range(epochs):
             callbacks.on_epoch_begin(epoch)
-            if getattr(self, "compiled_metrics", None):  # pragma: no branch
-                for m in self.compiled_metrics:  # pragma: no cover
-                    m.reset_state()  # pragma: no cover
+            if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+                for m in self.compiled_metrics:
+                    m.reset_state()
 
             epoch_loss_sum = 0.0
             batches_seen = 0
@@ -1944,28 +1875,24 @@ class Model(Layer):
 
                         try:
                             b_loss = float(asarray(loss_val).data.mean())
-                        except Exception:  # pragma: no cover
-                            b_loss = 0.0  # pragma: no cover
+                        except Exception:
+                            b_loss = 0.0
                     epoch_loss_sum += b_loss
                     batches_seen += 1
             else:
                 for batch in range(num_batches):
                     callbacks.on_train_batch_begin(batch)
                     callbacks.on_batch_begin(batch)
-                    if (
-                        num_samples > 0
-                        and hasattr(x, "__getitem__")
-                        and hasattr(y, "__getitem__")
-                    ):
+                    if num_samples > 0 and hasattr(x, "__getitem__") and hasattr(y, "__getitem__"):
                         start = batch * batch_size
                         end = min((batch + 1) * batch_size, num_samples)
                         try:
                             bx = x[start:end]
                             by = y[start:end]
-                        except Exception:  # pragma: no cover
-                            bx, by = x, y  # pragma: no cover
-                    else:  # pragma: no cover
-                        bx, by = x, y  # pragma: no cover
+                        except Exception:
+                            bx, by = x, y
+                    else:
+                        bx, by = x, y
 
                     from zero_keras.activations import _to_tensor
 
@@ -1986,16 +1913,16 @@ class Model(Layer):
                     batches_seen += 1
 
             epoch_logs = {"loss": epoch_loss_sum / max(1, batches_seen)}
-            if getattr(self, "compiled_metrics", None):  # pragma: no branch
-                for m in self.compiled_metrics:  # pragma: no cover
-                    epoch_logs[m.name] = m.result()  # pragma: no cover
+            if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+                for m in self.compiled_metrics:
+                    epoch_logs[m.name] = m.result()
 
             callbacks.on_epoch_end(epoch, epoch_logs)
             for k, v in epoch_logs.items():
                 history.setdefault(k, []).append(v)
 
-            if getattr(self, "stop_training", False):  # pragma: no branch
-                break  # pragma: no cover
+            if self.stop_training if hasattr(self, "stop_training") else False:
+                break
 
         callbacks.on_train_end()
         hist_obj = type(
@@ -2005,7 +1932,13 @@ class Model(Layer):
         )()
         return hist_obj
 
-    def save(self, filepath, overwrite=True, save_format=None, **kwargs):
+    def save(
+        self,
+        filepath: TensorLike,
+        overwrite: TensorLike = True,
+        save_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Save function.
 
         Args:
@@ -2015,7 +1948,7 @@ class Model(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import json
@@ -2029,49 +1962,45 @@ class Model(Layer):
 
         config = {
             "class_name": self.__class__.__name__,
-            "config": getattr(self, "get_config", dict)(),
+            "config": (self.get_config if hasattr(self, "get_config") else dict)(),
         }
 
-        def _to_bytes_and_dtype(tensor):
+        def _to_bytes_and_dtype(tensor: TensorLike) -> TensorLike:
             """_to_bytes_and_dtype function.
 
             Args:
             tensor: Parameter tensor.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             import array
 
-            if hasattr(tensor, "numpy"):  # pragma: no branch
-                data = tensor.numpy()  # pragma: no cover
-            elif hasattr(tensor, "data") and hasattr(
-                tensor.data, "numpy"
-            ):  # pragma: no branch  # pragma: no cover
-                data = tensor.data.numpy()  # pragma: no cover
+            if hasattr(tensor, "numpy"):
+                data = tensor.numpy()
+            elif hasattr(tensor, "data") and hasattr(tensor.data, "numpy"):
+                data = tensor.data.numpy()
             else:
                 data = tensor
 
             # Extract standard python array
-            if hasattr(data, "tobytes"):  # pragma: no branch
-                b = data.tobytes()  # pragma: no cover
-                shape = data.shape  # pragma: no cover
-                dt = str(getattr(data, "dtype", "float32")).split(".")[
-                    -1
-                ]  # pragma: no cover
+            if hasattr(data, "tobytes"):
+                b = data.tobytes()
+                shape = data.shape
+                dt = str((data.dtype if hasattr(data, "dtype") else "float32")).split(".")[-1]
             else:
                 # fallback
                 flat = []
 
-                def flatten(x):
+                def flatten(x: TensorLike) -> TensorLike:
                     """Flatten function.
 
                     Args:
                     x: Parameter x.
 
                     Returns:
-                    Any: Return value.
+                    TensorLike: Return value.
 
                     """
                     if isinstance(x, (list, tuple)):
@@ -2082,13 +2011,13 @@ class Model(Layer):
 
                 flatten(data)
                 b = array.array("f", flat).tobytes()
-                shape = getattr(data, "shape", (len(flat),))
+                shape = data.shape if hasattr(data, "shape") else (len(flat),)
                 dt = "float32"
 
             dtype_map = {"float32": "F32", "int32": "I32", "float64": "F64"}
             return b, list(shape), dtype_map.get(dt, "F32")
 
-        def _get_safetensors(w_list, prefix="weight_"):
+        def _get_safetensors(w_list: TensorLike, prefix: TensorLike = "weight_") -> TensorLike:
             """_get_safetensors function.
 
             Args:
@@ -2096,7 +2025,7 @@ class Model(Layer):
             prefix: Parameter prefix.
 
             Returns:
-            Any: Return value.
+            TensorLike: Return value.
 
             """
             header = {}
@@ -2133,16 +2062,18 @@ class Model(Layer):
             if (
                 hasattr(self, "optimizer")
                 and hasattr(self.optimizer, "variables")
-                and self.optimizer.variables  # pragma: no branch
+                and self.optimizer.variables
             ):
-                zinfo_opt = zipfile.ZipInfo("optimizer.safetensors")  # pragma: no cover
-                zf.writestr(  # pragma: no cover
-                    zinfo_opt, _get_safetensors(self.optimizer.variables, "opt_weight_")
-                )
+                zinfo_opt = zipfile.ZipInfo("optimizer.safetensors")
+                zf.writestr(zinfo_opt, _get_safetensors(self.optimizer.variables, "opt_weight_"))
 
     def evaluate(
-        self, x: Any, y: Any = None, batch_size: int | None = None, **kwargs: Any
-    ) -> Any:
+        self,
+        x: TensorLike,
+        y: TensorLike = None,
+        batch_size: int | None = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Evaluate function.
 
         Args:
@@ -2152,7 +2083,7 @@ class Model(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import math
@@ -2163,14 +2094,14 @@ class Model(Layer):
         num_samples = len(x) if hasattr(x, "__len__") else 0
         num_batches = math.ceil(num_samples / batch_size) if num_samples > 0 else 1
 
-        if getattr(self, "compiled_metrics", None):  # pragma: no branch
-            for m in self.compiled_metrics:  # pragma: no cover
-                m.reset_state()  # pragma: no cover
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+            for m in self.compiled_metrics:
+                m.reset_state()
 
         from zero_keras.callbacks import callbacks as cb_module
 
         callbacks = kwargs.get("callbacks", [])
-        if not isinstance(callbacks, cb_module.CallbackList):  # pragma: no branch
+        if not isinstance(callbacks, cb_module.CallbackList):
             callbacks = cb_module.CallbackList(callbacks, model=self)
 
         callbacks.on_test_begin()
@@ -2191,27 +2122,23 @@ class Model(Layer):
 
                     try:
                         b_loss = float(asarray(loss_val).data.mean())
-                    except Exception:  # pragma: no cover
-                        b_loss = 0.0  # pragma: no cover
+                    except Exception:
+                        b_loss = 0.0
                 epoch_loss_sum += b_loss
                 batches_seen += 1
         else:
             for batch in range(num_batches):
                 callbacks.on_test_batch_begin(batch)
-                if (
-                    num_samples > 0
-                    and hasattr(x, "__getitem__")
-                    and hasattr(y, "__getitem__")
-                ):
+                if num_samples > 0 and hasattr(x, "__getitem__") and hasattr(y, "__getitem__"):
                     start = batch * batch_size
                     end = min((batch + 1) * batch_size, num_samples)
                     try:
                         bx = x[start:end]
                         by = y[start:end]
-                    except Exception:  # pragma: no cover
-                        bx, by = x, y  # pragma: no cover
-                else:  # pragma: no cover
-                    bx, by = x, y  # pragma: no cover
+                    except Exception:
+                        bx, by = x, y
+                else:
+                    bx, by = x, y
 
                 logs = self.test_step((_to_tensor(bx), _to_tensor(by)))
                 callbacks.on_test_batch_end(batch, logs)
@@ -2229,13 +2156,15 @@ class Model(Layer):
                 batches_seen += 1
 
         metrics_results = {"loss": epoch_loss_sum / max(1, batches_seen)}
-        if getattr(self, "compiled_metrics", None):  # pragma: no branch
-            for m in self.compiled_metrics:  # pragma: no cover
-                metrics_results[m.name] = m.result()  # pragma: no cover
+        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+            for m in self.compiled_metrics:
+                metrics_results[m.name] = m.result()
         callbacks.on_test_end(metrics_results)
         return metrics_results
 
-    def predict(self, x: Any, batch_size: int | None = None, **kwargs: Any) -> Any:
+    def predict(
+        self, x: TensorLike, batch_size: int | None = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Predict function.
 
         Args:
@@ -2244,7 +2173,7 @@ class Model(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         import math
@@ -2258,7 +2187,7 @@ class Model(Layer):
         from zero_keras.callbacks import callbacks as cb_module
 
         callbacks = kwargs.get("callbacks", [])
-        if not isinstance(callbacks, cb_module.CallbackList):  # pragma: no branch
+        if not isinstance(callbacks, cb_module.CallbackList):
             callbacks = cb_module.CallbackList(callbacks, model=self)
 
         callbacks.on_predict_begin()
@@ -2273,14 +2202,14 @@ class Model(Layer):
                 )
                 callbacks.on_predict_batch_end(b_idx, {"outputs": preds})
                 if hasattr(preds, "numpy"):
-                    all_preds.append(preds.numpy())  # pragma: no cover
+                    all_preds.append(preds.numpy())
                 else:
                     from ml_switcheroo_compiler.ops import asarray
 
                     try:
                         all_preds.append(asarray(preds).data)
-                    except Exception:  # pragma: no cover
-                        all_preds.append(preds)  # pragma: no cover
+                    except Exception:
+                        all_preds.append(preds)
         else:
             for batch in range(num_batches):
                 callbacks.on_predict_batch_begin(batch)
@@ -2289,10 +2218,10 @@ class Model(Layer):
                     end = min((batch + 1) * batch_size, num_samples)
                     try:
                         bx = x[start:end]
-                    except Exception:  # pragma: no cover
-                        bx = x  # pragma: no cover
-                else:  # pragma: no cover
-                    bx = x  # pragma: no cover
+                    except Exception:
+                        bx = x
+                else:
+                    bx = x
 
                 preds = self.predict_step((bx,))
                 callbacks.on_predict_batch_end(batch, {"outputs": preds})
@@ -2304,8 +2233,8 @@ class Model(Layer):
 
                     try:
                         all_preds.append(asarray(preds).data)
-                    except Exception:  # pragma: no cover
-                        all_preds.append(preds)  # pragma: no cover
+                    except Exception:
+                        all_preds.append(preds)
 
         from ml_switcheroo_compiler.serialization import (
             concatenate_arrays,
@@ -2319,12 +2248,24 @@ class Model(Layer):
             return concatenate_arrays(all_preds)
         return all_preds
 
-    def save_weights(self, filepath, overwrite=True, save_format=None, options=None):
-        """Saves all layer weights."""
-        import ml_switcheroo_compiler.serialization as msc_serialization  # pragma: no cover
+    def save_weights(
+        self,
+        filepath: TensorLike,
+        overwrite: TensorLike = True,
+        save_format: TensorLike = None,
+        options: TensorLike = None,
+    ) -> TensorLike:
+        """Saves all layer weights.
 
-        # pragma: no cover
-        msc_serialization.save_weights(  # pragma: no cover
+        Args:
+            filepath: Input parameter ``filepath``.
+            overwrite: Input parameter ``overwrite``.
+            save_format: Input parameter ``save_format``.
+            options: Input parameter ``options``.
+        """
+        import ml_switcheroo_compiler.serialization as msc_serialization
+
+        msc_serialization.save_weights(
             self,
             filepath,
             overwrite=overwrite,
@@ -2333,33 +2274,40 @@ class Model(Layer):
         )
 
     def load_weights(
-        self, filepath, skip_mismatch=False, by_name=False, options=None
-    ):  # pragma: no cover
-        """Loads all layer weights."""  # pragma: no cover
-        import ml_switcheroo_compiler.serialization as msc_serialization  # pragma: no cover
+        self,
+        filepath: TensorLike,
+        skip_mismatch: TensorLike = False,
+        by_name: TensorLike = False,
+        options: TensorLike = None,
+    ) -> TensorLike:
+        """Loads all layer weights.
 
-        # pragma: no cover
-        weights = msc_serialization.load_weights(
-            filepath, target_model=self
-        )  # pragma: no cover
-        # pragma: no cover
-        # apply weights  # pragma: no cover
-        if not hasattr(self, "weights") or not self.weights:  # pragma: no cover
-            return  # pragma: no cover
-        # pragma: no cover
-        for i, w in enumerate(self.weights):  # pragma: no cover
-            k = "weight_" + str(i)  # pragma: no cover
-            if k in weights and hasattr(w, "assign"):  # pragma: no cover
-                w.assign(weights[k])  # pragma: no cover
+        Args:
+            filepath: Input parameter ``filepath``.
+            skip_mismatch: Input parameter ``skip_mismatch``.
+            by_name: Input parameter ``by_name``.
+            options: Input parameter ``options``.
+        """
+        import ml_switcheroo_compiler.serialization as msc_serialization
 
+        weights = msc_serialization.load_weights(filepath, target_model=self)
 
-# pragma: no cover
+        # apply weights
+        if not hasattr(self, "weights") or not self.weights:
+            return
+
+        for i, w in enumerate(self.weights):
+            k = "weight_" + str(i)
+            if k in weights and hasattr(w, "assign"):
+                w.assign(weights[k])
 
 
 class Functional(Model):
     """Functional class."""
 
-    def __init__(self, inputs=None, outputs=None, **kwargs):
+    def __init__(
+        self, inputs: TensorLike = None, outputs: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2380,7 +2328,7 @@ class Functional(Model):
                     layers.append(node.layer)
         self.layers = layers
 
-    def _map_graph_network(self, inputs, outputs):
+    def _map_graph_network(self, inputs: TensorLike, outputs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2390,7 +2338,7 @@ class Functional(Model):
         nodes_by_depth = {}
 
         # Simple DFS to map depths
-        def _get_depth(tensor, current_depth):
+        def _get_depth(tensor: TensorLike, current_depth: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -2398,8 +2346,8 @@ class Functional(Model):
                 current_depth: Description.
             """
             if not isinstance(tensor, KerasTensor):
-                return  # pragma: no cover
-            node = getattr(tensor, "_keras_history", None)
+                return
+            node = tensor._keras_history if hasattr(tensor, "_keras_history") else None
             if node is None:
                 return
 
@@ -2408,21 +2356,21 @@ class Functional(Model):
             if node not in nodes_by_depth[current_depth]:
                 nodes_by_depth[current_depth].append(node)
             else:
-                return  # pragma: no cover
+                return
 
             node_inputs = node.inputs
             if isinstance(node_inputs, (list, tuple)):
-                for x in node_inputs:  # pragma: no cover
-                    _get_depth(x, current_depth + 1)  # pragma: no cover
+                for x in node_inputs:
+                    _get_depth(x, current_depth + 1)
             elif isinstance(node_inputs, dict):
-                for x in node_inputs.values():  # pragma: no cover
-                    _get_depth(x, current_depth + 1)  # pragma: no cover
+                for x in node_inputs.values():
+                    _get_depth(x, current_depth + 1)
             else:
                 _get_depth(node_inputs, current_depth + 1)
 
         if isinstance(outputs, (list, tuple)):
             for x in outputs:
-                _get_depth(x, 0)  # pragma: no cover
+                _get_depth(x, 0)
         elif isinstance(outputs, dict):
             for x in outputs.values():
                 _get_depth(x, 0)
@@ -2431,14 +2379,12 @@ class Functional(Model):
 
         return nodes_by_depth
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         layer_configs = []
 
         # Inject InputLayers for all inputs
-        inputs_list = (
-            self.inputs if isinstance(self.inputs, (list, tuple)) else [self.inputs]
-        )
+        inputs_list = self.inputs if isinstance(self.inputs, (list, tuple)) else [self.inputs]
         for t in inputs_list:
             layer_configs.append(
                 {
@@ -2446,10 +2392,14 @@ class Functional(Model):
                     "class_name": "InputLayer",
                     "config": {
                         "name": t.name,
-                        "batch_input_shape": getattr(
-                            t, "batch_shape", getattr(t, "shape", (None,))
+                        "batch_input_shape": (
+                            t.batch_shape
+                            if hasattr(t, "batch_shape")
+                            else t.shape
+                            if hasattr(t, "shape")
+                            else (None,)
                         ),
-                        "dtype": getattr(t, "dtype", "float32"),
+                        "dtype": (t.dtype if hasattr(t, "dtype") else "float32"),
                     },
                     "inbound_nodes": [],
                 }
@@ -2460,8 +2410,10 @@ class Functional(Model):
                 {
                     "name": layer.name,
                     "class_name": layer.__class__.__name__,
-                    "config": getattr(
-                        layer, "get_config", lambda: getattr(layer, "_kwargs", {})
+                    "config": (
+                        layer.get_config
+                        if hasattr(layer, "get_config")
+                        else lambda: layer._kwargs if hasattr(layer, "_kwargs") else {}
                     )(),
                     "inbound_nodes": [],
                 }
@@ -2495,18 +2447,16 @@ class Functional(Model):
         for t in inputs_list:
             if hasattr(t, "_keras_history") and t._keras_history is not None:
                 input_layers.append([t._keras_history.layer.name, 0, 0])
-            elif hasattr(t, "name") and t.name in lc_map:
+            else:
                 input_layers.append([t.name, 0, 0])
 
         # Output layers
         output_layers = []
-        outputs_list = (
-            self.outputs if isinstance(self.outputs, (list, tuple)) else [self.outputs]
-        )
+        outputs_list = self.outputs if isinstance(self.outputs, (list, tuple)) else [self.outputs]
         for t in outputs_list:
             if hasattr(t, "_keras_history") and t._keras_history is not None:
                 output_layers.append([t._keras_history.layer.name, 0, 0])
-            elif hasattr(t, "name") and t.name in lc_map:
+            else:
                 output_layers.append([t.name, 0, 0])
 
         return {
@@ -2516,7 +2466,7 @@ class Functional(Model):
             "output_layers": output_layers,
         }
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2526,7 +2476,7 @@ class Functional(Model):
         """
         tensor_dict = {}
 
-        def _add_input(key, val):
+        def _add_input(key: TensorLike, val: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -2540,15 +2490,15 @@ class Functional(Model):
             for k, v in zip(self.inputs, inputs):
                 _add_input(k, v)
         elif isinstance(self.inputs, dict):
-            for k in self.inputs:  # pragma: no cover
-                _add_input(self.inputs[k], inputs[k])  # pragma: no cover
+            for k in self.inputs:
+                _add_input(self.inputs[k], inputs[k])
         else:
             _add_input(self.inputs, inputs)
 
         for depth in sorted(self._nodes_by_depth.keys(), reverse=True):
             for node in self._nodes_by_depth[depth]:
                 # Prepare inputs
-                def _get_input(x):
+                def _get_input(x: TensorLike) -> TensorLike:
                     """Function docstring.
 
                     Args:
@@ -2556,14 +2506,12 @@ class Functional(Model):
                     """
                     if isinstance(x, KerasTensor) and id(x) in tensor_dict:
                         return tensor_dict[id(x)]
-                    return x  # pragma: no cover
+                    return x
 
                 if isinstance(node.inputs, (list, tuple)):
-                    node_in = [_get_input(x) for x in node.inputs]  # pragma: no cover
+                    node_in = [_get_input(x) for x in node.inputs]
                 elif isinstance(node.inputs, dict):
-                    node_in = {
-                        k: _get_input(v) for k, v in node.inputs.items()
-                    }  # pragma: no cover
+                    node_in = {k: _get_input(v) for k, v in node.inputs.items()}
                 else:
                     node_in = _get_input(node.inputs)
 
@@ -2579,9 +2527,9 @@ class Functional(Model):
                             tensor_dict[id(node.outputs[k])] = out[k]
                 else:
                     if isinstance(node.outputs, KerasTensor):
-                        tensor_dict[id(node.outputs)] = out  # pragma: no cover
+                        tensor_dict[id(node.outputs)] = out
 
-        def _get_output(x):
+        def _get_output(x: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -2596,13 +2544,13 @@ class Functional(Model):
         elif isinstance(self.outputs, dict):
             return {k: _get_output(v) for k, v in self.outputs.items()}
         else:
-            return _get_output(self.outputs)  # pragma: no cover
+            return _get_output(self.outputs)
 
 
 class Sequential(Model):
     """Sequential class."""
 
-    def __init__(self, layers=None, **kwargs):
+    def __init__(self, layers: TensorLike = None, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -2612,19 +2560,19 @@ class Sequential(Model):
         super().__init__(**kwargs)
         self.layers = layers or []
 
-    def add(self, layer):
+    def add(self, layer: TensorLike) -> TensorLike:
         """Add function.
 
         Args:
         layer: Parameter layer.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.layers.append(layer)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2633,7 +2581,7 @@ class Sequential(Model):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         x = inputs
@@ -2642,7 +2590,9 @@ class Sequential(Model):
         return x
 
 
-def deserialize(config, custom_objects=None, safe_mode=True):
+def deserialize(
+    config: TensorLike, custom_objects: TensorLike = None, safe_mode: TensorLike = True
+) -> TensorLike:
     """Returns a Keras layer object via its configuration.
 
     Args:
@@ -2675,11 +2625,11 @@ def deserialize(config, custom_objects=None, safe_mode=True):
         import zero_keras.layers
         import zero_keras.models
 
-        cls = getattr(zero_keras.layers, class_name, None)
+        cls = zero_keras.layers.__dict__.get(class_name, None)
         if cls is None:
-            cls = getattr(zero_keras.models, class_name, None)
+            cls = zero_keras.models.__dict__.get(class_name, None)
         if cls is None:
-            cls = getattr(builtins, class_name, None)
+            cls = builtins.__dict__.get(class_name, None)
 
     if cls and hasattr(cls, "from_config"):
         if "config" in config:
@@ -2694,7 +2644,7 @@ def deserialize(config, custom_objects=None, safe_mode=True):
     raise ValueError(f"Unknown class {class_name}")
 
 
-def get(identifier, custom_objects=None):
+def get(identifier: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
     """Get function.
 
     Args:
@@ -2702,7 +2652,7 @@ def get(identifier, custom_objects=None):
     custom_objects: Parameter custom_objects.
 
     Returns:
-    Any: Return value.
+    TensorLike: Return value.
 
     """
     if identifier is None:
@@ -2731,7 +2681,7 @@ def get(identifier, custom_objects=None):
         ]
 
         for mod in modules_to_check:
-            cls = getattr(mod, identifier, None)
+            cls = mod.__dict__.get(identifier, None)
             if cls:
                 return cls
 
@@ -2742,28 +2692,28 @@ def get(identifier, custom_objects=None):
 class Function:
     """Function docstring."""
 
-    def call(self, *args, **kwargs):
-        """call docstring.
+    def call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call docstring.
 
         Args:
             *args: Args.
             **kwargs: Kwargs.
         """
-        if getattr(self, "_fn", None) is not None:
+        if (self._fn if hasattr(self, "_fn") else None) is not None:
             return self._fn(*args, **kwargs)
         return args[0] if args else None
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
         """compute_output_shape docstring.
 
         Args:
             input_shape: Input shape.
         """
-        if getattr(self, "_shape_fn", None) is not None:
+        if (self._shape_fn if hasattr(self, "_shape_fn") else None) is not None:
             return self._shape_fn(input_shape)
         return input_shape
 
-    def compute_output_spec(self, *args, **kwargs):
+    def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """compute_output_spec docstring.
 
         Args:
@@ -2774,10 +2724,10 @@ class Function:
             return self.compute_output_shape(*args, **kwargs)
         from zero_keras.core_layers import KerasTensor
 
-        return KerasTensor(shape=None, dtype=getattr(self, "dtype", "float32"))
+        return KerasTensor(shape=None, dtype=(self.dtype if hasattr(self, "dtype") else "float32"))
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -2785,13 +2735,13 @@ class Function:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         return {}
 
     @property
-    def input(self):
-        """input docstring."""
+    def input(self) -> TensorLike:
+        """Input docstring."""
         return (
             self._inbound_nodes[0].input_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -2799,18 +2749,18 @@ class Function:
         )
 
     @property
-    def inputs(self):
-        """inputs docstring."""
+    def inputs(self) -> TensorLike:
+        """Inputs docstring."""
         return []
 
     @property
-    def operations(self):
-        """operations docstring."""
+    def operations(self) -> TensorLike:
+        """Operations docstring."""
         return []
 
     @property
-    def output(self):
-        """output docstring."""
+    def output(self) -> TensorLike:
+        """Output docstring."""
         return (
             self._inbound_nodes[0].output_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -2818,11 +2768,11 @@ class Function:
         )
 
     @property
-    def outputs(self):
-        """outputs docstring."""
+    def outputs(self) -> TensorLike:
+        """Outputs docstring."""
         return []
 
-    def quantized_call(self, *args, **kwargs):
+    def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """quantized_call docstring.
 
         Args:
@@ -2831,7 +2781,7 @@ class Function:
         """
         return
 
-    def symbolic_call(self, *args, **kwargs):
+    def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """symbolic_call docstring.
 
         Args:
@@ -2845,7 +2795,7 @@ class InputSpec:
     """InputSpec docstring."""
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -2853,32 +2803,44 @@ class InputSpec:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         return {
-            "dtype": getattr(self, "dtype", None),
-            "shape": getattr(self, "shape", None),
-            "ndim": getattr(self, "ndim", None),
-            "max_ndim": getattr(self, "max_ndim", None),
-            "min_ndim": getattr(self, "min_ndim", None),
-            "axes": getattr(self, "axes", None),
-            "allow_last_axis_squeeze": getattr(self, "allow_last_axis_squeeze", False),
-            "name": getattr(self, "name", None),
+            "dtype": (self.dtype if hasattr(self, "dtype") else None),
+            "shape": (self.shape if hasattr(self, "shape") else None),
+            "ndim": (self.ndim if hasattr(self, "ndim") else None),
+            "max_ndim": (self.max_ndim if hasattr(self, "max_ndim") else None),
+            "min_ndim": (self.min_ndim if hasattr(self, "min_ndim") else None),
+            "axes": (self.axes if hasattr(self, "axes") else None),
+            "allow_last_axis_squeeze": (
+                self.allow_last_axis_squeeze if hasattr(self, "allow_last_axis_squeeze") else False
+            ),
+            "name": (self.name if hasattr(self, "name") else None),
         }
 
     def __init__(
         self,
-        dtype=None,
-        shape=None,
-        ndim=None,
-        max_ndim=None,
-        min_ndim=None,
-        axes=None,
-        allow_last_axis_squeeze=False,
-        name=None,
-    ):
-        """docstring."""
+        dtype: TensorLike = None,
+        shape: TensorLike = None,
+        ndim: TensorLike = None,
+        max_ndim: TensorLike = None,
+        min_ndim: TensorLike = None,
+        axes: TensorLike = None,
+        allow_last_axis_squeeze: TensorLike = False,
+        name: TensorLike = None,
+    ) -> None:
+        """Docstring.
 
+        Args:
+            dtype: Input parameter ``dtype``.
+            shape: Input parameter ``shape``.
+            ndim: Input parameter ``ndim``.
+            max_ndim: Input parameter ``max_ndim``.
+            min_ndim: Input parameter ``min_ndim``.
+            axes: Input parameter ``axes``.
+            allow_last_axis_squeeze: Input parameter ``allow_last_axis_squeeze``.
+            name: Input parameter ``name``.
+        """
         self.dtype = dtype
         self.shape = shape
         self.ndim = ndim
@@ -2892,13 +2854,18 @@ class InputSpec:
 class Operation:
     """Operation docstring."""
 
-    def call(self, *args, **kwargs):
-        """call docstring."""
-        if getattr(self, "_fn", None) is not None:
+    def call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call docstring.
+
+        Args:
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
+        if (self._fn if hasattr(self, "_fn") else None) is not None:
             return self._fn(*args, **kwargs)
         return args[0] if args else None
 
-    def compute_output_spec(self, *args, **kwargs):
+    def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """compute_output_spec docstring.
 
         Args:
@@ -2909,10 +2876,10 @@ class Operation:
             return self.compute_output_shape(*args, **kwargs)
         from zero_keras.core_layers import KerasTensor
 
-        return KerasTensor(shape=None, dtype=getattr(self, "dtype", "float32"))
+        return KerasTensor(shape=None, dtype=(self.dtype if hasattr(self, "dtype") else "float32"))
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -2920,21 +2887,21 @@ class Operation:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
-        return getattr(self, "_config", {})
+        return self._config if hasattr(self, "_config") else {}
 
     @property
-    def input(self):
-        """input docstring."""
-        return getattr(self, "_input", None)
+    def input(self) -> TensorLike:
+        """Input docstring."""
+        return self._input if hasattr(self, "_input") else None
 
     @property
-    def output(self):
-        """output docstring."""
-        return getattr(self, "_output", None)
+    def output(self) -> TensorLike:
+        """Output docstring."""
+        return self._output if hasattr(self, "_output") else None
 
-    def quantized_call(self, *args, **kwargs):
+    def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """quantized_call docstring.
 
         Args:
@@ -2943,7 +2910,7 @@ class Operation:
         """
         return self.call(*args, **kwargs)
 
-    def symbolic_call(self, *args, **kwargs):
+    def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """symbolic_call docstring.
 
         Args:
@@ -2956,34 +2923,41 @@ class Operation:
 class Variable:
     """Variable docstring."""
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: TensorLike) -> TensorLike:
         """__getitem__ docstring.
 
         Args:
             key: Key.
         """
-        return self.value[key] if getattr(self, "value", None) is not None else None
+        return (
+            self.value[key]
+            if (self.value if hasattr(self, "value") else None) is not None
+            else None
+        )
 
     @property
-    def aggregation(self):
-        """aggregation docstring."""
-        return getattr(self, "_aggregation", None)
+    def aggregation(self) -> TensorLike:
+        """Aggregation docstring."""
+        return self._aggregation if hasattr(self, "_aggregation") else None
 
     @aggregation.setter
-    def aggregation(self, value):
-        """docstring."""
+    def aggregation(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._aggregation = value
 
-    def assign(self, value):
-        """assign docstring.
+    def assign(self, value: TensorLike) -> TensorLike:
+        """Assign docstring.
 
         Args:
             value: Value.
         """
         self.value = value
 
-    def assign_add(self, value):
+    def assign_add(self, value: TensorLike) -> TensorLike:
         """assign_add docstring.
 
         Args:
@@ -2993,11 +2967,11 @@ class Variable:
 
         self.value = (
             ops.add(self.value, value)
-            if getattr(self, "value", None) is not None
+            if (self.value if hasattr(self, "value") else None) is not None
             else value
         )
 
-    def assign_sub(self, value):
+    def assign_sub(self, value: TensorLike) -> TensorLike:
         """assign_sub docstring.
 
         Args:
@@ -3007,53 +2981,61 @@ class Variable:
 
         self.value = (
             ops.subtract(self.value, value)
-            if getattr(self, "value", None) is not None
+            if (self.value if hasattr(self, "value") else None) is not None
             else ops.negative(value)
         )
 
     @property
-    def constraint(self):
-        """constraint docstring."""
-        return getattr(self, "_constraint", None)
+    def constraint(self) -> TensorLike:
+        """Constraint docstring."""
+        return self._constraint if hasattr(self, "_constraint") else None
 
     @constraint.setter
-    def constraint(self, value):
-        """docstring."""
+    def constraint(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._constraint = value
 
     @property
-    def handle(self):
-        """handle docstring."""
-        return getattr(self, "_handle", None)
+    def handle(self) -> TensorLike:
+        """Handle docstring."""
+        return self._handle if hasattr(self, "_handle") else None
 
     @handle.setter
-    def handle(self, value):
-        """docstring."""
+    def handle(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._handle = value
 
     @property
-    def ndim(self):
-        """ndim docstring."""
+    def ndim(self) -> TensorLike:
+        """Ndim docstring."""
         return len(self.shape) if self.shape is not None else 0
 
-    def numpy(self):
-        """numpy docstring."""
+    def numpy(self) -> TensorLike:
+        """Numpy docstring."""
         from ml_switcheroo_compiler.serialization import to_numpy
 
         return to_numpy(self.value)
 
-    def __array__(self, dtype=None):
-        """Allow casting to numpy array."""
+    def __array__(self, dtype: TensorLike = None) -> TensorLike:
+        """Allow casting to numpy array.
+
+        Args:
+            dtype: Input parameter ``dtype``.
+        """
         from zero_keras import ops
 
         arr = self.value
         if arr is None:
             # For uninitialized or dummy tests, just return a zeros array if shape is known
-            shape = (
-                [d if d is not None else 1 for d in self.shape] if self.shape else [0]
-            )
+            shape = [d if d is not None else 1 for d in self.shape] if self.shape else [0]
             arr = ops.zeros(shape)
 
         res = ops.convert_to_tensor(arr).numpy()
@@ -3062,7 +3044,7 @@ class Variable:
             return res.astype(dtype)
         return res
 
-    def overwrite_with_gradient(self, gradient):
+    def overwrite_with_gradient(self, gradient: TensorLike) -> TensorLike:
         """overwrite_with_gradient docstring.
 
         Args:
@@ -3072,86 +3054,149 @@ class Variable:
         self.value = gradient
 
     @property
-    def path(self):
-        """path docstring."""
+    def path(self) -> TensorLike:
+        """Path docstring."""
         return self.name
 
     @property
-    def regularizer(self):
-        """regularizer docstring."""
-        return getattr(self, "_regularizer", None)
+    def regularizer(self) -> TensorLike:
+        """Regularizer docstring."""
+        return self._regularizer if hasattr(self, "_regularizer") else None
 
     @regularizer.setter
-    def regularizer(self, value):
-        """docstring."""
+    def regularizer(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._regularizer = value
 
     @property
-    def synchronization(self):
-        """synchronization docstring."""
-        return getattr(self, "_synchronization", None)
+    def synchronization(self) -> TensorLike:
+        """Synchronization docstring."""
+        return self._synchronization if hasattr(self, "_synchronization") else None
 
     @synchronization.setter
-    def synchronization(self, value):
-        """docstring."""
+    def synchronization(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._synchronization = value
 
     @property
-    def value(self):
-        """value docstring."""
-        return getattr(self, "_value", None)
+    def value(self) -> TensorLike:
+        """Value docstring."""
+        return self._value if hasattr(self, "_value") else None
 
     @value.setter
-    def value(self, val):
-        """docstring."""
+    def value(self, val: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            val: Input parameter ``val``.
+        """
         self._value = val
 
-    def __add__(self, other):
+    def __add__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__add__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.add(self.value, other)
 
-    def __radd__(self, other):
+    def __radd__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__radd__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.add(other, self.value)
 
-    def __sub__(self, other):
+    def __sub__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__sub__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.subtract(self.value, other)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__rsub__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.subtract(other, self.value)
 
-    def __mul__(self, other):
+    def __mul__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__mul__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.multiply(self.value, other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__rmul__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.multiply(other, self.value)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__truediv__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.divide(self.value, other)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other: TensorLike) -> TensorLike:
+        """Execute ``__rtruediv__``.
+
+        Args:
+            other: Input parameter ``other``.
+        """
         from zero_keras import ops
 
         return ops.divide(other, self.value)
 
-    def __init__(self, initializer, shape=None, dtype=None, trainable=True, name=None):
-        """docstring."""
+    def __init__(
+        self,
+        initializer: TensorLike,
+        shape: TensorLike = None,
+        dtype: TensorLike = None,
+        trainable: TensorLike = True,
+        name: TensorLike = None,
+    ) -> None:
+        """Docstring.
 
+        Args:
+            initializer: Input parameter ``initializer``.
+            shape: Input parameter ``shape``.
+            dtype: Input parameter ``dtype``.
+            trainable: Input parameter ``trainable``.
+            name: Input parameter ``name``.
+        """
         self.initializer = initializer
         self.shape = shape
         self.dtype = dtype
@@ -3159,83 +3204,17 @@ class Variable:
         self.name = name
 
 
-class DTypePolicy:
-    """DTypePolicy docstring."""
-
-    @property
-    def name(self):
-        """name docstring."""
-        return getattr(self, "_name", None)  # pragma: no cover
-
-    @name.setter
-    def name(self, value):
-        """docstring."""
-
-        self._name = value  # pragma: no cover
-
-    @property
-    def compute_dtype(self):
-        """compute_dtype docstring."""
-        return None  # pragma: no cover
-
-    def convert_input(self, x, dtype=None, exact=False):
-        """convert_input docstring.
-
-        Args:
-            x: Input.
-            dtype: Dtype.
-            exact: Exact.
-        """
-        return x  # pragma: no cover
-
-    @classmethod
-    def from_config(cls, config):
-        """from_config docstring.
-
-        Args:
-            config: Config.
-        """
-        return cls(**config)  # pragma: no cover
-
-    def get_config(self):
-        """get_config docstring."""
-        return {"name": getattr(self, "name", None)}  # pragma: no cover
-
-    @property
-    def quantization_mode(self):
-        """quantization_mode docstring."""
-        return getattr(self, "_quantization_mode", None)  # pragma: no cover
-
-    @property
-    def variable_dtype(self):
-        """variable_dtype docstring."""
-        return getattr(self, "dtype", None)  # pragma: no cover
-
-    def __init__(self, name=None):
-        """docstring."""
-
-        self._name = name
-
-
-class FloatDTypePolicy(DTypePolicy):
-    """FloatDTypePolicy docstring."""
-
-    @property
-    def compute_dtype(self):
-        """compute_dtype docstring."""
-        return getattr(self, "_compute_dtype", "float32")
-
-    @property
-    def variable_dtype(self):
-        """variable_dtype docstring."""
-        return getattr(self, "_variable_dtype", "float32")
+from zero_keras.dtype_policies import (
+    DTypePolicy as DTypePolicy,
+    FloatDTypePolicy as FloatDTypePolicy,
+)
 
 
 class Quantizer:
     """Quantizer docstring."""
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -3243,7 +3222,7 @@ class Quantizer:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
         return {"name": self.__class__.__name__}
 
@@ -3251,24 +3230,29 @@ class Quantizer:
 class RematScope:
     """RematScope docstring."""
 
-    def __enter__(self):
-        """docstring."""
+    def __enter__(self) -> TensorLike:
+        """Docstring."""
         self._active = True
         return self
 
-    def __exit__(self, *args):
-        """docstring."""
+    def __exit__(self, *args: TensorLike) -> TensorLike:
+        """Docstring.
+
+        Args:
+            args: Input parameter ``args``.
+        """
         self._active = False
 
 
 class StatelessScope:
     """StatelessScope docstring."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Execute ``__init__``."""
         self.losses = []
         self.updates = []
 
-    def add_loss(self, loss):
+    def add_loss(self, loss: TensorLike) -> TensorLike:
         """add_loss docstring.
 
         Args:
@@ -3276,7 +3260,7 @@ class StatelessScope:
         """
         self.losses.append(loss)
 
-    def add_update(self, update):
+    def add_update(self, update: TensorLike) -> TensorLike:
         """add_update docstring.
 
         Args:
@@ -3284,50 +3268,71 @@ class StatelessScope:
         """
         self.updates.append(update)
 
-    def get_current_value(self, variable):
+    def get_current_value(self, variable: TensorLike) -> TensorLike:
         """get_current_value docstring.
 
         Args:
             variable: Variable.
         """
-        return getattr(variable, "value", None)
+        return variable.value if hasattr(variable, "value") else None
 
-    def __enter__(self):
-        """docstring."""
+    def __enter__(self) -> TensorLike:
+        """Docstring."""
         return self
 
-    def __exit__(self, *args):
-        """docstring."""
+    def __exit__(self, *args: TensorLike) -> TensorLike:
+        """Docstring.
+
+        Args:
+            args: Input parameter ``args``.
+        """
 
 
 class SymbolicScope:
     """SymbolicScope docstring."""
 
-    def __enter__(self):
-        """docstring."""
+    def __enter__(self) -> TensorLike:
+        """Docstring."""
         self._is_symbolic = True
         return self
 
-    def __exit__(self, *args):
-        """docstring."""
+    def __exit__(self, *args: TensorLike) -> TensorLike:
+        """Docstring.
+
+        Args:
+            args: Input parameter ``args``.
+        """
         self._is_symbolic = False
 
 
-def device(device_name):
-    """device docstring."""
+def device(device_name: TensorLike) -> TensorLike:
+    """Device docstring.
+
+    Args:
+        device_name: Input parameter ``device_name``.
+    """
 
     class DeviceScope:
         """docstring."""
 
-        def __init__(self, name):
+        def __init__(self, name: TensorLike) -> None:
+            """Execute ``__init__``.
+
+            Args:
+                name: Input parameter ``name``.
+            """
             self.name = name
 
-        def __enter__(self):
-            """docstring."""
+        def __enter__(self) -> TensorLike:
+            """Docstring."""
             return self
 
-        def __exit__(self, *args):
-            """docstring."""
+        def __exit__(self, *args: TensorLike) -> TensorLike:
+            """Docstring.
+
+            Args:
+                args: Input parameter ``args``.
+            """
 
     return DeviceScope(device_name)
 
@@ -3335,36 +3340,58 @@ def device(device_name):
 class name_scope:
     """name_scope docstring."""
 
-    def __init__(self, name):
-        """docstring."""
+    def __init__(self, name: TensorLike) -> None:
+        """Docstring.
+
+        Args:
+            name: Input parameter ``name``.
+        """
         self.name = name
 
-    def __enter__(self):
-        """docstring."""
+    def __enter__(self) -> TensorLike:
+        """Docstring."""
         return self
 
-    def __exit__(self, *args):
-        """docstring."""
+    def __exit__(self, *args: TensorLike) -> TensorLike:
+        """Docstring.
+
+        Args:
+            args: Input parameter ``args``.
+        """
 
 
-def remat(f):
-    """remat docstring."""
+def remat(f: TensorLike) -> TensorLike:
+    """Remat docstring.
+
+    Args:
+        f: Input parameter ``f``.
+    """
     return f
 
 
-def version():
-    """version docstring."""
+def version() -> TensorLike:
+    """Version docstring."""
     return "3.0.0"
 
 
-def is_keras_tensor(x):
-    """is_keras_tensor docstring."""
-    return isinstance(x, KerasTensor)  # pragma: no cover
+def is_keras_tensor(x: TensorLike) -> TensorLike:
+    """is_keras_tensor docstring.
+
+    Args:
+        x: Input parameter ``x``.
+    """
+    return isinstance(x, KerasTensor)
 
 
 class Wrapper(Layer):
     """Base class for layer wrappers."""
 
-    def __init__(self, layer, **kwargs):
+    def __init__(self, layer: TensorLike, **kwargs: TensorLike) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            layer: Input parameter ``layer``.
+            kwargs: Input parameter ``kwargs``.
+        """
         super().__init__(**kwargs)
         self.layer = layer

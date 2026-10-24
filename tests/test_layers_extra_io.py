@@ -1,9 +1,12 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras import layers
 
 
-def test_layers_io():
+def test_layers_io() -> TensorLike:
     """Function docstring."""
     layer = layers.Dense(10)
     config = layers.serialize(layer)
@@ -18,7 +21,7 @@ def test_layers_io():
     assert layers.deserialize(None) is None
 
 
-def test_new_layers():
+def test_new_layers() -> TensorLike:
     """Function docstring."""
     gqa = layers.GroupQueryAttention(num_heads=2, key_dim=2)
     res = gqa(None, None)

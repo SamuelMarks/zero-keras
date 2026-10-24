@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 
 class Callback:
     """Base class used to build new callbacks.
@@ -60,21 +63,24 @@ class Callback:
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Function docstring."""
 
     @property
-    def model(self):
-        """model docstring."""
-        return getattr(self, "_model", None)
+    def model(self) -> TensorLike:
+        """Model docstring."""
+        return self._model if hasattr(self, "_model") else None
 
     @model.setter
-    def model(self, value):
-        """docstring."""
+    def model(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-        self._model = value  # pragma: no cover
+        Args:
+            value: Input parameter ``value``.
+        """
+        self._model = value
 
-    def on_predict_batch_begin(self, batch, logs=None):
+    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_predict_batch_begin docstring.
 
         Args:
@@ -82,7 +88,7 @@ class Callback:
             logs: Logs.
         """
 
-    def on_predict_batch_end(self, batch, logs=None):
+    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_predict_batch_end docstring.
 
         Args:
@@ -90,21 +96,21 @@ class Callback:
             logs: Logs.
         """
 
-    def on_predict_begin(self, logs=None):
+    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
         """on_predict_begin docstring.
 
         Args:
             logs: Logs.
         """
 
-    def on_predict_end(self, logs=None):
+    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
         """on_predict_end docstring.
 
         Args:
             logs: Logs.
         """
 
-    def on_test_batch_begin(self, batch, logs=None):
+    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_test_batch_begin docstring.
 
         Args:
@@ -112,7 +118,7 @@ class Callback:
             logs: Logs.
         """
 
-    def on_test_batch_end(self, batch, logs=None):
+    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_test_batch_end docstring.
 
         Args:
@@ -120,21 +126,21 @@ class Callback:
             logs: Logs.
         """
 
-    def on_test_begin(self, logs=None):
+    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
         """on_test_begin docstring.
 
         Args:
             logs: Logs.
         """
 
-    def on_test_end(self, logs=None):
+    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
         """on_test_end docstring.
 
         Args:
             logs: Logs.
         """
 
-    def on_train_batch_begin(self, batch, logs=None):
+    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_train_batch_begin docstring.
 
         Args:
@@ -142,7 +148,7 @@ class Callback:
             logs: Logs.
         """
 
-    def on_train_batch_end(self, batch, logs=None):
+    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_train_batch_end docstring.
 
         Args:
@@ -150,37 +156,31 @@ class Callback:
             logs: Logs.
         """
 
-    @model.setter
-    def model(self, value):
-        """docstring."""
-
-        self._model = value
-
-    def set_model(self, model):
+    def set_model(self, model: TensorLike) -> TensorLike:
         """set_model function.
 
         Args:
         model: Parameter model.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.model = model
 
-    def set_params(self, params):
+    def set_params(self, params: TensorLike) -> TensorLike:
         """set_params function.
 
         Args:
         params: Parameter params.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.params = params
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Called at the start of an epoch.
 
         Subclasses should override for any actions to run. This function should
@@ -193,7 +193,7 @@ class Callback:
 
         """
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Called at the end of an epoch.
 
         Subclasses should override for any actions to run. This function should
@@ -209,13 +209,23 @@ class Callback:
 
         """
 
-    def on_batch_begin(self, batch, logs=None):
-        """A backwards compatibility alias for `on_train_batch_begin`."""
+    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """A backwards compatibility alias for `on_train_batch_begin`.
 
-    def on_batch_end(self, batch, logs=None):
-        """A backwards compatibility alias for `on_train_batch_end`."""
+        Args:
+            batch: Input parameter ``batch``.
+            logs: Input parameter ``logs``.
+        """
 
-    def on_train_begin(self, logs=None):
+    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """A backwards compatibility alias for `on_train_batch_end`.
+
+        Args:
+            batch: Input parameter ``batch``.
+            logs: Input parameter ``logs``.
+        """
+
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
         """Called at the beginning of training.
 
         Subclasses should override for any actions to run.
@@ -226,7 +236,7 @@ class Callback:
 
         """
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
         """Called at the end of training.
 
         Subclasses should override for any actions to run.
@@ -296,7 +306,7 @@ class EarlyStopping(Callback):
 
     """
 
-    def get_monitor_value(self, logs):
+    def get_monitor_value(self, logs: TensorLike) -> TensorLike:
         """get_monitor_value docstring.
 
         Args:
@@ -306,15 +316,15 @@ class EarlyStopping(Callback):
 
     def __init__(
         self,
-        monitor="val_loss",
-        min_delta=0,
-        patience=0,
-        verbose=0,
-        mode="auto",
-        baseline=None,
-        restore_best_weights=False,
-        start_from_epoch=0,
-    ):
+        monitor: TensorLike = "val_loss",
+        min_delta: TensorLike = 0,
+        patience: TensorLike = 0,
+        verbose: TensorLike = 0,
+        mode: TensorLike = "auto",
+        baseline: TensorLike = None,
+        restore_best_weights: TensorLike = False,
+        start_from_epoch: TensorLike = 0,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -345,7 +355,7 @@ class EarlyStopping(Callback):
         )
         self.best_weights = None
 
-    def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
         """Called at the beginning of training.
 
         Subclasses should override for any actions to run.
@@ -358,7 +368,7 @@ class EarlyStopping(Callback):
         self.wait = 0
         self.stopped_epoch = 0
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Called at the end of an epoch.
 
         Subclasses should override for any actions to run. This function should
@@ -373,15 +383,15 @@ class EarlyStopping(Callback):
               `{'loss': 0.2, 'accuracy': 0.7}`.
 
         """
-        logs = logs or {}  # pragma: no cover
+        logs = logs or {}
         current = logs.get(self.monitor)
         if current is None:
-            return  # pragma: no cover
+            return
 
         if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor):
             improved = current < self.best - self.min_delta
         else:
-            improved = current > self.best + self.min_delta  # pragma: no cover
+            improved = current > self.best + self.min_delta
 
         if improved:
             self.best = current
@@ -513,15 +523,15 @@ class ModelCheckpoint(Callback):
 
     def __init__(
         self,
-        filepath,
-        monitor="val_loss",
-        verbose=0,
-        save_best_only=False,
-        save_weights_only=False,
-        mode="auto",
-        save_freq="epoch",
-        initial_value_threshold=None,
-    ):
+        filepath: TensorLike,
+        monitor: TensorLike = "val_loss",
+        verbose: TensorLike = 0,
+        save_best_only: TensorLike = False,
+        save_weights_only: TensorLike = False,
+        mode: TensorLike = "auto",
+        save_freq: TensorLike = "epoch",
+        initial_value_threshold: TensorLike = None,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -552,7 +562,7 @@ class ModelCheckpoint(Callback):
             )
         )
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Called at the end of an epoch.
 
         Subclasses should override for any actions to run. This function should
@@ -567,15 +577,13 @@ class ModelCheckpoint(Callback):
               `{'loss': 0.2, 'accuracy': 0.7}`.
 
         """
-        logs = logs or {}  # pragma: no cover
+        logs = logs or {}
         filepath = self.filepath.format(epoch=epoch + 1, **logs)
 
         save_model = False
         current = logs.get(self.monitor)
         if current is not None:
-            if self.mode == "min" or (
-                self.mode == "auto" and "acc" not in self.monitor
-            ):
+            if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor):
                 improved = current < self.best
             else:
                 improved = current > self.best
@@ -589,125 +597,126 @@ class ModelCheckpoint(Callback):
         if save_model and self.model is not None:
             import os
 
-            os.makedirs(
-                os.path.dirname(os.path.abspath(filepath)) or ".", exist_ok=True
-            )
+            os.makedirs(os.path.dirname(os.path.abspath(filepath)) or ".", exist_ok=True)
             self.model.save(filepath)
 
 
 class History(Callback):
     """Callback that records events into a `History` object."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Function docstring."""
 
     @property
-    def model(self):
-        """model docstring."""
-        return getattr(self, "_model", None)  # pragma: no cover
+    def model(self) -> TensorLike:
+        """Model docstring."""
+        return self._model if hasattr(self, "_model") else None
 
     @model.setter
-    def model(self, value):
-        """docstring."""
+    def model(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
-        self._model = value  # pragma: no cover
+        Args:
+            value: Input parameter ``value``.
+        """
+        self._model = value
 
-    def on_predict_batch_begin(self, batch, logs=None):
+    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_predict_batch_begin docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_predict_batch_end(self, batch, logs=None):
+    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_predict_batch_end docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_predict_begin(self, logs=None):
+    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
         """on_predict_begin docstring.
 
         Args:
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_predict_end(self, logs=None):
+    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
         """on_predict_end docstring.
 
         Args:
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_test_batch_begin(self, batch, logs=None):
+    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_test_batch_begin docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_test_batch_end(self, batch, logs=None):
+    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_test_batch_end docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_test_begin(self, logs=None):
+    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
         """on_test_begin docstring.
 
         Args:
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_test_end(self, logs=None):
+    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
         """on_test_end docstring.
 
         Args:
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_train_batch_begin(self, batch, logs=None):
+    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_train_batch_begin docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        # pragma: no cover
 
-    def on_train_batch_end(self, batch, logs=None):
+    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """on_train_batch_end docstring.
 
         Args:
             batch: Batch.
             logs: Logs.
         """
-        super().__init__()  # pragma: no cover
-        self.history = {}  # pragma: no cover
-        self.epoch = []  # pragma: no cover
-
-    def on_train_begin(self, logs=None):
-        """Called at the beginning of training."""
+        super().__init__()
         self.history = {}
         self.epoch = []
 
-    def on_epoch_end(self, epoch, logs=None):
-        """Called at the end of an epoch."""
-        logs = logs or {}  # pragma: no cover
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the beginning of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
+        self.history = {}
+        self.epoch = []
+
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
+        logs = logs or {}
         self.epoch.append(epoch)
         for k, v in logs.items():
             self.history.setdefault(k, []).append(v)
@@ -718,14 +727,14 @@ class LambdaCallback(Callback):
 
     def __init__(
         self,
-        on_epoch_begin=None,
-        on_epoch_end=None,
-        on_batch_begin=None,
-        on_batch_end=None,
-        on_train_begin=None,
-        on_train_end=None,
-        **kwargs,
-    ):
+        on_epoch_begin: TensorLike = None,
+        on_epoch_end: TensorLike = None,
+        on_batch_begin: TensorLike = None,
+        on_batch_end: TensorLike = None,
+        on_train_begin: TensorLike = None,
+        on_train_end: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -746,33 +755,61 @@ class LambdaCallback(Callback):
         self._on_train_begin = on_train_begin
         self._on_train_end = on_train_end
 
-    def on_epoch_begin(self, epoch, logs=None):
-        """Called at the start of an epoch."""
+    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the start of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
         if self._on_epoch_begin is not None:
             self._on_epoch_begin(epoch, logs)
 
-    def on_epoch_end(self, epoch, logs=None):
-        """Called at the end of an epoch."""
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
         if self._on_epoch_end is not None:
             self._on_epoch_end(epoch, logs)
 
-    def on_batch_begin(self, batch, logs=None):
-        """Called at the start of a batch."""
+    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the start of a batch.
+
+        Args:
+            batch: Input parameter ``batch``.
+            logs: Input parameter ``logs``.
+        """
         if self._on_batch_begin is not None:
             self._on_batch_begin(batch, logs)
 
-    def on_batch_end(self, batch, logs=None):
-        """Called at the end of a batch."""
+    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of a batch.
+
+        Args:
+            batch: Input parameter ``batch``.
+            logs: Input parameter ``logs``.
+        """
         if self._on_batch_end is not None:
             self._on_batch_end(batch, logs)
 
-    def on_train_begin(self, logs=None):
-        """Called at the beginning of training."""
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the beginning of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
         if self._on_train_begin is not None:
             self._on_train_begin(logs)
 
-    def on_train_end(self, logs=None):
-        """Called at the end of training."""
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
         if self._on_train_end is not None:
             self._on_train_end(logs)
 
@@ -780,7 +817,7 @@ class LambdaCallback(Callback):
 class LearningRateScheduler(Callback):
     """Learning rate scheduler."""
 
-    def __init__(self, schedule, verbose=0):
+    def __init__(self, schedule: TensorLike, verbose: TensorLike = 0) -> None:
         """Function docstring.
 
         Args:
@@ -791,8 +828,13 @@ class LearningRateScheduler(Callback):
         self.schedule = schedule
         self.verbose = verbose
 
-    def on_epoch_begin(self, epoch, logs=None):
-        """Called at the start of an epoch."""
+    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the start of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
         if not hasattr(self.model, "optimizer"):
             return
         if not hasattr(self.model.optimizer, "learning_rate"):
@@ -808,13 +850,18 @@ class LearningRateScheduler(Callback):
 class TerminateOnNaN(Callback):
     """Callback that terminates training when a NaN loss is encountered."""
 
-    def on_batch_end(self, batch, logs=None):
-        """Called at the end of a batch."""
+    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of a batch.
+
+        Args:
+            batch: Input parameter ``batch``.
+            logs: Input parameter ``logs``.
+        """
         import math
 
-        logs = logs or {}  # pragma: no cover
+        logs = logs or {}
         loss = logs.get("loss")
-        if loss is not None:  # pragma: no branch
+        if loss is not None:
             if math.isnan(loss) or math.isinf(loss):
                 self.model.stop_training = True
 
@@ -822,7 +869,9 @@ class TerminateOnNaN(Callback):
 class CSVLogger(Callback):
     """Callback that streams epoch results to a CSV file."""
 
-    def __init__(self, filename, separator=",", append=False):
+    def __init__(
+        self, filename: TensorLike, separator: TensorLike = ",", append: TensorLike = False
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -839,8 +888,12 @@ class CSVLogger(Callback):
         self.keys = None
         self.append_header = True
 
-    def on_train_begin(self, logs=None):
-        """Called at the beginning of training."""
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the beginning of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
         import os
 
         if self.append:
@@ -853,13 +906,18 @@ class CSVLogger(Callback):
             self.append_header = True
         self.csv_file = open(self.filename, "a" if self.append else "w", newline="")
 
-    def on_epoch_end(self, epoch, logs=None):
-        """Called at the end of an epoch."""
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
         import csv
 
-        logs = logs or {}  # pragma: no cover
+        logs = logs or {}
 
-        def handle_value(k):
+        def handle_value(k: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -875,61 +933,64 @@ class CSVLogger(Callback):
 
         if self.keys is None:
             self.keys = sorted(logs.keys())
-            if self.writer is None:  # pragma: no branch
 
-                class CustomDialect(csv.excel):
-                    """Class docstring."""
+            class CustomDialect(csv.excel):
+                """Class docstring."""
 
-                    delimiter = self.separator
+                delimiter = self.separator
 
-                self.writer = csv.DictWriter(
-                    self.csv_file,
-                    fieldnames=["epoch"] + self.keys,
-                    dialect=CustomDialect,
-                )
-                if self.append_header:
-                    self.writer.writeheader()
+            self.writer = csv.DictWriter(
+                self.csv_file,
+                fieldnames=["epoch"] + self.keys,
+                dialect=CustomDialect,
+            )
+            if self.append_header:
+                self.writer.writeheader()
 
         row_dict = {"epoch": epoch}
-        row_dict.update(
-            (key, handle_value(logs[key])) for key in self.keys if key in logs
-        )
+        row_dict.update((key, handle_value(logs[key])) for key in self.keys if key in logs)
         self.writer.writerow(row_dict)
         self.csv_file.flush()
 
-    def on_train_end(self, logs=None):
-        """Called at the end of training."""
-        if getattr(self, "csv_file", None) is not None:  # pragma: no branch
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
+        if (self.csv_file if hasattr(self, "csv_file") else None) is not None:
             self.csv_file.close()
 
-    def __del__(self):
+    def __del__(self) -> TensorLike:
         """Destructor to ensure file is closed."""
-        if getattr(self, "csv_file", None) is not None and not self.csv_file.closed:
+        if (
+            self.csv_file if hasattr(self, "csv_file") else None
+        ) is not None and not self.csv_file.closed:
             self.csv_file.close()
 
 
 class ReduceLROnPlateau(Callback):
     """Reduce learning rate when a metric has stopped improving."""
 
-    def get_monitor_value(self, logs):
+    def get_monitor_value(self, logs: TensorLike) -> TensorLike:
         """get_monitor_value docstring.
 
         Args:
             logs: Logs.
         """
-        return logs.get(self.monitor)  # pragma: no cover
+        return logs.get(self.monitor)
 
     def __init__(
         self,
-        monitor="val_loss",
-        factor=0.1,
-        patience=10,
-        verbose=0,
-        mode="auto",
-        min_delta=1e-4,
-        cooldown=0,
-        min_lr=0,
-    ):
+        monitor: TensorLike = "val_loss",
+        factor: TensorLike = 0.1,
+        patience: TensorLike = 10,
+        verbose: TensorLike = 0,
+        mode: TensorLike = "auto",
+        min_delta: TensorLike = 1e-4,
+        cooldown: TensorLike = 0,
+        min_lr: TensorLike = 0,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -962,9 +1023,12 @@ class ReduceLROnPlateau(Callback):
             self.monitor_op = lambda a, b: a > (b + self.min_delta)
             self.best = -float("inf")
 
-    def on_train_begin(self, logs=None):
-        """Called at the beginning of training."""
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the beginning of training.
 
+        Args:
+            logs: Input parameter ``logs``.
+        """
         self.wait = 0
         self.cooldown_counter = 0
         self.best = (
@@ -973,9 +1037,14 @@ class ReduceLROnPlateau(Callback):
             else -float("inf")
         )
 
-    def on_epoch_end(self, epoch, logs=None):
-        """Called at the end of an epoch."""
-        logs = logs or {}  # pragma: no cover
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of an epoch.
+
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
+        logs = logs or {}
         current = logs.get(self.monitor)
         if current is None:
             return
@@ -987,21 +1056,21 @@ class ReduceLROnPlateau(Callback):
         if self.monitor_op(current, self.best):
             self.best = current
             self.wait = 0
-        elif not self.in_cooldown():  # pragma: no branch
+        elif not self.in_cooldown():
             self.wait += 1
             if self.wait >= self.patience:
-                if hasattr(self.model, "optimizer") and hasattr(  # pragma: no branch
+                if hasattr(self.model, "optimizer") and hasattr(
                     self.model.optimizer, "learning_rate"
                 ):
                     old_lr = float(self.model.optimizer.learning_rate)
-                    if old_lr > self.min_lr:  # pragma: no branch
+                    if old_lr > self.min_lr:
                         new_lr = old_lr * self.factor
                         new_lr = max(new_lr, self.min_lr)
                         self.model.optimizer.learning_rate = new_lr
                         self.cooldown_counter = self.cooldown
                         self.wait = 0
 
-    def in_cooldown(self):
+    def in_cooldown(self) -> TensorLike:
         """in_cooldown."""
         return self.cooldown_counter > 0
 
@@ -1009,7 +1078,12 @@ class ReduceLROnPlateau(Callback):
 class BackupAndRestore(Callback):
     """Callback to back up and restore the training state."""
 
-    def __init__(self, backup_dir, save_freq="epoch", delete_checkpoint=True):
+    def __init__(
+        self,
+        backup_dir: TensorLike,
+        save_freq: TensorLike = "epoch",
+        delete_checkpoint: TensorLike = True,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1022,19 +1096,32 @@ class BackupAndRestore(Callback):
         self.save_freq = save_freq
         self.delete_checkpoint = delete_checkpoint
 
-    def on_train_begin(self, logs=None):
-        """Called at the beginning of training."""
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the beginning of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
         import os
 
         if not os.path.exists(self.backup_dir):
             os.makedirs(self.backup_dir)
 
-    def on_epoch_end(self, epoch, logs=None):
-        """Called at the end of an epoch."""
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of an epoch.
 
-    def on_train_end(self, logs=None):
-        """Called at the end of training."""
-        if self.delete_checkpoint:  # pragma: no branch
+        Args:
+            epoch: Input parameter ``epoch``.
+            logs: Input parameter ``logs``.
+        """
+
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
+        """Called at the end of training.
+
+        Args:
+            logs: Input parameter ``logs``.
+        """
+        if self.delete_checkpoint:
             import shutil
 
             shutil.rmtree(self.backup_dir, ignore_errors=True)
@@ -1045,12 +1132,12 @@ class RemoteMonitor(Callback):
 
     def __init__(
         self,
-        root="http://localhost:9000",
-        path="/publish/epoch/end/",
-        field="data",
-        headers=None,
-        send_as_json=False,
-    ):
+        root: TensorLike = "http://localhost:9000",
+        path: TensorLike = "/publish/epoch/end/",
+        field: TensorLike = "data",
+        headers: TensorLike = None,
+        send_as_json: TensorLike = False,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1071,7 +1158,7 @@ class RemoteMonitor(Callback):
 class SwapEMAWeights(Callback):
     """Swaps model weights with their exponential moving average."""
 
-    def __init__(self, swap_on_epoch=False):
+    def __init__(self, swap_on_epoch: TensorLike = False) -> None:
         """Function docstring.
 
         Args:
@@ -1086,16 +1173,16 @@ class TensorBoard(Callback):
 
     def __init__(
         self,
-        log_dir="logs",
-        histogram_freq=0,
-        write_graph=True,
-        write_images=False,
-        write_steps_per_second=False,
-        update_freq="epoch",
-        profile_batch=0,
-        embeddings_freq=0,
-        embeddings_metadata=None,
-    ):
+        log_dir: TensorLike = "logs",
+        histogram_freq: TensorLike = 0,
+        write_graph: TensorLike = True,
+        write_images: TensorLike = False,
+        write_steps_per_second: TensorLike = False,
+        update_freq: TensorLike = "epoch",
+        profile_batch: TensorLike = 0,
+        embeddings_freq: TensorLike = 0,
+        embeddings_metadata: TensorLike = None,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1125,17 +1212,20 @@ class CallbackList:
     """Class docstring."""
 
     @property
-    def model(self):
-        """model docstring."""
-        return getattr(self, "_model", None)
+    def model(self) -> TensorLike:
+        """Model docstring."""
+        return self._model if hasattr(self, "_model") else None
 
     @model.setter
-    def model(self, value):
-        """docstring."""
+    def model(self, value: TensorLike) -> TensorLike:
+        """Docstring.
 
+        Args:
+            value: Input parameter ``value``.
+        """
         self._model = value
 
-    def set_model(self, model):
+    def set_model(self, model: TensorLike) -> TensorLike:
         """set_model docstring.
 
         Args:
@@ -1143,7 +1233,7 @@ class CallbackList:
         """
         self.model = model
 
-    def set_params(self, params):
+    def set_params(self, params: TensorLike) -> TensorLike:
         """set_params docstring.
 
         Args:
@@ -1151,7 +1241,7 @@ class CallbackList:
         """
         self.params = params
 
-    def __init__(self, callbacks=None, model=None):
+    def __init__(self, callbacks: TensorLike = None, model: TensorLike = None) -> None:
         """Function docstring.
 
         Args:
@@ -1163,7 +1253,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.model = model
 
-    def on_train_begin(self, logs=None):
+    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1172,7 +1262,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_train_begin(logs)
 
-    def on_epoch_begin(self, epoch, logs=None):
+    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1182,7 +1272,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_epoch_begin(epoch, logs)
 
-    def on_train_batch_begin(self, batch, logs=None):
+    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1190,10 +1280,9 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_train_batch_begin"):  # pragma: no branch
-                cb.on_train_batch_begin(batch, logs)
+            cb.on_train_batch_begin(batch, logs)
 
-    def on_batch_begin(self, batch, logs=None):
+    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1203,7 +1292,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_batch_begin(batch, logs)
 
-    def on_train_batch_end(self, batch, logs=None):
+    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1211,10 +1300,9 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_train_batch_end"):  # pragma: no branch
-                cb.on_train_batch_end(batch, logs)
+            cb.on_train_batch_end(batch, logs)
 
-    def on_batch_end(self, batch, logs=None):
+    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1224,7 +1312,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_batch_end(batch, logs)
 
-    def on_epoch_end(self, epoch, logs=None):
+    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1234,7 +1322,7 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_epoch_end(epoch, logs)
 
-    def on_train_end(self, logs=None):
+    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1243,28 +1331,16 @@ class CallbackList:
         for cb in self.callbacks:
             cb.on_train_end(logs)
 
-    def on_test_begin(self, logs=None):
+    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_begin"):  # pragma: no branch
-                cb.on_test_begin(logs)
+            cb.on_test_begin(logs)
 
-    def on_test_batch_begin(self, batch, logs=None):
-        """Function docstring.
-
-        Args:
-            batch: Description.
-            logs: Description.
-        """
-        for cb in self.callbacks:
-            if hasattr(cb, "on_test_batch_begin"):  # pragma: no branch
-                cb.on_test_batch_begin(batch, logs)
-
-    def on_test_batch_end(self, batch, logs=None):
+    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1272,30 +1348,9 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_test_batch_end"):  # pragma: no branch
-                cb.on_test_batch_end(batch, logs)
+            cb.on_test_batch_begin(batch, logs)
 
-    def on_test_end(self, logs=None):
-        """Function docstring.
-
-        Args:
-            logs: Description.
-        """
-        for cb in self.callbacks:
-            if hasattr(cb, "on_test_end"):  # pragma: no branch
-                cb.on_test_end(logs)
-
-    def on_predict_begin(self, logs=None):
-        """Function docstring.
-
-        Args:
-            logs: Description.
-        """
-        for cb in self.callbacks:
-            if hasattr(cb, "on_predict_begin"):  # pragma: no branch
-                cb.on_predict_begin(logs)
-
-    def on_predict_batch_begin(self, batch, logs=None):
+    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1303,10 +1358,27 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_batch_begin"):  # pragma: no branch
-                cb.on_predict_batch_begin(batch, logs)
+            cb.on_test_batch_end(batch, logs)
 
-    def on_predict_batch_end(self, batch, logs=None):
+    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_test_end(logs)
+
+    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
+        """Function docstring.
+
+        Args:
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_predict_begin(logs)
+
+    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1314,18 +1386,26 @@ class CallbackList:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_batch_end"):  # pragma: no branch
-                cb.on_predict_batch_end(batch, logs)
+            cb.on_predict_batch_begin(batch, logs)
 
-    def on_predict_end(self, logs=None):
+    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
+        """Function docstring.
+
+        Args:
+            batch: Description.
+            logs: Description.
+        """
+        for cb in self.callbacks:
+            cb.on_predict_batch_end(batch, logs)
+
+    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
         """Function docstring.
 
         Args:
             logs: Description.
         """
         for cb in self.callbacks:
-            if hasattr(cb, "on_predict_end"):  # pragma: no branch
-                cb.on_predict_end(logs)
+            cb.on_predict_end(logs)
 
 
 class ProgbarLogger:

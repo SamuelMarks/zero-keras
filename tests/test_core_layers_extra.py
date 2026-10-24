@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import os
 from unittest.mock import patch
 
@@ -8,7 +11,7 @@ import numpy as np
 from zero_keras.core_layers import KerasTensor, Layer, Model, Sequential
 
 
-def test_keras_tensor_eq_no_data():
+def test_keras_tensor_eq_no_data() -> TensorLike:
     """Function docstring."""
     tensor = KerasTensor(shape=(2, 2))
     other = KerasTensor(shape=(2, 2))
@@ -16,7 +19,7 @@ def test_keras_tensor_eq_no_data():
     assert result is not None
 
 
-def test_keras_tensor_array_branches():
+def test_keras_tensor_array_branches() -> TensorLike:
     """Function docstring."""
     tensor = KerasTensor(shape=(2,), data=np.array([1, 2]))
     np.testing.assert_array_equal(tensor.__array__(copy=False), np.array([1, 2]))
@@ -28,20 +31,20 @@ def test_keras_tensor_array_branches():
     np.testing.assert_array_equal(tensor3.__array__(copy=True), np.array([5, 6]))
 
 
-def test_layer_set_weights_fallback():
+def test_layer_set_weights_fallback() -> TensorLike:
     """Function docstring."""
 
     class CustomLayer(Layer):
         """Class docstring."""
 
         @property
-        def weights(self):
+        def weights(self) -> TensorLike:
             """Function docstring."""
 
             class W:
                 """Class docstring."""
 
-                def __setitem__(self, key, value):
+                def __setitem__(self, key: TensorLike, value: TensorLike) -> TensorLike:
                     """Function docstring.
 
                     Args:
@@ -59,14 +62,14 @@ def test_layer_set_weights_fallback():
     assert layer.weights[0].val == [3, 4]
 
 
-def test_model_compute_loss_reg():
+def test_model_compute_loss_reg() -> TensorLike:
     """Function docstring."""
 
     class MyModel(Model):
         """Class docstring."""
 
         @property
-        def losses(self):
+        def losses(self) -> TensorLike:
             """Function docstring."""
             return [0.5]
 
@@ -76,13 +79,13 @@ def test_model_compute_loss_reg():
     assert float(np.asarray(loss)) == 0.5
 
 
-def test_model_steps_type_error_fallback():
+def test_model_steps_type_error_fallback() -> TensorLike:
     """Function docstring."""
 
     class SimpleModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -105,7 +108,7 @@ def test_model_steps_type_error_fallback():
     np.testing.assert_array_equal(np.asarray(preds), np.array([2.0, 4.0]))
 
 
-def test_model_is_iterator_torch():
+def test_model_is_iterator_torch() -> TensorLike:
     """Function docstring."""
     model = Model()
 
@@ -116,7 +119,7 @@ def test_model_is_iterator_torch():
     assert model._is_iterator(FakeDataloader())
 
 
-def test_model_fit_batch_size_none():
+def test_model_fit_batch_size_none() -> TensorLike:
     """Function docstring."""
     model = Sequential([Layer()])
     model.compile("sgd", "mse")
@@ -126,32 +129,32 @@ def test_model_fit_batch_size_none():
     assert len(history.history["loss"]) == 1
 
 
-def test_model_fit_eval_predict_unsliceable():
+def test_model_fit_eval_predict_unsliceable() -> TensorLike:
     """Function docstring."""
     model = Sequential([Layer()])
     model.compile("sgd", "mse")
 
-    def gen():
+    def gen() -> TensorLike:
         """Function docstring."""
         yield np.array([[1.0]]), np.array([[1.0]])
 
     model.fit(gen(), epochs=1, verbose=0)
     model.evaluate(gen(), verbose=0)
 
-    def gen_x():
+    def gen_x() -> TensorLike:
         """Function docstring."""
         yield np.array([[1.0]])
 
     model.predict(gen_x(), verbose=0)
 
 
-def test_model_predict_numpy_fallback():
+def test_model_predict_numpy_fallback() -> TensorLike:
     """Function docstring."""
 
     class SimpleModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -161,7 +164,7 @@ def test_model_predict_numpy_fallback():
             class Pred:
                 """Class docstring."""
 
-                def numpy(self):
+                def numpy(self) -> TensorLike:
                     """Function docstring."""
                     return np.array([[1.0]])
 
@@ -173,26 +176,26 @@ def test_model_predict_numpy_fallback():
     assert res is not None
 
 
-def test_flatten_in_save():
+def test_flatten_in_save() -> TensorLike:
     """Function docstring."""
 
     class NestedLayer(Layer):
         """Class docstring."""
 
         @property
-        def weights(self):
+        def weights(self) -> TensorLike:
             """Function docstring."""
             return [[[1.0, 2.0]]]
 
         @property
-        def _trainable_weights(self):
+        def _trainable_weights(self) -> TensorLike:
             """Function docstring."""
-            return self.weights  # pragma: no cover
+            return self.weights
 
         @property
-        def _non_trainable_weights(self):
+        def _non_trainable_weights(self) -> TensorLike:
             """Function docstring."""
-            return []  # pragma: no cover
+            return []
 
     model = Sequential([NestedLayer()])
     model.save("test_flatten.keras")
@@ -200,20 +203,20 @@ def test_flatten_in_save():
         os.remove("test_flatten.keras")
 
 
-def test_predict_concatenate_arrays_fallback():
+def test_predict_concatenate_arrays_fallback() -> TensorLike:
     """Function docstring."""
 
     class Pred:
         """Class docstring."""
 
-        def numpy(self):
+        def numpy(self) -> TensorLike:
             """Function docstring."""
             return [1.0]  # returns list, which is not a numpy array
 
     class SimpleModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -229,21 +232,21 @@ def test_predict_concatenate_arrays_fallback():
     assert len(res) == 2
 
 
-def test_fit_exception_loss():
+def test_fit_exception_loss() -> TensorLike:
     """Function docstring."""
 
     class BrokenLossModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 inputs: Description.
             """
-            return inputs  # pragma: no cover
+            return inputs
 
-        def train_step(self, data):
+        def train_step(self, data: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -251,7 +254,7 @@ def test_fit_exception_loss():
             """
             return {"loss": "not_a_float_or_array"}
 
-        def test_step(self, data):
+        def test_step(self, data: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -267,13 +270,13 @@ def test_fit_exception_loss():
     model.evaluate(x, y, verbose=0)
 
 
-def test_predict_exception_data():
+def test_predict_exception_data() -> TensorLike:
     """Function docstring."""
 
     class BrokenPredModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -284,9 +287,9 @@ def test_predict_exception_data():
                 """Class docstring."""
 
                 @property
-                def data(self):
+                def data(self) -> TensorLike:
                     """Function docstring."""
-                    raise ValueError("Fail data")  # pragma: no cover
+                    raise ValueError("Fail data")
 
             return Pred()
 
@@ -298,14 +301,14 @@ def test_predict_exception_data():
     assert res is not None
 
 
-def test_sequential_add():
+def test_sequential_add() -> TensorLike:
     """Function docstring."""
     model = Sequential()
     model.add(Layer())
     assert len(model.layers) == 1
 
 
-def test_ops_add():
+def test_ops_add() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import ops
 
@@ -314,27 +317,27 @@ def test_ops_add():
     assert res.shape == (2, 2)
 
 
-def test_deserialize():
+def test_deserialize() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import deserialize
 
     assert deserialize({"class_name": "Dense", "config": {"units": 10}}).units == 10
 
 
-def test_get():
+def test_get() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import get as layer_get
 
     assert layer_get("Dense").__name__ == "Dense"
 
 
-def test_predict_concatenate_arrays_success():
+def test_predict_concatenate_arrays_success() -> TensorLike:
     """Function docstring."""
 
     class SimpleModel(Model):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -349,7 +352,7 @@ def test_predict_concatenate_arrays_success():
 
 
 @patch("ml_switcheroo_compiler.ops.ones")
-def test_keras_tensor_eq_no_data2(mock_ones):
+def test_keras_tensor_eq_no_data2(mock_ones: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -363,7 +366,7 @@ def test_keras_tensor_eq_no_data2(mock_ones):
 
 
 @patch("ml_switcheroo_compiler.ops.asarray")
-def test_keras_tensor_array_numpy_attr(mock_asarray):
+def test_keras_tensor_array_numpy_attr(mock_asarray: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -373,9 +376,9 @@ def test_keras_tensor_array_numpy_attr(mock_asarray):
     class MockArr:
         """Class docstring."""
 
-        def numpy(self):
+        def numpy(self) -> TensorLike:
             """Function docstring."""
-            return np.array([5, 6])  # pragma: no cover
+            return np.array([5, 6])
 
     mock_asarray.return_value = MockArr()
     tensor = KerasTensor(shape=(2,), data=[5, 6])
@@ -383,7 +386,8 @@ def test_keras_tensor_array_numpy_attr(mock_asarray):
     np.testing.assert_array_equal(res, np.array([5, 6]))
 
 
-def test_function_methods():
+def test_function_methods() -> TensorLike:
+    """Execute ``test_function_methods``."""
     from zero_keras.core_layers import Function
 
     fn = Function()
@@ -401,7 +405,8 @@ def test_function_methods():
     assert fn.symbolic_call(1) is None
 
 
-def test_input_spec_methods():
+def test_input_spec_methods() -> TensorLike:
+    """Execute ``test_input_spec_methods``."""
     from zero_keras.core_layers import InputSpec
 
     spec = InputSpec(name="test")
@@ -411,7 +416,8 @@ def test_input_spec_methods():
     assert new_spec.name == "test"
 
 
-def test_keras_tensor_methods():
+def test_keras_tensor_methods() -> TensorLike:
+    """Execute ``test_keras_tensor_methods``."""
     import pytest
 
     from zero_keras.core_layers import KerasTensor
@@ -431,7 +437,8 @@ def test_keras_tensor_methods():
     assert t5.shape is None
 
 
-def test_layer_methods_extra():
+def test_layer_methods_extra() -> TensorLike:
+    """Execute ``test_layer_methods_extra``."""
     from zero_keras.core_layers import Layer
 
     layer = Layer(name="test_layer")
@@ -480,7 +487,8 @@ def test_layer_methods_extra():
     assert layer.variables == []
 
 
-def test_model_methods_extra():
+def test_model_methods_extra() -> TensorLike:
+    """Execute ``test_model_methods_extra``."""
     from zero_keras.core_layers import Model
 
     model = Model()
@@ -513,7 +521,8 @@ def test_model_methods_extra():
     # tested train_on_batch
 
 
-def test_operation_methods_extra():
+def test_operation_methods_extra() -> TensorLike:
+    """Execute ``test_operation_methods_extra``."""
     from zero_keras.core_layers import Operation
 
     op = Operation()
@@ -527,7 +536,8 @@ def test_operation_methods_extra():
     assert op.symbolic_call() is None
 
 
-def test_quantizer_regularizer_methods():
+def test_quantizer_regularizer_methods() -> TensorLike:
+    """Execute ``test_quantizer_regularizer_methods``."""
     from zero_keras.core_layers import Quantizer
     from zero_keras.regularizers import Regularizer
 
@@ -542,7 +552,8 @@ def test_quantizer_regularizer_methods():
     assert isinstance(r2, Regularizer)
 
 
-def test_stateless_variable_methods():
+def test_stateless_variable_methods() -> TensorLike:
+    """Execute ``test_stateless_variable_methods``."""
     from zero_keras.core_layers import StatelessScope, Variable
 
     with StatelessScope() as scope:
@@ -573,7 +584,8 @@ def test_stateless_variable_methods():
     assert var.synchronization == "auto"
 
 
-def test_sequential_methods_extra():
+def test_sequential_methods_extra() -> TensorLike:
+    """Execute ``test_sequential_methods_extra``."""
     from zero_keras.core_layers import Sequential
 
     seq = Sequential()
@@ -637,12 +649,15 @@ def test_sequential_methods_extra():
     assert seq.variables == []
 
 
-def test_wrapper_layer():
+def test_wrapper_layer() -> TensorLike:
+    """Execute ``test_wrapper_layer``."""
     from zero_keras.core_layers import Layer, Wrapper
     from zero_keras.layers.core import Layer as LLayer
     from zero_keras.layers.core import Wrapper as LWrapper
 
     class Dense(Layer):
+        """Keras ``Dense`` class."""
+
         pass
 
     l = Dense()

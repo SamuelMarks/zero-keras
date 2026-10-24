@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import layers
 
 
-def test_instantiate_and_call_all_untested_layers():
+def test_instantiate_and_call_all_untested_layers() -> TensorLike:
     """Function docstring."""
     untested_shapes = {
         "Convolution1D": ((2, 10, 3), {"filters": 4, "kernel_size": 3}),
@@ -53,14 +56,14 @@ def test_instantiate_and_call_all_untested_layers():
 
     for name, (shape, kwargs) in untested_shapes.items():
         if not hasattr(layers, name):
-            continue  # pragma: no cover
+            continue
 
-        layer_cls = getattr(layers, name)
+        layer_cls = layers.__dict__[name]
 
         try:
             layer = layer_cls(**kwargs)
-        except Exception:  # pragma: no cover
-            continue  # pragma: no cover
+        except Exception:
+            continue
 
         try:
             layer.get_config()
@@ -74,29 +77,27 @@ def test_instantiate_and_call_all_untested_layers():
             print(f"Call failed for {name}: {e}")
 
 
-def test_string_lookup_vocab():
+def test_string_lookup_vocab() -> TensorLike:
     """Function docstring."""
     layer = layers.StringLookup(vocabulary=["a", "b", "c"])
     layer(np.array(["a", "d"]))
 
 
-def test_hashing_call():
+def test_hashing_call() -> TensorLike:
     """Function docstring."""
     layer = layers.Hashing(num_bins=10)
     layer(np.array(["a", "d"]))
 
 
-def test_text_vectorization_call():
+def test_text_vectorization_call() -> TensorLike:
     """Function docstring."""
     layer = layers.TextVectorization()
     layer(np.array(["a", "d"]))
 
 
-def test_mha_coverage():
+def test_mha_coverage() -> TensorLike:
     """Function docstring."""
-    layer = layers.MultiHeadAttention(
-        num_heads=2, key_dim=2, value_dim=3, output_shape=(4,)
-    )
+    layer = layers.MultiHeadAttention(num_heads=2, key_dim=2, value_dim=3, output_shape=(4,))
     q = np.random.uniform(size=(2, 10, 4)).astype(np.float32)
     v = np.random.uniform(size=(2, 5, 4)).astype(np.float32)
     # test build branch
@@ -109,43 +110,41 @@ def test_mha_coverage():
         return_attention_scores=True,
         use_causal_mask=True,
     )
-    layer2 = layers.MultiHeadAttention(
-        num_heads=2, key_dim=2, value_dim=3, output_shape=4
-    )
+    layer2 = layers.MultiHeadAttention(num_heads=2, key_dim=2, value_dim=3, output_shape=4)
     layer2(q, v)
 
 
-def test_integer_lookup():
+def test_integer_lookup() -> TensorLike:
     """Function docstring."""
     layer = layers.IntegerLookup(vocabulary=[1, 2])
     layer(np.array([1, 3]))
 
 
-def test_rand_augment():
+def test_rand_augment() -> TensorLike:
     """Function docstring."""
     layer = layers.RandAugment(factor=0.2)
     layer(np.ones((2, 10, 10, 3)), training=False)
 
 
-def test_random_contrast():
+def test_random_contrast() -> TensorLike:
     """Function docstring."""
     layer = layers.RandomContrast(factor=0.2)
     layer(np.ones((2, 10, 10, 3)), training=True)
 
 
-def test_random_grayscale():
+def test_random_grayscale() -> TensorLike:
     """Function docstring."""
     layer = layers.RandomGrayscale()
     layer(np.ones((2, 10, 10, 3)), training=False)
 
 
-def test_random_invert():
+def test_random_invert() -> TensorLike:
     """Function docstring."""
     layer = layers.RandomInvert()
     layer(np.ones((2, 10, 10, 3)), training=False)
 
 
-def test_missing_layer_coverage():
+def test_missing_layer_coverage() -> TensorLike:
     """Function docstring."""
     layer = layers.RandomFlip()
     layer(np.ones((2, 10, 10, 3)), training=True)

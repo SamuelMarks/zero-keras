@@ -1,15 +1,15 @@
-"""config API."""
+"""Global runtime configuration API for zero_keras."""
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from zero_keras.dtype_policies import DTypePolicy
 
 _BACKEND: str = "numpy"
 _FLASH_ATTENTION_ENABLED: bool = False
 _INTERACTIVE_LOGGING_ENABLED: bool = False
 _TRACEBACK_FILTERING_ENABLED: bool = False
 _UNSAFE_DESERIALIZATION_ENABLED: bool = False
-_DTYPE_POLICY: Any = None
+_DTYPE_POLICY: DTypePolicy | str | None = None
 _EPSILON: float = 1e-7
 _FLOATX: str = "float32"
 _IMAGE_DATA_FORMAT: str = "channels_last"
@@ -18,162 +18,202 @@ _MAX_STEPS_PER_EPOCH: int | None = None
 
 
 def backend() -> str:
-    """backend docstring."""
+    """Return the name of the active backend.
+
+    Returns:
+        str: Active backend name.
+    """
     return _BACKEND
 
 
 def disable_flash_attention() -> None:
-    """disable_flash_attention docstring."""
+    """Disable flash attention globally."""
     global _FLASH_ATTENTION_ENABLED
     _FLASH_ATTENTION_ENABLED = False
 
 
 def disable_interactive_logging() -> None:
-    """disable_interactive_logging docstring."""
+    """Disable interactive logging globally."""
     global _INTERACTIVE_LOGGING_ENABLED
     _INTERACTIVE_LOGGING_ENABLED = False
 
 
 def disable_traceback_filtering() -> None:
-    """disable_traceback_filtering docstring."""
+    """Disable Keras traceback filtering globally."""
     global _TRACEBACK_FILTERING_ENABLED
     _TRACEBACK_FILTERING_ENABLED = False
 
 
-def dtype_policy() -> Any:
-    """dtype_policy docstring."""
+def dtype_policy() -> DTypePolicy | str | None:
+    """Return the current default dtype policy.
+
+    Returns:
+        DTypePolicy | str | None: Active global dtype policy.
+    """
     return _DTYPE_POLICY
 
 
 def enable_flash_attention() -> None:
-    """enable_flash_attention docstring."""
+    """Enable flash attention globally."""
     global _FLASH_ATTENTION_ENABLED
     _FLASH_ATTENTION_ENABLED = True
 
 
 def enable_interactive_logging() -> None:
-    """enable_interactive_logging docstring."""
+    """Enable interactive logging globally."""
     global _INTERACTIVE_LOGGING_ENABLED
     _INTERACTIVE_LOGGING_ENABLED = True
 
 
 def enable_traceback_filtering() -> None:
-    """enable_traceback_filtering docstring."""
+    """Enable Keras traceback filtering globally."""
     global _TRACEBACK_FILTERING_ENABLED
     _TRACEBACK_FILTERING_ENABLED = True
 
 
 def enable_unsafe_deserialization() -> None:
-    """enable_unsafe_deserialization docstring."""
+    """Enable unsafe lambda deserialization globally."""
     global _UNSAFE_DESERIALIZATION_ENABLED
     _UNSAFE_DESERIALIZATION_ENABLED = True
 
 
 def epsilon() -> float:
-    """epsilon docstring."""
+    """Return the numerical fuzz factor used in numeric expressions.
+
+    Returns:
+        float: Epsilon value.
+    """
     return _EPSILON
 
 
 def floatx() -> str:
-    """floatx docstring."""
+    """Return the default float type string.
+
+    Returns:
+        str: Default float dtype (e.g., ``"float32"``).
+    """
     return _FLOATX
 
 
 def image_data_format() -> str:
-    """image_data_format docstring."""
+    """Return the default image data format convention.
+
+    Returns:
+        str: Either ``"channels_last"`` or ``"channels_first"``.
+    """
     return _IMAGE_DATA_FORMAT
 
 
 def is_flash_attention_enabled() -> bool:
-    """is_flash_attention_enabled docstring."""
+    """Return whether flash attention is enabled.
+
+    Returns:
+        bool: True if flash attention is enabled.
+    """
     return _FLASH_ATTENTION_ENABLED
 
 
 def is_interactive_logging_enabled() -> bool:
-    """is_interactive_logging_enabled docstring."""
+    """Return whether interactive logging is enabled.
+
+    Returns:
+        bool: True if interactive logging is enabled.
+    """
     return _INTERACTIVE_LOGGING_ENABLED
 
 
 def is_traceback_filtering_enabled() -> bool:
-    """is_traceback_filtering_enabled docstring."""
+    """Return whether traceback filtering is enabled.
+
+    Returns:
+        bool: True if traceback filtering is enabled.
+    """
     return _TRACEBACK_FILTERING_ENABLED
 
 
 def max_epochs() -> int | None:
-    """max_epochs docstring."""
+    """Return the configured maximum number of training epochs, if any.
+
+    Returns:
+        int | None: Maximum epochs limit or None.
+    """
     return _MAX_EPOCHS
 
 
 def max_steps_per_epoch() -> int | None:
-    """max_steps_per_epoch docstring."""
+    """Return the configured maximum number of steps per epoch, if any.
+
+    Returns:
+        int | None: Maximum steps per epoch or None.
+    """
     return _MAX_STEPS_PER_EPOCH
 
 
 def set_backend(backend: str) -> None:
-    """set_backend docstring.
+    """Set the active backend name.
 
     Args:
-        backend: Backend.
+        backend: Name of the backend to activate.
     """
     global _BACKEND
     _BACKEND = backend
 
 
-def set_dtype_policy(policy: Any) -> None:
-    """set_dtype_policy docstring.
+def set_dtype_policy(policy: DTypePolicy | str | None) -> None:
+    """Set the global default dtype policy.
 
     Args:
-        policy: Policy.
+        policy: Policy instance or policy name string.
     """
     global _DTYPE_POLICY
     _DTYPE_POLICY = policy
 
 
 def set_epsilon(value: float) -> None:
-    """set_epsilon docstring.
+    """Set the numerical fuzz factor used in numeric expressions.
 
     Args:
-        value: Value.
+        value: New epsilon float value.
     """
     global _EPSILON
     _EPSILON = value
 
 
 def set_floatx(value: str) -> None:
-    """set_floatx docstring.
+    """Set the default float dtype string.
 
     Args:
-        value: Value.
+        value: Float dtype string (``"float16"``, ``"float32"``, or ``"float64"``).
     """
     global _FLOATX
     _FLOATX = value
 
 
 def set_image_data_format(data_format: str) -> None:
-    """set_image_data_format docstring.
+    """Set the default image data format convention.
 
     Args:
-        data_format: Data format.
+        data_format: Data format string (``"channels_last"`` or ``"channels_first"``).
     """
     global _IMAGE_DATA_FORMAT
     _IMAGE_DATA_FORMAT = data_format
 
 
 def set_max_epochs(value: int | None) -> None:
-    """set_max_epochs docstring.
+    """Set the maximum number of training epochs limit.
 
     Args:
-        value: Value.
+        value: Maximum epochs integer or None.
     """
     global _MAX_EPOCHS
     _MAX_EPOCHS = value
 
 
 def set_max_steps_per_epoch(value: int | None) -> None:
-    """set_max_steps_per_epoch docstring.
+    """Set the maximum number of steps per epoch limit.
 
     Args:
-        value: Value.
+        value: Maximum steps per epoch integer or None.
     """
     global _MAX_STEPS_PER_EPOCH
     _MAX_STEPS_PER_EPOCH = value

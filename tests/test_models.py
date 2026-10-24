@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import json
 
 import pytest
@@ -11,12 +14,12 @@ from zero_keras.core_layers import Layer, Model
 class DummyLayer(Layer):
     """Class docstring."""
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """Function docstring."""
         return {"name": "dummy"}
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -25,7 +28,7 @@ class DummyLayer(Layer):
         return cls()
 
 
-def test_clone_model():
+def test_clone_model() -> TensorLike:
     """Function docstring."""
     seq = models.Sequential()
     seq.add(DummyLayer())
@@ -42,7 +45,7 @@ def test_clone_model():
         models.clone_model("not a model")
 
 
-def test_save_model(tmp_path):
+def test_save_model(tmp_path: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -61,7 +64,7 @@ def test_save_model(tmp_path):
     assert fp2.exists()
 
 
-def test_model_from_json():
+def test_model_from_json() -> TensorLike:
     """Function docstring."""
     # Test sequential
     seq_config = {
@@ -73,7 +76,7 @@ def test_model_from_json():
     }
     model = models.model_from_json(json.dumps(seq_config))
     assert isinstance(model, models.Sequential)
-    assert getattr(model, "_name", None) == "seq1"
+    assert (model._name if hasattr(model, "_name") else None) == "seq1"
 
     # Test base
     base_config = {"class_name": "Model", "config": {"name": "model1"}}

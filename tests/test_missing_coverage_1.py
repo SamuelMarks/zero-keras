@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import json
 
 import pytest
@@ -7,16 +10,14 @@ import pytest
 from zero_keras import models, optimizers
 
 
-def test_optimizers_deserialize_fallback():
+def test_optimizers_deserialize_fallback() -> TensorLike:
     """Function docstring."""
     # If the identifier is a float or unhandled dict
     assert optimizers.deserialize(123) == 123
-    assert optimizers.deserialize({"class_name": "UnknownOpt"}) == {
-        "class_name": "UnknownOpt"
-    }
+    assert optimizers.deserialize({"class_name": "UnknownOpt"}) == {"class_name": "UnknownOpt"}
 
 
-def test_models_clone_function_fallback():
+def test_models_clone_function_fallback() -> TensorLike:
     """Function docstring."""
 
     # Model cloning where a layer has no get_config
@@ -30,7 +31,7 @@ def test_models_clone_function_fallback():
     assert cloned.layers[0] is mock_layer
 
 
-def test_models_save_model_fallback():
+def test_models_save_model_fallback() -> TensorLike:
     """Function docstring."""
 
     class MockModel:
@@ -41,7 +42,7 @@ def test_models_save_model_fallback():
         models.save_model(mock_model, "fake_path.keras")
 
 
-def test_models_model_from_json_builtins():
+def test_models_model_from_json_builtins() -> TensorLike:
     """Function docstring."""
     # test falling back to builtins
     config = {
@@ -65,7 +66,7 @@ def test_models_model_from_json_builtins():
         models.model_from_json(json_str_with_dict)
 
 
-def test_models_model_from_json_multiple_connections():
+def test_models_model_from_json_multiple_connections() -> TensorLike:
     """Function docstring."""
     config = {
         "class_name": "Functional",
@@ -101,7 +102,7 @@ def test_models_model_from_json_multiple_connections():
     assert m.name == "test"
 
 
-def test_models_model_from_json_fallback():
+def test_models_model_from_json_fallback() -> TensorLike:
     """Function docstring."""
     json_str = '{"class_name": "UnknownModel", "config": {}}'
     m = models.model_from_json(json_str)

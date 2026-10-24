@@ -1,25 +1,26 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 import pytest
 
 from zero_keras import metrics
 
 
-def test_confusion_matrix_invalid_type():
+def test_confusion_matrix_invalid_type() -> TensorLike:
     """Function docstring."""
     with pytest.raises(ValueError):
         m = metrics._ConfusionMatrixMetric(metric_type="INVALID")
         m.update_state([0], [0])
 
     with pytest.raises(ValueError):
-        m2 = metrics._ConfusionMatrixMetric(
-            thresholds=[0.5, 0.8], metric_type="INVALID"
-        )
+        m2 = metrics._ConfusionMatrixMetric(thresholds=[0.5, 0.8], metric_type="INVALID")
         m2.update_state([0], [0])
 
 
-def test_metric_shape_mismatch():
+def test_metric_shape_mismatch() -> TensorLike:
     """Function docstring."""
     m = metrics.MeanSquaredError()
     # It might broadcast or fail depending on ops. Let's see what happens.
@@ -35,7 +36,7 @@ def test_metric_shape_mismatch():
         pass
 
 
-def test_confusion_matrix_list_thresholds():
+def test_confusion_matrix_list_thresholds() -> TensorLike:
     """Function docstring."""
     m = metrics._ConfusionMatrixMetric(thresholds=[0.5, 0.8], metric_type="FP")
     m.update_state([0, 0, 1], [0.6, 0.9, 0.9], sample_weight=[1, 1, 1])
@@ -45,7 +46,7 @@ def test_confusion_matrix_list_thresholds():
     assert res is not None
 
 
-def test_confusion_matrix_coverage():
+def test_confusion_matrix_coverage() -> TensorLike:
     """Function docstring."""
     types = ["TP", "TN", "FP", "FN"]
     for t in types:

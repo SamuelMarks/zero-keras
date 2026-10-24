@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 from ml_switcheroo_compiler.ops import asarray
 
@@ -11,13 +14,13 @@ from zero_keras.optimizers import LossScaleOptimizer
 from zero_keras.regularizers import deserialize as deserialize_regularizer
 
 
-def test_initializers_deserialize_invalid():
+def test_initializers_deserialize_invalid() -> TensorLike:
     """Function docstring."""
     res = deserialize_initializer({"class_name": "InvalidClassThatDoesNotExist"})
     assert res == {"class_name": "InvalidClassThatDoesNotExist"}
 
 
-def test_layers_conv_transpose_channels_first_no_bias():
+def test_layers_conv_transpose_channels_first_no_bias() -> TensorLike:
     """Function docstring."""
     # 2793->2796, 3221->3224, 3651->3654
     c1 = Conv1DTranspose(2, 2, data_format="channels_first", use_bias=False)
@@ -33,13 +36,13 @@ def test_layers_conv_transpose_channels_first_no_bias():
     c3(asarray(np.ones((1, 3, 10, 10, 10))))
 
 
-def test_layers_inputlayer_batch_shape_not_none():
+def test_layers_inputlayer_batch_shape_not_none() -> TensorLike:
     """Function docstring."""
     layer = LayersInput(shape=(10,), batch_shape=(32, 10))
     assert layer.batch_shape == (32, 10)
 
 
-def test_layers_deserialize_invalid():
+def test_layers_deserialize_invalid() -> TensorLike:
     """Function docstring."""
     from zero_keras.layers import deserialize
 
@@ -47,13 +50,13 @@ def test_layers_deserialize_invalid():
     assert res == {"class_name": "InvalidLayerClassThatDoesNotExist"}
 
 
-def test_models_clone_model_custom_function():
+def test_models_clone_model_custom_function() -> TensorLike:
     """Function docstring."""
     model = Sequential()
     clone_model(model, clone_function=lambda x: x)
 
 
-def test_models_from_json_edges():
+def test_models_from_json_edges() -> TensorLike:
     """Function docstring."""
     json_str = """{
         "class_name": "Functional",
@@ -76,35 +79,35 @@ def test_models_from_json_edges():
     }"""
     try:
         model_from_json(json_str)
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
 
 class DummyOptWithoutMethods:
     """Class docstring."""
 
 
-def test_optimizers_lossscale_no_inner_methods():
+def test_optimizers_lossscale_no_inner_methods() -> TensorLike:
     """Function docstring."""
     opt = LossScaleOptimizer(DummyOptWithoutMethods())
     opt.build([])
     opt.apply_gradients([])
 
 
-def test_regularizers_deserialize_invalid():
+def test_regularizers_deserialize_invalid() -> TensorLike:
     """Function docstring."""
     res = deserialize_regularizer({"class_name": "InvalidRegularizerClassXYZ"})
     assert res == {"class_name": "InvalidRegularizerClassXYZ"}
 
 
-def test_initializers_deserialize_custom():
+def test_initializers_deserialize_custom() -> TensorLike:
     """Function docstring."""
     from zero_keras.initializers import deserialize
 
     class MockInit:
         """Class docstring."""
 
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -119,14 +122,14 @@ def test_initializers_deserialize_custom():
     assert isinstance(res, MockInit)
 
 
-def test_layers_deserialize_custom():
+def test_layers_deserialize_custom() -> TensorLike:
     """Function docstring."""
     from zero_keras.layers import deserialize
 
     class MockLayer:
         """Class docstring."""
 
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: TensorLike) -> None:
             """Function docstring.
 
             Args:

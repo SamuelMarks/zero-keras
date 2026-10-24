@@ -1,6 +1,9 @@
 """Module docstring."""
 
-from ml_switcheroo_compiler import core as backend
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
@@ -18,15 +21,15 @@ WEIGHTS_PATH_NO_TOP = (
 
 
 def Xception(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="xception",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "xception",
+) -> TensorLike:
     """Instantiates the Xception architecture.
 
     Reference:
@@ -88,7 +91,7 @@ def Xception(
         A model instance.
     """
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), 'imagenet' "
             "(pre-training on ImageNet), "
@@ -96,7 +99,7 @@ def Xception(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "If using `weights='imagenet'` with `include_top=True`, "
             "`classes` should be 1000.  "
             f"Received classes={classes}"
@@ -115,84 +118,68 @@ def Xception(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     channel_axis = 1 if backend.image_data_format() == "channels_first" else -1
 
-    x = layers.Conv2D(32, (3, 3), strides=(2, 2), use_bias=False, name="block1_conv1")(
-        img_input
-    )
+    x = layers.Conv2D(32, (3, 3), strides=(2, 2), use_bias=False, name="block1_conv1")(img_input)
     x = layers.BatchNormalization(axis=channel_axis, name="block1_conv1_bn")(x)
     x = layers.Activation("relu", name="block1_conv1_act")(x)
     x = layers.Conv2D(64, (3, 3), use_bias=False, name="block1_conv2")(x)
     x = layers.BatchNormalization(axis=channel_axis, name="block1_conv2_bn")(x)
     x = layers.Activation("relu", name="block1_conv2_act")(x)
 
-    residual = layers.Conv2D(
-        128, (1, 1), strides=(2, 2), padding="same", use_bias=False
-    )(x)
+    residual = layers.Conv2D(128, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
     residual = layers.BatchNormalization(axis=channel_axis)(residual)
 
-    x = layers.SeparableConv2D(
-        128, (3, 3), padding="same", use_bias=False, name="block2_sepconv1"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block2_sepconv1_bn")(x)
-    x = layers.Activation("relu", name="block2_sepconv2_act")(x)
-    x = layers.SeparableConv2D(
-        128, (3, 3), padding="same", use_bias=False, name="block2_sepconv2"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block2_sepconv2_bn")(x)
-
-    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block2_pool")(
+    x = layers.SeparableConv2D(128, (3, 3), padding="same", use_bias=False, name="block2_sepconv1")(
         x
     )
+    x = layers.BatchNormalization(axis=channel_axis, name="block2_sepconv1_bn")(x)
+    x = layers.Activation("relu", name="block2_sepconv2_act")(x)
+    x = layers.SeparableConv2D(128, (3, 3), padding="same", use_bias=False, name="block2_sepconv2")(
+        x
+    )
+    x = layers.BatchNormalization(axis=channel_axis, name="block2_sepconv2_bn")(x)
+
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block2_pool")(x)
     x = layers.add([x, residual])
 
-    residual = layers.Conv2D(
-        256, (1, 1), strides=(2, 2), padding="same", use_bias=False
-    )(x)
+    residual = layers.Conv2D(256, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
     residual = layers.BatchNormalization(axis=channel_axis)(residual)
 
     x = layers.Activation("relu", name="block3_sepconv1_act")(x)
-    x = layers.SeparableConv2D(
-        256, (3, 3), padding="same", use_bias=False, name="block3_sepconv1"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block3_sepconv1_bn")(x)
-    x = layers.Activation("relu", name="block3_sepconv2_act")(x)
-    x = layers.SeparableConv2D(
-        256, (3, 3), padding="same", use_bias=False, name="block3_sepconv2"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block3_sepconv2_bn")(x)
-
-    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block3_pool")(
+    x = layers.SeparableConv2D(256, (3, 3), padding="same", use_bias=False, name="block3_sepconv1")(
         x
     )
+    x = layers.BatchNormalization(axis=channel_axis, name="block3_sepconv1_bn")(x)
+    x = layers.Activation("relu", name="block3_sepconv2_act")(x)
+    x = layers.SeparableConv2D(256, (3, 3), padding="same", use_bias=False, name="block3_sepconv2")(
+        x
+    )
+    x = layers.BatchNormalization(axis=channel_axis, name="block3_sepconv2_bn")(x)
+
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block3_pool")(x)
     x = layers.add([x, residual])
 
-    residual = layers.Conv2D(
-        728, (1, 1), strides=(2, 2), padding="same", use_bias=False
-    )(x)
+    residual = layers.Conv2D(728, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
     residual = layers.BatchNormalization(axis=channel_axis)(residual)
 
     x = layers.Activation("relu", name="block4_sepconv1_act")(x)
-    x = layers.SeparableConv2D(
-        728, (3, 3), padding="same", use_bias=False, name="block4_sepconv1"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block4_sepconv1_bn")(x)
-    x = layers.Activation("relu", name="block4_sepconv2_act")(x)
-    x = layers.SeparableConv2D(
-        728, (3, 3), padding="same", use_bias=False, name="block4_sepconv2"
-    )(x)
-    x = layers.BatchNormalization(axis=channel_axis, name="block4_sepconv2_bn")(x)
-
-    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block4_pool")(
+    x = layers.SeparableConv2D(728, (3, 3), padding="same", use_bias=False, name="block4_sepconv1")(
         x
     )
+    x = layers.BatchNormalization(axis=channel_axis, name="block4_sepconv1_bn")(x)
+    x = layers.Activation("relu", name="block4_sepconv2_act")(x)
+    x = layers.SeparableConv2D(728, (3, 3), padding="same", use_bias=False, name="block4_sepconv2")(
+        x
+    )
+    x = layers.BatchNormalization(axis=channel_axis, name="block4_sepconv2_bn")(x)
+
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block4_pool")(x)
     x = layers.add([x, residual])
 
     for i in range(8):
@@ -207,9 +194,7 @@ def Xception(
             use_bias=False,
             name=f"{prefix}_sepconv1",
         )(x)
-        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv1_bn")(
-            x
-        )
+        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv1_bn")(x)
         x = layers.Activation("relu", name=f"{prefix}_sepconv2_act")(x)
         x = layers.SeparableConv2D(
             728,
@@ -218,9 +203,7 @@ def Xception(
             use_bias=False,
             name=f"{prefix}_sepconv2",
         )(x)
-        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv2_bn")(
-            x
-        )
+        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv2_bn")(x)
         x = layers.Activation("relu", name=f"{prefix}_sepconv3_act")(x)
         x = layers.SeparableConv2D(
             728,
@@ -229,15 +212,11 @@ def Xception(
             use_bias=False,
             name=f"{prefix}_sepconv3",
         )(x)
-        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv3_bn")(
-            x
-        )
+        x = layers.BatchNormalization(axis=channel_axis, name=f"{prefix}_sepconv3_bn")(x)
 
         x = layers.add([x, residual])
 
-    residual = layers.Conv2D(
-        1024, (1, 1), strides=(2, 2), padding="same", use_bias=False
-    )(x)
+    residual = layers.Conv2D(1024, (1, 1), strides=(2, 2), padding="same", use_bias=False)(x)
     residual = layers.BatchNormalization(axis=channel_axis)(residual)
 
     x = layers.Activation("relu", name="block13_sepconv1_act")(x)
@@ -251,9 +230,7 @@ def Xception(
     )(x)
     x = layers.BatchNormalization(axis=channel_axis, name="block13_sepconv2_bn")(x)
 
-    x = layers.MaxPooling2D(
-        (3, 3), strides=(2, 2), padding="same", name="block13_pool"
-    )(x)
+    x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding="same", name="block13_pool")(x)
     x = layers.add([x, residual])
 
     x = layers.SeparableConv2D(
@@ -271,19 +248,17 @@ def Xception(
     if include_top:
         x = layers.GlobalAveragePooling2D(name="avg_pool")(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
-        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
-            x
-        )
+        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D()(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
     # Create model.
@@ -291,47 +266,45 @@ def Xception(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            weights_path = generic_utils.get_file(  # pragma: no cover
+        if include_top:
+            weights_path = generic_utils.get_file(
                 "xception_weights_tf_dim_ordering_tf_kernels.h5",
                 WEIGHTS_PATH,
                 cache_subdir="models",
                 file_hash="0a58e3b7378bc2990ea3b43d5981f1f6",
             )
         else:
-            weights_path = generic_utils.get_file(  # pragma: no cover
+            weights_path = generic_utils.get_file(
                 "xception_weights_tf_dim_ordering_tf_kernels_notop.h5",
                 WEIGHTS_PATH_NO_TOP,
                 cache_subdir="models",
                 file_hash="b0042744bf5b25fce3cb969f33bebb97",
             )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="tf"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(

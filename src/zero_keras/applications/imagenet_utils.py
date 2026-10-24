@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import json
 import warnings
 
@@ -8,8 +11,7 @@ from zero_keras.utils import generic_utils
 
 CLASS_INDEX = None
 CLASS_INDEX_PATH = (
-    "https://storage.googleapis.com/download.tensorflow.org/"
-    "data/imagenet_class_index.json"
+    "https://storage.googleapis.com/download.tensorflow.org/data/imagenet_class_index.json"
 )
 
 
@@ -77,25 +79,30 @@ PREPROCESS_INPUT_RET_DOC_CAFFE = """
       zero-centered with respect to the ImageNet dataset, without scaling."""
 
 
-def preprocess_input(x, data_format=None, mode="caffe"):
-    """Preprocesses a tensor encoding a batch of images."""
-    if mode not in {"caffe", "tf", "torch"}:  # pragma: no cover
-        raise ValueError(  # pragma: no cover
-            "Expected mode to be one of `caffe`, `tf` or `torch`. "
-            f"Received: mode={mode}"
+def preprocess_input(
+    x: TensorLike, data_format: TensorLike = None, mode: TensorLike = "caffe"
+) -> TensorLike:
+    """Preprocesses a tensor encoding a batch of images.
+
+    Args:
+        x: Input parameter ``x``.
+        data_format: Input parameter ``data_format``.
+        mode: Input parameter ``mode``.
+    """
+    if mode not in {"caffe", "tf", "torch"}:
+        raise ValueError(
+            f"Expected mode to be one of `caffe`, `tf` or `torch`. Received: mode={mode}"
         )
 
-    if data_format is None:  # pragma: no cover
-        data_format = backend.image_data_format()  # pragma: no cover
-    elif data_format not in {"channels_first", "channels_last"}:  # pragma: no cover
-        raise ValueError(  # pragma: no cover
+    if data_format is None:
+        data_format = backend.image_data_format()
+    elif data_format not in {"channels_first", "channels_last"}:
+        raise ValueError(
             "Expected data_format to be one of `channels_first` or "
             f"`channels_last`. Received: data_format={data_format}"
         )
 
-    return _preprocess_tensor_input(
-        x, data_format=data_format, mode=mode
-    )  # pragma: no cover
+    return _preprocess_tensor_input(x, data_format=data_format, mode=mode)
 
 
 preprocess_input.__doc__ = PREPROCESS_INPUT_DOC.format(
@@ -105,7 +112,7 @@ preprocess_input.__doc__ = PREPROCESS_INPUT_DOC.format(
 )
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Decodes the prediction of an ImageNet model.
 
     Args:
@@ -123,35 +130,35 @@ def decode_predictions(preds, top=5):
     """
     global CLASS_INDEX
 
-    if len(preds.shape) != 2 or preds.shape[1] != 1000:  # pragma: no cover
-        raise ValueError(  # pragma: no cover
+    if len(preds.shape) != 2 or preds.shape[1] != 1000:
+        raise ValueError(
             "`decode_predictions` expects "
             "a batch of predictions "
             "(i.e. a 2D array of shape (samples, 1000)). "
             f"Received array with shape: {preds.shape}"
         )
-    if CLASS_INDEX is None:  # pragma: no cover
-        fpath = generic_utils.get_file(  # pragma: no cover
+    if CLASS_INDEX is None:
+        fpath = generic_utils.get_file(
             "imagenet_class_index.json",
             CLASS_INDEX_PATH,
             cache_subdir="models",
             file_hash="c2c37ea517e94d9795004a39431a14cb",
         )
-        with open(fpath) as f:  # pragma: no cover
-            CLASS_INDEX = json.load(f)  # pragma: no cover
-    results = []  # pragma: no cover
-    preds = ops.convert_to_numpy(preds)  # pragma: no cover
-    for pred in preds:  # pragma: no cover
-        top_indices = pred.argsort()[-top:][::-1]  # pragma: no cover
-        result = [
-            tuple(CLASS_INDEX[str(i)]) + (pred[i],) for i in top_indices
-        ]  # pragma: no cover
-        result.sort(key=lambda x: x[2], reverse=True)  # pragma: no cover
-        results.append(result)  # pragma: no cover
-    return results  # pragma: no cover
+        with open(fpath) as f:
+            CLASS_INDEX = json.load(f)
+    results = []
+    preds = ops.convert_to_numpy(preds)
+    for pred in preds:
+        top_indices = pred.argsort()[-top:][::-1]
+        result = [tuple(CLASS_INDEX[str(i)]) + (pred[i],) for i in top_indices]
+        result.sort(key=lambda x: x[2], reverse=True)
+        results.append(result)
+    return results
 
 
-def _preprocess_tensor_input(x, data_format, mode):
+def _preprocess_tensor_input(
+    x: TensorLike, data_format: TensorLike, mode: TensorLike
+) -> TensorLike:
     """Preprocesses a tensor encoding a batch of images.
 
     Args:
@@ -171,67 +178,57 @@ def _preprocess_tensor_input(x, data_format, mode):
     Returns:
         Preprocessed tensor.
     """
-    x = ops.cast(x, backend.floatx())  # pragma: no cover
-    ndim = len(x.shape)  # pragma: no cover
+    x = ops.cast(x, backend.floatx())
+    ndim = len(x.shape)
 
-    if mode == "tf":  # pragma: no cover
-        x /= 127.5  # pragma: no cover
-        x -= 1.0  # pragma: no cover
-        return x  # pragma: no cover
-    elif mode == "torch":  # pragma: no cover
-        x /= 255.0  # pragma: no cover
-        mean = [0.485, 0.456, 0.406]  # pragma: no cover
-        std = [0.229, 0.224, 0.225]  # pragma: no cover
+    if mode == "tf":
+        x /= 127.5
+        x -= 1.0
+        return x
+    elif mode == "torch":
+        x /= 255.0
+        mean = [0.485, 0.456, 0.406]
+        std = [0.229, 0.224, 0.225]
     else:
-        if data_format == "channels_first":  # pragma: no cover
+        if data_format == "channels_first":
             # 'RGB'->'BGR'
-            if len(x.shape) == 3:  # pragma: no cover
-                x = ops.stack(
-                    [x[i, ...] for i in (2, 1, 0)], axis=0
-                )  # pragma: no cover
+            if len(x.shape) == 3:
+                x = ops.stack([x[i, ...] for i in (2, 1, 0)], axis=0)
             else:
-                x = ops.stack(
-                    [x[:, i, :] for i in (2, 1, 0)], axis=1
-                )  # pragma: no cover
+                x = ops.stack([x[:, i, :] for i in (2, 1, 0)], axis=1)
         else:
             # 'RGB'->'BGR'
-            x = ops.stack([x[..., i] for i in (2, 1, 0)], axis=-1)  # pragma: no cover
-        mean = [103.939, 116.779, 123.68]  # pragma: no cover
-        std = None  # pragma: no cover
+            x = ops.stack([x[..., i] for i in (2, 1, 0)], axis=-1)
+        mean = [103.939, 116.779, 123.68]
+        std = None
 
-    mean_tensor = ops.convert_to_tensor(
-        [-m for m in mean], dtype=x.dtype
-    )  # pragma: no cover
+    mean_tensor = ops.convert_to_tensor([-m for m in mean], dtype=x.dtype)
 
     # Zero-center by mean pixel
-    if data_format == "channels_first":  # pragma: no cover
-        if len(x.shape) == 3:  # pragma: no cover
-            mean_tensor = ops.reshape(mean_tensor, (3, 1, 1))  # pragma: no cover
+    if data_format == "channels_first":
+        if len(x.shape) == 3:
+            mean_tensor = ops.reshape(mean_tensor, (3, 1, 1))
         else:
-            mean_tensor = ops.reshape(
-                mean_tensor, (1, 3) + (1,) * (ndim - 2)
-            )  # pragma: no cover
+            mean_tensor = ops.reshape(mean_tensor, (1, 3) + (1,) * (ndim - 2))
     else:
-        mean_tensor = ops.reshape(
-            mean_tensor, (1,) * (ndim - 1) + (3,)
-        )  # pragma: no cover
-    x += mean_tensor  # pragma: no cover
-    if std is not None:  # pragma: no cover
-        std_tensor = ops.convert_to_tensor(std, dtype=x.dtype)  # pragma: no cover
-        if data_format == "channels_first":  # pragma: no cover
-            std_tensor = ops.reshape(std_tensor, (-1, 1, 1))  # pragma: no cover
-        x /= std_tensor  # pragma: no cover
-    return x  # pragma: no cover
+        mean_tensor = ops.reshape(mean_tensor, (1,) * (ndim - 1) + (3,))
+    x += mean_tensor
+    if std is not None:
+        std_tensor = ops.convert_to_tensor(std, dtype=x.dtype)
+        if data_format == "channels_first":
+            std_tensor = ops.reshape(std_tensor, (-1, 1, 1))
+        x /= std_tensor
+    return x
 
 
 def obtain_input_shape(
-    input_shape,
-    default_size,
-    min_size,
-    data_format,
-    require_flatten,
-    weights=None,
-):
+    input_shape: TensorLike,
+    default_size: TensorLike,
+    min_size: TensorLike,
+    data_format: TensorLike,
+    require_flatten: TensorLike,
+    weights: TensorLike = None,
+) -> TensorLike:
     """Internal utility to compute/validate a model's input shape.
 
     Args:
@@ -253,10 +250,10 @@ def obtain_input_shape(
       ValueError: In case of invalid argument values.
     """
     if weights != "imagenet" and input_shape and len(input_shape) == 3:
-        if data_format == "channels_first":  # pragma: no cover
-            correct_channel_axis = 1 if len(input_shape) == 4 else 0  # pragma: no cover
-            if input_shape[correct_channel_axis] not in {1, 3}:  # pragma: no cover
-                warnings.warn(  # pragma: no cover
+        if data_format == "channels_first":
+            correct_channel_axis = 1 if len(input_shape) == 4 else 0
+            if input_shape[correct_channel_axis] not in {1, 3}:
+                warnings.warn(
                     "This model usually expects 1 or 3 input channels. "
                     "However, it was passed an input_shape "
                     f"with {input_shape[0]} input channels.",
@@ -266,10 +263,10 @@ def obtain_input_shape(
                 input_shape[0],
                 default_size,
                 default_size,
-            )  # pragma: no cover
+            )
         else:
-            if input_shape[-1] not in {1, 3}:  # pragma: no cover
-                warnings.warn(  # pragma: no cover
+            if input_shape[-1] not in {1, 3}:
+                warnings.warn(
                     "This model usually expects 1 or 3 input channels. "
                     "However, it was passed an input_shape "
                     f"with {input_shape[-1]} input channels.",
@@ -279,75 +276,63 @@ def obtain_input_shape(
                 default_size,
                 default_size,
                 input_shape[-1],
-            )  # pragma: no cover
+            )
     else:
         if data_format == "channels_first":
-            default_shape = (3, default_size, default_size)  # pragma: no cover
+            default_shape = (3, default_size, default_size)
         else:
             default_shape = (default_size, default_size, 3)
     if weights == "imagenet" and require_flatten:
-        if input_shape is not None:  # pragma: no cover
-            if input_shape != default_shape:  # pragma: no cover
-                raise ValueError(  # pragma: no cover
+        if input_shape is not None:
+            if input_shape != default_shape:
+                raise ValueError(
                     "When setting `include_top=True` "
                     "and loading `imagenet` weights, "
                     f"`input_shape` should be {default_shape}.  "
                     f"Received: input_shape={input_shape}"
                 )
-        return default_shape  # pragma: no cover
+        return default_shape
     if input_shape:
-        if data_format == "channels_first":  # pragma: no cover
-            if input_shape is not None:  # pragma: no cover
-                if len(input_shape) != 3:  # pragma: no cover
-                    raise ValueError(
-                        "`input_shape` must be a tuple of three integers."
-                    )  # pragma: no cover
-                if input_shape[0] != 3 and weights == "imagenet":  # pragma: no cover
-                    raise ValueError(  # pragma: no cover
-                        "The input must have 3 channels; Received "
-                        f"`input_shape={input_shape}`"
-                    )
-                if (
-                    input_shape[1] is not None and input_shape[1] < min_size
-                ) or (  # pragma: no cover
-                    input_shape[2] is not None and input_shape[2] < min_size
-                ):
-                    raise ValueError(  # pragma: no cover
-                        f"Input size must be at least {min_size}"
-                        f"x{min_size}; Received: "
-                        f"input_shape={input_shape}"
-                    )
+        if data_format == "channels_first":
+            if len(input_shape) != 3:
+                raise ValueError("`input_shape` must be a tuple of three integers.")
+            if input_shape[0] != 3 and weights == "imagenet":
+                raise ValueError(
+                    f"The input must have 3 channels; Received `input_shape={input_shape}`"
+                )
+            if (input_shape[1] is not None and input_shape[1] < min_size) or (
+                input_shape[2] is not None and input_shape[2] < min_size
+            ):
+                raise ValueError(
+                    f"Input size must be at least {min_size}"
+                    f"x{min_size}; Received: "
+                    f"input_shape={input_shape}"
+                )
         else:
-            if input_shape is not None:  # pragma: no cover
-                if len(input_shape) != 3:  # pragma: no cover
-                    raise ValueError(
-                        "`input_shape` must be a tuple of three integers."
-                    )  # pragma: no cover
-                if input_shape[-1] != 3 and weights == "imagenet":  # pragma: no cover
-                    raise ValueError(  # pragma: no cover
-                        "The input must have 3 channels; Received "
-                        f"`input_shape={input_shape}`"
-                    )
-                if (
-                    input_shape[0] is not None and input_shape[0] < min_size
-                ) or (  # pragma: no cover
-                    input_shape[1] is not None and input_shape[1] < min_size
-                ):
-                    raise ValueError(  # pragma: no cover
-                        "Input size must be at least "
-                        f"{min_size}x{min_size}; Received: "
-                        f"input_shape={input_shape}"
-                    )
+            if len(input_shape) != 3:
+                raise ValueError("`input_shape` must be a tuple of three integers.")
+            if input_shape[-1] != 3 and weights == "imagenet":
+                raise ValueError(
+                    f"The input must have 3 channels; Received `input_shape={input_shape}`"
+                )
+            if (input_shape[0] is not None and input_shape[0] < min_size) or (
+                input_shape[1] is not None and input_shape[1] < min_size
+            ):
+                raise ValueError(
+                    "Input size must be at least "
+                    f"{min_size}x{min_size}; Received: "
+                    f"input_shape={input_shape}"
+                )
     else:
         if require_flatten:
             input_shape = default_shape
         else:
-            if data_format == "channels_first":  # pragma: no cover
-                input_shape = (3, None, None)  # pragma: no cover
+            if data_format == "channels_first":
+                input_shape = (3, None, None)
             else:
-                input_shape = (None, None, 3)  # pragma: no cover
+                input_shape = (None, None, 3)
     if require_flatten and None in input_shape:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "If `include_top` is True, "
             "you should specify a static `input_shape`. "
             f"Received: input_shape={input_shape}"
@@ -355,7 +340,7 @@ def obtain_input_shape(
     return input_shape
 
 
-def correct_pad(inputs, kernel_size):
+def correct_pad(inputs: TensorLike, kernel_size: TensorLike) -> TensorLike:
     """Returns a tuple for zero-padding for 2D convolution with downsampling.
 
     Args:
@@ -380,8 +365,8 @@ def correct_pad(inputs, kernel_size):
     )
 
 
-def validate_activation(classifier_activation, weights):
-    """validates that the classifer_activation is compatible with the weights.
+def validate_activation(classifier_activation: TensorLike, weights: TensorLike) -> TensorLike:
+    """Validates that the classifer_activation is compatible with the weights.
 
     Args:
       classifier_activation: str or callable activation function
@@ -394,12 +379,12 @@ def validate_activation(classifier_activation, weights):
     if weights is None:
         return
 
-    classifier_activation = activations.get(classifier_activation)  # pragma: no cover
-    if classifier_activation not in {  # pragma: no cover
+    classifier_activation = activations.get(classifier_activation)
+    if classifier_activation not in {
         activations.get("softmax"),
         activations.get(None),
     }:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "Only `None` and `softmax` activations are allowed "
             "for the `classifier_activation` argument when using "
             "pretrained weights, with `include_top=True`; Received: "

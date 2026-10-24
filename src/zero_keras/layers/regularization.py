@@ -1,3 +1,7 @@
+"""Regularization and noise layers (`SpatialDropout1D/2D/3D`, `GaussianDropout`, `GaussianNoise`, `AlphaDropout`, `ActivityRegularization`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -20,7 +24,7 @@ class ActivityRegularization(Layer):
 
     """
 
-    def __init__(self, l1=0.0, l2=0.0, **kwargs):
+    def __init__(self, l1: TensorLike = 0.0, l2: TensorLike = 0.0, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -32,7 +36,9 @@ class ActivityRegularization(Layer):
         self.l1 = l1
         self.l2 = l2
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -41,7 +47,7 @@ class ActivityRegularization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -86,7 +92,13 @@ class AlphaDropout(Layer):
 
     """
 
-    def __init__(self, rate, noise_shape=None, seed=None, **kwargs):
+    def __init__(
+        self,
+        rate: TensorLike,
+        noise_shape: TensorLike = None,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -100,7 +112,9 @@ class AlphaDropout(Layer):
         self.noise_shape = noise_shape
         self.seed = seed
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -109,16 +123,13 @@ class AlphaDropout(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-
         inputs = _to_tensor(inputs)
         if training:
             return _wrap(
-                ops.dropout(
-                    inputs, rate=self.rate, noise_shape=self.noise_shape, seed=self.seed
-                )
+                ops.dropout(inputs, rate=self.rate, noise_shape=self.noise_shape, seed=self.seed)
             )
         return _wrap(inputs)
 
@@ -141,7 +152,7 @@ class GaussianDropout(Layer):
 
     """
 
-    def __init__(self, rate, **kwargs):
+    def __init__(self, rate: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -151,7 +162,9 @@ class GaussianDropout(Layer):
         super().__init__(**kwargs)
         self.rate = rate
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -160,7 +173,7 @@ class GaussianDropout(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -188,7 +201,7 @@ class GaussianNoise(Layer):
 
     """
 
-    def __init__(self, stddev, **kwargs):
+    def __init__(self, stddev: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -198,7 +211,9 @@ class GaussianNoise(Layer):
         super().__init__(**kwargs)
         self.stddev = stddev
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -207,7 +222,7 @@ class GaussianNoise(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -245,7 +260,9 @@ class SpatialDropout1D(Layer):
 
     """
 
-    def __init__(self, rate, data_format=None, **kwargs):
+    def __init__(
+        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -258,7 +275,9 @@ class SpatialDropout1D(Layer):
         self.data_format = data_format or "channels_last"
         self.rank = 1
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -272,7 +291,7 @@ class SpatialDropout1D(Layer):
         input_shape = inputs.shape
         if self.data_format == "channels_last":
             noise_shape = (input_shape[0], 1, input_shape[-1])
-        else:  # pragma: no cover
+        else:
             noise_shape = (input_shape[0], input_shape[1], 1)
 
         return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))
@@ -318,7 +337,9 @@ class SpatialDropout2D(Layer):
 
     """
 
-    def __init__(self, rate, data_format=None, **kwargs):
+    def __init__(
+        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -331,7 +352,9 @@ class SpatialDropout2D(Layer):
         self.data_format = data_format or "channels_last"
         self.rank = 2
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -345,7 +368,7 @@ class SpatialDropout2D(Layer):
         input_shape = inputs.shape
         if self.data_format == "channels_last":
             noise_shape = (input_shape[0], 1, 1, input_shape[-1])
-        else:  # pragma: no cover
+        else:
             noise_shape = (input_shape[0], input_shape[1], 1, 1)
 
         return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))
@@ -391,7 +414,9 @@ class SpatialDropout3D(Layer):
 
     """
 
-    def __init__(self, rate, data_format=None, **kwargs):
+    def __init__(
+        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -404,7 +429,9 @@ class SpatialDropout3D(Layer):
         self.data_format = data_format or "channels_last"
         self.rank = 3
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -418,7 +445,7 @@ class SpatialDropout3D(Layer):
         input_shape = inputs.shape
         if self.data_format == "channels_last":
             noise_shape = (input_shape[0], 1, 1, 1, input_shape[-1])
-        else:  # pragma: no cover
+        else:
             noise_shape = (input_shape[0], input_shape[1], 1, 1, 1)
 
         return _wrap(ops.dropout(inputs, rate=self.rate, noise_shape=noise_shape))

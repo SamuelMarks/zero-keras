@@ -1,5 +1,8 @@
 """Tests for zero_keras learning rate schedules parity with Keras."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 
 from zero_keras.optimizers import schedules
@@ -7,7 +10,9 @@ from zero_keras.optimizers import schedules
 from .utils import assert_allclose_keras_zero
 
 
-def check_schedule_parity(schedule_cls, keras_cls, **kwargs):
+def check_schedule_parity(
+    schedule_cls: TensorLike, keras_cls: TensorLike, **kwargs: TensorLike
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -25,7 +30,7 @@ def check_schedule_parity(schedule_cls, keras_cls, **kwargs):
     assert_allclose_keras_zero(keras_vals, zero_vals, atol=1e-5, rtol=1e-5)
 
 
-def test_schedule_CosineDecay():
+def test_schedule_CosineDecay() -> TensorLike:
     """Function docstring."""
     check_schedule_parity(
         schedules.CosineDecay,
@@ -43,7 +48,7 @@ def test_schedule_CosineDecay():
     )
 
 
-def test_schedule_ExponentialDecay():
+def test_schedule_ExponentialDecay() -> TensorLike:
     """Function docstring."""
     check_schedule_parity(
         schedules.ExponentialDecay,
@@ -62,7 +67,7 @@ def test_schedule_ExponentialDecay():
     )
 
 
-def test_schedule_CosineDecayRestarts():
+def test_schedule_CosineDecayRestarts() -> TensorLike:
     """Function docstring."""
     schedules.CosineDecayRestarts(0.1, 100, t_mul=1.0)(5)
     check_schedule_parity(
@@ -73,7 +78,7 @@ def test_schedule_CosineDecayRestarts():
     )
 
 
-def test_schedule_InverseTimeDecay():
+def test_schedule_InverseTimeDecay() -> TensorLike:
     """Function docstring."""
     check_schedule_parity(
         schedules.InverseTimeDecay,
@@ -92,7 +97,7 @@ def test_schedule_InverseTimeDecay():
     )
 
 
-def test_schedule_PiecewiseConstantDecay():
+def test_schedule_PiecewiseConstantDecay() -> TensorLike:
     """Function docstring."""
     check_schedule_parity(
         schedules.PiecewiseConstantDecay,
@@ -102,7 +107,7 @@ def test_schedule_PiecewiseConstantDecay():
     )
 
 
-def test_schedule_PolynomialDecay():
+def test_schedule_PolynomialDecay() -> TensorLike:
     """Function docstring."""
     check_schedule_parity(
         schedules.PolynomialDecay,
@@ -123,7 +128,7 @@ def test_schedule_PolynomialDecay():
     )
 
 
-def test_schedule_LearningRateSchedule():
+def test_schedule_LearningRateSchedule() -> TensorLike:
     """Function docstring."""
     s = schedules.LearningRateSchedule()
     assert s(0) == 0.0

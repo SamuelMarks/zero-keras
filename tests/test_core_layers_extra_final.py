@@ -1,7 +1,12 @@
+"""Module `test_core_layers_extra_final` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import pytest
 
 
-def test_tensorshape_more():
+def test_tensorshape_more() -> TensorLike:
+    """Execute ``test_tensorshape_more``."""
     from zero_keras.core_layers import TensorShape
 
     # dims is required
@@ -16,7 +21,8 @@ def test_tensorshape_more():
     assert ts3.dims == [5]
 
 
-def test_kerastensor_call_pass_through():
+def test_kerastensor_call_pass_through() -> TensorLike:
+    """Execute ``test_kerastensor_call_pass_through``."""
     import numpy as np
 
     from zero_keras.core_layers import KerasTensor
@@ -26,7 +32,8 @@ def test_kerastensor_call_pass_through():
     assert kt(np.array([1, 2, 3])) is not None
 
 
-def test_model_properties_coverage():
+def test_model_properties_coverage() -> TensorLike:
+    """Execute ``test_model_properties_coverage``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -41,7 +48,8 @@ def test_model_properties_coverage():
     assert model.run_eagerly
 
 
-def test_compile_metrics_coverage():
+def test_compile_metrics_coverage() -> TensorLike:
+    """Execute ``test_compile_metrics_coverage``."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.metrics import MeanSquaredError
 
@@ -52,20 +60,28 @@ def test_compile_metrics_coverage():
     assert len(model.compiled_metrics) == 1
 
 
-def test_model_loss_callable():
+def test_model_loss_callable() -> TensorLike:
+    """Execute ``test_model_loss_callable``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
     model = Model(inp, inp)
 
-    def my_loss(y_true, y_pred):
+    def my_loss(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
+        """Execute ``my_loss``.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+        """
         return y_pred
 
     model.compile(optimizer="sgd", loss=my_loss)
     assert model.loss_fn == my_loss
 
 
-def test_kerastensor_ops():
+def test_kerastensor_ops() -> TensorLike:
+    """Execute ``test_kerastensor_ops``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,))
@@ -79,7 +95,8 @@ def test_kerastensor_ops():
     assert (1 + kt) is not None
 
 
-def test_kerastensor_more_ops():
+def test_kerastensor_more_ops() -> TensorLike:
+    """Execute ``test_kerastensor_more_ops``."""
     from ml_switcheroo_compiler.core import config
 
     from zero_keras.core_layers import KerasTensor
@@ -101,7 +118,10 @@ def test_kerastensor_more_ops():
 
     # Exception branch in bool
     class Unboolable:
-        def __bool__(self):
+        """Keras ``Unboolable`` class."""
+
+        def __bool__(self) -> TensorLike:
+            """Execute ``__bool__``."""
             raise ValueError("no")
 
     kt_unbool = KerasTensor((3,), data=Unboolable())
@@ -109,7 +129,8 @@ def test_kerastensor_more_ops():
         bool(kt_unbool)
 
 
-def test_kerastensor_ops_no_data():
+def test_kerastensor_ops_no_data() -> TensorLike:
+    """Execute ``test_kerastensor_ops_no_data``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,))
@@ -124,7 +145,8 @@ def test_kerastensor_ops_no_data():
     assert (kt**2).shape == (3,)
 
 
-def test_kerastensor_numpy_array_getitem():
+def test_kerastensor_numpy_array_getitem() -> TensorLike:
+    """Execute ``test_kerastensor_numpy_array_getitem``."""
     import numpy as np
 
     from zero_keras.core_layers import KerasTensor
@@ -139,7 +161,8 @@ def test_kerastensor_numpy_array_getitem():
     assert kt_none[0] == 0.0
 
 
-def test_node_coverage():
+def test_node_coverage() -> TensorLike:
+    """Execute ``test_node_coverage``."""
     from zero_keras.core_layers import KerasTensor, Layer, Node
 
     layer = Layer()
@@ -147,6 +170,8 @@ def test_node_coverage():
 
     # without _inbound_nodes
     class EmptyOp:
+        """Keras ``EmptyOp`` class."""
+
         pass
 
     op = EmptyOp()
@@ -161,7 +186,8 @@ def test_node_coverage():
     assert kt1._keras_history is node2
 
 
-def test_input_batch_shape():
+def test_input_batch_shape() -> TensorLike:
+    """Execute ``test_input_batch_shape``."""
     from zero_keras.core_layers import Input
 
     # with batch_shape
@@ -172,10 +198,13 @@ def test_input_batch_shape():
     assert y.shape == (2,)
 
 
-def test_layer_from_config_add_loss_dict():
+def test_layer_from_config_add_loss_dict() -> TensorLike:
+    """Execute ``test_layer_from_config_add_loss_dict``."""
     from zero_keras.core_layers import Layer
 
     class MyLayer(Layer):
+        """Keras ``MyLayer`` class."""
+
         pass
 
     layer = MyLayer.from_config({"name": "test"})
@@ -193,39 +222,81 @@ def test_layer_from_config_add_loss_dict():
     assert sum(layer.losses) == 2.0
 
 
-def test_layer_weights_methods():
+def test_layer_weights_methods() -> TensorLike:
+    """Execute ``test_layer_weights_methods``."""
     import numpy as np
 
     from zero_keras.core_layers import Layer
 
     class DummyWeight:
-        def __init__(self, val):
+        """Keras ``DummyWeight`` class."""
+
+        def __init__(self, val: TensorLike) -> None:
+            """Execute ``__init__``.
+
+            Args:
+                val: Input parameter ``val``.
+            """
             self.val = val
 
-        def assign(self, new_val):
+        def assign(self, new_val: TensorLike) -> TensorLike:
+            """Execute ``assign``.
+
+            Args:
+                new_val: Input parameter ``new_val``.
+            """
             self.val = new_val
 
-        def __array__(self):
+        def __array__(self) -> TensorLike:
+            """Execute ``__array__``."""
             return np.array(self.val)
 
     class DummyWeightData:
-        def __init__(self, val):
+        """Keras ``DummyWeightData`` class."""
+
+        def __init__(self, val: TensorLike) -> None:
+            """Execute ``__init__``.
+
+            Args:
+                val: Input parameter ``val``.
+            """
             self.data = val
 
-        def __setitem__(self, key, value):
+        def __setitem__(self, key: TensorLike, value: TensorLike) -> TensorLike:
+            """Execute ``__setitem__``.
+
+            Args:
+                key: Input parameter ``key``.
+                value: Input parameter ``value``.
+            """
             self.data = value
 
-        def __array__(self):
+        def __array__(self) -> TensorLike:
+            """Execute ``__array__``."""
             return np.array(self.data)
 
     class DummyWeightArr:
-        def __init__(self, val):
+        """Keras ``DummyWeightArr`` class."""
+
+        def __init__(self, val: TensorLike) -> None:
+            """Execute ``__init__``.
+
+            Args:
+                val: Input parameter ``val``.
+            """
             self.val = val
 
-        def __setitem__(self, key, value):
+        def __setitem__(self, key: TensorLike, value: TensorLike) -> TensorLike:
+            """Execute ``__setitem__``.
+
+            Args:
+                key: Input parameter ``key``.
+                value: Input parameter ``value``.
+            """
             self.val = value
 
-        def __array__(self):
+        def __array__(self) -> TensorLike:
+            """Execute ``__array__``."""
             return np.array(self.val)
 
     layer = Layer()
@@ -254,7 +325,8 @@ def test_layer_weights_methods():
         layer.set_weights([10])
 
 
-def test_layer_call_tracing_list_dict():
+def test_layer_call_tracing_list_dict() -> TensorLike:
+    """Execute ``test_layer_call_tracing_list_dict``."""
     from zero_keras.core_layers import KerasTensor, Layer
 
     layer = Layer()
@@ -269,7 +341,8 @@ def test_layer_call_tracing_list_dict():
     out_dict = layer({"a": kt1, "b": kt2})
 
 
-def test_layer_call_tracing_tuple_out():
+def test_layer_call_tracing_tuple_out() -> TensorLike:
+    """Execute ``test_layer_call_tracing_tuple_out``."""
     from zero_keras.core_layers import KerasTensor, Layer
 
     layer = Layer()
@@ -278,14 +351,16 @@ def test_layer_call_tracing_tuple_out():
     out = layer(kt1)
 
 
-def test_model_kwargs():
+def test_model_kwargs() -> TensorLike:
+    """Execute ``test_model_kwargs``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
     model = Model(inputs=inp, outputs=inp)
 
 
-def test_model_compute_metrics():
+def test_model_compute_metrics() -> TensorLike:
+    """Execute ``test_model_compute_metrics``."""
     import numpy as np
 
     from zero_keras.core_layers import Input, Model
@@ -301,7 +376,8 @@ def test_model_compute_metrics():
     assert "meansquarederror" in res
 
 
-def test_model_train_step_x_only():
+def test_model_train_step_x_only() -> TensorLike:
+    """Execute ``test_model_train_step_x_only``."""
     import numpy as np
 
     from zero_keras.core_layers import Input, Model
@@ -318,7 +394,8 @@ def test_model_train_step_x_only():
         pass
 
 
-def test_model_test_step_x_only():
+def test_model_test_step_x_only() -> TensorLike:
+    """Execute ``test_model_test_step_x_only``."""
     import numpy as np
 
     from zero_keras.core_layers import Input, Model
@@ -333,7 +410,8 @@ def test_model_test_step_x_only():
         pass
 
 
-def test_model_evaluate_predict_branches():
+def test_model_evaluate_predict_branches() -> TensorLike:
+    """Execute ``test_model_evaluate_predict_branches``."""
     import numpy as np
 
     from zero_keras.core_layers import Input, Model
@@ -349,13 +427,15 @@ def test_model_evaluate_predict_branches():
     assert res is not None
 
     # test evaluate with iterator
-    def x_iter():
+    def x_iter() -> TensorLike:
+        """Execute ``x_iter``."""
         yield (x, y)
 
     model.evaluate(x_iter())
 
     # test predict with iterator
-    def x_iter_predict():
+    def x_iter_predict() -> TensorLike:
+        """Execute ``x_iter_predict``."""
         yield x
 
     pred_iter = model.predict(x_iter_predict())

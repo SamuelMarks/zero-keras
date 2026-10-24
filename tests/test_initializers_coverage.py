@@ -1,7 +1,10 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
 
-def test_initializers_coverage():
+
+def test_initializers_coverage() -> TensorLike:
     """Function docstring."""
     from ml_switcheroo_compiler.core.dtype import DType
 

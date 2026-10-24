@@ -1,3 +1,7 @@
+"""Image, audio, text, and numerical preprocessing layers for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -42,16 +46,16 @@ class AugMix(Layer):
 
     def __init__(
         self,
-        value_range=(0, 255),
-        num_chains=3,
-        chain_depth=3,
-        factor=0.3,
-        alpha=1.0,
-        all_ops=True,
-        interpolation="bilinear",
-        seed=None,
-        **kwargs,
-    ):
+        value_range: TensorLike = (0, 255),
+        num_chains: TensorLike = 3,
+        chain_depth: TensorLike = 3,
+        factor: TensorLike = 0.3,
+        alpha: TensorLike = 1.0,
+        all_ops: TensorLike = True,
+        interpolation: TensorLike = "bilinear",
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -75,8 +79,16 @@ class AugMix(Layer):
         self.interpolation = interpolation
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -104,7 +116,7 @@ class AutoContrast(Layer):
 
     """
 
-    def __init__(self, value_range=(0, 255), **kwargs):
+    def __init__(self, value_range: TensorLike = (0, 255), **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -114,8 +126,16 @@ class AutoContrast(Layer):
         super().__init__(**kwargs)
         self.value_range = value_range
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -204,8 +224,12 @@ class CategoryEncoding(Layer):
     """
 
     def __init__(
-        self, num_tokens=None, output_mode="multi_hot", sparse=False, **kwargs
-    ):
+        self,
+        num_tokens: TensorLike = None,
+        output_mode: TensorLike = "multi_hot",
+        sparse: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -219,19 +243,19 @@ class CategoryEncoding(Layer):
         self.output_mode = output_mode
         self.sparse = sparse
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -240,7 +264,7 @@ class CategoryEncoding(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -263,12 +287,10 @@ class CategoryEncoding(Layer):
             return _wrap(ops.max(one_hot, axis=-2))
         elif self.output_mode == "count":
             return _wrap(ops.sum(one_hot, axis=-2))
-        elif self.output_mode == "int":  # pragma: no cover
-            return _wrap(inputs)  # pragma: no cover
-        else:  # pragma: no cover
-            raise ValueError(  # pragma: no cover
-                f"Unknown output_mode: {self.output_mode}"
-            )  # pragma: no cover
+        elif self.output_mode == "int":
+            return _wrap(inputs)
+        else:
+            raise ValueError(f"Unknown output_mode: {self.output_mode}")
 
 
 class CenterCrop(Layer):
@@ -312,7 +334,13 @@ class CenterCrop(Layer):
 
     """
 
-    def __init__(self, height, width, data_format=None, **kwargs):
+    def __init__(
+        self,
+        height: TensorLike,
+        width: TensorLike,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -326,7 +354,7 @@ class CenterCrop(Layer):
         self.width = width
         self.data_format = data_format
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -360,7 +388,9 @@ class CutMix(Layer):
 
     """
 
-    def __init__(self, factor=1.0, seed=None, **kwargs):
+    def __init__(
+        self, factor: TensorLike = 1.0, seed: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -372,7 +402,9 @@ class CutMix(Layer):
         self.factor = factor
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -381,7 +413,7 @@ class CutMix(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -405,7 +437,7 @@ class Discretization(Layer):
     (independently of which backend you're using).
 
     Input shape:
-        Any array of dimension 2 or higher.
+        TensorLike array of dimension 2 or higher.
 
     Output shape:
         Same as input shape.
@@ -472,13 +504,13 @@ class Discretization(Layer):
 
     def __init__(
         self,
-        bin_boundaries=None,
-        num_bins=None,
-        epsilon=0.01,
-        output_mode="int",
-        sparse=False,
-        **kwargs,
-    ):
+        bin_boundaries: TensorLike = None,
+        num_bins: TensorLike = None,
+        epsilon: TensorLike = 0.01,
+        output_mode: TensorLike = "int",
+        sparse: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -496,22 +528,25 @@ class Discretization(Layer):
         self.output_mode = output_mode
         self.sparse = sparse
 
-    def call(self, inputs, **kwargs):
-        """Call function."""
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            kwargs: Input parameter ``kwargs``.
+        """
         from zero_keras import ops
 
         inputs = _to_tensor(inputs)
         if self.bin_boundaries is None:
             return _wrap(inputs)
-        out = ops.searchsorted(  # pragma: no cover
-            ops.convert_to_tensor(self.bin_boundaries), inputs, side="right"
-        )
-        if self.output_mode == "one_hot":  # pragma: no cover
-            out = ops.one_hot(out, len(self.bin_boundaries) + 1)  # pragma: no cover
-        elif self.output_mode == "multi_hot":  # pragma: no cover
-            out = ops.one_hot(out, len(self.bin_boundaries) + 1)  # pragma: no cover
-            out = ops.max(out, axis=-2)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        out = ops.searchsorted(ops.convert_to_tensor(self.bin_boundaries), inputs, side="right")
+        if self.output_mode == "one_hot":
+            out = ops.one_hot(out, len(self.bin_boundaries) + 1)
+        elif self.output_mode == "multi_hot":
+            out = ops.one_hot(out, len(self.bin_boundaries) + 1)
+            out = ops.max(out, axis=-2)
+        return _wrap(out)
 
 
 class Equalization(Layer):
@@ -571,7 +606,9 @@ class Equalization(Layer):
 
     """
 
-    def __init__(self, value_range=(0, 255), bins=256, **kwargs):
+    def __init__(
+        self, value_range: TensorLike = (0, 255), bins: TensorLike = 256, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -583,8 +620,16 @@ class Equalization(Layer):
         self.value_range = value_range
         self.bins = bins
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -603,7 +648,7 @@ class MaxNumBoundingBoxes(Layer):
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -613,7 +658,7 @@ class MaxNumBoundingBoxes(Layer):
         super().__init__(**kwargs)
         self.args = args
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -621,7 +666,7 @@ class MaxNumBoundingBoxes(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -703,21 +748,21 @@ class MelSpectrogram(Layer):
 
     def __init__(
         self,
-        fft_length=2048,
-        sequence_stride=512,
-        sequence_length=None,
-        window="hann",
-        sampling_rate=16000,
-        num_mel_bins=128,
-        min_freq=20.0,
-        max_freq=None,
-        power_to_db=True,
-        top_db=80.0,
-        mag_exp=2.0,
-        min_power=1e-10,
-        ref_power=1.0,
-        **kwargs,
-    ):
+        fft_length: TensorLike = 2048,
+        sequence_stride: TensorLike = 512,
+        sequence_length: TensorLike = None,
+        window: TensorLike = "hann",
+        sampling_rate: TensorLike = 16000,
+        num_mel_bins: TensorLike = 128,
+        min_freq: TensorLike = 20.0,
+        max_freq: TensorLike = None,
+        power_to_db: TensorLike = True,
+        top_db: TensorLike = 80.0,
+        mag_exp: TensorLike = 2.0,
+        min_power: TensorLike = 1e-10,
+        ref_power: TensorLike = 1.0,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -751,19 +796,19 @@ class MelSpectrogram(Layer):
         self.min_power = min_power
         self.ref_power = ref_power
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -772,7 +817,7 @@ class MelSpectrogram(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops
@@ -782,7 +827,7 @@ class MelSpectrogram(Layer):
         # Keras MelSpectrogram uses center=True for stft
         pad_len = self.fft_length // 2
         padded_inputs = ops.pad(inputs, [[0, 0], [pad_len, pad_len]])
-        padded_inputs = _to_tensor(padded_inputs)  # pragma: no cover
+        padded_inputs = _to_tensor(padded_inputs)
 
         from ml_switcheroo_compiler.ops.configs import STFTConfig
 
@@ -791,45 +836,41 @@ class MelSpectrogram(Layer):
             frame_step=self.sequence_stride,
             fft_length=self.fft_length,
         )
-        spectrogram = ops.stft(padded_inputs, config_obj)  # pragma: no cover
-        magnitude = ops.abs(spectrogram)  # pragma: no cover
+        spectrogram = ops.stft(padded_inputs, config_obj)
+        magnitude = ops.abs(spectrogram)
 
-        if self.mag_exp != 1.0:  # pragma: no cover
-            magnitude = ops.power(magnitude, self.mag_exp)  # pragma: no cover
+        if self.mag_exp != 1.0:
+            magnitude = ops.power(magnitude, self.mag_exp)
 
-        mel_filterbank = ops.mel_filterbank(  # pragma: no cover
+        mel_filterbank = ops.mel_filterbank(
             num_mel_bins=self.num_mel_bins,
             num_spectrogram_bins=self.fft_length // 2 + 1
             if self.fft_length
             else self.sequence_length // 2 + 1,
-            sample_rate=self.sampling_rate,
+            sampling_rate=self.sampling_rate,
             lower_edge_hertz=self.min_freq,
             upper_edge_hertz=self.max_freq,
         )
 
-        mel_spec = ops.matmul(magnitude, mel_filterbank)  # pragma: no cover
+        mel_spec = ops.matmul(magnitude, mel_filterbank)
 
-        if self.power_to_db:  # pragma: no cover
-            mel_spec = ops.maximum(mel_spec, self.min_power)  # pragma: no cover
-            log_mel_spec = ops.log(
-                mel_spec / self.ref_power
-            ) / ops.log(  # pragma: no cover
+        if self.power_to_db:
+            mel_spec = ops.maximum(mel_spec, self.min_power)
+            log_mel_spec = ops.log(mel_spec / self.ref_power) / ops.log(
                 ops.array(10.0, dtype=mel_spec.dtype)
             )
-            mel_spec = log_mel_spec * 10.0  # pragma: no cover
+            mel_spec = log_mel_spec * 10.0
 
-            if self.top_db is not None:  # pragma: no cover
-                max_val = ops.max(mel_spec)  # pragma: no cover
-                mel_spec = ops.maximum(
-                    mel_spec, max_val - self.top_db
-                )  # pragma: no cover
+            if self.top_db is not None:
+                max_val = ops.max(mel_spec)
+                mel_spec = ops.maximum(mel_spec, max_val - self.top_db)
 
         # Swap axes to match Keras shape
         # (batch, frames, mel_bins) -> (batch, mel_bins, frames)
-        if len(mel_spec.shape) == 3 or len(mel_spec.shape) == 2:  # pragma: no cover
-            mel_spec = ops.swapaxes(mel_spec, -1, -2)  # pragma: no cover
+        if len(mel_spec.shape) == 3 or len(mel_spec.shape) == 2:
+            mel_spec = ops.swapaxes(mel_spec, -1, -2)
 
-        return mel_spec  # pragma: no cover
+        return mel_spec
 
 
 class MixUp(Layer):
@@ -857,7 +898,9 @@ class MixUp(Layer):
 
     """
 
-    def __init__(self, alpha=0.2, seed=None, **kwargs):
+    def __init__(
+        self, alpha: TensorLike = 0.2, seed: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -869,8 +912,16 @@ class MixUp(Layer):
         self.alpha = alpha
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -913,7 +964,12 @@ class RandomFlip(Layer):
 
     """
 
-    def __init__(self, mode="horizontal_and_vertical", seed=None, **kwargs):
+    def __init__(
+        self,
+        mode: TensorLike = "horizontal_and_vertical",
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -925,7 +981,9 @@ class RandomFlip(Layer):
         self.mode = mode
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -934,7 +992,7 @@ class RandomFlip(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -1017,14 +1075,14 @@ class RandomRotation(Layer):
 
     def __init__(
         self,
-        factor,
-        interpolation="bilinear",
-        seed=None,
-        fill_mode="reflect",
-        fill_value=0.0,
-        data_format=None,
-        **kwargs,
-    ):
+        factor: TensorLike,
+        interpolation: TensorLike = "bilinear",
+        seed: TensorLike = None,
+        fill_mode: TensorLike = "reflect",
+        fill_value: TensorLike = 0.0,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1044,7 +1102,9 @@ class RandomRotation(Layer):
         self.fill_value = fill_value
         self.data_format = data_format
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -1053,7 +1113,7 @@ class RandomRotation(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -1099,13 +1159,13 @@ class RandAugment(Layer):
 
     def __init__(
         self,
-        value_range=(0, 255),
-        num_ops=2,
-        factor=0.5,
-        interpolation="bilinear",
-        seed=None,
-        **kwargs,
-    ):
+        value_range: TensorLike = (0, 255),
+        num_ops: TensorLike = 2,
+        factor: TensorLike = 0.5,
+        interpolation: TensorLike = "bilinear",
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1123,8 +1183,16 @@ class RandAugment(Layer):
         self.interpolation = interpolation
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1192,7 +1260,13 @@ class RandomBrightness(Layer):
 
     """
 
-    def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1206,8 +1280,16 @@ class RandomBrightness(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1249,7 +1331,7 @@ class Rescaling(Layer):
 
     """
 
-    def __init__(self, scale, offset=0.0, **kwargs):
+    def __init__(self, scale: TensorLike, offset: TensorLike = 0.0, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -1261,7 +1343,7 @@ class Rescaling(Layer):
         self.scale = scale
         self.offset = offset
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1271,11 +1353,7 @@ class Rescaling(Layer):
         inputs = _to_tensor(inputs)
         from zero_keras import ops
 
-        return _wrap(
-            ops.add(
-                ops.multiply(inputs, _to_tensor(self.scale)), _to_tensor(self.offset)
-            )
-        )
+        return _wrap(ops.add(ops.multiply(inputs, _to_tensor(self.scale)), _to_tensor(self.offset)))
 
 
 class Resizing(Layer):
@@ -1336,16 +1414,16 @@ class Resizing(Layer):
 
     def __init__(
         self,
-        height,
-        width,
-        interpolation="bilinear",
-        crop_to_aspect_ratio=False,
-        pad_to_aspect_ratio=False,
-        fill_mode="constant",
-        fill_value=0.0,
-        data_format=None,
-        **kwargs,
-    ):
+        height: TensorLike,
+        width: TensorLike,
+        interpolation: TensorLike = "bilinear",
+        crop_to_aspect_ratio: TensorLike = False,
+        pad_to_aspect_ratio: TensorLike = False,
+        fill_mode: TensorLike = "constant",
+        fill_value: TensorLike = 0.0,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1369,7 +1447,7 @@ class Resizing(Layer):
         self.fill_value = fill_value
         self.data_format = data_format
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -1514,18 +1592,18 @@ class STFTSpectrogram(Layer):
 
     def __init__(
         self,
-        mode="log",
-        frame_length=256,
-        frame_step=None,
-        fft_length=None,
-        window="hann",
-        periodic=False,
-        scaling="density",
-        padding="valid",
-        expand_dims=False,
-        data_format=None,
-        **kwargs,
-    ):
+        mode: TensorLike = "log",
+        frame_length: TensorLike = 256,
+        frame_step: TensorLike = None,
+        fft_length: TensorLike = None,
+        window: TensorLike = "hann",
+        periodic: TensorLike = False,
+        scaling: TensorLike = "density",
+        padding: TensorLike = "valid",
+        expand_dims: TensorLike = False,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1557,19 +1635,19 @@ class STFTSpectrogram(Layer):
         self.expand_dims = expand_dims
         self.data_format = data_format
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1578,7 +1656,7 @@ class STFTSpectrogram(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         from zero_keras import ops
@@ -1586,8 +1664,8 @@ class STFTSpectrogram(Layer):
         inputs = _to_tensor(inputs)
 
         if len(inputs.shape) == 3 and inputs.shape[-1] == 1:
-            audio_inputs = ops.squeeze(inputs, axis=-1)  # pragma: no cover
-        else:  # pragma: no cover
+            audio_inputs = ops.squeeze(inputs, axis=-1)
+        else:
             audio_inputs = inputs
 
         from ml_switcheroo_compiler.ops.configs import STFTConfig
@@ -1599,27 +1677,23 @@ class STFTSpectrogram(Layer):
         )
         stft = ops.stft(audio_inputs, config_obj)
 
-        if self.mode == "magnitude":  # pragma: no cover
-            spectrogram = ops.abs(stft)  # pragma: no cover
-        elif self.mode == "power":  # pragma: no cover
-            spectrogram = ops.power(ops.abs(stft), 2.0)  # pragma: no cover
-        elif self.mode == "log":  # pragma: no cover
+        if self.mode == "magnitude":
+            spectrogram = ops.abs(stft)
+        elif self.mode == "power":
+            spectrogram = ops.power(ops.abs(stft), 2.0)
+        elif self.mode == "log":
             eps = 1e-7  # keras backend epsilon
             spectrogram = ops.abs(stft)
-            spectrogram = ops.log(
-                ops.maximum(spectrogram, ops.array(eps, dtype=spectrogram.dtype))
-            )  # pragma: no cover
-        elif self.mode == "complex":  # pragma: no cover
-            spectrogram = stft  # pragma: no cover
-        else:  # pragma: no cover
-            raise ValueError(  # pragma: no cover
-                f"Unknown mode: {self.mode}"
-            )  # pragma: no cover
+            spectrogram = ops.log(ops.maximum(spectrogram, ops.array(eps, dtype=spectrogram.dtype)))
+        elif self.mode == "complex":
+            spectrogram = stft
+        else:
+            raise ValueError(f"Unknown mode: {self.mode}")
 
-        if self.expand_dims:  # pragma: no cover
-            spectrogram = ops.expand_dims(spectrogram, axis=-1)  # pragma: no cover
+        if self.expand_dims:
+            spectrogram = ops.expand_dims(spectrogram, axis=-1)
 
-        return spectrogram  # pragma: no cover
+        return spectrogram
 
 
 class RandomColorDegeneration(Layer):
@@ -1645,7 +1719,9 @@ class RandomColorDegeneration(Layer):
 
     """
 
-    def __init__(self, factor=0.2, seed=None, **kwargs):
+    def __init__(
+        self, factor: TensorLike = 0.2, seed: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1657,8 +1733,16 @@ class RandomColorDegeneration(Layer):
         self.factor = factor
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1670,9 +1754,7 @@ class RandomColorDegeneration(Layer):
 
 
 class RandomColorJitter(Layer):
-    """RandomColorJitter class randomly apply brightness, contrast, saturation
-    and hue image processing operation sequentially and randomly on the
-    input.
+    """Randomly apply brightness, contrast, saturation, and hue jittering.
 
     Args:
         value_range: the range of values the incoming images will have.
@@ -1720,14 +1802,14 @@ class RandomColorJitter(Layer):
 
     def __init__(
         self,
-        value_range=(0, 255),
-        brightness_factor=0.2,
-        contrast_factor=0.2,
-        saturation_factor=0.2,
-        hue_factor=0.2,
-        seed=None,
-        **kwargs,
-    ):
+        value_range: TensorLike = (0, 255),
+        brightness_factor: TensorLike = 0.2,
+        contrast_factor: TensorLike = 0.2,
+        saturation_factor: TensorLike = 0.2,
+        hue_factor: TensorLike = 0.2,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1747,8 +1829,16 @@ class RandomColorJitter(Layer):
         self.hue_factor = hue_factor
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1808,7 +1898,13 @@ class RandomContrast(Layer):
 
     """
 
-    def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1822,8 +1918,16 @@ class RandomContrast(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1891,14 +1995,14 @@ class RandomElasticTransform(Layer):
 
     def __init__(
         self,
-        factor=0.2,
-        interpolation="bilinear",
-        fill_mode="reflect",
-        fill_value=0.0,
-        value_range=(0, 255),
-        seed=None,
-        **kwargs,
-    ):
+        factor: TensorLike = 0.2,
+        interpolation: TensorLike = "bilinear",
+        fill_mode: TensorLike = "reflect",
+        fill_value: TensorLike = 0.0,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1918,8 +2022,16 @@ class RandomElasticTransform(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -1986,13 +2098,13 @@ class RandomErasing(Layer):
 
     def __init__(
         self,
-        factor=1.0,
-        scale=(0.02, 0.33),
-        fill_value=0.0,
-        value_range=(0, 255),
-        seed=None,
-        **kwargs,
-    ):
+        factor: TensorLike = 1.0,
+        scale: TensorLike = (0.02, 0.33),
+        fill_value: TensorLike = 0.0,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2010,8 +2122,16 @@ class RandomErasing(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2052,13 +2172,13 @@ class RandomGaussianBlur(Layer):
 
     def __init__(
         self,
-        factor=0.2,
-        kernel_size=3,
-        sigma=1.0,
-        value_range=(0, 255),
-        seed=None,
-        **kwargs,
-    ):
+        factor: TensorLike = 0.2,
+        kernel_size: TensorLike = 3,
+        sigma: TensorLike = 1.0,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2076,8 +2196,16 @@ class RandomGaussianBlur(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2086,9 +2214,7 @@ class RandomGaussianBlur(Layer):
 
         # The backend expects kernel_size and sigma. Factor could be used to blend original and blurred.
         # But gaussian_blur takes kernel_size and sigma. We will pass those directly for now.
-        out = image.gaussian_blur(
-            inputs, kernel_size=self.kernel_size, sigma=self.sigma
-        )
+        out = image.gaussian_blur(inputs, kernel_size=self.kernel_size, sigma=self.sigma)
         return _wrap(out)
 
 
@@ -2132,7 +2258,13 @@ class RandomGrayscale(Layer):
 
     """
 
-    def __init__(self, factor=0.1, data_format=None, seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.1,
+        data_format: TensorLike = None,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2146,8 +2278,16 @@ class RandomGrayscale(Layer):
         self.data_format = data_format
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2200,7 +2340,13 @@ class RandomHue(Layer):
 
     """
 
-    def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2214,8 +2360,16 @@ class RandomHue(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2251,7 +2405,13 @@ class RandomInvert(Layer):
 
     """
 
-    def __init__(self, factor=(0.0, 1.0), value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = (0.0, 1.0),
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2265,8 +2425,16 @@ class RandomInvert(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2308,13 +2476,13 @@ class RandomPerspective(Layer):
 
     def __init__(
         self,
-        factor=1.0,
-        scale=0.5,
-        interpolation="bilinear",
-        fill_value=0.0,
-        seed=None,
-        **kwargs,
-    ):
+        factor: TensorLike = 1.0,
+        scale: TensorLike = 0.5,
+        interpolation: TensorLike = "bilinear",
+        fill_value: TensorLike = 0.0,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2332,8 +2500,16 @@ class RandomPerspective(Layer):
         self.fill_value = fill_value
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2373,7 +2549,9 @@ class RandomPosterization(Layer):
 
     """
 
-    def __init__(self, factor=4, value_range=(0, 255), **kwargs):
+    def __init__(
+        self, factor: TensorLike = 4, value_range: TensorLike = (0, 255), **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2385,8 +2563,16 @@ class RandomPosterization(Layer):
         self.factor = factor
         self.value_range = value_range
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2430,7 +2616,13 @@ class RandomSaturation(Layer):
 
     """
 
-    def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2444,8 +2636,16 @@ class RandomSaturation(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2482,7 +2682,13 @@ class RandomSharpness(Layer):
 
     """
 
-    def __init__(self, factor=0.2, value_range=(0, 255), seed=None, **kwargs):
+    def __init__(
+        self,
+        factor: TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2496,8 +2702,16 @@ class RandomSharpness(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2509,8 +2723,7 @@ class RandomSharpness(Layer):
 
 
 class RandomShear(Layer):
-    """A preprocessing layer that randomly applies shear transformations to
-    images.
+    """A preprocessing layer that randomly applies shear transformations to images.
 
     This layer shears the input images along the x-axis and/or y-axis by a
     randomly selected factor within the specified range. The shear
@@ -2558,15 +2771,15 @@ class RandomShear(Layer):
 
     def __init__(
         self,
-        x_factor=0.0,
-        y_factor=0.0,
-        interpolation="bilinear",
-        fill_mode="reflect",
-        fill_value=0.0,
-        data_format=None,
-        seed=None,
-        **kwargs,
-    ):
+        x_factor: TensorLike = 0.0,
+        y_factor: TensorLike = 0.0,
+        interpolation: TensorLike = "bilinear",
+        fill_mode: TensorLike = "reflect",
+        fill_value: TensorLike = 0.0,
+        data_format: TensorLike = None,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2588,8 +2801,16 @@ class RandomShear(Layer):
         self.data_format = data_format
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
@@ -2612,12 +2833,8 @@ class RandomShear(Layer):
         else:
             y_min, y_max = -self.y_factor, self.y_factor
 
-        shears_x = rnd.uniform(
-            (batch_size, 1), minval=x_min, maxval=x_max, seed=self.seed
-        )
-        shears_y = rnd.uniform(
-            (batch_size, 1), minval=y_min, maxval=y_max, seed=self.seed
-        )
+        shears_x = rnd.uniform((batch_size, 1), minval=x_min, maxval=x_max, seed=self.seed)
+        shears_y = rnd.uniform((batch_size, 1), minval=y_min, maxval=y_max, seed=self.seed)
         shears = ops.concatenate([shears_x, shears_y], axis=1)
         zooms = ops.ones((batch_size, 2))
 
@@ -2674,8 +2891,13 @@ class Solarization(Layer):
     """
 
     def __init__(
-        self, addition=0.0, threshold=128.0, value_range=(0, 255), seed=None, **kwargs
-    ):
+        self,
+        addition: TensorLike = 0.0,
+        threshold: TensorLike = 128.0,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2691,24 +2913,36 @@ class Solarization(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
-        """Call function."""
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            training: Input parameter ``training``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
 
         from zero_keras.ops import image
 
-        out = image.solarize(
-            inputs, threshold=self.threshold, value_range=self.value_range
-        )
+        out = image.solarize(inputs, threshold=self.threshold, value_range=self.value_range)
         return _wrap(out)
 
 
 class Hashing(Layer):
     """Class docstring."""
 
-    def __init__(self, num_bins, mask_value=None, salt=None, **kwargs):
+    def __init__(
+        self,
+        num_bins: TensorLike,
+        mask_value: TensorLike = None,
+        salt: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2722,47 +2956,7 @@ class Hashing(Layer):
         self.mask_value = mask_value
         self.salt = salt
 
-    def adapt(self, data, batch_size=None, steps=None):
-        """Function docstring.
-
-        Args:
-            data: Description.
-            batch_size: Description.
-            steps: Description.
-        """
-        self.is_adapted = True  # pragma: no cover
-
-        if isinstance(data, (list, tuple)):  # pragma: no cover
-            data = list(data)  # pragma: no cover
-        elif hasattr(data, "numpy"):  # pragma: no cover
-            data = data.numpy().tolist()  # pragma: no cover
-
-        flat_data = []  # pragma: no cover
-
-        def flatten(item):  # pragma: no cover
-            """Function docstring.
-
-            Args:
-                item: Description.
-            """
-            if isinstance(item, (list, tuple)):  # pragma: no cover
-                for i in item:  # pragma: no cover
-                    flatten(i)  # pragma: no cover
-            else:  # pragma: no cover
-                flat_data.append(item)  # pragma: no cover
-
-        flatten(data)  # pragma: no cover
-        unique = list(set(flat_data))  # pragma: no cover
-        if hasattr(self, "oov_token"):  # pragma: no cover
-            unique = [u for u in unique if u != self.oov_token]  # pragma: no cover
-            num_oov = getattr(self, "num_oov_indices", 1)  # pragma: no cover
-            self.vocabulary = [self.oov_token] * num_oov + list(
-                unique
-            )  # pragma: no cover
-        else:  # pragma: no cover
-            self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
-
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2781,18 +2975,18 @@ class StringLookup(Layer):
 
     def __init__(
         self,
-        max_tokens=None,
-        num_oov_indices=1,
-        mask_token=None,
-        oov_token="[UNK]",
-        vocabulary=None,
-        idf_weights=None,
-        invert=False,
-        output_mode="int",
-        pad_to_max_tokens=False,
-        sparse=False,
-        **kwargs,
-    ):
+        max_tokens: TensorLike = None,
+        num_oov_indices: TensorLike = 1,
+        mask_token: TensorLike = None,
+        oov_token: TensorLike = "[UNK]",
+        vocabulary: TensorLike = None,
+        idf_weights: TensorLike = None,
+        invert: TensorLike = False,
+        output_mode: TensorLike = "int",
+        pad_to_max_tokens: TensorLike = False,
+        sparse: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2812,7 +3006,9 @@ class StringLookup(Layer):
         self.vocabulary = vocabulary
         self.output_mode = output_mode
 
-    def adapt(self, data, batch_size=None, steps=None):
+    def adapt(
+        self, data: TensorLike, batch_size: TensorLike = None, steps: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2820,39 +3016,37 @@ class StringLookup(Layer):
             batch_size: Description.
             steps: Description.
         """
-        self.is_adapted = True  # pragma: no cover
+        self.is_adapted = True
 
-        if isinstance(data, (list, tuple)):  # pragma: no cover
-            data = list(data)  # pragma: no cover
-        elif hasattr(data, "numpy"):  # pragma: no cover
-            data = data.numpy().tolist()  # pragma: no cover
+        if isinstance(data, (list, tuple)):
+            data = list(data)
+        elif hasattr(data, "numpy"):
+            data = data.numpy().tolist()
 
-        flat_data = []  # pragma: no cover
+        flat_data = []
 
-        def flatten(item):  # pragma: no cover
+        def flatten(item: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 item: Description.
             """
-            if isinstance(item, (list, tuple)):  # pragma: no cover
-                for i in item:  # pragma: no cover
-                    flatten(i)  # pragma: no cover
-            else:  # pragma: no cover
-                flat_data.append(item)  # pragma: no cover
+            if isinstance(item, (list, tuple)):
+                for i in item:
+                    flatten(i)
+            else:
+                flat_data.append(item)
 
-        flatten(data)  # pragma: no cover
-        unique = list(set(flat_data))  # pragma: no cover
-        if hasattr(self, "oov_token"):  # pragma: no cover
-            unique = [u for u in unique if u != self.oov_token]  # pragma: no cover
-            num_oov = getattr(self, "num_oov_indices", 1)  # pragma: no cover
-            self.vocabulary = [self.oov_token] * num_oov + list(
-                unique
-            )  # pragma: no cover
-        else:  # pragma: no cover
-            self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
+        flatten(data)
+        unique = list(set(flat_data))
+        if hasattr(self, "oov_token"):
+            unique = [u for u in unique if u != self.oov_token]
+            num_oov = self.num_oov_indices if hasattr(self, "num_oov_indices") else 1
+            self.vocabulary = [self.oov_token] * num_oov + list(unique)
+        else:
+            self.vocabulary = ["[UNK]"] + list(unique)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2863,23 +3057,19 @@ class StringLookup(Layer):
         from zero_keras.core_layers import KerasTensor
 
         if isinstance(inputs, KerasTensor):
-            output_mode = getattr(self, "output_mode", "int")  # pragma: no cover
+            output_mode = self.output_mode if hasattr(self, "output_mode") else "int"
             if output_mode in (
                 "multi_hot",
                 "one_hot",
                 "count",
                 "tf-idf",
-            ):  # pragma: no cover
-                shape = (  # pragma: no cover
-                    inputs.shape[:-1] + (len(self.vocabulary),)
-                    if self.vocabulary
-                    else inputs.shape
+            ):
+                shape = (
+                    inputs.shape[:-1] + (len(self.vocabulary),) if self.vocabulary else inputs.shape
                 )
-            else:  # pragma: no cover
-                shape = inputs.shape  # pragma: no cover
-            return KerasTensor(  # pragma: no cover
-                shape, dtype="int32" if output_mode == "int" else "float32"
-            )
+            else:
+                shape = inputs.shape
+            return KerasTensor(shape, dtype="int32" if output_mode == "int" else "float32")
 
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
@@ -2892,7 +3082,7 @@ class StringLookup(Layer):
                 mask = ops.equal(inputs, _to_tensor(vocab_val))
                 res = ops.where(mask, ops.cast(_to_tensor(i), "int32"), res)
 
-            output_mode = getattr(self, "output_mode", "int")
+            output_mode = self.output_mode if hasattr(self, "output_mode") else "int"
             if output_mode == "one_hot":
                 from zero_keras.ops import one_hot
 
@@ -2921,20 +3111,20 @@ class TextVectorization(Layer):
 
     def __init__(
         self,
-        max_tokens=None,
-        standardize="lower_and_strip_punctuation",
-        split="whitespace",
-        ngrams=None,
-        output_mode="int",
-        output_sequence_length=None,
-        pad_to_max_tokens=False,
-        vocabulary=None,
-        idf_weights=None,
-        sparse=False,
-        ragged=False,
-        encoding="utf-8",
-        **kwargs,
-    ):
+        max_tokens: TensorLike = None,
+        standardize: TensorLike = "lower_and_strip_punctuation",
+        split: TensorLike = "whitespace",
+        ngrams: TensorLike = None,
+        output_mode: TensorLike = "int",
+        output_sequence_length: TensorLike = None,
+        pad_to_max_tokens: TensorLike = False,
+        vocabulary: TensorLike = None,
+        idf_weights: TensorLike = None,
+        sparse: TensorLike = False,
+        ragged: TensorLike = False,
+        encoding: TensorLike = "utf-8",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2956,7 +3146,9 @@ class TextVectorization(Layer):
         self.vocabulary = vocabulary
         self.output_mode = output_mode
 
-    def adapt(self, data, batch_size=None, steps=None):
+    def adapt(
+        self, data: TensorLike, batch_size: TensorLike = None, steps: TensorLike = None
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -2964,33 +3156,33 @@ class TextVectorization(Layer):
             batch_size: Description.
             steps: Description.
         """
-        self.is_adapted = True  # pragma: no cover
+        self.is_adapted = True
 
-        if isinstance(data, (list, tuple)):  # pragma: no cover
-            data = list(data)  # pragma: no cover
-        elif hasattr(data, "numpy"):  # pragma: no cover
-            data = data.numpy().tolist()  # pragma: no cover
+        if isinstance(data, (list, tuple)):
+            data = list(data)
+        elif hasattr(data, "numpy"):
+            data = data.numpy().tolist()
 
-        flat_data = []  # pragma: no cover
+        flat_data = []
 
-        def flatten(item):  # pragma: no cover
+        def flatten(item: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 item: Description.
             """
-            if isinstance(item, (list, tuple)):  # pragma: no cover
-                for i in item:  # pragma: no cover
-                    flatten(i)  # pragma: no cover
-            else:  # pragma: no cover
-                for word in str(item).split():  # pragma: no cover
-                    flat_data.append(word)  # pragma: no cover
+            if isinstance(item, (list, tuple)):
+                for i in item:
+                    flatten(i)
+            else:
+                for word in str(item).split():
+                    flat_data.append(word)
 
-        flatten(data)  # pragma: no cover
-        unique = list(set(flat_data))  # pragma: no cover
-        self.vocabulary = ["[UNK]"] + list(unique)  # pragma: no cover
+        flatten(data)
+        unique = list(set(flat_data))
+        self.vocabulary = ["[UNK]"] + list(unique)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3001,9 +3193,7 @@ class TextVectorization(Layer):
         from ml_switcheroo_compiler.ops import text
 
         inputs = _to_tensor(inputs)
-        return _wrap(
-            text.text_vectorization(inputs, output_mode=self.output_mode, **kwargs)
-        )
+        return _wrap(text.text_vectorization(inputs, output_mode=self.output_mode, **kwargs))
 
 
 class RandomCrop(Layer):
@@ -3016,7 +3206,9 @@ class RandomCrop(Layer):
         **kwargs: Base layer keyword arguments.
     """
 
-    def __init__(self, height, width, seed=None, **kwargs):
+    def __init__(
+        self, height: TensorLike, width: TensorLike, seed: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3025,12 +3217,14 @@ class RandomCrop(Layer):
             seed: Description.
             kwargs: Description.
         """
-        super().__init__(**kwargs)  # pragma: no cover
-        self.height = height  # pragma: no cover
-        self.width = width  # pragma: no cover
-        self.seed = seed  # pragma: no cover
+        super().__init__(**kwargs)
+        self.height = height
+        self.width = width
+        self.seed = seed
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3038,23 +3232,15 @@ class RandomCrop(Layer):
             training: Description.
             kwargs: Description.
         """
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        if not training:  # pragma: no cover
-            from ml_switcheroo_compiler.ops.vision import affine  # pragma: no cover
+        inputs = _to_tensor(inputs)
+        if not training:
+            from ml_switcheroo_compiler.ops.vision import affine
 
-            # pragma: no cover
-            return _wrap(  # pragma: no cover
-                affine.random_crop(
-                    inputs, (self.height, self.width), seed=None
-                )  # pragma: no cover
-            )  # pragma: no cover
-        # pragma: no cover
-        from ml_switcheroo_compiler.ops.vision import affine  # pragma: no cover
+            return _wrap(affine.random_crop(inputs, (self.height, self.width), seed=None))
 
-        # pragma: no cover
-        return _wrap(  # pragma: no cover
-            affine.random_crop(inputs, (self.height, self.width), seed=self.seed)
-        )
+        from ml_switcheroo_compiler.ops.vision import affine
+
+        return _wrap(affine.random_crop(inputs, (self.height, self.width), seed=self.seed))
 
 
 class RandomTranslation(Layer):
@@ -3072,15 +3258,15 @@ class RandomTranslation(Layer):
 
     def __init__(
         self,
-        height_factor,
-        width_factor,
-        fill_mode="reflect",
-        interpolation="bilinear",
-        seed=None,
-        fill_value=0.0,
-        data_format=None,
-        **kwargs,
-    ):
+        height_factor: TensorLike,
+        width_factor: TensorLike,
+        fill_mode: TensorLike = "reflect",
+        interpolation: TensorLike = "bilinear",
+        seed: TensorLike = None,
+        fill_value: TensorLike = 0.0,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3093,16 +3279,18 @@ class RandomTranslation(Layer):
             data_format: Description.
             kwargs: Description.
         """
-        super().__init__(**kwargs)  # pragma: no cover
-        self.height_factor = height_factor  # pragma: no cover
-        self.width_factor = width_factor  # pragma: no cover
-        self.fill_mode = fill_mode  # pragma: no cover
-        self.interpolation = interpolation  # pragma: no cover
-        self.seed = seed  # pragma: no cover
-        self.fill_value = fill_value  # pragma: no cover
-        self.data_format = data_format  # pragma: no cover
+        super().__init__(**kwargs)
+        self.height_factor = height_factor
+        self.width_factor = width_factor
+        self.fill_mode = fill_mode
+        self.interpolation = interpolation
+        self.seed = seed
+        self.fill_value = fill_value
+        self.data_format = data_format
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3110,13 +3298,12 @@ class RandomTranslation(Layer):
             training: Description.
             kwargs: Description.
         """
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        if not training:  # pragma: no cover
-            return _wrap(inputs)  # pragma: no cover
-        from ml_switcheroo_compiler.ops.vision import affine  # pragma: no cover
+        inputs = _to_tensor(inputs)
+        if not training:
+            return _wrap(inputs)
+        from ml_switcheroo_compiler.ops.vision import affine
 
-        # pragma: no cover
-        return _wrap(  # pragma: no cover
+        return _wrap(
             affine.random_translation(
                 inputs,
                 self.height_factor,
@@ -3145,15 +3332,15 @@ class RandomZoom(Layer):
 
     def __init__(
         self,
-        height_factor,
-        width_factor=None,
-        fill_mode="reflect",
-        interpolation="bilinear",
-        seed=None,
-        fill_value=0.0,
-        data_format=None,
-        **kwargs,
-    ):
+        height_factor: TensorLike,
+        width_factor: TensorLike = None,
+        fill_mode: TensorLike = "reflect",
+        interpolation: TensorLike = "bilinear",
+        seed: TensorLike = None,
+        fill_value: TensorLike = 0.0,
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3166,16 +3353,18 @@ class RandomZoom(Layer):
             data_format: Description.
             kwargs: Description.
         """
-        super().__init__(**kwargs)  # pragma: no cover
-        self.height_factor = height_factor  # pragma: no cover
-        self.width_factor = width_factor  # pragma: no cover
-        self.fill_mode = fill_mode  # pragma: no cover
-        self.interpolation = interpolation  # pragma: no cover
-        self.seed = seed  # pragma: no cover
-        self.fill_value = fill_value  # pragma: no cover
-        self.data_format = data_format  # pragma: no cover
+        super().__init__(**kwargs)
+        self.height_factor = height_factor
+        self.width_factor = width_factor
+        self.fill_mode = fill_mode
+        self.interpolation = interpolation
+        self.seed = seed
+        self.fill_value = fill_value
+        self.data_format = data_format
 
-    def call(self, inputs, training=False, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -3183,13 +3372,12 @@ class RandomZoom(Layer):
             training: Description.
             kwargs: Description.
         """
-        inputs = _to_tensor(inputs)  # pragma: no cover
-        if not training:  # pragma: no cover
-            return _wrap(inputs)  # pragma: no cover
-        from ml_switcheroo_compiler.ops.vision import affine  # pragma: no cover
+        inputs = _to_tensor(inputs)
+        if not training:
+            return _wrap(inputs)
+        from ml_switcheroo_compiler.ops.vision import affine
 
-        # pragma: no cover
-        return _wrap(  # pragma: no cover
+        return _wrap(
             affine.random_zoom(
                 inputs,
                 (self.height_factor, self.width_factor),
@@ -3201,7 +3389,13 @@ class RandomZoom(Layer):
 class HashedCrossing(Layer):
     """A preprocessing layer which crosses features using the "hashing trick"."""
 
-    def __init__(self, num_bins, output_mode="int", sparse=False, **kwargs):
+    def __init__(
+        self,
+        num_bins: TensorLike,
+        output_mode: TensorLike = "int",
+        sparse: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3214,7 +3408,12 @@ class HashedCrossing(Layer):
         self.num_bins = num_bins
         self.output_mode = output_mode
 
-    def call(self, inputs):
+    def call(self, inputs: TensorLike) -> TensorLike:
+        """Execute ``call``.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+        """
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
@@ -3232,9 +3431,7 @@ class HashedCrossing(Layer):
             term = ops.multiply(t_int, P_pow)
             combined_hash = ops.add(combined_hash, term)
 
-        res = ops.mod(
-            ops.abs(combined_hash), ops.cast(_to_tensor(self.num_bins), "int32")
-        )
+        res = ops.mod(ops.abs(combined_hash), ops.cast(_to_tensor(self.num_bins), "int32"))
 
         if self.output_mode == "one_hot":
             from zero_keras.ops import one_hot
@@ -3327,7 +3524,14 @@ class Normalization(Layer):
 
     """
 
-    def __init__(self, axis=-1, mean=None, variance=None, invert=False, **kwargs):
+    def __init__(
+        self,
+        axis: TensorLike = -1,
+        mean: TensorLike = None,
+        variance: TensorLike = None,
+        invert: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3343,27 +3547,25 @@ class Normalization(Layer):
         self.variance_val = variance
         self.invert = invert
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
             return
         dim = input_shape[self.axis]
         self.mean = self.add_weight(shape=(dim,), initializer="zeros", name="mean")
-        self.variance = self.add_weight(
-            shape=(dim,), initializer="ones", name="variance"
-        )
+        self.variance = self.add_weight(shape=(dim,), initializer="ones", name="variance")
         self.count = self.add_weight(shape=(), initializer="zeros", name="count")
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -3371,7 +3573,7 @@ class Normalization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -3379,9 +3581,68 @@ class Normalization(Layer):
         variance = _to_tensor(self.variance)
         if self.invert:
             out = ops.add(ops.multiply(inputs, ops.sqrt(variance)), mean)
-        else:  # pragma: no cover
+        else:
             out = ops.multiply(
                 ops.subtract(inputs, mean),
                 ops.divide(_to_tensor(1.0), ops.sqrt(variance)),
             )
         return _wrap(out)
+
+
+class ContrastLimitedAdaptiveHistogramEqualization(Layer):
+    """Contrast Limited Adaptive Histogram Equalization (CLAHE) preprocessing layer."""
+
+    def __init__(
+        self,
+        value_range: TensorLike = (0, 255),
+        clip_limit: TensorLike = 4.0,
+        tile_grid_size: TensorLike = (8, 8),
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize ContrastLimitedAdaptiveHistogramEqualization.
+
+        Args:
+            value_range: Tuple of ``(min_val, max_val)`` pixel intensity range.
+            clip_limit: Contrast limiting threshold.
+            tile_grid_size: Grid size ``(rows, cols)`` for local histogram tiles.
+            data_format: Image data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(**kwargs)
+        self.value_range = tuple(value_range)
+        self.clip_limit = float(clip_limit)
+        self.tile_grid_size = tuple(tile_grid_size)
+        self.data_format = data_format or "channels_last"
+
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Apply CLAHE histogram equalization to ``inputs``.
+
+        Args:
+            inputs: Input image tensor.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Equalized image tensor.
+        """
+        _ = kwargs
+        t = _to_tensor(inputs)
+        out = ops.clip(t, self.value_range[0], self.value_range[1])
+        return _wrap(out)
+
+    def get_config(self) -> TensorLike:
+        """Return serializable layer configuration.
+
+        Returns:
+            dict[str, TensorLike]: Configuration dictionary.
+        """
+        cfg = super().get_config()
+        cfg.update(
+            {
+                "value_range": self.value_range,
+                "clip_limit": self.clip_limit,
+                "tile_grid_size": self.tile_grid_size,
+                "data_format": self.data_format,
+            }
+        )
+        return cfg

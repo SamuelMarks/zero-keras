@@ -1,9 +1,10 @@
-"""Module docstring."""
+"""Pure-Python Keras 3 API implementation backed by ``ml-switcheroo-compiler``."""
+
+from __future__ import annotations
 
 import sys
 
 sys.setrecursionlimit(10000)
-"""zero_keras API."""
 
 from ml_switcheroo_compiler.core.config import config as msc_config
 

@@ -1,3 +1,7 @@
+"""Attention layers (`MultiHeadAttention`, `Attention`, `AdditiveAttention`, `GroupQueryAttention`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -59,7 +63,7 @@ class AdditiveAttention(Layer):
 
     """
 
-    def __init__(self, use_scale=True, **kwargs):
+    def __init__(self, use_scale: TensorLike = True, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -70,28 +74,31 @@ class AdditiveAttention(Layer):
         self.head_dim = kwargs.get("head_dim")
         self.use_scale = use_scale
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if self.built:  # pragma: no cover
+        if self.built:
             return
         self.scale = (
-            self.add_weight(shape=(), initializer="ones", name="scale")
-            if self.use_scale
-            else None
+            self.add_weight(shape=(), initializer="ones", name="scale") if self.use_scale else None
         )
         self.built = True
 
     def call(
-        self, inputs, mask=None, training=None, return_attention_scores=False, **kwargs
-    ):
+        self,
+        inputs: TensorLike,
+        mask: TensorLike = None,
+        training: TensorLike = None,
+        return_attention_scores: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -102,7 +109,7 @@ class AdditiveAttention(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         query = _to_tensor(inputs[0])
@@ -119,14 +126,14 @@ class AdditiveAttention(Layer):
         from zero_keras.activations import softmax, tanh
 
         scores = _to_tensor(tanh(ops.add(q_exp, k_exp)))
-        if self.use_scale:  # pragma: no cover
+        if self.use_scale:
             scores = ops.multiply(scores, _to_tensor(self.scale))
         scores = ops.sum(scores, axis=-1)
 
         scores = _to_tensor(softmax(scores))
         out = ops.matmul(scores, value)
 
-        if return_attention_scores:  # pragma: no branch
+        if return_attention_scores:
             return _wrap(out), _wrap(scores)
         return _wrap(out)
 
@@ -189,7 +196,9 @@ class Attention(Layer):
 
     """
 
-    def __init__(self, use_scale=False, score_mode="dot", **kwargs):
+    def __init__(
+        self, use_scale: TensorLike = False, score_mode: TensorLike = "dot", **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -202,25 +211,30 @@ class Attention(Layer):
         self.use_scale = use_scale
         self.score_mode = score_mode
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
-        if self.built:  # pragma: no cover
+        if self.built:
             return
-        if self.use_scale:  # pragma: no cover
+        if self.use_scale:
             self.scale = self.add_weight(shape=(), initializer="ones", name="scale")
         self.built = True
 
     def call(
-        self, inputs, mask=None, training=None, return_attention_scores=False, **kwargs
-    ):
+        self,
+        inputs: TensorLike,
+        mask: TensorLike = None,
+        training: TensorLike = None,
+        return_attention_scores: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -231,7 +245,7 @@ class Attention(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         query = _to_tensor(inputs[0])
@@ -243,7 +257,7 @@ class Attention(Layer):
         k_t = ops.permute(key, (0, 2, 1))
         scores = ops.matmul(query, k_t)
 
-        if self.use_scale:  # pragma: no cover
+        if self.use_scale:
             scores = ops.multiply(scores, _to_tensor(self.scale))
 
         from zero_keras.activations import softmax
@@ -252,7 +266,7 @@ class Attention(Layer):
 
         out = ops.matmul(scores, value)
 
-        if return_attention_scores:  # pragma: no branch
+        if return_attention_scores:
             return _wrap(out), _wrap(scores)
         return _wrap(out)
 
@@ -343,24 +357,24 @@ class MultiHeadAttention(Layer):
 
     def __init__(
         self,
-        num_heads,
-        key_dim,
-        value_dim=None,
-        dropout=0.0,
-        use_bias=True,
-        output_shape=None,
-        attention_axes=None,
-        flash_attention=False,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        seed=None,
-        **kwargs,
-    ):
+        num_heads: TensorLike,
+        key_dim: TensorLike,
+        value_dim: TensorLike = None,
+        dropout: TensorLike = 0.0,
+        use_bias: TensorLike = True,
+        output_shape: TensorLike = None,
+        attention_axes: TensorLike = None,
+        flash_attention: TensorLike = False,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        seed: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -401,14 +415,16 @@ class MultiHeadAttention(Layer):
         self.bias_constraint = bias_constraint
         self.seed = seed
 
-    def build(self, input_shape):
-        """Build function."""
+    def build(self, input_shape: TensorLike) -> TensorLike:
+        """Build function.
+
+        Args:
+            input_shape: Input parameter ``input_shape``.
+        """
         # Query shape is first element if multiple inputs, else the input shape
-        if isinstance(input_shape, tuple) and isinstance(
-            input_shape[0], tuple
-        ):  # pragma: no branch
-            q_shape = input_shape[0]  # pragma: no cover
-        else:  # pragma: no cover
+        if isinstance(input_shape, tuple) and isinstance(input_shape[0], tuple):
+            q_shape = input_shape[0]
+        else:
             q_shape = input_shape
 
         out_dim = (
@@ -481,16 +497,27 @@ class MultiHeadAttention(Layer):
 
     def call(
         self,
-        query,
-        value,
-        key=None,
-        attention_mask=None,
-        return_attention_scores=False,
-        training=False,
-        use_causal_mask=False,
-        **kwargs,
-    ):
-        """Call function."""
+        query: TensorLike,
+        value: TensorLike,
+        key: TensorLike = None,
+        attention_mask: TensorLike = None,
+        return_attention_scores: TensorLike = False,
+        training: TensorLike = False,
+        use_causal_mask: TensorLike = False,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
+        """Call function.
+
+        Args:
+            query: Input parameter ``query``.
+            value: Input parameter ``value``.
+            key: Input parameter ``key``.
+            attention_mask: Input parameter ``attention_mask``.
+            return_attention_scores: Input parameter ``return_attention_scores``.
+            training: Input parameter ``training``.
+            use_causal_mask: Input parameter ``use_causal_mask``.
+            kwargs: Input parameter ``kwargs``.
+        """
         query = _to_tensor(query)
         value = _to_tensor(value)
         key = value if key is None else _to_tensor(key)
@@ -510,7 +537,7 @@ class MultiHeadAttention(Layer):
         from zero_keras import ops
 
         letters = string.ascii_lowercase
-        b_dims = len(getattr(query, "shape", [1] * 4)) - 3
+        b_dims = len((query.shape if hasattr(query, "shape") else [1] * 4)) - 3
         b_str = letters[:b_dims]
         nxt = letters[b_dims:]
         t_str, h_str, d_str, s_str = nxt[0], nxt[1], nxt[2], nxt[3]
@@ -521,17 +548,15 @@ class MultiHeadAttention(Layer):
             attention_scores, _to_tensor(1.0 / math.sqrt(float(self.key_dim)))
         )
 
-        if use_causal_mask:  # pragma: no cover
+        if use_causal_mask:
             # Basic causal mask
             seq_len_q = query.shape[-3]
             seq_len_k = key.shape[-3]
             causal_mask = ops.tril(ops.ones((seq_len_q, seq_len_k)))
             causal_mask = ops.cast(causal_mask, attention_scores.dtype)
-            attention_scores = ops.where(
-                causal_mask > 0.5, attention_scores, _to_tensor(-1e9)
-            )
+            attention_scores = ops.where(causal_mask > 0.5, attention_scores, _to_tensor(-1e9))
 
-        if attention_mask is not None:  # pragma: no cover
+        if attention_mask is not None:
             attention_mask = _to_tensor(attention_mask)
             attention_scores = ops.add(attention_scores, attention_mask)
 
@@ -548,8 +573,8 @@ class MultiHeadAttention(Layer):
 
         attention_output = self._output_dense(attention_output)
 
-        if return_attention_scores:  # pragma: no branch
-            return _wrap(attention_output), _wrap(attention_scores)  # pragma: no cover
+        if return_attention_scores:
+            return _wrap(attention_output), _wrap(attention_scores)
         return _wrap(attention_output)
 
 
@@ -558,23 +583,43 @@ class GroupQueryAttention(MultiHeadAttention):
 
     def __init__(
         self,
-        num_heads,
-        key_dim,
-        num_key_value_heads=None,
-        value_dim=None,
-        dropout=0.0,
-        use_bias=True,
-        output_shape=None,
-        attention_axes=None,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        num_heads: TensorLike,
+        key_dim: TensorLike,
+        num_key_value_heads: TensorLike = None,
+        value_dim: TensorLike = None,
+        dropout: TensorLike = 0.0,
+        use_bias: TensorLike = True,
+        output_shape: TensorLike = None,
+        attention_axes: TensorLike = None,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Execute ``__init__``.
+
+        Args:
+            num_heads: Input parameter ``num_heads``.
+            key_dim: Input parameter ``key_dim``.
+            num_key_value_heads: Input parameter ``num_key_value_heads``.
+            value_dim: Input parameter ``value_dim``.
+            dropout: Input parameter ``dropout``.
+            use_bias: Input parameter ``use_bias``.
+            output_shape: Input parameter ``output_shape``.
+            attention_axes: Input parameter ``attention_axes``.
+            kernel_initializer: Input parameter ``kernel_initializer``.
+            bias_initializer: Input parameter ``bias_initializer``.
+            kernel_regularizer: Input parameter ``kernel_regularizer``.
+            bias_regularizer: Input parameter ``bias_regularizer``.
+            activity_regularizer: Input parameter ``activity_regularizer``.
+            kernel_constraint: Input parameter ``kernel_constraint``.
+            bias_constraint: Input parameter ``bias_constraint``.
+            kwargs: Input parameter ``kwargs``.
+        """
         super().__init__(
             num_heads=num_heads,
             key_dim=key_dim,
@@ -600,7 +645,12 @@ class GroupQueryAttention(MultiHeadAttention):
                 f"num_heads ({self.num_heads}) must be divisible by num_key_value_heads ({self.num_key_value_heads})"
             )
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
+        """Execute ``build``.
+
+        Args:
+            input_shape: Input parameter ``input_shape``.
+        """
         if input_shape is None:
             return
         if (
@@ -686,14 +736,25 @@ class GroupQueryAttention(MultiHeadAttention):
 
     def call(
         self,
-        query,
-        value,
-        key=None,
-        attention_mask=None,
-        return_attention_scores=False,
-        training=False,
-        use_causal_mask=False,
-    ):
+        query: TensorLike,
+        value: TensorLike,
+        key: TensorLike = None,
+        attention_mask: TensorLike = None,
+        return_attention_scores: TensorLike = False,
+        training: TensorLike = False,
+        use_causal_mask: TensorLike = False,
+    ) -> TensorLike:
+        """Execute ``call``.
+
+        Args:
+            query: Input parameter ``query``.
+            value: Input parameter ``value``.
+            key: Input parameter ``key``.
+            attention_mask: Input parameter ``attention_mask``.
+            return_attention_scores: Input parameter ``return_attention_scores``.
+            training: Input parameter ``training``.
+            use_causal_mask: Input parameter ``use_causal_mask``.
+        """
         if query is None:
             return (None, None) if return_attention_scores else None
 
@@ -718,7 +779,7 @@ class GroupQueryAttention(MultiHeadAttention):
         import string
 
         letters = string.ascii_lowercase
-        b_dims = len(getattr(query, "shape", [1] * 4)) - 3
+        b_dims = len((query.shape if hasattr(query, "shape") else [1] * 4)) - 3
         b_str = letters[:b_dims]
         nxt = letters[b_dims:]
         t_str, h_str, d_str, s_str = nxt[0], nxt[1], nxt[2], nxt[3]
@@ -731,7 +792,7 @@ class GroupQueryAttention(MultiHeadAttention):
             attention_scores -= 1e9 * (1.0 - mask)
 
         if use_causal_mask:
-            seq_len = getattr(query, "shape", [0] * 3)[-3]
+            seq_len = (query.shape if hasattr(query, "shape") else [0] * 3)[-3]
             idx = ops.arange(seq_len)
             mask = idx[:, None] >= idx[None, :]
             mask = ops.cast(mask, "float32")

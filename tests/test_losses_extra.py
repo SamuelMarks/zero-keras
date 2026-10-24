@@ -1,4 +1,11 @@
-def test_loss_methods_extra():
+"""Module `test_losses_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+
+def test_loss_methods_extra() -> TensorLike:
+    """Execute ``test_loss_methods_extra``."""
     from zero_keras.losses import Loss
 
     loss = Loss(name="test_loss")

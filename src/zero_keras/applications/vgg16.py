@@ -1,6 +1,9 @@
 """Module docstring."""
 
-from ml_switcheroo_compiler import core as backend
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
+from zero_keras import backend
 
 from zero_keras import layers
 from zero_keras.applications import imagenet_utils
@@ -19,15 +22,15 @@ WEIGHTS_PATH_NO_TOP = (
 
 
 def VGG16(
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    input_shape=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="vgg16",
-):
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    input_shape: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "vgg16",
+) -> TensorLike:
     """Instantiates the VGG16 model.
 
     Reference:
@@ -93,7 +96,7 @@ def VGG16(
         A `Model` instance.
     """
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), 'imagenet' "
             "(pre-training on ImageNet), "
@@ -102,7 +105,7 @@ def VGG16(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "If using `weights='imagenet'` with `include_top=True`, "
             "`classes` should be 1000.  "
             f"Received classes={classes}"
@@ -121,64 +124,36 @@ def VGG16(
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
     # Block 1
-    x = layers.Conv2D(
-        64, (3, 3), activation="relu", padding="same", name="block1_conv1"
-    )(img_input)
-    x = layers.Conv2D(
-        64, (3, 3), activation="relu", padding="same", name="block1_conv2"
-    )(x)
+    x = layers.Conv2D(64, (3, 3), activation="relu", padding="same", name="block1_conv1")(img_input)
+    x = layers.Conv2D(64, (3, 3), activation="relu", padding="same", name="block1_conv2")(x)
     x = layers.MaxPooling2D((2, 2), strides=(2, 2), name="block1_pool")(x)
 
     # Block 2
-    x = layers.Conv2D(
-        128, (3, 3), activation="relu", padding="same", name="block2_conv1"
-    )(x)
-    x = layers.Conv2D(
-        128, (3, 3), activation="relu", padding="same", name="block2_conv2"
-    )(x)
+    x = layers.Conv2D(128, (3, 3), activation="relu", padding="same", name="block2_conv1")(x)
+    x = layers.Conv2D(128, (3, 3), activation="relu", padding="same", name="block2_conv2")(x)
     x = layers.MaxPooling2D((2, 2), strides=(2, 2), name="block2_pool")(x)
 
     # Block 3
-    x = layers.Conv2D(
-        256, (3, 3), activation="relu", padding="same", name="block3_conv1"
-    )(x)
-    x = layers.Conv2D(
-        256, (3, 3), activation="relu", padding="same", name="block3_conv2"
-    )(x)
-    x = layers.Conv2D(
-        256, (3, 3), activation="relu", padding="same", name="block3_conv3"
-    )(x)
+    x = layers.Conv2D(256, (3, 3), activation="relu", padding="same", name="block3_conv1")(x)
+    x = layers.Conv2D(256, (3, 3), activation="relu", padding="same", name="block3_conv2")(x)
+    x = layers.Conv2D(256, (3, 3), activation="relu", padding="same", name="block3_conv3")(x)
     x = layers.MaxPooling2D((2, 2), strides=(2, 2), name="block3_pool")(x)
 
     # Block 4
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block4_conv1"
-    )(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block4_conv2"
-    )(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block4_conv3"
-    )(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block4_conv1")(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block4_conv2")(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block4_conv3")(x)
     x = layers.MaxPooling2D((2, 2), strides=(2, 2), name="block4_pool")(x)
 
     # Block 5
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block5_conv1"
-    )(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block5_conv2"
-    )(x)
-    x = layers.Conv2D(
-        512, (3, 3), activation="relu", padding="same", name="block5_conv3"
-    )(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block5_conv1")(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block5_conv2")(x)
+    x = layers.Conv2D(512, (3, 3), activation="relu", padding="same", name="block5_conv3")(x)
     x = layers.MaxPooling2D((2, 2), strides=(2, 2), name="block5_pool")(x)
 
     if include_top:
@@ -188,19 +163,17 @@ def VGG16(
         x = layers.Dense(4096, activation="relu", name="fc2")(x)
 
         imagenet_utils.validate_activation(classifier_activation, weights)
-        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
-            x
-        )
+        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover
-            x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D()(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -209,47 +182,45 @@ def VGG16(
 
     # Load weights.
     if weights == "imagenet":
-        if include_top:  # pragma: no cover
-            weights_path = generic_utils.get_file(  # pragma: no cover
+        if include_top:
+            weights_path = generic_utils.get_file(
                 "vgg16_weights_tf_dim_ordering_tf_kernels.h5",
                 WEIGHTS_PATH,
                 cache_subdir="models",
                 file_hash="64373286793e3c8b2b4e3219cbf3544b",
             )
         else:
-            weights_path = generic_utils.get_file(  # pragma: no cover
+            weights_path = generic_utils.get_file(
                 "vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5",
                 WEIGHTS_PATH_NO_TOP,
                 cache_subdir="models",
                 file_hash="6d6bbae143d832006294945121d1f1fc",
             )
-        model.load_weights(weights_path)  # pragma: no cover
+        model.load_weights(weights_path)
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="caffe"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="caffe")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(

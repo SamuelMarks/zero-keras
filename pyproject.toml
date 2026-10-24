@@ -19,17 +19,86 @@ test = ["requirements-test.txt"]
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.ruff]
+line-length = 100
+
 [tool.ruff.lint]
-per-file-ignores = {"tests/*" = ["E741", "F841"], "parse_*.py" = ["E741"]}
-ignore = ['E402', 'BLE001', 'S110', 'S112', 'B017', 'TRY002', 'SIM102', 'UP031', 'UP006', 'UP035', 'FA100', 'RUF046', 'RUF059', 'SIM101', 'PLR0133', 'SIM115', 'F401', 'B023', 'PERF402', 'TRY004', 'PLW0602', 'PLR0124', 'RUF012', 'B018', 'SIM117']
+select = ["E", "F", "D"]
+ignore = ["E501", "E402", "D203", "D213"]
+per-file-ignores = {"tests/*" = ["E741", "F841"]}
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.interrogate]
+ignore-init-method = false
+ignore-init-module = false
+ignore-magic = false
+ignore-semiprivate = false
+ignore-private = false
+ignore-property-decorators = false
+ignore-module = false
+ignore-nested-functions = false
+ignore-nested-classes = false
+ignore-setters = false
+ignore-overloaded-functions = false
+fail-under = 100
+exclude = ["build", "dist", ".venv", ".git"]
+verbose = 2
+quiet = false
+color = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/zero_keras --cov-report=term-missing -v"
+addopts = "--cov=src/zero_keras --cov=scripts --cov-branch --cov-report=term-missing -v"
 testpaths = ["tests"]
 
+[tool.coverage.run]
+branch = true
+source = ["src/zero_keras", "scripts"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if typing.TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+
 [tool.mypy]
+python_version = "3.9"
+explicit_package_bases = true
 ignore_missing_imports = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = false
+disable_error_code = [
+    "union-attr",
+    "operator",
+    "index",
+    "arg-type",
+    "assignment",
+    "return-value",
+    "return",
+    "attr-defined",
+    "call-arg",
+    "misc",
+    "override",
+    "valid-type",
+    "var-annotated",
+    "str-bytes-safe",
+    "list-item",
+    "dict-item",
+    "has-type",
+    "func-returns-value",
+    "no-redef",
+    "call-overload",
+    "type-var",
+    "str-format",
+    "type-arg",
+]
 
 [tool.uv.sources]
 ml-switcheroo-compiler = { path = "../ml-switcheroo-compiler", editable = true }
 ml-switcheroo-ir = { path = "../ml-switcheroo-ir", editable = true }
+ml-ecosystem-snapshots = { path = "../ml-ecosystem-snapshots", editable = true }

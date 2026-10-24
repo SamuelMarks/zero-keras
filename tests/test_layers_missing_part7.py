@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras.layers import (
@@ -33,13 +36,13 @@ from zero_keras.layers import (
 from zero_keras.ops import ops
 
 
-def test_dot_tuple_axes():
+def test_dot_tuple_axes() -> TensorLike:
     """Function docstring."""
     layer = Dot(axes=(1, 1))
     layer([np.ones((2, 3)), np.ones((2, 3))])
 
 
-def test_conv_transpose_channels_first():
+def test_conv_transpose_channels_first() -> TensorLike:
     """Function docstring."""
     l1 = Conv1DTranspose(2, 2, data_format="channels_first")
     l1(np.ones((1, 2, 4)))
@@ -51,7 +54,7 @@ def test_conv_transpose_channels_first():
     l3(np.ones((1, 2, 4, 4, 4)))
 
 
-def test_cropping_tuples():
+def test_cropping_tuples() -> TensorLike:
     """Function docstring."""
     l1 = Cropping1D(cropping=((1, 2),))
     l1(np.ones((1, 5, 2)))
@@ -63,7 +66,7 @@ def test_cropping_tuples():
     l3(np.ones((1, 5, 5, 5, 2)))
 
 
-def test_einsum_dense_bias():
+def test_einsum_dense_bias() -> TensorLike:
     """Function docstring."""
     layer = EinsumDense("abc,cd->abd", output_shape=(None, 64), bias_axes="d")
     layer.build((None, 32, 128))
@@ -73,7 +76,7 @@ def test_einsum_dense_bias():
 class DummyCell(Layer):
     """Class docstring."""
 
-    def __init__(self, units, **kwargs):
+    def __init__(self, units: TensorLike, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -83,7 +86,13 @@ class DummyCell(Layer):
         super().__init__(**kwargs)
         self.units = units
 
-    def call(self, inputs, states, training=None, **kwargs):
+    def call(
+        self,
+        inputs: TensorLike,
+        states: TensorLike,
+        training: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -95,7 +104,7 @@ class DummyCell(Layer):
         return inputs, states
 
 
-def test_rnn_missing_coverage():
+def test_rnn_missing_coverage() -> TensorLike:
     """Function docstring."""
     rnn = RNN(DummyCell(10))
     rnn(np.ones((1, 5, 10)))
@@ -108,13 +117,13 @@ def test_rnn_missing_coverage():
     srnn.reset_states(states=(np.zeros((1, 10)),))
 
 
-def test_lstm_return_state():
+def test_lstm_return_state() -> TensorLike:
     """Function docstring."""
     lstm = LSTM(10, return_state=True)
     lstm(np.ones((1, 5, 10)))
 
 
-def test_cells_build():
+def test_cells_build() -> TensorLike:
     """Function docstring."""
     c1 = SimpleRNNCell(10)
     c1(np.ones((1, 10)), states=(np.zeros((1, 10)),))
@@ -128,10 +137,10 @@ def test_cells_build():
     c3.build((None, 10))
 
 
-def test_bidirectional_missing():
+def test_bidirectional_missing() -> TensorLike:
     """Function docstring."""
     # Mock ops.reverse since ml_switcheroo_compiler might not have it
-    original_reverse = getattr(ops, "reverse", None)
+    original_reverse = ops.reverse if hasattr(ops, "reverse") else None
     ops.reverse = lambda x, dims: x
     try:
         bidi = Bidirectional(LSTM(10, return_sequences=True), merge_mode="sum")
@@ -146,7 +155,7 @@ def test_bidirectional_missing():
         )
     finally:
         if original_reverse:
-            ops.reverse = original_reverse  # pragma: no cover
+            ops.reverse = original_reverse
         else:
             delattr(ops, "reverse")
 
@@ -154,13 +163,13 @@ def test_bidirectional_missing():
     bidi2(np.ones((1, 5, 10)))
 
 
-def test_normalization():
+def test_normalization() -> TensorLike:
     """Function docstring."""
     norm = Normalization(invert=True)
     norm(np.ones((1, 10)))
 
 
-def test_group_normalization():
+def test_group_normalization() -> TensorLike:
     """Function docstring."""
     gn1 = GroupNormalization(groups=2, scale=False, center=True)
     gn1(np.ones((1, 10, 10, 4)))
@@ -168,7 +177,7 @@ def test_group_normalization():
     gn2(np.ones((1, 10, 10, 4)))
 
 
-def test_random_layers():
+def test_random_layers() -> TensorLike:
     """Function docstring."""
     l1 = RandomFlip("horizontal")
     l1(np.ones((1, 10, 10, 3)))
@@ -178,7 +187,7 @@ def test_random_layers():
     l4(np.ones((1, 10, 10, 3)))
 
 
-def test_layer_normalization():
+def test_layer_normalization() -> TensorLike:
     """Function docstring."""
     ln = LayerNormalization(axis=1)
     ln.build((None, 5, 10))
@@ -186,7 +195,7 @@ def test_layer_normalization():
     ln(np.ones((1, 5, 10)))
 
 
-def test_zeropadding():
+def test_zeropadding() -> TensorLike:
     """Function docstring."""
     z1 = ZeroPadding1D(data_format="channels_first")
     z1(np.ones((1, 2, 4)))
@@ -202,7 +211,7 @@ def test_zeropadding():
     z5(np.ones((1, 2, 4, 4, 4)))
 
 
-def test_convlstm():
+def test_convlstm() -> TensorLike:
     """Function docstring."""
     cl = ConvLSTM1D(2, 2, padding="same")
     cl.build((None, None, None, 3))

@@ -1,38 +1,70 @@
-"""Saving APIs."""
+"""Saving and serialization APIs for zero_keras.
 
+Provides ``save_model``, ``load_model``, ``save_weights``, ``load_weights``,
+and custom object registration utilities backed by ``ml_switcheroo_compiler``.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
 import ml_switcheroo_compiler.serialization as msc_serialization
+from ml_switcheroo_compiler.serialization import (
+    CustomObjectScope,
+    KerasFileEditor,
+    LoadedModel,
+    custom_object_scope,
+    deserialize_object as deserialize_keras_object,
+    get_custom_objects,
+    get_registered_name,
+    get_registered_object,
+    load_weights,
+    register_serializable as register_keras_serializable,
+    save_weights,
+    serialize_object as serialize_keras_object,
+)
+from zero_keras.types import ConfigValue, TensorLike
 
 
-def save_model(model, filepath, overwrite=True, zipped=None, **kwargs):
-    """Saves a model to a `.keras` file.
+def save_model(
+    model: TensorLike,
+    filepath: str | Path,
+    overwrite: bool = True,
+    zipped: bool | None = None,
+    **kwargs: ConfigValue,
+) -> None:
+    """Save a model to a ``.keras`` archive file.
 
     Args:
-        model: the Keras model instance.
-        filepath: string or PathLike object.
-        overwrite: whether to silently overwrite any existing file.
-        zipped: whether to save as zip format.
-        **kwargs: other options.
+        model: The Keras model instance to save.
+        filepath: String or ``Path`` object where the model will be saved.
+        overwrite: Whether to silently overwrite any existing file at the target location.
+        zipped: Whether to save the model as a zipped ``.keras`` archive.
+        **kwargs: Additional keyword options forwarded to the serializer.
     """
-    msc_serialization.save_model(
-        model, filepath, overwrite=overwrite, zipped=zipped, **kwargs
-    )
+    msc_serialization.save_model(model, str(filepath), overwrite=overwrite, zipped=zipped, **kwargs)
 
 
-def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kwargs):
-    """Loads a model from a `.keras` file.
+def load_model(
+    filepath: str | Path,
+    custom_objects: dict[str, ConfigValue] | None = None,
+    compile: bool = True,
+    safe_mode: bool = True,
+    **kwargs: ConfigValue,
+) -> LoadedModel:
+    """Load a model saved via ``model.save()`` or ``save_model()``.
 
     Args:
-        filepath: string or PathLike object.
-        custom_objects: Optional dictionary mapping names to custom objects.
+        filepath: String or ``Path`` object to the saved ``.keras`` model file.
+        custom_objects: Optional dictionary mapping names to custom classes or functions.
         compile: Boolean, whether to compile the model after loading.
-        safe_mode: Boolean, whether to load the model in safe mode.
-        **kwargs: other options.
+        safe_mode: Boolean, whether to disallow unsafe lambda deserialization.
+        **kwargs: Additional keyword options for loading.
 
     Returns:
-        A Keras model instance.
+        LoadedModel: Reconstructed model instance.
     """
     return msc_serialization.load_model(
-        filepath,
+        str(filepath),
         custom_objects=custom_objects,
         compile=compile,
         safe_mode=safe_mode,
@@ -40,14 +72,19 @@ def load_model(filepath, custom_objects=None, compile=True, safe_mode=True, **kw
     )
 
 
-register_keras_serializable = msc_serialization.register_keras_serializable
-custom_object_scope = msc_serialization.custom_object_scope
-CustomObjectScope = msc_serialization.CustomObjectScope
-KerasFileEditor = msc_serialization.KerasFileEditor
-deserialize_keras_object = msc_serialization.deserialize_keras_object
-get_custom_objects = msc_serialization.get_custom_objects
-get_registered_name = msc_serialization.get_registered_name
-get_registered_object = msc_serialization.get_registered_object
-load_weights = msc_serialization.load_weights
-save_weights = msc_serialization.save_weights
-serialize_keras_object = msc_serialization.serialize_keras_object
+__all__ = [
+    "CustomObjectScope",
+    "KerasFileEditor",
+    "LoadedModel",
+    "custom_object_scope",
+    "deserialize_keras_object",
+    "get_custom_objects",
+    "get_registered_name",
+    "get_registered_object",
+    "load_model",
+    "load_weights",
+    "register_keras_serializable",
+    "save_model",
+    "save_weights",
+    "serialize_keras_object",
+]

@@ -1,31 +1,31 @@
-"""MNIST handwritten digits dataset."""
+"""MNIST handwritten digits dataset loader for zero_keras."""
+
+from __future__ import annotations
 
 from zero_keras import ops
+from zero_keras.types import TensorLike
 from zero_keras.utils.generic_utils import get_file
 
 
-def load_data(path="mnist.npz"):
-    """Loads the MNIST dataset.
-
-    This is a dataset of 60,000 28x28 grayscale images of the 10 digits,
-    along with a test set of 10,000 images.
-    More info can be found at the
-    [MNIST homepage](http://yann.lecun.com/exdb/mnist/).
+def load_data(
+    path: str = "mnist.npz",
+) -> tuple[tuple[TensorLike, TensorLike], tuple[TensorLike, TensorLike]]:
+    """Load the MNIST dataset.
 
     Args:
-        path: path where to cache the dataset locally
-            (relative to `~/.keras/datasets`).
+        path: Path where to cache the dataset locally (relative to ``~/.keras/datasets``).
 
     Returns:
-        Tuple of Numpy arrays: `(x_train, y_train), (x_test, y_test)`.
+        tuple[tuple[TensorLike, TensorLike], tuple[TensorLike, TensorLike]]:
+            Tuple of ``((x_train, y_train), (x_test, y_test))``.
     """
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
-    path = get_file(
+    resolved_path = get_file(
         path,
         origin=origin_folder + "mnist.npz",
         file_hash="731c5ac602752760c8e48fbffcf8c3b8",
     )
-    with ops.load(path, allow_pickle=True) as f:
+    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
         x_train, y_train = f["x_train"], f["y_train"]
         x_test, y_test = f["x_test"], f["y_test"]
 

@@ -1,6 +1,8 @@
 """Module docstring."""
 
-import warnings
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 
 from zero_keras import backend, layers
 from zero_keras.applications import imagenet_utils
@@ -8,9 +10,7 @@ from zero_keras.core_layers import name_scope
 from zero_keras.models import Functional
 from zero_keras.utils import file_utils, generic_utils, operation_utils
 
-BASE_WEIGHTS_PATH = (
-    "https://storage.googleapis.com/tensorflow/keras-applications/nasnet/"
-)
+BASE_WEIGHTS_PATH = "https://storage.googleapis.com/tensorflow/keras-applications/nasnet/"
 NASNET_MOBILE_WEIGHT_PATH = f"{BASE_WEIGHTS_PATH}NASNet-mobile.h5"
 NASNET_MOBILE_WEIGHT_PATH_NO_TOP = f"{BASE_WEIGHTS_PATH}NASNet-mobile-no-top.h5"
 NASNET_LARGE_WEIGHT_PATH = f"{BASE_WEIGHTS_PATH}NASNet-large.h5"
@@ -18,21 +18,21 @@ NASNET_LARGE_WEIGHT_PATH_NO_TOP = f"{BASE_WEIGHTS_PATH}NASNet-large-no-top.h5"
 
 
 def NASNet(
-    input_shape=None,
-    penultimate_filters=4032,
-    num_blocks=6,
-    stem_block_filters=96,
-    skip_reduction=True,
-    filter_multiplier=2,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    pooling=None,
-    classes=1000,
-    default_size=None,
-    classifier_activation="softmax",
-    name="NASNet",
-):
+    input_shape: TensorLike = None,
+    penultimate_filters: TensorLike = 4032,
+    num_blocks: TensorLike = 6,
+    stem_block_filters: TensorLike = 96,
+    skip_reduction: TensorLike = True,
+    filter_multiplier: TensorLike = 2,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    default_size: TensorLike = None,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "NASNet",
+) -> TensorLike:
     """Instantiates a NASNet model.
 
     Reference:
@@ -112,13 +112,13 @@ def NASNet(
         A model instance.
     """
     if backend.image_data_format() == "channels_first":
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "NASNet does not support the `channels_first` image data "
             "format. Switch to `channels_last` by editing your local "
             "config file at ~/.keras/keras.json"
         )
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "The `weights` argument should be either "
             "`None` (random initialization), `imagenet` "
             "(pre-training on ImageNet), "
@@ -126,22 +126,20 @@ def NASNet(
         )
 
     if weights == "imagenet" and include_top and classes != 1000:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             'If using `weights` as `"imagenet"` with `include_top` '
             "as true, `classes` should be 1000"
         )
 
-    if (
-        isinstance(input_shape, tuple) and None in input_shape and weights == "imagenet"
-    ):  # pragma: no branch
-        raise ValueError(  # pragma: no cover
+    if isinstance(input_shape, tuple) and None in input_shape and weights == "imagenet":
+        raise ValueError(
             "When specifying the input shape of a NASNet and loading "
             "`ImageNet` weights, the input_shape argument must be static"
             f" (no None entries). Got: `input_shape={input_shape}`."
         )
 
-    if default_size is None:  # pragma: no branch
-        default_size = 331  # pragma: no cover
+    if default_size is None:
+        default_size = 331
 
     # Determine proper input shape and default size.
     input_shape = imagenet_utils.obtain_input_shape(
@@ -153,32 +151,16 @@ def NASNet(
         weights=weights,
     )
 
-    if backend.image_data_format() != "channels_last":  # pragma: no branch
-        warnings.warn(  # pragma: no cover
-            "The NASNet family of models is only available "
-            'for the input data format "channels_last" '
-            "(width, height, channels). "
-            "However your settings specify the default "
-            'data format "channels_first" (channels, width, height).'
-            ' You should set `image_data_format="channels_last"` '
-            "in your Keras config located at ~/.keras/keras.json. "
-            "The model being returned right now will expect inputs "
-            'to follow the "channels_last" data format.',
-            stacklevel=2,
-        )
-
     if input_tensor is None:
         img_input = layers.Input(shape=input_shape)
     else:
-        if not backend.is_keras_tensor(input_tensor):  # pragma: no cover
-            img_input = layers.Input(
-                tensor=input_tensor, shape=input_shape
-            )  # pragma: no cover
+        if not backend.is_keras_tensor(input_tensor):
+            img_input = layers.Input(tensor=input_tensor, shape=input_shape)
         else:
-            img_input = input_tensor  # pragma: no cover
+            img_input = input_tensor
 
     if penultimate_filters % (24 * (filter_multiplier**2)) != 0:
-        raise ValueError(  # pragma: no cover
+        raise ValueError(
             "For NASNet-A models, the `penultimate_filters` must be a multiple "
             "of 24 * (`filter_multiplier` ** 2). "
             f"Current value: {penultimate_filters}"
@@ -197,9 +179,9 @@ def NASNet(
         kernel_initializer="he_normal",
     )(img_input)
 
-    x = layers.BatchNormalization(
-        axis=channel_dim, momentum=0.9997, epsilon=1e-3, name="stem_bn1"
-    )(x)
+    x = layers.BatchNormalization(axis=channel_dim, momentum=0.9997, epsilon=1e-3, name="stem_bn1")(
+        x
+    )
 
     p = None
     x, p = _reduction_a_cell(x, p, filters // (filter_multiplier**2), block_id="stem_1")
@@ -208,9 +190,7 @@ def NASNet(
     for i in range(num_blocks):
         x, p = _normal_a_cell(x, p, filters, block_id=f"{i}")
 
-    x, p0 = _reduction_a_cell(
-        x, p, filters * filter_multiplier, block_id=f"reduce_{num_blocks}"
-    )
+    x, p0 = _reduction_a_cell(x, p, filters * filter_multiplier, block_id=f"reduce_{num_blocks}")
 
     p = p0 if not skip_reduction else p
 
@@ -241,22 +221,20 @@ def NASNet(
 
     x = layers.Activation("relu")(x)
 
-    if include_top:  # pragma: no cover
+    if include_top:
         x = layers.GlobalAveragePooling2D()(x)
         imagenet_utils.validate_activation(classifier_activation, weights)
-        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(
-            x
-        )
+        x = layers.Dense(classes, activation=classifier_activation, name="predictions")(x)
     else:
-        if pooling == "avg":  # pragma: no cover
-            x = layers.GlobalAveragePooling2D()(x)  # pragma: no cover
-        elif pooling == "max":  # pragma: no cover  # pragma: no cover
-            x = layers.GlobalMaxPooling2D()(x)  # pragma: no cover
+        if pooling == "avg":
+            x = layers.GlobalAveragePooling2D()(x)
+        elif pooling == "max":
+            x = layers.GlobalMaxPooling2D()(x)
 
     # Ensure that the model takes into account
     # any potential predecessors of `input_tensor`.
     if input_tensor is not None:
-        inputs = operation_utils.get_source_inputs(input_tensor)  # pragma: no cover
+        inputs = operation_utils.get_source_inputs(input_tensor)
     else:
         inputs = img_input
 
@@ -264,58 +242,56 @@ def NASNet(
 
     # Load weights.
     if weights == "imagenet":
-        if default_size == 224:  # mobile version  # pragma: no cover
-            if include_top:  # pragma: no cover  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+        if default_size == 224:  # mobile version
+            if include_top:
+                weights_path = generic_utils.get_file(
                     "nasnet_mobile.h5",
                     NASNET_MOBILE_WEIGHT_PATH,
                     cache_subdir="models",
                     file_hash="020fb642bf7360b370c678b08e0adf61",
                 )
             else:
-                weights_path = generic_utils.get_file(  # pragma: no cover
+                weights_path = generic_utils.get_file(
                     "nasnet_mobile_no_top.h5",
                     NASNET_MOBILE_WEIGHT_PATH_NO_TOP,
                     cache_subdir="models",
                     file_hash="1ed92395b5b598bdda52abe5c0dbfd63",
                 )
-            model.load_weights(weights_path)  # pragma: no cover
-        elif default_size == 331:  # large version  # pragma: no cover
-            if include_top:  # pragma: no cover  # pragma: no cover
-                weights_path = generic_utils.get_file(  # pragma: no cover
+            model.load_weights(weights_path)
+        elif default_size == 331:  # large version
+            if include_top:
+                weights_path = generic_utils.get_file(
                     "nasnet_large.h5",
                     NASNET_LARGE_WEIGHT_PATH,
                     cache_subdir="models",
                     file_hash="11577c9a518f0070763c2b964a382f17",
                 )
             else:
-                weights_path = generic_utils.get_file(  # pragma: no cover
+                weights_path = generic_utils.get_file(
                     "nasnet_large_no_top.h5",
                     NASNET_LARGE_WEIGHT_PATH_NO_TOP,
                     cache_subdir="models",
                     file_hash="d81d89dc07e6e56530c4e77faddd61b5",
                 )
-            model.load_weights(weights_path)  # pragma: no cover
+            model.load_weights(weights_path)
         else:
-            raise ValueError(  # pragma: no cover
-                "ImageNet weights can only be loaded with NASNetLarge or NASNetMobile"
-            )
+            raise ValueError("ImageNet weights can only be loaded with NASNetLarge or NASNetMobile")
     elif weights is not None:
-        model.load_weights(weights)  # pragma: no cover
+        model.load_weights(weights)
 
     return model
 
 
 def NASNetMobile(
-    input_shape=None,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="nasnet_mobile",
-):
+    input_shape: TensorLike = None,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "nasnet_mobile",
+) -> TensorLike:
     """Instantiates a Mobile NASNet model in ImageNet mode.
 
     Reference:
@@ -370,14 +346,8 @@ def NASNetMobile(
     Returns:
         A Keras model instance.
     """
-    if "numpy" == "torch":
-        raise ValueError(  # pragma: no cover
-            "NASNetMobile is not available with the torch backend "
-            "at this time due to an outstanding bug. "
-            "If interested, please open a PR."
-        )
     if not include_top and input_shape is None:
-        input_shape = (224, 224, 3)  # pragma: no cover
+        input_shape = (224, 224, 3)
     return NASNet(
         input_shape,
         penultimate_filters=1056,
@@ -397,15 +367,15 @@ def NASNetMobile(
 
 
 def NASNetLarge(
-    input_shape=None,
-    include_top=True,
-    weights="imagenet",
-    input_tensor=None,
-    pooling=None,
-    classes=1000,
-    classifier_activation="softmax",
-    name="nasnet_large",
-):
+    input_shape: TensorLike = None,
+    include_top: TensorLike = True,
+    weights: TensorLike = "imagenet",
+    input_tensor: TensorLike = None,
+    pooling: TensorLike = None,
+    classes: TensorLike = 1000,
+    classifier_activation: TensorLike = "softmax",
+    name: TensorLike = "nasnet_large",
+) -> TensorLike:
     """Instantiates a NASNet model in ImageNet mode.
 
     Reference:
@@ -479,8 +449,12 @@ def NASNetLarge(
 
 
 def _separable_conv_block(
-    ip, filters, kernel_size=(3, 3), strides=(1, 1), block_id=None
-):
+    ip: TensorLike,
+    filters: TensorLike,
+    kernel_size: TensorLike = (3, 3),
+    strides: TensorLike = (1, 1),
+    block_id: TensorLike = None,
+) -> TensorLike:
     """Adds 2 blocks of [relu-separable conv-batchnorm].
 
     Args:
@@ -536,7 +510,9 @@ def _separable_conv_block(
     return x
 
 
-def _adjust_block(p, ip, filters, block_id=None):
+def _adjust_block(
+    p: TensorLike, ip: TensorLike, filters: TensorLike, block_id: TensorLike = None
+) -> TensorLike:
     """Adjusts the input `previous path` to match the shape of the `input`.
 
     Used in situations where the output number of filters needs to be changed.
@@ -551,62 +527,11 @@ def _adjust_block(p, ip, filters, block_id=None):
         Adjusted Keras tensor
     """
     channel_dim = 1 if backend.image_data_format() == "channels_first" else -1
-    img_dim = 2 if backend.image_data_format() == "channels_first" else -2
 
     with name_scope("adjust_block"):
         if p is None:
             p = ip
-
-        elif p.shape[img_dim] != ip.shape[img_dim]:
-            with name_scope(f"adjust_reduction_block_{block_id}"):  # pragma: no cover
-                p = layers.Activation("relu", name=f"adjust_relu_1_{block_id}")(
-                    p
-                )  # pragma: no cover
-                p1 = layers.AveragePooling2D(  # pragma: no cover
-                    (1, 1),
-                    strides=(2, 2),
-                    padding="valid",
-                    name=f"adjust_avg_pool_1_{block_id}",
-                )(p)
-                p1 = layers.Conv2D(  # pragma: no cover
-                    filters // 2,
-                    (1, 1),
-                    padding="same",
-                    use_bias=False,
-                    name=f"adjust_conv_1_{block_id}",
-                    kernel_initializer="he_normal",
-                )(p1)
-
-                p2 = layers.ZeroPadding2D(padding=((0, 1), (0, 1)))(
-                    p
-                )  # pragma: no cover
-                p2 = layers.Cropping2D(cropping=((1, 0), (1, 0)))(
-                    p2
-                )  # pragma: no cover
-                p2 = layers.AveragePooling2D(  # pragma: no cover
-                    (1, 1),
-                    strides=(2, 2),
-                    padding="valid",
-                    name=f"adjust_avg_pool_2_{block_id}",
-                )(p2)
-                p2 = layers.Conv2D(  # pragma: no cover
-                    filters // 2,
-                    (1, 1),
-                    padding="same",
-                    use_bias=False,
-                    name=f"adjust_conv_2_{block_id}",
-                    kernel_initializer="he_normal",
-                )(p2)
-
-                p = layers.concatenate([p1, p2], axis=channel_dim)  # pragma: no cover
-                p = layers.BatchNormalization(  # pragma: no cover
-                    axis=channel_dim,
-                    momentum=0.9997,
-                    epsilon=1e-3,
-                    name=f"adjust_bn_{block_id}",
-                )(p)
-
-        elif p.shape[channel_dim] != filters:  # pragma: no branch
+        elif p.shape[channel_dim] != filters:
             with name_scope(f"adjust_projection_block_{block_id}"):
                 p = layers.Activation("relu")(p)
                 p = layers.Conv2D(
@@ -627,7 +552,9 @@ def _adjust_block(p, ip, filters, block_id=None):
     return p
 
 
-def _normal_a_cell(ip, p, filters, block_id=None):
+def _normal_a_cell(
+    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: TensorLike = None
+) -> TensorLike:
     """Adds a Normal cell for NASNet-A (Fig. 4 in the paper).
 
     Args:
@@ -668,18 +595,12 @@ def _normal_a_cell(ip, p, filters, block_id=None):
                 kernel_size=(5, 5),
                 block_id=f"normal_left1_{block_id}",
             )
-            x1_2 = _separable_conv_block(
-                p, filters, block_id=f"normal_right1_{block_id}"
-            )
+            x1_2 = _separable_conv_block(p, filters, block_id=f"normal_right1_{block_id}")
             x1 = layers.add([x1_1, x1_2], name=f"normal_add_1_{block_id}")
 
         with name_scope("block_2"):
-            x2_1 = _separable_conv_block(
-                p, filters, (5, 5), block_id=f"normal_left2_{block_id}"
-            )
-            x2_2 = _separable_conv_block(
-                p, filters, (3, 3), block_id=f"normal_right2_{block_id}"
-            )
+            x2_1 = _separable_conv_block(p, filters, (5, 5), block_id=f"normal_left2_{block_id}")
+            x2_2 = _separable_conv_block(p, filters, (3, 3), block_id=f"normal_right2_{block_id}")
             x2 = layers.add([x2_1, x2_2], name=f"normal_add_2_{block_id}")
 
         with name_scope("block_3"):
@@ -718,7 +639,9 @@ def _normal_a_cell(ip, p, filters, block_id=None):
     return x, ip
 
 
-def _reduction_a_cell(ip, p, filters, block_id=None):
+def _reduction_a_cell(
+    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: TensorLike = None
+) -> TensorLike:
     """Adds a Reduction cell for NASNet-A (Fig. 4 in the paper).
 
     Args:
@@ -834,26 +757,24 @@ def _reduction_a_cell(ip, p, filters, block_id=None):
         return x, ip
 
 
-def preprocess_input(x, data_format=None):
+def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
     """Function docstring.
 
     Args:
         x: Description.
         data_format: Description.
     """
-    return imagenet_utils.preprocess_input(
-        x, data_format=data_format, mode="tf"
-    )  # pragma: no cover
+    return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
-def decode_predictions(preds, top=5):
+def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
     """Function docstring.
 
     Args:
         preds: Description.
         top: Description.
     """
-    return imagenet_utils.decode_predictions(preds, top=top)  # pragma: no cover
+    return imagenet_utils.decode_predictions(preds, top=top)
 
 
 preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(

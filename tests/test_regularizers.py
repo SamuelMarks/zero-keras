@@ -1,12 +1,15 @@
 """Tests for zero_keras regularizers."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np  # type: ignore
 import pytest
 
 from zero_keras import regularizers
 
 
-def test_l2_regularizer():
+def test_l2_regularizer() -> TensorLike:
     """Function docstring."""
     reg = regularizers.L2(l2=0.01)
     base_reg = regularizers.Regularizer()
@@ -16,7 +19,7 @@ def test_l2_regularizer():
     assert reg.get_config() == {"l2": 0.01}
 
 
-def test_l1_regularizer():
+def test_l1_regularizer() -> TensorLike:
     """Function docstring."""
     reg = regularizers.L1(l1=0.01)
     x = np.array([1.0, 2.0])
@@ -24,7 +27,7 @@ def test_l1_regularizer():
     assert reg.get_config() == {"l1": 0.01}
 
 
-def test_l1_l2_regularizer():
+def test_l1_l2_regularizer() -> TensorLike:
     """Function docstring."""
     reg = regularizers.L1L2(l1=0.01, l2=0.01)
     x = np.array([1.0, 2.0])
@@ -40,7 +43,7 @@ def test_l1_l2_regularizer():
     assert reg2(x) is not None
 
 
-def test_orthogonal_regularizer():
+def test_orthogonal_regularizer() -> TensorLike:
     """Function docstring."""
     reg = regularizers.OrthogonalRegularizer(factor=0.01, mode="rows")
     x = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
@@ -58,7 +61,7 @@ def test_orthogonal_regularizer():
         reg_bad(x)
 
 
-def test_regularizer_get():
+def test_regularizer_get() -> TensorLike:
     """Function docstring."""
     assert regularizers.get(None) is None
     reg = regularizers.L2()
@@ -73,7 +76,7 @@ def test_regularizer_get():
     assert regularizers.get(123) == 123
 
 
-def test_serialize_deserialize():
+def test_serialize_deserialize() -> TensorLike:
     """Function docstring."""
     reg = regularizers.L2(l2=0.01)
     config = regularizers.serialize(reg)
@@ -96,9 +99,7 @@ def test_serialize_deserialize():
         regularizers.L1,
     )
     assert isinstance(
-        regularizers.deserialize(
-            {"class_name": "L1L2", "config": {"l1": 0.01, "l2": 0.01}}
-        ),
+        regularizers.deserialize({"class_name": "L1L2", "config": {"l1": 0.01, "l2": 0.01}}),
         regularizers.L1L2,
     )
     assert isinstance(

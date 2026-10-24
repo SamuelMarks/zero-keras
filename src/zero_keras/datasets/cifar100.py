@@ -1,47 +1,53 @@
-"""CIFAR100 small images classification dataset."""
+"""CIFAR100 small images classification dataset loader for zero_keras."""
+
+from __future__ import annotations
 
 import os
 import pickle
 
 from zero_keras import ops
+from zero_keras.types import TensorLike
 from zero_keras.utils.generic_utils import get_file
 
 
-def load_batch(fpath, label_key="fine_labels"):
-    """Internal utility for parsing CIFAR data."""
-    with open(fpath, "rb") as f:
-        d = pickle.load(f, encoding="bytes")
-        d_decoded = {}
-        for k, v in d.items():
-            d_decoded[k.decode("utf8")] = v
-        d = d_decoded
-    data = d["data"]
-    labels = d[label_key]
-
-    data = ops.reshape(data, (data.shape[0], 3, 32, 32))
-    return data, labels
-
-
-def load_data(label_mode="fine"):
-    """Loads the CIFAR100 dataset.
-
-    This is a dataset of 50,000 32x32 color training images and 10,000 test
-    images, labeled over 100 fine-grained classes that are grouped into 20
-    coarse-grained classes. See more info at the
-    [CIFAR homepage](https://www.cs.toronto.edu/~kriz/cifar.html).
+def load_batch(fpath: str, label_key: str = "fine_labels") -> tuple[TensorLike, TensorLike]:
+    """Parse a single pickled CIFAR100 batch file.
 
     Args:
-        label_mode: one of "fine", "coarse". If it is "fine" the category labels
-            are the fine-grained labels, if it is "coarse" the output labels are
-            the coarse-grained superclasses.
+        fpath: Path to the batch file.
+        label_key: Key name for fine or coarse labels in the pickled dict.
 
     Returns:
-        Tuple of backend-native tensors: `(x_train, y_train), (x_test, y_test)`.
+        tuple[TensorLike, TensorLike]: ``(data, labels)`` tensors.
     """
-    if label_mode not in ["fine", "coarse"]:
+    with open(fpath, "rb") as f:
+        d = pickle.load(f, encoding="bytes")
+        d_decoded = {k.decode("utf8"): v for k, v in d.items()}
+    data = d_decoded["data"]
+    labels = d_decoded[label_key]
+
+    data_t = ops.reshape(data, (data.shape[0], 3, 32, 32))
+    return data_t, labels
+
+
+def load_data(
+    label_mode: str = "fine",
+) -> tuple[tuple[TensorLike, TensorLike], tuple[TensorLike, TensorLike]]:
+    """Load the CIFAR100 dataset.
+
+    Args:
+        label_mode: Either ``"fine"`` (100 classes) or ``"coarse"`` (20 superclasses).
+
+    Returns:
+        tuple[tuple[TensorLike, TensorLike], tuple[TensorLike, TensorLike]]:
+            Tuple of ``((x_train, y_train), (x_test, y_test))``.
+
+    Raises:
+        ValueError: If ``label_mode`` is not ``"fine"`` or ``"coarse"``.
+    """
+    if label_mode not in ("fine", "coarse"):
         raise ValueError(
-            f'`label_mode` must be one of "fine", "coarse". '
-            f"Received: label_mode={label_mode}."
+            f'`label_mode` must be one of "fine", "coarse". Received: label_mode={label_mode}.'
         )
 
     dirname = "cifar-100-python"
@@ -65,10 +71,9 @@ def load_data(label_mode="fine"):
     fpath = os.path.join(path, "test")
     x_test, y_test = load_batch(fpath, label_key=label_mode + "_labels")
 
-    y_train = ops.reshape(y_train, (y_train.shape[0], 1))
-    y_test = ops.reshape(y_test, (y_test.shape[0], 1))
+    y_train = ops.reshape(y_train, (ops.shape(y_train)[0], 1))
+    y_test = ops.reshape(y_test, (ops.shape(y_test)[0], 1))
 
-    # Always return channels_last for zero-keras as default
     x_train = ops.moveaxis(x_train, (0, 1, 2, 3), (0, 3, 1, 2))
     x_test = ops.moveaxis(x_test, (0, 1, 2, 3), (0, 3, 1, 2))
 

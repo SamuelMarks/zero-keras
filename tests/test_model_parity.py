@@ -1,5 +1,8 @@
 """Tests for zero_keras model parity with Keras."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 import pytest
@@ -10,12 +13,12 @@ from .utils import set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed():
+def _set_seed() -> TensorLike:
     """Function docstring."""
     set_seed(42)
 
 
-def test_keras_tensor_parity():
+def test_keras_tensor_parity() -> TensorLike:
     """Function docstring."""
     # KerasTensor is just a metadata holder in keras. Check shape/dtype match
     keras_input = keras.Input(shape=(10,), name="test_in")
@@ -25,7 +28,7 @@ def test_keras_tensor_parity():
     assert zero_input.name == "test_in"
 
 
-def test_model_Sequential():
+def test_model_Sequential() -> TensorLike:
     """Function docstring."""
     # Test our basic mocked architecture
     z_seq = core_layers.Sequential()
@@ -38,7 +41,7 @@ def test_model_Sequential():
     assert res.shape == x.shape
 
 
-def test_model_Functional():
+def test_model_Functional() -> TensorLike:
     """Function docstring."""
     # Test our basic mocked architecture
     z_in = core_layers.Input(shape=(5,))
@@ -48,10 +51,10 @@ def test_model_Functional():
     x = np.random.rand(2, 5)
     res = z_func(x)
     # the dummy layer just passes through
-    assert getattr(res, "shape", None) == z_in.shape or res.shape == x.shape
+    assert (res.shape if hasattr(res, "shape") else None) == z_in.shape or res.shape == x.shape
 
 
-def test_model_Model_API():
+def test_model_Model_API() -> TensorLike:
     """Function docstring."""
     m = core_layers.Model()
     m.compile(optimizer="sgd", loss="mse")
@@ -70,7 +73,7 @@ def test_model_Model_API():
     assert res.shape[0] == 3
 
 
-def test_get_and_deserialize():
+def test_get_and_deserialize() -> TensorLike:
     """Function docstring."""
     import pytest
 
@@ -95,7 +98,7 @@ def test_get_and_deserialize():
         core_layers.get("unknown_layer_test")
 
 
-def test_load_model_safe_stub():
+def test_load_model_safe_stub() -> TensorLike:
     """Function docstring."""
     import pytest
 

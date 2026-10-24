@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras.layers import FlaxLayer, JaxLayer, TFSMLayer, TorchModuleWrapper
 
 
-def dummy_module(x, **kwargs):
+def dummy_module(x: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -15,7 +18,7 @@ def dummy_module(x, **kwargs):
     return x + 1
 
 
-def dummy_jax_module(params, x, **kwargs):
+def dummy_jax_module(params: TensorLike, x: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -26,7 +29,7 @@ def dummy_jax_module(params, x, **kwargs):
     return x + 1
 
 
-def dummy_module_tuple(x, **kwargs):
+def dummy_module_tuple(x: TensorLike, **kwargs: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -36,7 +39,7 @@ def dummy_module_tuple(x, **kwargs):
     return (x + 1, x + 2)
 
 
-def test_torch_module_wrapper():
+def test_torch_module_wrapper() -> TensorLike:
     """Function docstring."""
     layer = TorchModuleWrapper(module=dummy_module)
 
@@ -46,17 +49,17 @@ def test_torch_module_wrapper():
     assert np.array_equal(res2[1].data, [3, 4])
 
 
-def test_jax_layer():
+def test_jax_layer() -> TensorLike:
     """Function docstring."""
     layer = JaxLayer(call_fn=dummy_jax_module)
 
 
-def test_flax_layer():
+def test_flax_layer() -> TensorLike:
     """Function docstring."""
     layer = FlaxLayer(module=dummy_module)
 
 
-def test_tfsm_layer():
+def test_tfsm_layer() -> TensorLike:
     """Function docstring."""
     layer = TFSMLayer("path")
     # without module set, returns identity

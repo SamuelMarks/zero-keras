@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import metrics
 
 
-def test_scc_and_bce_inner():
+def test_scc_and_bce_inner() -> TensorLike:
     """Function docstring."""
     # 2492-2494: SparseCategoricalCrossentropy
     m1 = metrics.SparseCategoricalCrossentropy()
@@ -16,13 +19,13 @@ def test_scc_and_bce_inner():
     m2.update_state(np.array([1, 0]), np.array([0.9, 0.1]))
 
 
-def test_iou_edges():
+def test_iou_edges() -> TensorLike:
     """Function docstring."""
 
     class MockVariable:
         """Class docstring."""
 
-        def __init__(self, val=0.0):
+        def __init__(self, val: TensorLike = 0.0) -> None:
             """Function docstring.
 
             Args:
@@ -30,7 +33,7 @@ def test_iou_edges():
             """
             self.val = val
 
-        def assign(self, new_val):
+        def assign(self, new_val: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -38,7 +41,7 @@ def test_iou_edges():
             """
             self.val = new_val
 
-        def __add__(self, other):
+        def __add__(self, other: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -64,28 +67,28 @@ def test_iou_edges():
     m2.result()
 
 
-def test_binary_iou():
+def test_binary_iou() -> TensorLike:
     """Function docstring."""
     m = metrics.BinaryIoU()
     m.update_state(np.array([1, 0]), np.array([0.9, 0.1]))
     m.result()
 
 
-def test_assign_metrics_direct():
+def test_assign_metrics_direct() -> TensorLike:
     """Function docstring."""
     import ml_switcheroo_compiler.ops as cops
 
     class DummyArray(np.ndarray):
         """Class docstring."""
 
-        def assign(self, value):
+        def assign(self, value: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
                 value: Description.
             """
 
-    def make_dummy(*args, **kwargs):
+    def make_dummy(*args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -95,14 +98,14 @@ def test_assign_metrics_direct():
         arr = np.array([0.0])
         return arr.view(DummyArray)
 
-    old_add = getattr(cops, "add", None)
-    old_mul = getattr(cops, "multiply", None)
-    old_eq = getattr(cops, "equal", None)
-    old_sum = getattr(cops, "sum", None)
-    old_any = getattr(cops, "any", None)
-    old_cast = getattr(cops, "cast", None)
-    old_argmax = getattr(cops, "argmax", None)
-    old_round = getattr(cops, "round", None)
+    old_add = cops.add if hasattr(cops, "add") else None
+    old_mul = cops.multiply if hasattr(cops, "multiply") else None
+    old_eq = cops.equal if hasattr(cops, "equal") else None
+    old_sum = cops.sum if hasattr(cops, "sum") else None
+    old_any = cops.any if hasattr(cops, "any") else None
+    old_cast = cops.cast if hasattr(cops, "cast") else None
+    old_argmax = cops.argmax if hasattr(cops, "argmax") else None
+    old_round = cops.round if hasattr(cops, "round") else None
 
     cops.add = make_dummy
     cops.multiply = make_dummy
@@ -124,9 +127,7 @@ def test_assign_metrics_direct():
         m.sum_y2 = make_dummy()
         m.sum_xy = make_dummy()
         m.count = make_dummy()
-        m.update_state(
-            _to_tensor(np.array([1.0, 0.0])), _to_tensor(np.array([0.9, 0.1]))
-        )
+        m.update_state(_to_tensor(np.array([1.0, 0.0])), _to_tensor(np.array([0.9, 0.1])))
 
         # R2Score
         m = metrics.R2Score()
@@ -134,14 +135,13 @@ def test_assign_metrics_direct():
         m.sum_y = make_dummy()
         m.sum_squared_errors = make_dummy()
         m.sum_y_squared = make_dummy()
-        m.update_state(
-            _to_tensor(np.array([1.0, 0.0])), _to_tensor(np.array([0.9, 0.1]))
-        )
+        m.update_state(_to_tensor(np.array([1.0, 0.0])), _to_tensor(np.array([0.9, 0.1])))
 
-        def test_acc(cls, y_t, y_p):
+        def test_acc(cls: TensorLike, y_t: TensorLike, y_p: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
+                cls: Metric class.
                 y_t: Description.
                 y_p: Description.
             """
@@ -152,18 +152,10 @@ def test_assign_metrics_direct():
 
         test_acc(metrics.Accuracy, np.array([1]), np.array([1]))
         test_acc(metrics.BinaryAccuracy, np.array([1]), np.array([0.9]))
-        test_acc(
-            metrics.CategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]])
-        )
-        test_acc(
-            metrics.SparseCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]])
-        )
-        test_acc(
-            metrics.TopKCategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]])
-        )
-        test_acc(
-            metrics.SparseTopKCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]])
-        )
+        test_acc(metrics.CategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]]))
+        test_acc(metrics.SparseCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]]))
+        test_acc(metrics.TopKCategoricalAccuracy, np.array([[0, 1]]), np.array([[0.1, 0.9]]))
+        test_acc(metrics.SparseTopKCategoricalAccuracy, np.array([1]), np.array([[0.1, 0.9]]))
     finally:
         for k, v in zip(
             ["add", "multiply", "equal", "sum", "any", "cast", "argmax", "round"],
@@ -180,5 +172,5 @@ def test_assign_metrics_direct():
         ):
             if v is not None:
                 setattr(cops, k, v)
-            elif hasattr(cops, k):  # pragma: no cover
-                delattr(cops, k)  # pragma: no cover
+            elif hasattr(cops, k):
+                delattr(cops, k)

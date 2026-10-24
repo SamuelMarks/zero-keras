@@ -1,3 +1,7 @@
+"""Normalization layers (`BatchNormalization`, `LayerNormalization`, `UnitNormalization`, `GroupNormalization`, `RMSNormalization`, `SpectralNormalization`) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer, Wrapper
@@ -103,7 +107,9 @@ class LayerNormalization(Layer):
 
     """
 
-    def __init__(self, axis=-1, epsilon=1e-3, **kwargs):
+    def __init__(
+        self, axis: TensorLike = -1, epsilon: TensorLike = 1e-3, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -115,26 +121,22 @@ class LayerNormalization(Layer):
         self.axis = axis
         self.epsilon = epsilon
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         input_dim = input_shape[-1]
-        self.gamma = self.add_weight(
-            shape=(input_dim,), initializer="ones", name="gamma"
-        )
-        self.beta = self.add_weight(
-            shape=(input_dim,), initializer="zeros", name="beta"
-        )
+        self.gamma = self.add_weight(shape=(input_dim,), initializer="ones", name="gamma")
+        self.beta = self.add_weight(shape=(input_dim,), initializer="zeros", name="beta")
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -142,7 +144,7 @@ class LayerNormalization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -229,7 +231,7 @@ class BatchNormalization(Layer):
             `True` values indicating the positions for which mean and variance
             should be computed. Masked elements of the current inputs are not
             taken into account for mean and variance computation during
-            training. Any prior unmasked element values will be taken into
+            training. TensorLike prior unmasked element values will be taken into
             account until their momentum expires.
 
     Reference:
@@ -264,7 +266,13 @@ class BatchNormalization(Layer):
 
     """
 
-    def __init__(self, axis=-1, momentum=0.99, epsilon=1e-3, **kwargs):
+    def __init__(
+        self,
+        axis: TensorLike = -1,
+        momentum: TensorLike = 0.99,
+        epsilon: TensorLike = 1e-3,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -278,23 +286,19 @@ class BatchNormalization(Layer):
         self.momentum = momentum
         self.epsilon = epsilon
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         input_dim = input_shape[-1]
-        self.gamma = self.add_weight(
-            shape=(input_dim,), initializer="ones", name="gamma"
-        )
-        self.beta = self.add_weight(
-            shape=(input_dim,), initializer="zeros", name="beta"
-        )
+        self.gamma = self.add_weight(shape=(input_dim,), initializer="ones", name="gamma")
+        self.beta = self.add_weight(shape=(input_dim,), initializer="zeros", name="beta")
         self.moving_mean = self.add_weight(
             shape=(input_dim,), initializer="zeros", name="moving_mean"
         )
@@ -303,7 +307,9 @@ class BatchNormalization(Layer):
         )
         self.built = True
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -312,20 +318,18 @@ class BatchNormalization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if training:
-            rank = len(inputs.shape)  # pragma: no cover
-            axis = self.axis if self.axis >= 0 else self.axis + rank  # pragma: no cover
-            axes = tuple(i for i in range(rank) if i != axis)  # pragma: no cover
-            mean = ops.mean(inputs, axis=axes, keepdims=True)  # pragma: no cover
-            var = ops.var(inputs, axis=axes, keepdims=True)  # pragma: no cover
-            return _wrap(
-                (inputs - mean) / ops.sqrt(var + self.epsilon)
-            )  # pragma: no cover
-        else:  # pragma: no cover
+            rank = len(inputs.shape)
+            axis = self.axis if self.axis >= 0 else self.axis + rank
+            axes = tuple(i for i in range(rank) if i != axis)
+            mean = ops.mean(inputs, axis=axes, keepdims=True)
+            var = ops.var(inputs, axis=axes, keepdims=True)
+            return _wrap((inputs - mean) / ops.sqrt(var + self.epsilon))
+        else:
             return _wrap(inputs / ops.sqrt(_to_tensor(1.0 + self.epsilon)))
 
 
@@ -386,8 +390,14 @@ class GroupNormalization(Layer):
     """
 
     def __init__(
-        self, groups=32, axis=-1, epsilon=1e-3, center=True, scale=True, **kwargs
-    ):
+        self,
+        groups: TensorLike = 32,
+        axis: TensorLike = -1,
+        epsilon: TensorLike = 1e-3,
+        center: TensorLike = True,
+        scale: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -405,14 +415,14 @@ class GroupNormalization(Layer):
         self.center = center
         self.scale = scale
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -420,15 +430,15 @@ class GroupNormalization(Layer):
         dim = input_shape[self.axis]
         if self.scale:
             self.gamma = self.add_weight(shape=(dim,), initializer="ones", name="gamma")
-        else:  # pragma: no cover
+        else:
             self.gamma = None
         if self.center:
             self.beta = self.add_weight(shape=(dim,), initializer="zeros", name="beta")
-        else:  # pragma: no cover
+        else:
             self.beta = None
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -436,7 +446,7 @@ class GroupNormalization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -455,18 +465,14 @@ class GroupNormalization(Layer):
         inputs_reshaped = ops.reshape(inputs, new_shape)
 
         axes_to_reduce = tuple(range(1, rank)) + (rank,)
-        axes_to_reduce = tuple(
-            i for i in axes_to_reduce if i != rank - 1
-        )  # exclude groups
+        axes_to_reduce = tuple(i for i in axes_to_reduce if i != rank - 1)  # exclude groups
 
         mean = ops.mean(inputs_reshaped, axis=axes_to_reduce, keepdims=True)
         var = ops.var(inputs_reshaped, axis=axes_to_reduce, keepdims=True)
 
         out = ops.multiply(
             ops.subtract(inputs_reshaped, mean),
-            ops.divide(
-                _to_tensor(1.0), ops.sqrt(ops.add(var, _to_tensor(self.epsilon)))
-            ),
+            ops.divide(_to_tensor(1.0), ops.sqrt(ops.add(var, _to_tensor(self.epsilon)))),
         )
         out = ops.reshape(out, shape)
 
@@ -522,7 +528,14 @@ class RMSNormalization(Layer):
 
     """
 
-    def __init__(self, axis=-1, epsilon=1e-3, center=False, scale=True, **kwargs):
+    def __init__(
+        self,
+        axis: TensorLike = -1,
+        epsilon: TensorLike = 1e-3,
+        center: TensorLike = False,
+        scale: TensorLike = True,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -538,14 +551,14 @@ class RMSNormalization(Layer):
         self.center = center
         self.scale = scale
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -553,32 +566,31 @@ class RMSNormalization(Layer):
         dim = input_shape[self.axis]
         if self.scale:
             self.gamma = self.add_weight(shape=(dim,), initializer="ones", name="gamma")
-        else:  # pragma: no cover
+        else:
             self.gamma = None
         if self.center:
             self.beta = self.add_weight(shape=(dim,), initializer="zeros", name="beta")
-        else:  # pragma: no cover
+        else:
             self.beta = None
         self.built = True
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Applies RMS normalization to the input tensor.
 
         Args:
+            inputs: Input parameter ``inputs``.
+            kwargs: Input parameter ``kwargs``.
             x: Input tensor of shape (batch_size, input_dim).
 
         Returns:
             The RMS-normalized tensor of the same shape (batch_size, input_dim),
             scaled by the learned `scale` parameter.
-
         """
         inputs = _to_tensor(inputs)
         variance = ops.mean(ops.square(inputs), axis=self.axis, keepdims=True)
         out = ops.multiply(
             inputs,
-            ops.divide(
-                _to_tensor(1.0), ops.sqrt(ops.add(variance, _to_tensor(self.epsilon)))
-            ),
+            ops.divide(_to_tensor(1.0), ops.sqrt(ops.add(variance, _to_tensor(self.epsilon)))),
         )
 
         if self.scale:
@@ -609,7 +621,7 @@ class UnitNormalization(Layer):
 
     """
 
-    def __init__(self, axis=-1, **kwargs):
+    def __init__(self, axis: TensorLike = -1, **kwargs: TensorLike) -> None:
         """Function docstring.
 
         Args:
@@ -619,7 +631,7 @@ class UnitNormalization(Layer):
         super().__init__(**kwargs)
         self.axis = axis
 
-    def call(self, inputs, **kwargs):
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -627,7 +639,7 @@ class UnitNormalization(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -670,7 +682,9 @@ class SpectralNormalization(Wrapper):
 
     """
 
-    def __init__(self, layer, power_iterations=1, **kwargs):
+    def __init__(
+        self, layer: TensorLike, power_iterations: TensorLike = 1, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -681,14 +695,14 @@ class SpectralNormalization(Wrapper):
         super().__init__(layer=layer, **kwargs)
         self.power_iterations = power_iterations
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -714,7 +728,9 @@ class SpectralNormalization(Wrapper):
 
         self.built = True
 
-    def call(self, inputs, training=None, **kwargs):
+    def call(
+        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+    ) -> TensorLike:
         """Call function.
 
         Args:
@@ -723,7 +739,7 @@ class SpectralNormalization(Wrapper):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)

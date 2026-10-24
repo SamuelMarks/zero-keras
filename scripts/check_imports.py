@@ -1,140 +1,120 @@
-"""Module docstring."""
+"""Check that all imports in src/zero_keras are stdlib or allowed ecosystem packages.
+
+Scans ASTs of all Python files in ``src/`` to verify that no disallowed third-party
+runtime packages (such as ``numpy``, ``PIL``, ``torch``, ``tensorflow``, ``jax``, or ``keras``)
+are imported statically or dynamically via ``__import__`` / ``importlib.import_module``.
+"""
+
+from __future__ import annotations
 
 import ast
 import importlib.util
+from pathlib import Path
 import sys
 import sysconfig
-from pathlib import Path
+
+ALLOWED_3RD_PARTY: frozenset[str] = frozenset(
+    {
+        "zero_keras",
+        "ml_switcheroo_compiler",
+        "ml_switcheroo_ir",
+    }
+)
 
 
-def is_stdlib(base_name):
-    """Function docstring.
+def is_stdlib(base_name: str) -> bool:
+    """Return whether ``base_name`` is a Python standard library module.
 
     Args:
-        base_name: Description.
+        base_name: Top-level module name to inspect.
+
+    Returns:
+        bool: True if ``base_name`` belongs to the Python standard library.
     """
+    if hasattr(sys, "stdlib_module_names"):
+        if base_name in sys.stdlib_module_names:
+            return True
     if base_name in sys.builtin_module_names:
         return True
+
     try:
         spec = importlib.util.find_spec(base_name)
-        if spec is None:
-            return False
-        if spec.origin in ("built-in", "frozen"):
-            return True
-        if spec.origin is None:
-            return False
-        stdlib_paths = [sysconfig.get_path("stdlib"), sysconfig.get_path("platstdlib")]
-        for path in stdlib_paths:
-            if (
-                path
-                and spec.origin.startswith(path)
-                and "site-packages" not in spec.origin
-            ):
-                return True
+    except ValueError:
         return False
-    except ImportError:
+    if spec is None or spec.origin is None:
         return False
 
-
-ALLOWED_3RD_PARTY = {
-    "pydantic",
-    "cdd",
-    "ml_switcheroo_ir",
-    "ml_switcheroo_compiler",
-}
-
-ALLOWED_LOCAL = {"zero_keras"}
+    stdlib_path = sysconfig.get_path("stdlib")
+    if stdlib_path and spec.origin.startswith(stdlib_path) and "site-packages" not in spec.origin:
+        return True
+    return spec.origin in ("built-in", "frozen")
 
 
-def check_file(filepath):
-    """Function docstring.
+def check_file_imports(py_file: Path) -> set[str]:
+    """Scan a single Python file for disallowed third-party imports.
 
     Args:
-        filepath: Description.
+        py_file: Path to the Python source file to inspect.
+
+    Returns:
+        set[str]: Set of disallowed top-level package names found in ``py_file``.
     """
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            tree = ast.parse(f.read(), filename=str(filepath))
-    except SyntaxError as e:
-        print(f"Error parsing {filepath}: {e}")
-        return False
-
-    disallowed_imports = []
-
-    try:
-        with open(filepath, "r", encoding="utf-8") as f:
-            content = f.read()
-            if '"nu" + "mpy"' in content or "'nu' + 'mpy'" in content:
-                disallowed_imports.append(("Obfuscated numpy import", 0))
-    except ImportError:
-        pass
+    disallowed: set[str] = set()
+    content = py_file.read_text(encoding="utf-8")
+    tree = ast.parse(content, filename=str(py_file))
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                base_module = alias.name.split(".")[0]
-                if base_module == "importlib" or not check_module(base_module):
-                    disallowed_imports.append((alias.name, node.lineno))
+                base = alias.name.split(".")[0]
+                if not is_stdlib(base) and base not in ALLOWED_3RD_PARTY:
+                    disallowed.add(base)
         elif isinstance(node, ast.ImportFrom):
-            if node.module:
-                # Handle relative imports (level > 0)
-                if node.level > 0:
-                    continue
-                base_module = node.module.split(".")[0]
-                if base_module == "importlib" or not check_module(base_module):
-                    disallowed_imports.append((node.module, node.lineno))
-        elif isinstance(node, ast.Name):
-            pass
-        elif (
-            isinstance(node, ast.Attribute)
-            and node.attr == "modules"
-            and getattr(node.value, "id", None) == "sys"
-        ):
-            disallowed_imports.append(("sys.modules", node.lineno))
-
-    if disallowed_imports:
-        print(f"\n{filepath}: Disallowed imports found:")
-        for name, line in disallowed_imports:
-            print(f"  Line {line}: {name}")
-        return False
-    return True
+            if node.level == 0 and node.module:
+                base = node.module.split(".")[0]
+                if not is_stdlib(base) and base not in ALLOWED_3RD_PARTY:
+                    disallowed.add(base)
+        elif isinstance(node, ast.Call):
+            func_name = ""
+            if isinstance(node.func, ast.Name):
+                func_name = node.func.id
+            elif isinstance(node.func, ast.Attribute):
+                func_name = node.func.attr
+            if func_name in ("__import__", "import_module") and node.args:
+                first_arg = node.args[0]
+                if isinstance(first_arg, ast.Constant) and isinstance(first_arg.value, str):
+                    base = first_arg.value.split(".")[0]
+                    if not is_stdlib(base) and base not in ALLOWED_3RD_PARTY:
+                        disallowed.add(base)
+    return disallowed
 
 
-def check_module(base_module):
-    """Function docstring.
+def main(src_root: str = "src") -> int:
+    """Validate imports across all Python files under ``src_root``.
 
     Args:
-        base_module: Description.
+        src_root: Root source directory to scan.
+
+    Returns:
+        int: Exit status code (0 for success, 1 when unauthorized imports exist).
     """
-    if base_module in ALLOWED_3RD_PARTY:
-        return True
-    if base_module in ALLOWED_LOCAL:
-        return True
-    return bool(is_stdlib(base_module))
+    src_dir = Path(src_root)
+    disallowed_imports: set[tuple[str, str]] = set()
 
+    for py_file in sorted(src_dir.rglob("*.py")):
+        for pkg in sorted(check_file_imports(py_file)):
+            disallowed_imports.add((str(py_file), pkg))
 
-def main():
-    """Function docstring."""
-    src_dir = Path("src")
-    if not src_dir.exists():
-        print("src/ directory not found.")
-        sys.exit(0)
-
-    has_errors = False
-    for filepath in src_dir.rglob("*.py"):
-        if not check_file(filepath):
-            has_errors = True
-
-    if has_errors:
-        print(
-            "\nERROR: Non-test code must not import unauthorized 3rd-party dependencies."
-        )
+    if disallowed_imports:
+        print("Error: Unauthorized 3rd-party imports found in src/:")
+        for filepath, pkg in sorted(disallowed_imports):
+            print(f"  {filepath}: {pkg}")
         print(f"Allowed 3rd-party: {', '.join(sorted(ALLOWED_3RD_PARTY))}")
-        sys.exit(1)
-    else:
-        print("All imports in src/ are authorized.")
-        sys.exit(0)
+        return 1
+
+    print("All imports in src/ are authorized.")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

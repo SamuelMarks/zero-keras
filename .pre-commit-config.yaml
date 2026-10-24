@@ -15,6 +15,56 @@ repos:
     types:
     - python
     pass_filenames: false
+  - id: check-imports
+    name: Check Disallowed 3rd-party Imports
+    entry: python3 scripts/check_imports.py
+    language: system
+    types:
+    - python
+    files: ^src/
+    pass_filenames: false
+  - id: check-docstrings
+    name: Check 100% Docstrings (AST & Args)
+    entry: python3 scripts/check_docstrings.py
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: interrogate
+    name: Interrogate Docstring Coverage (100%)
+    entry: interrogate -vv -f 100 -M -i -c pyproject.toml src scripts tests
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: lint-typing
+    name: Check Strict Typing Rules (No Any/object/cast/getattr)
+    entry: python3 scripts/lint_typing.py
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: mypy
+    name: Mypy Strict Type Check
+    entry: mypy src tests scripts
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: check-compliance
+    name: Check Snapshot API Compliance
+    entry: python3 scripts/check_compliance.py
+    language: system
+    types:
+    - python
+    pass_filenames: false
+  - id: pytest-coverage
+    name: Pytest 100% Line & Branch Coverage
+    entry: pytest --cov=src/zero_keras --cov=scripts --cov-branch --cov-fail-under=100
+    language: system
+    types:
+    - python
+    pass_filenames: false
   - id: update-badges
     name: Update Coverage Shields
     entry: python3 scripts/update_badges.py
@@ -26,12 +76,4 @@ repos:
     name: Build Package
     entry: python3 -m build
     language: system
-    pass_filenames: false
-  - id: check-imports
-    name: Check Disallowed 3rd-party Imports
-    entry: python3 scripts/check_imports.py
-    language: system
-    types:
-    - python
-    files: ^src/
     pass_filenames: false

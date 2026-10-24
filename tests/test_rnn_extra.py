@@ -1,9 +1,14 @@
+"""Module `test_rnn_extra` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 
 from zero_keras import layers
 
 
-def test_simplernn_isolated():
+def test_simplernn_isolated() -> TensorLike:
+    """Execute ``test_simplernn_isolated``."""
     cell = layers.SimpleRNNCell(4)
     layer = layers.SimpleRNN(4)
     x = np.random.rand(2, 5, 3).astype(np.float32)
@@ -14,21 +19,24 @@ def test_simplernn_isolated():
     assert out.shape == (2, 4)
 
 
-def test_gru_isolated():
+def test_gru_isolated() -> TensorLike:
+    """Execute ``test_gru_isolated``."""
     cell = layers.GRUCell(4)
     layer = layers.GRU(4)
     x = np.random.rand(2, 5, 3).astype(np.float32)
     assert layer(x).shape == (2, 4)
 
 
-def test_lstm_isolated():
+def test_lstm_isolated() -> TensorLike:
+    """Execute ``test_lstm_isolated``."""
     cell = layers.LSTMCell(4)
     layer = layers.LSTM(4)
     x = np.random.rand(2, 5, 3).astype(np.float32)
     assert layer(x).shape == (2, 4)
 
 
-def test_stacked_rnn_cells():
+def test_stacked_rnn_cells() -> TensorLike:
+    """Execute ``test_stacked_rnn_cells``."""
     cells = [layers.LSTMCell(4), layers.LSTMCell(4)]
     layer = layers.RNN(layers.StackedRNNCells(cells))
     x = np.random.rand(2, 5, 3).astype(np.float32)
@@ -38,7 +46,8 @@ def test_stacked_rnn_cells():
     assert len(stacked.state_size) == 4
 
 
-def test_rnn_stateful():
+def test_rnn_stateful() -> TensorLike:
+    """Execute ``test_rnn_stateful``."""
     layer = layers.SimpleRNN(4, stateful=True)
     layer.build((2, 5, 3))
     x = np.random.rand(2, 5, 3).astype(np.float32)
@@ -54,7 +63,16 @@ from unittest.mock import patch
 @patch("zero_keras.ops.gru_cell", return_value=(None, [None, None]))
 @patch("zero_keras.ops.lstm_cell", return_value=(None, [None, None]))
 @patch("zero_keras.ops.rnn")
-def test_all_rnn_and_attention_coverage(mock_rnn, mock_lstm, mock_gru):
+def test_all_rnn_and_attention_coverage(
+    mock_rnn: TensorLike, mock_lstm: TensorLike, mock_gru: TensorLike
+) -> TensorLike:
+    """Execute ``test_all_rnn_and_attention_coverage``.
+
+    Args:
+        mock_rnn: Input parameter ``mock_rnn``.
+        mock_lstm: Input parameter ``mock_lstm``.
+        mock_gru: Input parameter ``mock_gru``.
+    """
     import numpy as np
 
     from zero_keras import layers

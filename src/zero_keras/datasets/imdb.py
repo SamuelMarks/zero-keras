@@ -1,14 +1,32 @@
-"""IMDB sentiment classification dataset."""
+"""IMDB sentiment classification dataset loader for zero_keras."""
 
+from __future__ import annotations
+
+from collections.abc import Sequence
 import json
 
 from zero_keras import ops, random
+from zero_keras.types import ConfigValue
 from zero_keras.utils.generic_utils import get_file
 
 
-def remove_long_seq(maxlen, seq, label):
-    """Removes sequences that exceed the maximum length."""
-    new_seq, new_label = [], []
+def remove_long_seq(
+    maxlen: int,
+    seq: Sequence[list[int]],
+    label: Sequence[int],
+) -> tuple[list[list[int]], list[int]]:
+    """Remove sequences that exceed ``maxlen``.
+
+    Args:
+        maxlen: Maximum allowed sequence length.
+        seq: Sequence of token-index lists.
+        label: Corresponding integer labels.
+
+    Returns:
+        tuple[list[list[int]], list[int]]: Filtered ``(sequences, labels)``.
+    """
+    new_seq: list[list[int]] = []
+    new_label: list[int] = []
     for x, y in zip(seq, label):
         if len(x) < maxlen:
             new_seq.append(x)
@@ -17,69 +35,60 @@ def remove_long_seq(maxlen, seq, label):
 
 
 def load_data(
-    path="imdb.npz",
-    num_words=None,
-    skip_top=0,
-    maxlen=None,
-    seed=113,
-    start_char=1,
-    oov_char=2,
-    index_from=3,
-    **kwargs,
-):
-    """Loads the [IMDB dataset](https://ai.stanford.edu/~amaas/data/sentiment/).
-
-    This is a dataset of 25,000 movies reviews from IMDB, labeled by sentiment
-    (positive/negative). Reviews have been preprocessed, and each review is
-    encoded as a list of word indexes (integers).
+    path: str = "imdb.npz",
+    num_words: int | None = None,
+    skip_top: int = 0,
+    maxlen: int | None = None,
+    seed: int = 113,
+    start_char: int | None = 1,
+    oov_char: int | None = 2,
+    index_from: int = 3,
+    **kwargs: ConfigValue,
+) -> tuple[tuple[list[list[int]], list[int]], tuple[list[list[int]], list[int]]]:
+    """Load the IMDB sentiment classification dataset.
 
     Args:
-        path: where to cache the data (relative to `~/.keras/dataset`).
-        num_words: integer or None. Words are
-            ranked by how often they occur (in the training set) and only
-            the `num_words` most frequent words are kept. Any less frequent word
-            will appear as `oov_char` value in the sequence data. If None,
-            all words are kept. Defaults to `None`.
-        skip_top: skip the top N most frequently occurring words
-            (which may not be informative). These words will appear as
-            `oov_char` value in the dataset. When 0, no words are
-            skipped. Defaults to `0`.
-        maxlen: int or None. Maximum sequence length.
-            Any longer sequence will be truncated. None, means no truncation.
-            Defaults to `None`.
-        seed: int. Seed for reproducible data shuffling.
-        start_char: int. The start of a sequence will be marked with this
-            character. 0 is usually the padding character. Defaults to `1`.
-        oov_char: int. The out-of-vocabulary character.
-            Words that were cut out because of the `num_words` or
-            `skip_top` limits will be replaced with this character.
-        index_from: int. Index actual words with this index and higher.
-        **kwargs: Optional keyword arguments.
+        path: Local cache filename (relative to ``~/.keras/datasets``).
+        num_words: Maximum number of most frequent words to keep.
+        skip_top: Top N most frequent words to skip.
+        maxlen: Maximum sequence length before filtering.
+        seed: Random seed for reproducible shuffling.
+        start_char: Token ID marking the start of a sequence.
+        oov_char: Token ID replacing out-of-vocabulary words.
+        index_from: Offset added to actual word indices.
+        **kwargs: Additional keyword arguments.
 
     Returns:
-        Tuple of arrays/lists: `(x_train, y_train), (x_test, y_test)`.
+        tuple[tuple[list[list[int]], list[int]], tuple[list[list[int]], list[int]]]:
+            Tuple of ``((x_train, y_train), (x_test, y_test))``.
+
+    Raises:
+        ValueError: If ``maxlen`` filters out all sequences.
     """
+    _ = kwargs
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
-    path = get_file(
+    resolved_path = get_file(
         fname=path,
         origin=f"{origin_folder}imdb.npz",
         file_hash="69664113be75683a8fe16e3ed0ab59fda8886cb3cd7ada244f7d9544e4676b9f",
     )
-    with ops.load(path, allow_pickle=True) as f:
-        x_train, labels_train = list(f["x_train"]), list(f["y_train"])
-        x_test, labels_test = list(f["x_test"]), list(f["y_test"])
+    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
+        x_train: list[list[int]] = [list(seq) for seq in f["x_train"]]
+        labels_train: list[int] = [int(lbl) for lbl in f["y_train"]]
+        x_test: list[list[int]] = [list(seq) for seq in f["x_test"]]
+        labels_test: list[int] = [int(lbl) for lbl in f["y_test"]]
 
     rng = random.RandomState(seed)
 
     indices = list(range(len(x_train)))
-    rng.shuffle(indices)
+    rng.shuffle(indices)  # type: ignore[arg-type]
     x_train = [x_train[i] for i in indices]
     labels_train = [labels_train[i] for i in indices]
 
-    indices = list(range(len(x_test)))
-    rng.shuffle(indices)
-    x_test = [x_test[i] for i in indices]
-    labels_test = [labels_test[i] for i in indices]
+    indices_test = list(range(len(x_test)))
+    rng.shuffle(indices_test)  # type: ignore[arg-type]
+    x_test = [x_test[i] for i in indices_test]
+    labels_test = [labels_test[i] for i in indices_test]
 
     if start_char is not None:
         x_train = [[start_char] + [w + index_from for w in x] for x in x_train]
@@ -96,8 +105,7 @@ def load_data(
         x_test, labels_test = remove_long_seq(maxlen, x_test, labels_test)
         if not x_train or not x_test:
             raise ValueError(
-                "After filtering for sequences shorter than maxlen="
-                f"{maxlen!s}, no sequence was kept. Increase maxlen."
+                f"After filtering for sequences shorter than maxlen={maxlen!s}, no sequence was kept. Increase maxlen."
             )
 
     xs = x_train + x_test
@@ -113,26 +121,26 @@ def load_data(
 
     idx = len(x_train)
 
-    x_train, y_train = xs[:idx], labels[:idx]
-    x_test, y_test = xs[idx:], labels[idx:]
-    return (x_train, y_train), (x_test, y_test)
+    x_train_out, y_train_out = xs[:idx], labels[:idx]
+    x_test_out, y_test_out = xs[idx:], labels[idx:]
+    return (x_train_out, y_train_out), (x_test_out, y_test_out)
 
 
-def get_word_index(path="imdb_word_index.json"):
-    """Retrieves a dict mapping words to their index in the IMDB dataset.
+def get_word_index(path: str = "imdb_word_index.json") -> dict[str, int]:
+    """Retrieve the dictionary mapping words to their integer index in IMDB.
 
     Args:
-        path: where to cache the data (relative to `~/.keras/dataset`).
+        path: Local cache filename (relative to ``~/.keras/datasets``).
 
     Returns:
-        The word index dictionary. Keys are word strings, values are their
-        index.
+        dict[str, int]: Word-to-index dictionary.
     """
     origin_folder = "https://storage.googleapis.com/tensorflow/tf-keras-datasets/"
-    path = get_file(
+    resolved_path = get_file(
         fname=path,
         origin=f"{origin_folder}imdb_word_index.json",
         file_hash="bfafd718b763782e994055a2d397834f",
     )
-    with open(path) as f:
-        return json.load(f)
+    with open(resolved_path, encoding="utf-8") as f:
+        raw = json.load(f)
+    return {str(k): int(v) for k, v in raw.items()}

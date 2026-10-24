@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from unittest.mock import patch
 
 import pytest
@@ -9,7 +12,7 @@ from ml_switcheroo_compiler.ops import asarray
 from zero_keras.core_layers import KerasTensor, Model
 
 
-def test_kerastensor_bool_exception():
+def test_kerastensor_bool_exception() -> TensorLike:
     """Function docstring."""
     t = KerasTensor((2,))
 
@@ -17,31 +20,29 @@ def test_kerastensor_bool_exception():
     class BadBool:
         """Class docstring."""
 
-        def __bool__(self):
+        def __bool__(self) -> TensorLike:
             """Function docstring."""
             raise ValueError("bad bool")
 
     t.data = BadBool()
 
     # Eager mode True
-    old_eager = getattr(config, "eager_mode", False)
+    old_eager = config.eager_mode if hasattr(config, "eager_mode") else False
     config.eager_mode = True
     try:
-        with pytest.raises(
-            TypeError, match="Using a KerasTensor as a Python bool is not allowed"
-        ):
+        with pytest.raises(TypeError, match="Using a KerasTensor as a Python bool is not allowed"):
             bool(t)
     finally:
         config.eager_mode = old_eager
 
 
-def test_kerastensor_bool_success():
+def test_kerastensor_bool_success() -> TensorLike:
     """Function docstring."""
     t = KerasTensor((2,))
     t.data = True
 
     # Eager mode True
-    old_eager = getattr(config, "eager_mode", False)
+    old_eager = config.eager_mode if hasattr(config, "eager_mode") else False
     config.eager_mode = True
     try:
         res = bool(t)
@@ -50,7 +51,7 @@ def test_kerastensor_bool_success():
         config.eager_mode = old_eager
 
 
-def test_kerastensor_array_fallback():
+def test_kerastensor_array_fallback() -> TensorLike:
     """Function docstring."""
     import sys
 
@@ -58,9 +59,7 @@ def test_kerastensor_array_fallback():
 
     import numpy as np
 
-    with patch(
-        "ml_switcheroo_compiler.core.tensor.Tensor.numpy", return_value=np.array([1.0])
-    ):
+    with patch("ml_switcheroo_compiler.core.tensor.Tensor.numpy", return_value=np.array([1.0])):
         arr = t.__array__(dtype="float32", copy=True)
         assert arr is not None
 
@@ -74,7 +73,7 @@ def test_kerastensor_array_fallback():
                 sys.modules["numpy"] = old_numpy
 
 
-def test_model_save_no_weights(tmp_path):
+def test_model_save_no_weights(tmp_path: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -86,7 +85,7 @@ def test_model_save_no_weights(tmp_path):
     m.save(tmp_path / "model.safetensors")
 
 
-def test_model_evaluate_branches():
+def test_model_evaluate_branches() -> TensorLike:
     """Function docstring."""
     m = Model()
     # dummy input

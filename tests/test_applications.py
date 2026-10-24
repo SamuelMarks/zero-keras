@@ -1,9 +1,12 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras import applications
 
 
-def test_applications():
+def test_applications() -> TensorLike:
     """Function docstring."""
     funcs = [
         applications.convnext.ConvNeXtTiny,
@@ -51,7 +54,8 @@ def test_applications():
         fn(weights=None)
 
 
-def test_resnet50_extra():
+def test_resnet50_extra() -> TensorLike:
+    """Execute ``test_resnet50_extra``."""
     import numpy as np
 
     from zero_keras.applications import resnet50

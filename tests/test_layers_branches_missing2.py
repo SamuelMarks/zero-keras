@@ -1,11 +1,14 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import layers
 
 
-def test_preset_weights_convs():
+def test_preset_weights_convs() -> TensorLike:
     """Function docstring."""
     # DepthwiseConv1D
     l = layers.DepthwiseConv1D(2)
@@ -38,7 +41,7 @@ def test_preset_weights_convs():
     l.build((None, 5, 5, 5, 2))
 
 
-def test_preset_weights_rnn_cells():
+def test_preset_weights_rnn_cells() -> TensorLike:
     """Function docstring."""
     # SimpleRNNCell
     c = layers.SimpleRNNCell(4)
@@ -69,19 +72,19 @@ def test_preset_weights_rnn_cells():
     c.build((None, 2))
 
 
-def test_simplernn_activation_none():
+def test_simplernn_activation_none() -> TensorLike:
     """Function docstring."""
     l = layers.SimpleRNN(4, activation=None)
     l(np.random.rand(2, 3, 2))
 
 
-def test_convlstm_bias_none():
+def test_convlstm_bias_none() -> TensorLike:
     """Function docstring."""
     l = layers.ConvLSTM1D(2, 3, use_bias=False)
     l(np.random.rand(2, 3, 5, 2))
 
 
-def test_wrapper_already_built():
+def test_wrapper_already_built() -> TensorLike:
     """Function docstring."""
     # TimeDistributed already built wrapper
     l = layers.Dense(4)
@@ -96,13 +99,13 @@ def test_wrapper_already_built():
     s.build((None, 2))  # trigger if self.built: return
 
 
-def test_bidirectional_args():
+def test_bidirectional_args() -> TensorLike:
     """Function docstring."""
 
     class DummyCell:
         """Class docstring."""
 
-        def __init__(self, units):
+        def __init__(self, units: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -113,7 +116,7 @@ def test_bidirectional_args():
     class DummyLayer(layers.Layer):
         """Class docstring."""
 
-        def __init__(self, cell):
+        def __init__(self, cell: TensorLike) -> None:
             """Function docstring.
 
             Args:

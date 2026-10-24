@@ -1,6 +1,9 @@
 # ruff: noqa
 """Keras layers."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras.core_layers import Layer, Wrapper
 from .core import *
 from .normalization import *

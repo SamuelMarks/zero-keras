@@ -1,5 +1,8 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from unittest import mock
 
 from zero_keras.core_layers import Model
@@ -7,17 +10,15 @@ from zero_keras.export import export_api
 from zero_keras.saving import saving_api
 
 
-def test_saving_model():
+def test_saving_model() -> TensorLike:
     """Function docstring."""
     model = Model()
     with mock.patch("ml_switcheroo_compiler.serialization.save_model") as mock_save:
         saving_api.save_model(model, "test.keras", overwrite=False, zipped=True)
-        mock_save.assert_called_once_with(
-            model, "test.keras", overwrite=False, zipped=True
-        )
+        mock_save.assert_called_once_with(model, "test.keras", overwrite=False, zipped=True)
 
 
-def test_loading_model():
+def test_loading_model() -> TensorLike:
     """Function docstring."""
     with mock.patch(
         "ml_switcheroo_compiler.serialization.load_model", return_value="model"
@@ -31,7 +32,7 @@ def test_loading_model():
         )
 
 
-def test_decorators_and_scopes():
+def test_decorators_and_scopes() -> TensorLike:
     """Function docstring."""
 
     @saving_api.register_keras_serializable(package="P", name="N")
@@ -44,7 +45,7 @@ def test_decorators_and_scopes():
         pass
 
 
-def test_export_archive():
+def test_export_archive() -> TensorLike:
     """Function docstring."""
     archive = export_api.ExportArchive()
 
@@ -62,7 +63,7 @@ def test_export_archive():
     archive.add_variable_collection("vars", [])
 
 
-def test_layer_weights():
+def test_layer_weights() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import Model
 
@@ -71,7 +72,7 @@ def test_layer_weights():
     class FakeWeight:
         """Class docstring."""
 
-        def assign(self, w):
+        def assign(self, w: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -104,7 +105,8 @@ def test_layer_weights():
         mock_load.assert_called_once()
 
 
-def test_export_archive_methods():
+def test_export_archive_methods() -> TensorLike:
+    """Execute ``test_export_archive_methods``."""
     from zero_keras.export.export_api import ExportArchive
 
     archive = ExportArchive()

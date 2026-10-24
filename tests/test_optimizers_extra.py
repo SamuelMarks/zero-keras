@@ -1,9 +1,12 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras import optimizers
 
 
-def test_optimizers_io():
+def test_optimizers_io() -> TensorLike:
     """Function docstring."""
     opt = optimizers.Adam()
     config = optimizers.serialize(opt)
@@ -25,12 +28,13 @@ def test_optimizers_io():
     assert optimizers.get("unknown") == "unknown"
 
 
-def test_legacy():
+def test_legacy() -> TensorLike:
     """Function docstring."""
     assert hasattr(optimizers, "legacy")
 
 
-def test_optimizer_methods_extra():
+def test_optimizer_methods_extra() -> TensorLike:
+    """Execute ``test_optimizer_methods_extra``."""
     from zero_keras.optimizers import Optimizer
 
     opt = Optimizer()
@@ -57,7 +61,8 @@ def test_optimizer_methods_extra():
     # tested indirectly
 
 
-def test_all_optimizers_coverage():
+def test_all_optimizers_coverage() -> TensorLike:
+    """Execute ``test_all_optimizers_coverage``."""
     import numpy as np
 
     from zero_keras import optimizers
@@ -95,7 +100,8 @@ def test_all_optimizers_coverage():
         opt.get_config()
 
 
-def test_schedules_coverage():
+def test_schedules_coverage() -> TensorLike:
+    """Execute ``test_schedules_coverage``."""
     from zero_keras.optimizers import schedules
 
     scheds = [

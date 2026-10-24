@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
+from zero_keras.types import TensorLike
 
 from zero_keras import ops
 
 from .activations import _to_tensor, _wrap
 
 
-def _reduce(loss: Any, reduction: str, sample_weight: Any | None = None) -> Any:
+def _reduce(
+    loss: TensorLike, reduction: str, sample_weight: TensorLike | None = None
+) -> TensorLike:
     """_reduce function.
 
     Args:
@@ -18,7 +20,7 @@ def _reduce(loss: Any, reduction: str, sample_weight: Any | None = None) -> Any:
     sample_weight: Parameter sample_weight.
 
     Returns:
-    Any: Return value.
+    TensorLike: Return value.
 
     """
     loss = _to_tensor(loss)
@@ -33,7 +35,7 @@ def _reduce(loss: Any, reduction: str, sample_weight: Any | None = None) -> Any:
     return _wrap(ops.mean(loss))
 
 
-def mean_squared_error(y_true, y_pred):
+def mean_squared_error(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the mean squared error between labels and predictions.
 
     Formula:
@@ -59,7 +61,7 @@ def mean_squared_error(y_true, y_pred):
     return ops.mean(ops.square(y_true - y_pred), axis=-1)
 
 
-def mean_absolute_error(y_true, y_pred):
+def mean_absolute_error(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the mean absolute error between labels and predictions.
 
     ```python
@@ -83,7 +85,7 @@ def mean_absolute_error(y_true, y_pred):
     return ops.mean(ops.abs(y_true - y_pred), axis=-1)
 
 
-def mean_absolute_percentage_error(y_true, y_pred):
+def mean_absolute_percentage_error(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the mean absolute percentage error between `y_true` & `y_pred`.
 
     Formula:
@@ -115,7 +117,7 @@ def mean_absolute_percentage_error(y_true, y_pred):
     return 100.0 * ops.mean(diff, axis=-1)
 
 
-def mean_squared_logarithmic_error(y_true, y_pred):
+def mean_squared_logarithmic_error(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the mean squared logarithmic error between `y_true` & `y_pred`.
 
     Formula:
@@ -148,7 +150,7 @@ def mean_squared_logarithmic_error(y_true, y_pred):
     return ops.mean(ops.square(first_log - second_log), axis=-1)
 
 
-def huber(y_true, y_pred, delta=1.0):
+def huber(y_true: TensorLike, y_pred: TensorLike, delta: TensorLike = 1.0) -> TensorLike:
     """Computes Huber loss value.
 
     Formula:
@@ -188,7 +190,7 @@ def huber(y_true, y_pred, delta=1.0):
     return ops.mean(0.5 * ops.square(quadratic) + delta * linear, axis=-1)
 
 
-def log_cosh(y_true, y_pred):
+def log_cosh(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Logarithm of the hyperbolic cosine of the prediction error.
 
     Formula:
@@ -223,7 +225,7 @@ def log_cosh(y_true, y_pred):
     )
 
 
-def hinge(y_true, y_pred):
+def hinge(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the hinge loss between `y_true` & `y_pred`.
 
     Formula:
@@ -251,7 +253,7 @@ def hinge(y_true, y_pred):
     return ops.mean(ops.maximum(1.0 - y_true * y_pred, 0.0), axis=-1)
 
 
-def squared_hinge(y_true, y_pred):
+def squared_hinge(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the squared hinge loss between `y_true` & `y_pred`.
 
     Formula:
@@ -279,7 +281,7 @@ def squared_hinge(y_true, y_pred):
     return ops.mean(ops.square(ops.maximum(1.0 - y_true * y_pred, 0.0)), axis=-1)
 
 
-def categorical_hinge(y_true, y_pred):
+def categorical_hinge(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the categorical hinge loss between `y_true` & `y_pred`.
 
     Formula:
@@ -312,7 +314,7 @@ def categorical_hinge(y_true, y_pred):
     return ops.maximum(neg - pos + 1.0, 0.0)
 
 
-def poisson(y_true, y_pred):
+def poisson(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes the Poisson loss between y_true and y_pred.
 
     Formula:
@@ -343,7 +345,7 @@ def poisson(y_true, y_pred):
     return ops.mean(y_pred - y_true * ops.log(y_pred + 1e-7), axis=-1)
 
 
-def kl_divergence(y_true, y_pred):
+def kl_divergence(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Computes Kullback-Leibler divergence loss between `y_true` & `y_pred`.
 
     Formula:
@@ -380,7 +382,7 @@ def kl_divergence(y_true, y_pred):
     return ops.sum(y_true * ops.log(y_true / y_pred), axis=-1)
 
 
-def cosine_similarity(y_true, y_pred, axis=-1):
+def cosine_similarity(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike = -1) -> TensorLike:
     """Computes the cosine similarity between labels and predictions.
 
     Formula:
@@ -417,7 +419,12 @@ def cosine_similarity(y_true, y_pred, axis=-1):
     return -ops.sum(y_true * y_pred, axis=axis) / (y_true_norm * y_pred_norm)
 
 
-def binary_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0.0):
+def binary_crossentropy(
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    from_logits: TensorLike = False,
+    label_smoothing: TensorLike = 0.0,
+) -> TensorLike:
     """Computes the binary crossentropy loss.
 
     Args:
@@ -460,7 +467,12 @@ def binary_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0.0):
     return -ops.mean(bce, axis=-1)
 
 
-def categorical_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=0.0):
+def categorical_crossentropy(
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    from_logits: TensorLike = False,
+    label_smoothing: TensorLike = 0.0,
+) -> TensorLike:
     """Computes the categorical crossentropy loss.
 
     Args:
@@ -488,9 +500,7 @@ def categorical_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     if label_smoothing > 0.0:
-        num_classes = ops.cast(
-            ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype
-        )
+        num_classes = ops.cast(ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype)
         y_true = y_true * (1.0 - label_smoothing) + (label_smoothing / num_classes)
 
     if from_logits:
@@ -505,8 +515,11 @@ def categorical_crossentropy(y_true, y_pred, from_logits=False, label_smoothing=
 
 
 def sparse_categorical_crossentropy(
-    y_true, y_pred, from_logits=False, ignore_class=None
-):
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    from_logits: TensorLike = False,
+    ignore_class: TensorLike = None,
+) -> TensorLike:
     """Computes the sparse categorical crossentropy loss.
 
     Args:
@@ -549,8 +562,13 @@ def sparse_categorical_crossentropy(
 
 
 def binary_focal_crossentropy(
-    y_true, y_pred, alpha=0.25, gamma=2.0, from_logits=False, label_smoothing=0.0
-):
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    alpha: TensorLike = 0.25,
+    gamma: TensorLike = 2.0,
+    from_logits: TensorLike = False,
+    label_smoothing: TensorLike = 0.0,
+) -> TensorLike:
     """Computes the binary focal crossentropy loss.
 
     According to [Lin et al., 2018](https://arxiv.org/pdf/1708.02002.pdf), it
@@ -625,9 +643,7 @@ def binary_focal_crossentropy(
         )
     else:
         y_pred_prob = ops.clip(y_pred, 1e-7, 1.0 - 1e-7)
-        bce = -(
-            y_true * ops.log(y_pred_prob) + (1.0 - y_true) * ops.log(1.0 - y_pred_prob)
-        )
+        bce = -(y_true * ops.log(y_pred_prob) + (1.0 - y_true) * ops.log(1.0 - y_pred_prob))
 
     p_t = y_true * y_pred_prob + (1.0 - y_true) * (1.0 - y_pred_prob)
     modulating_factor = ops.power(1.0 - p_t, gamma)
@@ -642,8 +658,13 @@ def binary_focal_crossentropy(
 
 
 def categorical_focal_crossentropy(
-    y_true, y_pred, alpha=0.25, gamma=2.0, from_logits=False, label_smoothing=0.0
-):
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    alpha: TensorLike = 0.25,
+    gamma: TensorLike = 2.0,
+    from_logits: TensorLike = False,
+    label_smoothing: TensorLike = 0.0,
+) -> TensorLike:
     """Computes the categorical focal crossentropy loss.
 
     Args:
@@ -680,9 +701,7 @@ def categorical_focal_crossentropy(
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     if label_smoothing > 0.0:
-        num_classes = ops.cast(
-            ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype
-        )
+        num_classes = ops.cast(ops.full_like(y_pred, y_pred.shape[-1]), dtype=y_pred.dtype)
         y_true = y_true * (1.0 - label_smoothing) + (label_smoothing / num_classes)
 
     if from_logits:
@@ -736,8 +755,8 @@ class Loss:
 
     """
 
-    def call(self, y_true, y_pred):
-        """call docstring.
+    def call(self, y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
+        """Call docstring.
 
         Args:
             y_true: y_true.
@@ -746,7 +765,7 @@ class Loss:
         return y_pred
 
     @classmethod
-    def from_config(cls, config):
+    def from_config(cls, config: TensorLike) -> TensorLike:
         """from_config docstring.
 
         Args:
@@ -754,16 +773,16 @@ class Loss:
         """
         return cls(**config)
 
-    def get_config(self):
+    def get_config(self) -> TensorLike:
         """get_config docstring."""
-        return {"name": getattr(self, "name", None)}
+        return {"name": (self.name if hasattr(self, "name") else None)}
 
     def __init__(
         self,
         reduction: str = "sum_over_batch_size",
         name: str | None = None,
         dtype: str | None = None,
-    ):
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -776,9 +795,15 @@ class Loss:
         self.dtype = dtype
 
     def __call__(
-        self, y_true: Any, y_pred: Any, sample_weight: Any | None = None
-    ) -> Any:
-        """Call self as a function."""
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         return _reduce(_to_tensor(0.0), self.reduction, sample_weight)
 
 
@@ -875,13 +900,13 @@ class BinaryCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits=False,
-        label_smoothing=0.0,
-        axis=-1,
-        reduction="sum_over_batch_size",
-        name="binary_crossentropy",
-        **kwargs,
-    ):
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0.0,
+        axis: TensorLike = -1,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "binary_crossentropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -893,16 +918,22 @@ class BinaryCrossentropy(Loss):
             kwargs: Description.
         """
         if not 0 <= label_smoothing <= 1:
-            raise ValueError(  # pragma: no cover
-                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
-            )
+            raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
         super().__init__(reduction=reduction, name=name)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
         self.axis = axis
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = binary_crossentropy(
             y_true,
             y_pred,
@@ -940,8 +971,11 @@ class MeanSquaredError(Loss):
     """
 
     def __init__(
-        self, reduction="sum_over_batch_size", name="mean_squared_error", **kwargs
-    ):
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "mean_squared_error",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -951,8 +985,16 @@ class MeanSquaredError(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = mean_squared_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1100,16 +1142,16 @@ class BinaryFocalCrossentropy(Loss):
 
     def __init__(
         self,
-        apply_class_balancing=False,
-        alpha=0.25,
-        gamma=2.0,
-        from_logits=False,
-        label_smoothing=0.0,
-        axis=-1,
-        reduction="sum_over_batch_size",
-        name="binary_focal_crossentropy",
-        **kwargs,
-    ):
+        apply_class_balancing: TensorLike = False,
+        alpha: TensorLike = 0.25,
+        gamma: TensorLike = 2.0,
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0.0,
+        axis: TensorLike = -1,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "binary_focal_crossentropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1124,9 +1166,7 @@ class BinaryFocalCrossentropy(Loss):
             kwargs: Description.
         """
         if not 0 <= label_smoothing <= 1:
-            raise ValueError(  # pragma: no cover
-                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
-            )
+            raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
         super().__init__(reduction=reduction, name=name)
         self.apply_class_balancing = apply_class_balancing
         self.alpha = alpha
@@ -1135,8 +1175,16 @@ class BinaryFocalCrossentropy(Loss):
         self.label_smoothing = label_smoothing
         self.axis = axis
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = binary_focal_crossentropy(
             y_true,
             y_pred,
@@ -1169,8 +1217,16 @@ class CTC(Loss):
 
     """
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         # Proper CTC requires backend support. Using a placeholder math here.
         loss = ops.mean(ops.abs(ops.subtract(y_true, y_pred)), axis=-1)
@@ -1248,13 +1304,13 @@ class CategoricalCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits=False,
-        label_smoothing=0.0,
-        axis=-1,
-        reduction="sum_over_batch_size",
-        name="categorical_crossentropy",
-        **kwargs,
-    ):
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0.0,
+        axis: TensorLike = -1,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "categorical_crossentropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1266,16 +1322,22 @@ class CategoricalCrossentropy(Loss):
             kwargs: Description.
         """
         if not 0 <= label_smoothing <= 1:
-            raise ValueError(  # pragma: no cover
-                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
-            )
+            raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
         super().__init__(reduction=reduction, name=name)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
         self.axis = axis
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = categorical_crossentropy(
             y_true,
             y_pred,
@@ -1397,15 +1459,15 @@ class CategoricalFocalCrossentropy(Loss):
 
     def __init__(
         self,
-        alpha=0.25,
-        gamma=2.0,
-        from_logits=False,
-        label_smoothing=0.0,
-        axis=-1,
-        reduction="sum_over_batch_size",
-        name="categorical_focal_crossentropy",
-        **kwargs,
-    ):
+        alpha: TensorLike = 0.25,
+        gamma: TensorLike = 2.0,
+        from_logits: TensorLike = False,
+        label_smoothing: TensorLike = 0.0,
+        axis: TensorLike = -1,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "categorical_focal_crossentropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1419,9 +1481,7 @@ class CategoricalFocalCrossentropy(Loss):
             kwargs: Description.
         """
         if not 0 <= label_smoothing <= 1:
-            raise ValueError(  # pragma: no cover
-                f"label_smoothing must be between 0 and 1. Got: {label_smoothing}"
-            )
+            raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
         super().__init__(reduction=reduction, name=name)
         self.alpha = alpha
         self.gamma = gamma
@@ -1429,8 +1489,16 @@ class CategoricalFocalCrossentropy(Loss):
         self.label_smoothing = label_smoothing
         self.axis = axis
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = categorical_focal_crossentropy(
             y_true,
             y_pred,
@@ -1496,11 +1564,11 @@ class CategoricalGeneralizedCrossEntropy(Loss):
 
     def __init__(
         self,
-        q=0.5,
-        reduction="sum_over_batch_size",
-        name="categorical_generalized_cross_entropy",
-        **kwargs,
-    ):
+        q: TensorLike = 0.5,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "categorical_generalized_cross_entropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1512,8 +1580,16 @@ class CategoricalGeneralizedCrossEntropy(Loss):
         super().__init__(reduction=reduction, name=name)
         self.q = q
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
 
         y_true_one_hot = y_true
@@ -1522,9 +1598,7 @@ class CategoricalGeneralizedCrossEntropy(Loss):
         p = ops.sum(ops.multiply(y_pred, y_true_one_hot), axis=-1)
 
         q_tensor = _to_tensor(self.q)
-        gce_loss = ops.divide(
-            ops.subtract(_to_tensor(1.0), ops.power(p, q_tensor)), q_tensor
-        )
+        gce_loss = ops.divide(ops.subtract(_to_tensor(1.0), ops.power(p, q_tensor)), q_tensor)
 
         return _reduce(gce_loss, self.reduction, sample_weight)
 
@@ -1559,8 +1633,11 @@ class CategoricalHinge(Loss):
     """
 
     def __init__(
-        self, reduction="sum_over_batch_size", name="categorical_hinge", **kwargs
-    ):
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "categorical_hinge",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1570,8 +1647,16 @@ class CategoricalHinge(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = categorical_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1634,13 +1719,13 @@ class Circle(Loss):
 
     def __init__(
         self,
-        gamma=80.0,
-        margin=0.4,
-        reduction="sum_over_batch_size",
-        remove_diagonal=True,
-        name="circle",
-        **kwargs,
-    ):
+        gamma: TensorLike = 80.0,
+        margin: TensorLike = 0.4,
+        reduction: TensorLike = "sum_over_batch_size",
+        remove_diagonal: TensorLike = True,
+        name: TensorLike = "circle",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1656,8 +1741,16 @@ class Circle(Loss):
         self.margin = margin
         self.remove_diagonal = remove_diagonal
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         # Simple placeholder for pair-wise circle loss since real circle loss is very complex
         diff = ops.subtract(y_pred, _to_tensor(self.margin))
@@ -1703,11 +1796,11 @@ class CosineSimilarity(Loss):
 
     def __init__(
         self,
-        axis=-1,
-        reduction="sum_over_batch_size",
-        name="cosine_similarity",
-        **kwargs,
-    ):
+        axis: TensorLike = -1,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "cosine_similarity",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1719,8 +1812,16 @@ class CosineSimilarity(Loss):
         super().__init__(reduction=reduction, name=name)
         self.axis = axis
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = cosine_similarity(y_true, y_pred, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1780,8 +1881,12 @@ class Dice(Loss):
     """
 
     def __init__(
-        self, reduction="sum_over_batch_size", name="dice", axis=None, **kwargs
-    ):
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "dice",
+        axis: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1793,8 +1898,16 @@ class Dice(Loss):
         super().__init__(reduction=reduction, name=name)
         self.axis = axis if axis is not None else -1
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         intersection = ops.sum(ops.multiply(y_true, y_pred), axis=self.axis)
         sum_y = ops.sum(ops.add(y_true, y_pred), axis=self.axis)
@@ -1837,7 +1950,12 @@ class Hinge(Loss):
 
     """
 
-    def __init__(self, reduction="sum_over_batch_size", name="hinge", **kwargs):
+    def __init__(
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "hinge",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1847,8 +1965,16 @@ class Hinge(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1890,8 +2016,12 @@ class Huber(Loss):
     """
 
     def __init__(
-        self, delta=1.0, reduction="sum_over_batch_size", name="huber_loss", **kwargs
-    ):
+        self,
+        delta: TensorLike = 1.0,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "huber_loss",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1903,8 +2033,16 @@ class Huber(Loss):
         super().__init__(reduction=reduction, name=name)
         self.delta = delta
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = huber(y_true, y_pred, delta=self.delta)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1941,8 +2079,11 @@ class KLDivergence(Loss):
     """
 
     def __init__(
-        self, reduction="sum_over_batch_size", name="k_l_divergence", **kwargs
-    ):
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "k_l_divergence",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1952,8 +2093,16 @@ class KLDivergence(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = kl_divergence(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1987,7 +2136,12 @@ class LogCosh(Loss):
 
     """
 
-    def __init__(self, reduction="sum_over_batch_size", name="log_cosh", **kwargs):
+    def __init__(
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "log_cosh",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1997,8 +2151,16 @@ class LogCosh(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = log_cosh(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2031,8 +2193,11 @@ class MeanAbsoluteError(Loss):
     """
 
     def __init__(
-        self, reduction="sum_over_batch_size", name="mean_absolute_error", **kwargs
-    ):
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "mean_absolute_error",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2042,8 +2207,16 @@ class MeanAbsoluteError(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = mean_absolute_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2077,10 +2250,10 @@ class MeanAbsolutePercentageError(Loss):
 
     def __init__(
         self,
-        reduction="sum_over_batch_size",
-        name="mean_absolute_percentage_error",
-        **kwargs,
-    ):
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "mean_absolute_percentage_error",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2090,8 +2263,16 @@ class MeanAbsolutePercentageError(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = mean_absolute_percentage_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2125,10 +2306,10 @@ class MeanSquaredLogarithmicError(Loss):
 
     def __init__(
         self,
-        reduction="sum_over_batch_size",
-        name="mean_squared_logarithmic_error",
-        **kwargs,
-    ):
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "mean_squared_logarithmic_error",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2138,8 +2319,16 @@ class MeanSquaredLogarithmicError(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = mean_squared_logarithmic_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2171,7 +2360,12 @@ class Poisson(Loss):
 
     """
 
-    def __init__(self, reduction="sum_over_batch_size", name="poisson", **kwargs):
+    def __init__(
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "poisson",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2181,8 +2375,16 @@ class Poisson(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = poisson(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2257,12 +2459,12 @@ class SparseCategoricalCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits=False,
-        ignore_class=None,
-        reduction="sum_over_batch_size",
-        name="sparse_categorical_crossentropy",
-        **kwargs,
-    ):
+        from_logits: TensorLike = False,
+        ignore_class: TensorLike = None,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "sparse_categorical_crossentropy",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2276,8 +2478,16 @@ class SparseCategoricalCrossentropy(Loss):
         self.from_logits = from_logits
         self.ignore_class = ignore_class
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = sparse_categorical_crossentropy(
             y_true, y_pred, from_logits=self.from_logits, ignore_class=self.ignore_class
         )
@@ -2314,7 +2524,12 @@ class SquaredHinge(Loss):
 
     """
 
-    def __init__(self, reduction="sum_over_batch_size", name="squared_hinge", **kwargs):
+    def __init__(
+        self,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "squared_hinge",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2324,8 +2539,16 @@ class SquaredHinge(Loss):
         """
         super().__init__(reduction=reduction, name=name)
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         loss = squared_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -2370,13 +2593,13 @@ class Tversky(Loss):
 
     def __init__(
         self,
-        alpha=0.5,
-        beta=0.5,
-        reduction="sum_over_batch_size",
-        name="tversky",
-        axis=None,
-        **kwargs,
-    ):
+        alpha: TensorLike = 0.5,
+        beta: TensorLike = 0.5,
+        reduction: TensorLike = "sum_over_batch_size",
+        name: TensorLike = "tversky",
+        axis: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2392,8 +2615,16 @@ class Tversky(Loss):
         self.beta = beta
         self.axis = axis if axis is not None else -1
 
-    def __call__(self, y_true, y_pred, sample_weight=None):
-        """Call self as a function."""
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+    ) -> TensorLike:
+        """Call self as a function.
+
+        Args:
+            y_true: Input parameter ``y_true``.
+            y_pred: Input parameter ``y_pred``.
+            sample_weight: Input parameter ``sample_weight``.
+        """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         true_pos = ops.sum(ops.multiply(y_true, y_pred), axis=self.axis)
         false_neg = ops.sum(
@@ -2416,37 +2647,50 @@ class Tversky(Loss):
         return _reduce(loss, self.reduction, sample_weight)
 
 
-def serialize(loss):
-    """Serialize a loss."""
-    if loss is None:  # pragma: no cover
-        return None  # pragma: no cover
-    if isinstance(loss, str):  # pragma: no cover
-        return loss  # pragma: no cover
-    return {  # pragma: no cover
+def serialize(loss: TensorLike) -> TensorLike:
+    """Serialize a loss.
+
+    Args:
+        loss: Input parameter ``loss``.
+    """
+    if loss is None:
+        return None
+    if isinstance(loss, str):
+        return loss
+    return {
         "class_name": loss.__class__.__name__,
         "config": loss.get_config() if hasattr(loss, "get_config") else {},
     }
 
 
-def deserialize(config, custom_objects=None):
-    """Deserialize a loss."""
+def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
+    """Deserialize a loss.
+
+    Args:
+        config: Input parameter ``config``.
+        custom_objects: Input parameter ``custom_objects``.
+    """
     if config is None:
-        return None  # pragma: no cover
+        return None
     if isinstance(config, str):
-        return get(config)  # pragma: no cover
+        return get(config)
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
         cls = globals().get(class_name)
         if cls:
-            return cls(**conf)  # pragma: no cover
+            return cls(**conf)
     return config
 
 
-def get(identifier):
-    """Retrieve a Keras loss object via an identifier."""
+def get(identifier: TensorLike) -> TensorLike:
+    """Retrieve a Keras loss object via an identifier.
+
+    Args:
+        identifier: Input parameter ``identifier``.
+    """
     if identifier is None:
-        return None  # pragma: no cover
+        return None
     if isinstance(identifier, str):
         identifier = identifier.lower()
         mapping = {
@@ -2488,7 +2732,7 @@ def get(identifier):
 # Additional esoteric Keras losses
 
 
-def dice(y_true, y_pred, axis=-1):
+def dice(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike = -1) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -2502,7 +2746,9 @@ def dice(y_true, y_pred, axis=-1):
     return dice_loss(y_true, y_pred, axis=axis)
 
 
-def tversky(y_true, y_pred, alpha=0.5, beta=0.5):
+def tversky(
+    y_true: TensorLike, y_pred: TensorLike, alpha: TensorLike = 0.5, beta: TensorLike = 0.5
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -2517,7 +2763,7 @@ def tversky(y_true, y_pred, alpha=0.5, beta=0.5):
     return tversky_loss(y_true, y_pred, alpha=alpha, beta=beta)
 
 
-def ctc(y_true, y_pred):
+def ctc(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -2534,7 +2780,9 @@ def ctc(y_true, y_pred):
     return ctc_loss(y_true, y_pred, y_true_len, y_pred_len)
 
 
-def circle(y_true, y_pred, margin=0.25, gamma=256):
+def circle(
+    y_true: TensorLike, y_pred: TensorLike, margin: TensorLike = 0.25, gamma: TensorLike = 256
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -2549,7 +2797,7 @@ def circle(y_true, y_pred, margin=0.25, gamma=256):
     return circle_loss(y_true, y_pred, margin=margin, gamma=gamma)
 
 
-def categorical_generalized_cross_entropy(y_true, y_pred):
+def categorical_generalized_cross_entropy(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     """Function docstring.
 
     Args:

@@ -1,3 +1,7 @@
+"""Convolutional layers (1D, 2D, 3D, Depthwise, Separable, Transpose) for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.activations import get as get_activation
@@ -94,24 +98,24 @@ class Conv1D(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        data_format=None,
-        dilation_rate=1,
-        groups=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        groups: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -141,9 +145,7 @@ class Conv1D(Layer):
         )
         self.strides = (strides,) * 1 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 1
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 1 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.data_format = data_format or "channels_last"
@@ -158,14 +160,14 @@ class Conv1D(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -174,7 +176,7 @@ class Conv1D(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (input_channel // self.groups, self.filters)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -182,8 +184,8 @@ class Conv1D(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -193,7 +195,7 @@ class Conv1D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -202,7 +204,7 @@ class Conv1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -210,7 +212,7 @@ class Conv1D(Layer):
             self.build(inputs.shape)
 
         x = inputs
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N C W/HW/DHW -> N W/HW/DHW C
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             x = ops.permute(x, perm)
@@ -227,10 +229,10 @@ class Conv1D(Layer):
         )
         out = ops.conv1d(x, self.kernel, config_obj)
 
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             out = ops.add(out, self.bias)
 
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N W/HW/DHW C -> N C W/HW/DHW
             perm = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm)
@@ -325,24 +327,24 @@ class Conv1DTranspose(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        output_padding=None,
-        data_format=None,
-        dilation_rate=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        output_padding: TensorLike = None,
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -372,9 +374,7 @@ class Conv1DTranspose(Layer):
         )
         self.strides = (strides,) * 1 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 1
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 1 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.output_padding = output_padding
@@ -389,14 +389,14 @@ class Conv1DTranspose(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -405,7 +405,7 @@ class Conv1DTranspose(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (self.filters, input_channel)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -413,8 +413,8 @@ class Conv1DTranspose(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -424,8 +424,14 @@ class Conv1DTranspose(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
-        """Call function."""
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not self.built:
             self.build(inputs.shape)
@@ -440,27 +446,25 @@ class Conv1DTranspose(Layer):
         k_perm = (self.rank + 1, self.rank) + tuple(range(self.rank))
         k = ops.permute(self.kernel, k_perm)
 
-        out = ops.conv1d_transpose(
-            x, k, strides=self.strides, padding=self.padding.upper()
-        )
+        out = ops.conv1d_transpose(x, k, strides=self.strides, padding=self.padding.upper())
 
         # Add bias / broadcast
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # transpose to channels last for easy bias broadcast
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
             # transpose back
             perm_back = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm_back)
-        else:  # pragma: no cover
+        else:
             # already channels_last from the perspective of what we need to output
             # wait, `conv_transpose` outputs `channels_first` (N C W H)
             # so we must transpose it to channels_last for the final output
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
 
         if self.activation is not None:
@@ -562,24 +566,24 @@ class Conv2D(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        data_format=None,
-        dilation_rate=1,
-        groups=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        groups: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -609,9 +613,7 @@ class Conv2D(Layer):
         )
         self.strides = (strides,) * 2 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 2
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 2 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.data_format = data_format or "channels_last"
@@ -626,14 +628,14 @@ class Conv2D(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -642,7 +644,7 @@ class Conv2D(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (input_channel // self.groups, self.filters)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -650,8 +652,8 @@ class Conv2D(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -661,7 +663,7 @@ class Conv2D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -670,7 +672,7 @@ class Conv2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -678,7 +680,7 @@ class Conv2D(Layer):
             self.build(inputs.shape)
 
         x = inputs
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N C W/HW/DHW -> N W/HW/DHW C
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             x = ops.permute(x, perm)
@@ -695,10 +697,10 @@ class Conv2D(Layer):
         )
         out = ops.conv2d(x, self.kernel, config_obj)
 
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             out = ops.add(out, self.bias)
 
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N W/HW/DHW C -> N C W/HW/DHW
             perm = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm)
@@ -795,24 +797,24 @@ class Conv2DTranspose(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        output_padding=None,
-        data_format=None,
-        dilation_rate=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        output_padding: TensorLike = None,
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -842,9 +844,7 @@ class Conv2DTranspose(Layer):
         )
         self.strides = (strides,) * 2 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 2
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 2 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.output_padding = output_padding
@@ -859,14 +859,14 @@ class Conv2DTranspose(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -875,7 +875,7 @@ class Conv2DTranspose(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (self.filters, input_channel)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -883,8 +883,8 @@ class Conv2DTranspose(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -894,8 +894,14 @@ class Conv2DTranspose(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
-        """Call function."""
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not self.built:
             self.build(inputs.shape)
@@ -910,27 +916,25 @@ class Conv2DTranspose(Layer):
         k_perm = (self.rank + 1, self.rank) + tuple(range(self.rank))
         k = ops.permute(self.kernel, k_perm)
 
-        out = ops.conv2d_transpose(
-            x, k, strides=self.strides, padding=self.padding.upper()
-        )
+        out = ops.conv2d_transpose(x, k, strides=self.strides, padding=self.padding.upper())
 
         # Add bias / broadcast
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # transpose to channels last for easy bias broadcast
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
             # transpose back
             perm_back = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm_back)
-        else:  # pragma: no cover
+        else:
             # already channels_last from the perspective of what we need to output
             # wait, `conv_transpose` outputs `channels_first` (N C W H)
             # so we must transpose it to channels_last for the final output
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
 
         if self.activation is not None:
@@ -1029,24 +1033,24 @@ class Conv3D(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        data_format=None,
-        dilation_rate=1,
-        groups=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        groups: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1076,9 +1080,7 @@ class Conv3D(Layer):
         )
         self.strides = (strides,) * 3 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 3
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 3 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.data_format = data_format or "channels_last"
@@ -1093,14 +1095,14 @@ class Conv3D(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -1109,7 +1111,7 @@ class Conv3D(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (input_channel // self.groups, self.filters)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -1117,8 +1119,8 @@ class Conv3D(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -1128,7 +1130,7 @@ class Conv3D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1137,7 +1139,7 @@ class Conv3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -1145,7 +1147,7 @@ class Conv3D(Layer):
             self.build(inputs.shape)
 
         x = inputs
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N C W/HW/DHW -> N W/HW/DHW C
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             x = ops.permute(x, perm)
@@ -1162,10 +1164,10 @@ class Conv3D(Layer):
         )
         out = ops.conv3d(x, self.kernel, config_obj)
 
-        if self.use_bias:  # pragma: no branch
+        if self.use_bias:
             out = ops.add(out, self.bias)
 
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # N W/HW/DHW C -> N C W/HW/DHW
             perm = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm)
@@ -1267,24 +1269,24 @@ class Conv3DTranspose(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        output_padding=None,
-        data_format=None,
-        dilation_rate=1,
-        activation=None,
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None,
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        output_padding: TensorLike = None,
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        kernel_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        kernel_regularizer: TensorLike = None,
+        bias_regularizer: TensorLike = None,
+        activity_regularizer: TensorLike = None,
+        kernel_constraint: TensorLike = None,
+        bias_constraint: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1314,9 +1316,7 @@ class Conv3DTranspose(Layer):
         )
         self.strides = (strides,) * 3 if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
-            (dilation_rate,) * 3
-            if isinstance(dilation_rate, int)
-            else tuple(dilation_rate)
+            (dilation_rate,) * 3 if isinstance(dilation_rate, int) else tuple(dilation_rate)
         )
         self.padding = padding
         self.output_padding = output_padding
@@ -1331,14 +1331,14 @@ class Conv3DTranspose(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
@@ -1347,7 +1347,7 @@ class Conv3DTranspose(Layer):
         input_channel = input_shape[channel_axis]
         kernel_shape = self.kernel_size + (self.filters, input_channel)
 
-        if getattr(self, "kernel", None) is None:  # pragma: no branch
+        if (self.kernel if hasattr(self, "kernel") else None) is None:
             self.kernel = self.add_weight(
                 shape=kernel_shape,
                 initializer=self.kernel_initializer,
@@ -1355,8 +1355,8 @@ class Conv3DTranspose(Layer):
                 constraint=self.kernel_constraint,
                 name="kernel",
             )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -1366,8 +1366,14 @@ class Conv3DTranspose(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
-        """Call function."""
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Call function.
+
+        Args:
+            inputs: Input parameter ``inputs``.
+            args: Input parameter ``args``.
+            kwargs: Input parameter ``kwargs``.
+        """
         inputs = _to_tensor(inputs)
         if not self.built:
             self.build(inputs.shape)
@@ -1382,27 +1388,25 @@ class Conv3DTranspose(Layer):
         k_perm = (self.rank + 1, self.rank) + tuple(range(self.rank))
         k = ops.permute(self.kernel, k_perm)
 
-        out = ops.conv3d_transpose(
-            x, k, strides=self.strides, padding=self.padding.upper()
-        )
+        out = ops.conv3d_transpose(x, k, strides=self.strides, padding=self.padding.upper())
 
         # Add bias / broadcast
-        if self.data_format == "channels_first":  # pragma: no branch
+        if self.data_format == "channels_first":
             # transpose to channels last for easy bias broadcast
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
             # transpose back
             perm_back = (0, self.rank + 1) + tuple(range(1, self.rank + 1))
             out = ops.permute(out, perm_back)
-        else:  # pragma: no cover
+        else:
             # already channels_last from the perspective of what we need to output
             # wait, `conv_transpose` outputs `channels_first` (N C W H)
             # so we must transpose it to channels_last for the final output
             perm = (0,) + tuple(range(2, self.rank + 2)) + (1,)
             out = ops.permute(out, perm)
-            if self.use_bias:  # pragma: no branch
+            if self.use_bias:
                 out = ops.add(out, self.bias)
 
         if self.activation is not None:
@@ -1506,18 +1510,18 @@ class DepthwiseConv1D(Layer):
 
     def __init__(
         self,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        depth_multiplier=1,
-        data_format=None,
-        dilation_rate=1,
-        activation=None,
-        use_bias=True,
-        depthwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        depth_multiplier: TensorLike = 1,
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        depthwise_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1535,9 +1539,7 @@ class DepthwiseConv1D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 1
-        self.kernel_size = (
-            (kernel_size,) if isinstance(kernel_size, int) else tuple(kernel_size)
-        )
+        self.kernel_size = (kernel_size,) if isinstance(kernel_size, int) else tuple(kernel_size)
         self.strides = (strides,) if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
             (dilation_rate,) if isinstance(dilation_rate, int) else tuple(dilation_rate)
@@ -1550,18 +1552,18 @@ class DepthwiseConv1D(Layer):
         self.depthwise_initializer = depthwise_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
-            return  # pragma: no cover
+            return
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = input_shape[channel_axis]
 
@@ -1571,8 +1573,8 @@ class DepthwiseConv1D(Layer):
             initializer=self.depthwise_initializer,
             name="depthwise_kernel",
         )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(input_channel * self.depth_multiplier,),
                     initializer=self.bias_initializer,
@@ -1580,7 +1582,7 @@ class DepthwiseConv1D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1589,19 +1591,14 @@ class DepthwiseConv1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
 
-        if self.rank == 1:
-            spatial = "W"
-        elif self.rank == 2:  # pragma: no cover
-            spatial = "HW"  # pragma: no cover
-        else:  # pragma: no cover
-            spatial = "DHW"  # pragma: no cover
+        spatial = {1: "W", 2: "HW"}.get(int(self.rank), "DHW")
 
         if self.data_format == "channels_last" or self.data_format is None:
             dimension_numbers = (
@@ -1609,8 +1606,8 @@ class DepthwiseConv1D(Layer):
                 spatial + "IO",
                 "N" + spatial + "C",
             )
-        else:  # pragma: no cover
-            dimension_numbers = (  # pragma: no cover
+        else:
+            dimension_numbers = (
                 "NC" + spatial,
                 spatial + "IO",
                 "NC" + spatial,
@@ -1633,18 +1630,18 @@ class DepthwiseConv1D(Layer):
         )
         out = conv_general_dilated(inputs, self.depthwise_kernel, config_obj)
 
-        if self.use_bias:  # pragma: no branch  # pragma: no cover
-            out_channels = input_channel * self.depth_multiplier  # pragma: no cover
-            bias_shape = (  # pragma: no cover
+        if self.use_bias:
+            out_channels = input_channel * self.depth_multiplier
+            bias_shape = (
                 [1] * (self.rank + 1) + [out_channels]
                 if self.data_format == "channels_last"
                 else [1, out_channels] + [1] * self.rank
             )
-            out = ops.add(out, ops.reshape(self.bias, bias_shape))  # pragma: no cover
+            out = ops.add(out, ops.reshape(self.bias, bias_shape))
 
-        if self.activation is not None:  # pragma: no cover
-            out = self.activation(out)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        if self.activation is not None:
+            out = self.activation(out)
+        return _wrap(out)
 
 
 class DepthwiseConv2D(Layer):
@@ -1744,18 +1741,18 @@ class DepthwiseConv2D(Layer):
 
     def __init__(
         self,
-        kernel_size,
-        strides=(1, 1),
-        padding="valid",
-        depth_multiplier=1,
-        data_format=None,
-        dilation_rate=(1, 1),
-        activation=None,
-        use_bias=True,
-        depthwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        kernel_size: TensorLike,
+        strides: TensorLike = (1, 1),
+        padding: TensorLike = "valid",
+        depth_multiplier: TensorLike = 1,
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = (1, 1),
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        depthwise_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1774,13 +1771,9 @@ class DepthwiseConv2D(Layer):
         super().__init__(**kwargs)
         self.rank = 2
         self.kernel_size = (
-            (kernel_size, kernel_size)
-            if isinstance(kernel_size, int)
-            else tuple(kernel_size)
+            (kernel_size, kernel_size) if isinstance(kernel_size, int) else tuple(kernel_size)
         )
-        self.strides = (
-            (strides, strides) if isinstance(strides, int) else tuple(strides)
-        )
+        self.strides = (strides, strides) if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
             (dilation_rate, dilation_rate)
             if isinstance(dilation_rate, int)
@@ -1794,18 +1787,18 @@ class DepthwiseConv2D(Layer):
         self.depthwise_initializer = depthwise_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
-            return  # pragma: no cover
+            return
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = input_shape[channel_axis]
 
@@ -1815,8 +1808,8 @@ class DepthwiseConv2D(Layer):
             initializer=self.depthwise_initializer,
             name="depthwise_kernel",
         )
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(input_channel * self.depth_multiplier,),
                     initializer=self.bias_initializer,
@@ -1824,7 +1817,7 @@ class DepthwiseConv2D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1833,19 +1826,14 @@ class DepthwiseConv2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
 
-        if self.rank == 1:
-            spatial = "W"  # pragma: no cover
-        elif self.rank == 2:
-            spatial = "HW"
-        else:  # pragma: no cover
-            spatial = "DHW"  # pragma: no cover
+        spatial = {1: "W", 2: "HW"}.get(int(self.rank), "DHW")
 
         if self.data_format == "channels_last" or self.data_format is None:
             dimension_numbers = (
@@ -1853,8 +1841,8 @@ class DepthwiseConv2D(Layer):
                 spatial + "IO",
                 "N" + spatial + "C",
             )
-        else:  # pragma: no cover
-            dimension_numbers = (  # pragma: no cover
+        else:
+            dimension_numbers = (
                 "NC" + spatial,
                 spatial + "IO",
                 "NC" + spatial,
@@ -1877,18 +1865,18 @@ class DepthwiseConv2D(Layer):
         )
         out = conv_general_dilated(inputs, self.depthwise_kernel, config_obj)
 
-        if self.use_bias:  # pragma: no branch  # pragma: no cover
-            out_channels = input_channel * self.depth_multiplier  # pragma: no cover
-            bias_shape = (  # pragma: no cover
+        if self.use_bias:
+            out_channels = input_channel * self.depth_multiplier
+            bias_shape = (
                 [1] * (self.rank + 1) + [out_channels]
                 if self.data_format == "channels_last"
                 else [1, out_channels] + [1] * self.rank
             )
-            out = ops.add(out, ops.reshape(self.bias, bias_shape))  # pragma: no cover
+            out = ops.add(out, ops.reshape(self.bias, bias_shape))
 
-        if self.activation is not None:  # pragma: no cover
-            out = self.activation(out)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        if self.activation is not None:
+            out = self.activation(out)
+        return _wrap(out)
 
 
 class SeparableConv1D(Layer):
@@ -1980,20 +1968,20 @@ class SeparableConv1D(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=1,
-        padding="valid",
-        data_format=None,
-        dilation_rate=1,
-        depth_multiplier=1,
-        activation=None,
-        use_bias=True,
-        depthwise_initializer="glorot_uniform",
-        pointwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = 1,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = 1,
+        depth_multiplier: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        depthwise_initializer: TensorLike = "glorot_uniform",
+        pointwise_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2014,9 +2002,7 @@ class SeparableConv1D(Layer):
         super().__init__(**kwargs)
         self.filters = filters
         self.rank = 1
-        self.kernel_size = (
-            (kernel_size,) if isinstance(kernel_size, int) else tuple(kernel_size)
-        )
+        self.kernel_size = (kernel_size,) if isinstance(kernel_size, int) else tuple(kernel_size)
         self.strides = (strides,) if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
             (dilation_rate,) if isinstance(dilation_rate, int) else tuple(dilation_rate)
@@ -2030,18 +2016,18 @@ class SeparableConv1D(Layer):
         self.pointwise_initializer = pointwise_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
-            return  # pragma: no cover
+            return
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = input_shape[channel_axis]
 
@@ -2059,8 +2045,8 @@ class SeparableConv1D(Layer):
             name="pointwise_kernel",
         )
 
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -2068,7 +2054,7 @@ class SeparableConv1D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2077,19 +2063,14 @@ class SeparableConv1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
 
-        if self.rank == 1:
-            spatial = "W"
-        elif self.rank == 2:  # pragma: no cover
-            spatial = "HW"  # pragma: no cover
-        else:  # pragma: no cover
-            spatial = "DHW"  # pragma: no cover
+        spatial = {1: "W", 2: "HW"}.get(int(self.rank), "DHW")
 
         if self.data_format == "channels_last" or self.data_format is None:
             dimension_numbers = (
@@ -2097,8 +2078,8 @@ class SeparableConv1D(Layer):
                 spatial + "IO",
                 "N" + spatial + "C",
             )
-        else:  # pragma: no cover
-            dimension_numbers = (  # pragma: no cover
+        else:
+            dimension_numbers = (
                 "NC" + spatial,
                 spatial + "IO",
                 "NC" + spatial,
@@ -2129,17 +2110,17 @@ class SeparableConv1D(Layer):
         )
         out = conv_general_dilated(out, self.pointwise_kernel, config_obj2)
 
-        if self.use_bias:  # pragma: no branch  # pragma: no cover
-            bias_shape = (  # pragma: no cover
+        if self.use_bias:
+            bias_shape = (
                 [1] * (self.rank + 1) + [self.filters]
                 if self.data_format == "channels_last"
                 else [1, self.filters] + [1] * self.rank
             )
-            out = ops.add(out, ops.reshape(self.bias, bias_shape))  # pragma: no cover
+            out = ops.add(out, ops.reshape(self.bias, bias_shape))
 
-        if self.activation is not None:  # pragma: no cover
-            out = self.activation(out)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        if self.activation is not None:
+            out = self.activation(out)
+        return _wrap(out)
 
 
 class SeparableConv2D(Layer):
@@ -2232,20 +2213,20 @@ class SeparableConv2D(Layer):
 
     def __init__(
         self,
-        filters,
-        kernel_size,
-        strides=(1, 1),
-        padding="valid",
-        data_format=None,
-        dilation_rate=(1, 1),
-        depth_multiplier=1,
-        activation=None,
-        use_bias=True,
-        depthwise_initializer="glorot_uniform",
-        pointwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        **kwargs,
-    ):
+        filters: TensorLike,
+        kernel_size: TensorLike,
+        strides: TensorLike = (1, 1),
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        dilation_rate: TensorLike = (1, 1),
+        depth_multiplier: TensorLike = 1,
+        activation: TensorLike = None,
+        use_bias: TensorLike = True,
+        depthwise_initializer: TensorLike = "glorot_uniform",
+        pointwise_initializer: TensorLike = "glorot_uniform",
+        bias_initializer: TensorLike = "zeros",
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2267,13 +2248,9 @@ class SeparableConv2D(Layer):
         self.filters = filters
         self.rank = 2
         self.kernel_size = (
-            (kernel_size, kernel_size)
-            if isinstance(kernel_size, int)
-            else tuple(kernel_size)
+            (kernel_size, kernel_size) if isinstance(kernel_size, int) else tuple(kernel_size)
         )
-        self.strides = (
-            (strides, strides) if isinstance(strides, int) else tuple(strides)
-        )
+        self.strides = (strides, strides) if isinstance(strides, int) else tuple(strides)
         self.dilation_rate = (
             (dilation_rate, dilation_rate)
             if isinstance(dilation_rate, int)
@@ -2288,18 +2265,18 @@ class SeparableConv2D(Layer):
         self.pointwise_initializer = pointwise_initializer
         self.bias_initializer = bias_initializer
 
-    def build(self, input_shape):
+    def build(self, input_shape: TensorLike) -> TensorLike:
         """Build function.
 
         Args:
         input_shape: Parameter input_shape.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         if self.built:
-            return  # pragma: no cover
+            return
         channel_axis = -1 if self.data_format == "channels_last" else 1
         input_channel = input_shape[channel_axis]
 
@@ -2317,8 +2294,8 @@ class SeparableConv2D(Layer):
             name="pointwise_kernel",
         )
 
-        if self.use_bias:  # pragma: no branch
-            if getattr(self, "bias", None) is None:  # pragma: no branch
+        if self.use_bias:
+            if (self.bias if hasattr(self, "bias") else None) is None:
                 self.bias = self.add_weight(
                     shape=(self.filters,),
                     initializer=self.bias_initializer,
@@ -2326,7 +2303,7 @@ class SeparableConv2D(Layer):
                 )
         self.built = True
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2335,19 +2312,14 @@ class SeparableConv2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
         if not self.built:
-            self.build(inputs.shape)  # pragma: no cover
+            self.build(inputs.shape)
 
-        if self.rank == 1:
-            spatial = "W"  # pragma: no cover
-        elif self.rank == 2:
-            spatial = "HW"
-        else:  # pragma: no cover
-            spatial = "DHW"  # pragma: no cover
+        spatial = {1: "W", 2: "HW"}.get(int(self.rank), "DHW")
 
         if self.data_format == "channels_last" or self.data_format is None:
             dimension_numbers = (
@@ -2355,8 +2327,8 @@ class SeparableConv2D(Layer):
                 spatial + "IO",
                 "N" + spatial + "C",
             )
-        else:  # pragma: no cover
-            dimension_numbers = (  # pragma: no cover
+        else:
+            dimension_numbers = (
                 "NC" + spatial,
                 spatial + "IO",
                 "NC" + spatial,
@@ -2387,17 +2359,17 @@ class SeparableConv2D(Layer):
         )
         out = conv_general_dilated(out, self.pointwise_kernel, config_obj2)
 
-        if self.use_bias:  # pragma: no branch  # pragma: no cover
-            bias_shape = (  # pragma: no cover
+        if self.use_bias:
+            bias_shape = (
                 [1] * (self.rank + 1) + [self.filters]
                 if self.data_format == "channels_last"
                 else [1, self.filters] + [1] * self.rank
             )
-            out = ops.add(out, ops.reshape(self.bias, bias_shape))  # pragma: no cover
+            out = ops.add(out, ops.reshape(self.bias, bias_shape))
 
-        if self.activation is not None:  # pragma: no cover
-            out = self.activation(out)  # pragma: no cover
-        return _wrap(out)  # pragma: no cover
+        if self.activation is not None:
+            out = self.activation(out)
+        return _wrap(out)
 
 
 class UpSampling1D(Layer):
@@ -2435,7 +2407,9 @@ class UpSampling1D(Layer):
 
     """
 
-    def __init__(self, size=2, data_format=None, **kwargs):
+    def __init__(
+        self, size: TensorLike = 2, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2448,7 +2422,7 @@ class UpSampling1D(Layer):
         self.data_format = data_format or "channels_last"
         self.size = (size,) * 1 if isinstance(size, int) else tuple(size)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2457,7 +2431,7 @@ class UpSampling1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -2530,7 +2504,9 @@ class UpSampling2D(Layer):
 
     """
 
-    def __init__(self, size=2, data_format=None, **kwargs):
+    def __init__(
+        self, size: TensorLike = 2, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2543,7 +2519,7 @@ class UpSampling2D(Layer):
         self.data_format = data_format or "channels_last"
         self.size = (size,) * 2 if isinstance(size, int) else tuple(size)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2552,7 +2528,7 @@ class UpSampling2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -2612,7 +2588,9 @@ class UpSampling3D(Layer):
 
     """
 
-    def __init__(self, size=2, data_format=None, **kwargs):
+    def __init__(
+        self, size: TensorLike = 2, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2625,7 +2603,7 @@ class UpSampling3D(Layer):
         self.data_format = data_format or "channels_last"
         self.size = (size,) * 3 if isinstance(size, int) else tuple(size)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2634,7 +2612,7 @@ class UpSampling3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -2706,7 +2684,9 @@ class ZeroPadding1D(Layer):
 
     """
 
-    def __init__(self, padding=1, data_format=None, **kwargs):
+    def __init__(
+        self, padding: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2720,16 +2700,12 @@ class ZeroPadding1D(Layer):
 
         if isinstance(padding, int):
             self.padding = ((padding, padding),) * 1
-        elif (
-            isinstance(padding, tuple)
-            and len(padding) == 1
-            and isinstance(padding[0], int)
-        ):
+        elif isinstance(padding, tuple) and len(padding) == 1 and isinstance(padding[0], int):
             self.padding = tuple((p, p) for p in padding)
-        else:  # pragma: no cover
+        else:
             self.padding = tuple(tuple(p) for p in padding)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2738,14 +2714,14 @@ class ZeroPadding1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
-        if self.data_format == "channels_first":  # pragma: no branch
-            pad_width = ((0, 0), (0, 0)) + self.padding  # pragma: no cover
-        else:  # pragma: no cover
+        if self.data_format == "channels_first":
+            pad_width = ((0, 0), (0, 0)) + self.padding
+        else:
             pad_width = ((0, 0),) + self.padding + ((0, 0),)
 
         out = ops.pad(inputs, pad_width=pad_width, mode="constant", constant_values=0.0)
@@ -2813,7 +2789,9 @@ class ZeroPadding2D(Layer):
 
     """
 
-    def __init__(self, padding=1, data_format=None, **kwargs):
+    def __init__(
+        self, padding: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2826,17 +2804,13 @@ class ZeroPadding2D(Layer):
         self.data_format = data_format or "channels_last"
 
         if isinstance(padding, int):
-            self.padding = ((padding, padding),) * 2  # pragma: no cover
-        elif (
-            isinstance(padding, tuple)
-            and len(padding) == 2
-            and isinstance(padding[0], int)
-        ):
+            self.padding = ((padding, padding),) * 2
+        elif isinstance(padding, tuple) and len(padding) == 2 and isinstance(padding[0], int):
             self.padding = tuple((p, p) for p in padding)
-        else:  # pragma: no cover
+        else:
             self.padding = tuple(tuple(p) for p in padding)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2845,14 +2819,14 @@ class ZeroPadding2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
-        if self.data_format == "channels_first":  # pragma: no branch
-            pad_width = ((0, 0), (0, 0)) + self.padding  # pragma: no cover
-        else:  # pragma: no cover
+        if self.data_format == "channels_first":
+            pad_width = ((0, 0), (0, 0)) + self.padding
+        else:
             pad_width = ((0, 0),) + self.padding + ((0, 0),)
 
         out = ops.pad(inputs, pad_width=pad_width, mode="constant", constant_values=0.0)
@@ -2909,7 +2883,9 @@ class ZeroPadding3D(Layer):
 
     """
 
-    def __init__(self, padding=1, data_format=None, **kwargs):
+    def __init__(
+        self, padding: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -2922,17 +2898,13 @@ class ZeroPadding3D(Layer):
         self.data_format = data_format or "channels_last"
 
         if isinstance(padding, int):
-            self.padding = ((padding, padding),) * 3  # pragma: no cover
-        elif (
-            isinstance(padding, tuple)
-            and len(padding) == 3
-            and isinstance(padding[0], int)
-        ):
+            self.padding = ((padding, padding),) * 3
+        elif isinstance(padding, tuple) and len(padding) == 3 and isinstance(padding[0], int):
             self.padding = tuple((p, p) for p in padding)
-        else:  # pragma: no cover
+        else:
             self.padding = tuple(tuple(p) for p in padding)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -2941,14 +2913,14 @@ class ZeroPadding3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
-        if self.data_format == "channels_first":  # pragma: no branch
-            pad_width = ((0, 0), (0, 0)) + self.padding  # pragma: no cover
-        else:  # pragma: no cover
+        if self.data_format == "channels_first":
+            pad_width = ((0, 0), (0, 0)) + self.padding
+        else:
             pad_width = ((0, 0),) + self.padding + ((0, 0),)
 
         out = ops.pad(inputs, pad_width=pad_width, mode="constant", constant_values=0.0)
@@ -2991,7 +2963,9 @@ class Cropping1D(Layer):
 
     """
 
-    def __init__(self, cropping=1, data_format=None, **kwargs):
+    def __init__(
+        self, cropping: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3005,16 +2979,12 @@ class Cropping1D(Layer):
 
         if isinstance(cropping, int):
             self.cropping = ((cropping, cropping),) * 1
-        elif (
-            isinstance(cropping, tuple)
-            and len(cropping) == 1
-            and isinstance(cropping[0], int)
-        ):
+        elif isinstance(cropping, tuple) and len(cropping) == 1 and isinstance(cropping[0], int):
             self.cropping = tuple((p, p) for p in cropping)
-        else:  # pragma: no cover
+        else:
             self.cropping = tuple(tuple(p) for p in cropping)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -3023,7 +2993,7 @@ class Cropping1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -3089,7 +3059,9 @@ class Cropping2D(Layer):
 
     """
 
-    def __init__(self, cropping=1, data_format=None, **kwargs):
+    def __init__(
+        self, cropping: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3103,16 +3075,12 @@ class Cropping2D(Layer):
 
         if isinstance(cropping, int):
             self.cropping = ((cropping, cropping),) * 2
-        elif (
-            isinstance(cropping, tuple)
-            and len(cropping) == 2
-            and isinstance(cropping[0], int)
-        ):
+        elif isinstance(cropping, tuple) and len(cropping) == 2 and isinstance(cropping[0], int):
             self.cropping = tuple((p, p) for p in cropping)
-        else:  # pragma: no cover
+        else:
             self.cropping = tuple(tuple(p) for p in cropping)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -3121,7 +3089,7 @@ class Cropping2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -3190,7 +3158,9 @@ class Cropping3D(Layer):
 
     """
 
-    def __init__(self, cropping=1, data_format=None, **kwargs):
+    def __init__(
+        self, cropping: TensorLike = 1, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -3204,16 +3174,12 @@ class Cropping3D(Layer):
 
         if isinstance(cropping, int):
             self.cropping = ((cropping, cropping),) * 3
-        elif (
-            isinstance(cropping, tuple)
-            and len(cropping) == 3
-            and isinstance(cropping[0], int)
-        ):
+        elif isinstance(cropping, tuple) and len(cropping) == 3 and isinstance(cropping[0], int):
             self.cropping = tuple((p, p) for p in cropping)
-        else:  # pragma: no cover
+        else:
             self.cropping = tuple(tuple(p) for p in cropping)
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -3222,7 +3188,7 @@ class Cropping3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)

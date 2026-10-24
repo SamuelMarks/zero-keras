@@ -1,5 +1,8 @@
 """Tests for zero_keras metrics parity with Keras."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import keras
 import numpy as np
 import pytest
@@ -10,22 +13,22 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed():
+def _set_seed() -> TensorLike:
     """Function docstring."""
     set_seed(42)
 
 
 def check_metric_parity(
-    metric_cls,
-    keras_cls,
-    y_true,
-    y_pred,
-    y_true2,
-    y_pred2,
-    atol=1e-5,
-    rtol=1e-5,
-    **kwargs,
-):
+    metric_cls: TensorLike,
+    keras_cls: TensorLike,
+    y_true: TensorLike,
+    y_pred: TensorLike,
+    y_true2: TensorLike,
+    y_pred2: TensorLike,
+    atol: TensorLike = 1e-5,
+    rtol: TensorLike = 1e-5,
+    **kwargs: TensorLike,
+) -> TensorLike:
     """Function docstring.
 
     Args:
@@ -61,12 +64,10 @@ def check_metric_parity(
     zero_metric.reset_state()
     keras_metric.update_state(y_true, y_pred)
     zero_metric.update_state(y_true, y_pred)
-    assert_allclose_keras_zero(
-        keras_metric.result(), zero_metric.result(), atol=atol, rtol=rtol
-    )
+    assert_allclose_keras_zero(keras_metric.result(), zero_metric.result(), atol=atol, rtol=rtol)
 
 
-def test_metric_Mean():
+def test_metric_Mean() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.Mean,
@@ -78,7 +79,7 @@ def test_metric_Mean():
     )
 
 
-def test_metric_Sum():
+def test_metric_Sum() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.Sum,
@@ -90,11 +91,11 @@ def test_metric_Sum():
     )
 
 
-def test_metric_MeanMetricWrapper():
+def test_metric_MeanMetricWrapper() -> TensorLike:
     """Function docstring."""
     import keras.losses
 
-    def custom_fn(y_true, y_pred):
+    def custom_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
         """Function docstring.
 
         Args:
@@ -114,7 +115,7 @@ def test_metric_MeanMetricWrapper():
     )
 
 
-def test_metric_Accuracy():
+def test_metric_Accuracy() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.Accuracy,
@@ -126,7 +127,7 @@ def test_metric_Accuracy():
     )
 
 
-def test_metric_BinaryAccuracy():
+def test_metric_BinaryAccuracy() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.BinaryAccuracy,
@@ -138,7 +139,7 @@ def test_metric_BinaryAccuracy():
     )
 
 
-def test_metric_CategoricalAccuracy():
+def test_metric_CategoricalAccuracy() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.CategoricalAccuracy,
@@ -150,7 +151,7 @@ def test_metric_CategoricalAccuracy():
     )
 
 
-def test_metric_SparseCategoricalAccuracy():
+def test_metric_SparseCategoricalAccuracy() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.SparseCategoricalAccuracy,
@@ -162,23 +163,19 @@ def test_metric_SparseCategoricalAccuracy():
     )
 
 
-def test_metric_TopKCategoricalAccuracy():
+def test_metric_TopKCategoricalAccuracy() -> TensorLike:
     """Function docstring."""
     check_metric_parity(
         metrics.TopKCategoricalAccuracy,
         keras.metrics.TopKCategoricalAccuracy,
         np.array([[0, 1, 0, 0, 0], [1, 0, 0, 0, 0]], dtype=np.int32),
-        np.array(
-            [[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32
-        ),
+        np.array([[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32),
         np.array([[0, 0, 1, 0, 0], [0, 1, 0, 0, 0]], dtype=np.int32),
-        np.array(
-            [[0.1, 0.1, 0.6, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32
-        ),
+        np.array([[0.1, 0.1, 0.6, 0.1, 0.1], [0.1, 0.6, 0.1, 0.1, 0.1]], dtype=np.float32),
     )
 
 
-def test_metric_unsupported():
+def test_metric_unsupported() -> TensorLike:
     """Function docstring."""
     y_true = np.random.rand(2, 5).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
@@ -198,12 +195,12 @@ def test_metric_unsupported():
         "PearsonCorrelation",
     ]
     for m in metrics_list:
-        zero_m = getattr(metrics, m)()
+        zero_m = metrics.__dict__[m]()
         zero_m.update_state(y_true, y_pred)
         assert zero_m.result() is not None
 
 
-def test_metrics_parity_more():
+def test_metrics_parity_more() -> TensorLike:
     """Function docstring."""
     y_true = np.random.rand(2, 5).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
@@ -225,8 +222,8 @@ def test_metrics_parity_more():
     for m in metrics_list:
         try:
             check_metric_parity(
-                getattr(metrics, m),
-                getattr(keras.metrics, m),
+                metrics.__dict__[m],
+                keras.metrics.__dict__[m],
                 y_true,
                 y_pred,
                 y_true,
@@ -237,7 +234,7 @@ def test_metrics_parity_more():
             print(f"{m} FAILED: {e}")
 
 
-def test_classification_metrics_parity():
+def test_classification_metrics_parity() -> TensorLike:
     """Function docstring."""
     y_true = np.random.randint(0, 2, size=(2, 5)).astype(np.float32)
     y_pred = np.random.rand(2, 5).astype(np.float32)
@@ -254,12 +251,12 @@ def test_classification_metrics_parity():
 
     for m in metrics_list:
         # We test that the API shell executes cleanly without error
-        zero_m = getattr(metrics, m)()
+        zero_m = metrics.__dict__[m]()
         zero_m.update_state(y_true, y_pred)
         assert zero_m.result() is not None
 
 
-def test_metric_logcosherror():
+def test_metric_logcosherror() -> TensorLike:
     """Function docstring."""
     y_true = np.array([0, 1, 1, 0], dtype="float32")
     y_pred = np.array([0.1, 0.9, 0.8, 0.3], dtype="float32")
@@ -269,7 +266,7 @@ def test_metric_logcosherror():
     )
 
 
-def test_metrics_sample_weights():
+def test_metrics_sample_weights() -> TensorLike:
     """Function docstring."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
@@ -291,6 +288,6 @@ def test_metrics_sample_weights():
         "PearsonCorrelation",
     ]
     for m in metrics_list:
-        zero_m = getattr(metrics, m)()
+        zero_m = metrics.__dict__[m]()
         zero_m.update_state(y_true, y_pred, sample_weight=sample_weight)
         assert zero_m.result() is not None

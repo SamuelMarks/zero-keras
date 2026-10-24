@@ -1,3 +1,7 @@
+"""Module `test_dataset_utils` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import os
 from unittest import mock
 
@@ -7,8 +11,9 @@ from zero_keras import ops
 from zero_keras.utils import dataset_utils
 
 
-def test_array_to_img():
+def test_array_to_img() -> TensorLike:
     # RGB
+    """Execute ``test_array_to_img``."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.array_to_img(arr, scale=True)
     assert isinstance(img, dataset_utils.GenericImage)
@@ -38,7 +43,8 @@ def test_array_to_img():
         dataset_utils.array_to_img(ops.zeros((32,)))
 
 
-def test_img_to_array():
+def test_img_to_array() -> TensorLike:
+    """Execute ``test_img_to_array``."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
     res = dataset_utils.img_to_array(img)
@@ -54,7 +60,12 @@ def test_img_to_array():
     assert res3.shape == (32, 32, 1)
 
 
-def test_load_img(tmpdir):
+def test_load_img(tmpdir: TensorLike) -> TensorLike:
+    """Execute ``test_load_img``.
+
+    Args:
+        tmpdir: Input parameter ``tmpdir``.
+    """
     path = str(tmpdir.join("test_img.jpg"))
 
     from PIL import Image
@@ -79,7 +90,12 @@ def test_load_img(tmpdir):
     assert loaded_rs.size == (32, 32)
 
 
-def test_generic_image(tmpdir):
+def test_generic_image(tmpdir: TensorLike) -> TensorLike:
+    """Execute ``test_generic_image``.
+
+    Args:
+        tmpdir: Input parameter ``tmpdir``.
+    """
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
     img2 = img.convert("L")
@@ -98,15 +114,21 @@ def test_generic_image(tmpdir):
     assert img_empty.size == (0, 0)
 
 
-def test_save_img(tmpdir):
+def test_save_img(tmpdir: TensorLike) -> TensorLike:
+    """Execute ``test_save_img``.
+
+    Args:
+        tmpdir: Input parameter ``tmpdir``.
+    """
     path = str(tmpdir.join("test_save2.jpg"))
     arr = ops.zeros((32, 32, 3))
     dataset_utils.save_img(path, arr, file_format="jpeg")
     assert os.path.exists(path)
 
 
-def test_smart_resize():
+def test_smart_resize() -> TensorLike:
     # MOCK ops.slice to avoid ml_switcheroo_compiler bug and ops.image.resize
+    """Execute ``test_smart_resize``."""
     with (
         mock.patch("zero_keras.ops.slice", return_value=ops.zeros((50, 50, 3))),
         mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((50, 50, 3))),

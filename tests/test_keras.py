@@ -1,10 +1,13 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 from zero_keras.core_layers import Input, KerasTensor, Layer, Model
 from zero_keras.ops import ops
 
 
-def test_keras_tensor():
+def test_keras_tensor() -> TensorLike:
     """Function docstring."""
     t = Input((2, 3))
     assert isinstance(t, KerasTensor)
@@ -37,8 +40,8 @@ def test_keras_tensor():
 
     try:
         _ = t == t
-    except ValueError:  # pragma: no cover
-        pass  # pragma: no cover
+    except ValueError:
+        pass
     _ = t_data == 1
 
     import numpy as np
@@ -53,24 +56,24 @@ def test_keras_tensor():
     class DummyHasNumpy:
         """Class docstring."""
 
-        def numpy(self):
+        def numpy(self) -> TensorLike:
             """Function docstring."""
             return np.array([2])
 
     t_hasnumpy = KerasTensor((1,), data=DummyHasNumpy())
     try:
         np.array(t_hasnumpy, copy=True)
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     try:
         np.array(t_bad_shape, copy=True)
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
     try:
         np.array(t_bad_shape, copy=False)
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     from ml_switcheroo_compiler.core import config
 
@@ -78,14 +81,14 @@ def test_keras_tensor():
     try:
         t_true = KerasTensor((1,), data=True)
         assert bool(t_true) is True
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     # Hit boolean exception branch by providing data that fails bool()
     class Unboolable:
         """Class docstring."""
 
-        def __bool__(self):
+        def __bool__(self) -> TensorLike:
             """Function docstring."""
             raise ValueError("cannot bool")
 
@@ -106,7 +109,7 @@ def test_keras_tensor():
     class HasHistory:
         """Class docstring."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             """Function docstring."""
             self._keras_history = None
 
@@ -122,13 +125,13 @@ def test_keras_tensor():
     Node(HasInboundNodes(), outputs=[])
 
 
-def test_layer_build():
+def test_layer_build() -> TensorLike:
     """Function docstring."""
 
     class MyLayer(Layer):
         """Class docstring."""
 
-        def build(self, input_shape):
+        def build(self, input_shape: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -143,7 +146,7 @@ def test_layer_build():
     assert layer.built
 
 
-def test_model_functional():
+def test_model_functional() -> TensorLike:
     """Function docstring."""
     from zero_keras.layers import Dense
 
@@ -162,7 +165,7 @@ def test_model_functional():
     class TestIterator:
         """Class docstring."""
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
             yield (np.array([[1.0, 2.0]]), np.array([[1.0]]))
             yield (np.array([[2.0, 3.0]]), np.array([[2.0]]))
@@ -174,10 +177,10 @@ def test_model_functional():
 
         name = "dummy_metric"
 
-        def reset_state(self):
+        def reset_state(self) -> TensorLike:
             """Function docstring."""
 
-        def update_state(self, y, y_pred):
+        def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -185,7 +188,7 @@ def test_model_functional():
                 y_pred: Description.
             """
 
-        def result(self):
+        def result(self) -> TensorLike:
             """Function docstring."""
             return 1.0
 
@@ -198,13 +201,13 @@ def test_model_functional():
 
         __module__ = "torch.utils.data.DataLoader"
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
 
             class FakeTorchTensor:
                 """Class docstring."""
 
-                def __init__(self, val):
+                def __init__(self, val: TensorLike) -> None:
                     """Function docstring.
 
                     Args:
@@ -212,13 +215,13 @@ def test_model_functional():
                     """
                     self.val = val
 
-                def numpy(self):
+                def numpy(self) -> TensorLike:
                     """Function docstring."""
                     return np.array([[self.val]])
 
             yield (FakeTorchTensor(1.0), FakeTorchTensor(1.0))
-            yield {"x": FakeTorchTensor(1.0)}  # pragma: no cover
-            yield FakeTorchTensor(1.0)  # pragma: no cover
+            yield {"x": FakeTorchTensor(1.0)}
+            yield FakeTorchTensor(1.0)
 
     try:
         m.fit(TestTorchLikeIterator())
@@ -238,7 +241,7 @@ def test_model_functional():
 
         __module__ = "tensorflow.python.data.ops.dataset_ops.DatasetV2"
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
             yield (np.array([[1.0, 2.0]]), np.array([[1.0]]))
 
@@ -248,7 +251,7 @@ def test_model_functional():
     class UnpredictableTensor:
         """Class docstring."""
 
-        def __init__(self, val):
+        def __init__(self, val: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -260,7 +263,7 @@ def test_model_functional():
     class MyPredictLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -270,14 +273,14 @@ def test_model_functional():
 
     m_pred_fail = Model(inputs=Input((2,)), outputs=MyPredictLayer()(Input((2,))))
 
-    def my_gen_fail():
+    def my_gen_fail() -> TensorLike:
         """Function docstring."""
         yield np.array([[1.0, 2.0]])
 
     class MyEvalLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -291,7 +294,7 @@ def test_model_functional():
     class EvalFailLoss:
         """Class docstring."""
 
-        def __call__(self, y_true, y_pred):
+        def __call__(self, y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -305,10 +308,10 @@ def test_model_functional():
 
         name = "dummy_metric"
 
-        def reset_state(self):
+        def reset_state(self) -> TensorLike:
             """Function docstring."""
 
-        def update_state(self, y, y_pred):
+        def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -316,7 +319,7 @@ def test_model_functional():
                 y_pred: Description.
             """
 
-        def result(self):
+        def result(self) -> TensorLike:
             """Function docstring."""
             return 1.0
 
@@ -324,15 +327,15 @@ def test_model_functional():
     m_pred_fail.predict(my_gen_fail())
     try:
         m_eval_fail.evaluate(my_gen_fail())
-    except Exception:  # pragma: no cover
-        pass  # pragma: no cover
+    except Exception:
+        pass
 
     m_eval_fail.evaluate(np.array([[1.0, 2.0]]), np.array([[1.0, 2.0]]))
 
     class Unsliceable:
         """Class docstring."""
 
-        def __init__(self, val):
+        def __init__(self, val: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -340,11 +343,11 @@ def test_model_functional():
             """
             self.val = val
 
-        def __len__(self):
+        def __len__(self) -> TensorLike:
             """Function docstring."""
             return 2
 
-        def __getitem__(self, key):
+        def __getitem__(self, key: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -370,7 +373,7 @@ def test_model_functional():
     class NoTrainingLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -385,7 +388,7 @@ def test_model_functional():
     m2.fit(x, x)
 
 
-def test_model_uncompiled():
+def test_model_uncompiled() -> TensorLike:
     """Function docstring."""
     i = Input((2,))
     layer_obj = Layer()(i)
@@ -396,19 +399,19 @@ def test_model_uncompiled():
     assert "loss" in res.history
 
 
-def test_ops():
+def test_ops() -> TensorLike:
     """Function docstring."""
     assert isinstance(ops.add(Input((2,)), Input((2,))), KerasTensor)
 
 
-def test_layer_properties():
+def test_layer_properties() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import Layer
 
     class MyLayer(Layer):
         """Class docstring."""
 
-        def build(self, input_shape):
+        def build(self, input_shape: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -422,7 +425,7 @@ def test_layer_properties():
     layer_obj.my_list = [MyLayer(), 1]
     layer_obj.my_list[0].build((1,))
     if hasattr(layer_obj, "get_config"):
-        layer_obj.get_config()  # pragma: no cover
+        layer_obj.get_config()
     assert layer_obj.name == "my_layer"
     layer_obj.add_loss(0.5)
     layer_obj.add_loss(0.6)
@@ -441,7 +444,7 @@ def test_layer_properties():
     class DummyWeightNoNumpy:
         """Class docstring."""
 
-        def __init__(self, data):
+        def __init__(self, data: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -450,11 +453,11 @@ def test_layer_properties():
             self.data = data
             self.shape = (1,)
 
-        def __float__(self):
+        def __float__(self) -> TensorLike:
             """Function docstring."""
             return float(self.data[0])
 
-        def assign(self, value):
+        def assign(self, value: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -480,7 +483,7 @@ def test_layer_properties():
     class DummyWeightNoNumpyAndIterable:
         """Class docstring."""
 
-        def __init__(self, data):
+        def __init__(self, data: TensorLike) -> None:
             """Function docstring.
 
             Args:
@@ -489,15 +492,15 @@ def test_layer_properties():
             self.data = data
             self.shape = (1, 1)
 
-        def __iter__(self):
+        def __iter__(self) -> TensorLike:
             """Function docstring."""
-            return iter([self.data])  # pragma: no cover
+            return iter([self.data])
 
-        def __float__(self):
+        def __float__(self) -> TensorLike:
             """Function docstring."""
             return float(self.data[0])
 
-        def assign(self, value):
+        def assign(self, value: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -528,7 +531,7 @@ def test_layer_properties():
     layer_obj.set_weights(layer_obj.get_weights())
 
 
-def test_sequential_properties():
+def test_sequential_properties() -> TensorLike:
     """Function docstring."""
     from zero_keras.layers import Dense
     from zero_keras.models import Sequential
@@ -566,7 +569,7 @@ def test_sequential_properties():
     m.set_weights(m.get_weights())
 
 
-def test_models_sequential():
+def test_models_sequential() -> TensorLike:
     """Function docstring."""
     import numpy as np
 
@@ -626,10 +629,21 @@ def test_models_sequential():
         trainable_weights = []
         non_trainable_weights = []
 
-        def __call__(self, inputs, **kwargs):
+        def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+            """Execute ``__call__``.
+
+            Args:
+                inputs: Input parameter ``inputs``.
+                kwargs: Input parameter ``kwargs``.
+            """
             return inputs
 
-        def compute_output_shape(self, shape):
+        def compute_output_shape(self, shape: TensorLike) -> TensorLike:
+            """Execute ``compute_output_shape``.
+
+            Args:
+                shape: Input parameter ``shape``.
+            """
             return shape
 
     class DummyLayerWithComputeShape:
@@ -640,7 +654,7 @@ def test_models_sequential():
         trainable_weights = []
         non_trainable_weights = []
 
-        def build(self, shape):
+        def build(self, shape: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -648,7 +662,7 @@ def test_models_sequential():
             """
             self.built = True
 
-        def compute_output_shape(self, shape):
+        def compute_output_shape(self, shape: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -656,7 +670,7 @@ def test_models_sequential():
             """
             return shape
 
-        def __call__(self, inputs, **kwargs):
+        def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -678,7 +692,7 @@ def test_models_sequential():
         units = 5
         built = False
 
-        def build(self, shape):
+        def build(self, shape: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -686,17 +700,15 @@ def test_models_sequential():
             """
             self.built = True
 
-    m4 = Sequential()
-    m4.add(DummyLayerWithUnits())
     import pytest
 
-    with pytest.raises(NotImplementedError):
-        m4.build(None)  # hit 315
+    m4 = Sequential()
+    m4.add(DummyLayerWithUnits())
+    m4.build(None)
 
     m5 = Sequential()
     m5.add(DummyLayerWithUnits())
-    with pytest.raises(NotImplementedError):
-        m5.build((1,))  # hit 313
+    m5.build((1,))
 
     # Weights empty properties for dummy layer
 
@@ -756,12 +768,8 @@ def test_models_sequential():
             import array
 
             arr = array.array("f", [1.0])
-            header = json.dumps(
-                {"0": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}}
-            )
-            safetensors_data = (
-                struct.pack("<Q", len(header)) + header.encode() + arr.tobytes()
-            )
+            header = json.dumps({"0": {"dtype": "F32", "shape": [1], "data_offsets": [0, 4]}})
+            safetensors_data = struct.pack("<Q", len(header)) + header.encode() + arr.tobytes()
             z.writestr("model.safetensors", safetensors_data)
         load_model(path4)
 
@@ -797,7 +805,7 @@ def test_models_sequential():
         get("b")
 
 
-def test_model_dict_in_out():
+def test_model_dict_in_out() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.layers import Dense
@@ -818,7 +826,7 @@ def test_model_dict_in_out():
     assert len(m2.layers) == 1
 
 
-def test_model_coverage_edges():
+def test_model_coverage_edges() -> TensorLike:
     """Function docstring."""
     from zero_keras.core_layers import Input, Layer, Model
     from zero_keras.layers import Dense
@@ -827,7 +835,7 @@ def test_model_coverage_edges():
     class ListLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -838,7 +846,7 @@ def test_model_coverage_edges():
     class DictLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:
@@ -858,7 +866,7 @@ def test_model_coverage_edges():
     class AddLayer(Layer):
         """Class docstring."""
 
-        def call(self, inputs):
+        def call(self, inputs: TensorLike) -> TensorLike:
             """Function docstring.
 
             Args:

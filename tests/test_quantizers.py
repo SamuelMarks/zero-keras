@@ -1,9 +1,13 @@
+"""Module `test_quantizers` for zero_keras."""
+
+from __future__ import annotations
+from zero_keras.types import TensorLike
 import numpy as np
 
 from zero_keras import ops, quantizers
 
 
-def test_quantizers():
+def test_quantizers() -> TensorLike:
     """Test quantizers module."""
     # Test quantize_and_dequantize
     inputs = ops.convert_to_tensor([1.0, 2.0, 3.0])

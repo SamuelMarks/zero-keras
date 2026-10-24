@@ -1,3 +1,9 @@
+"""Spatial and temporal pooling layers for zero_keras."""
+
+from __future__ import annotations
+
+from zero_keras.types import TensorLike
+
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -72,8 +78,13 @@ class AveragePooling1D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -85,19 +96,13 @@ class AveragePooling1D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 1
-        self.pool_size = (
-            (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 1
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 1 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -106,7 +111,7 @@ class AveragePooling1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -114,7 +119,7 @@ class AveragePooling1D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -214,8 +219,13 @@ class AveragePooling2D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -227,19 +237,13 @@ class AveragePooling2D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 2
-        self.pool_size = (
-            (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 2
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 2 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -248,7 +252,7 @@ class AveragePooling2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -256,7 +260,7 @@ class AveragePooling2D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -332,8 +336,13 @@ class AveragePooling3D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -345,19 +354,13 @@ class AveragePooling3D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 3
-        self.pool_size = (
-            (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 3
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 3 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -366,7 +369,7 @@ class AveragePooling3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -374,7 +377,7 @@ class AveragePooling3D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -458,8 +461,13 @@ class MaxPooling1D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -471,19 +479,13 @@ class MaxPooling1D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 1
-        self.pool_size = (
-            (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 1
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 1 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -492,7 +494,7 @@ class MaxPooling1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -500,7 +502,7 @@ class MaxPooling1D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -600,8 +602,13 @@ class MaxPooling2D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -613,19 +620,13 @@ class MaxPooling2D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 2
-        self.pool_size = (
-            (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 2
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 2 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -634,7 +635,7 @@ class MaxPooling2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -642,7 +643,7 @@ class MaxPooling2D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -718,8 +719,13 @@ class MaxPooling3D(Layer):
     """
 
     def __init__(
-        self, pool_size=2, strides=None, padding="valid", data_format=None, **kwargs
-    ):
+        self,
+        pool_size: TensorLike = 2,
+        strides: TensorLike = None,
+        padding: TensorLike = "valid",
+        data_format: TensorLike = None,
+        **kwargs: TensorLike,
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -731,19 +737,13 @@ class MaxPooling3D(Layer):
         """
         super().__init__(**kwargs)
         self.rank = 3
-        self.pool_size = (
-            (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
-        )
+        self.pool_size = (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
-        self.strides = (
-            (self.strides,) * 3
-            if isinstance(self.strides, int)
-            else tuple(self.strides)
-        )
+        self.strides = (self.strides,) * 3 if isinstance(self.strides, int) else tuple(self.strides)
         self.padding = padding
         self.data_format = data_format or "channels_last"
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -752,7 +752,7 @@ class MaxPooling3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
@@ -760,7 +760,7 @@ class MaxPooling3D(Layer):
         if self.data_format == "channels_first":
             window_shape = (1, 1) + self.pool_size
             strides = (1, 1) + self.strides
-        else:  # pragma: no cover
+        else:
             window_shape = (1,) + self.pool_size + (1,)
             strides = (1,) + self.strides + (1,)
 
@@ -823,7 +823,9 @@ class GlobalAveragePooling1D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -836,7 +838,7 @@ class GlobalAveragePooling1D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -845,14 +847,14 @@ class GlobalAveragePooling1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.mean(inputs, axis=axes, keepdims=self.keepdims)
@@ -905,7 +907,9 @@ class GlobalAveragePooling2D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -918,7 +922,7 @@ class GlobalAveragePooling2D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -927,14 +931,14 @@ class GlobalAveragePooling2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.mean(inputs, axis=axes, keepdims=self.keepdims)
@@ -988,7 +992,9 @@ class GlobalAveragePooling3D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1001,7 +1007,7 @@ class GlobalAveragePooling3D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1010,14 +1016,14 @@ class GlobalAveragePooling3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.mean(inputs, axis=axes, keepdims=self.keepdims)
@@ -1069,7 +1075,9 @@ class GlobalMaxPooling1D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1082,7 +1090,7 @@ class GlobalMaxPooling1D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1091,14 +1099,14 @@ class GlobalMaxPooling1D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.max(inputs, axis=axes, keepdims=self.keepdims)
@@ -1151,7 +1159,9 @@ class GlobalMaxPooling2D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1164,7 +1174,7 @@ class GlobalMaxPooling2D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1173,14 +1183,14 @@ class GlobalMaxPooling2D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.max(inputs, axis=axes, keepdims=self.keepdims)
@@ -1234,7 +1244,9 @@ class GlobalMaxPooling3D(Layer):
 
     """
 
-    def __init__(self, data_format=None, keepdims=False, **kwargs):
+    def __init__(
+        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+    ) -> None:
         """Function docstring.
 
         Args:
@@ -1247,7 +1259,7 @@ class GlobalMaxPooling3D(Layer):
         self.data_format = data_format or "channels_last"
         self.keepdims = keepdims
 
-    def call(self, inputs, *args, **kwargs):
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Call function.
 
         Args:
@@ -1256,16 +1268,176 @@ class GlobalMaxPooling3D(Layer):
         **kwargs: Arbitrary keyword arguments.
 
         Returns:
-        Any: Return value.
+        TensorLike: Return value.
 
         """
         inputs = _to_tensor(inputs)
 
         if self.data_format == "channels_first":
             axes = tuple(range(2, 2 + self.rank))
-        else:  # pragma: no cover
+        else:
             axes = tuple(range(1, 1 + self.rank))
 
         out = ops.max(inputs, axis=axes, keepdims=self.keepdims)
 
         return _wrap(out)
+
+
+class _AdaptivePoolingBase(Layer):
+    """Base layer for 1D/2D/3D adaptive average and max pooling."""
+
+    def __init__(
+        self,
+        rank: int,
+        mode: str,
+        output_size: int | tuple[int, ...] | list[int],
+        data_format: str | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the adaptive pooling base layer.
+
+        Args:
+            rank: Spatial rank (1, 2, or 3).
+            mode: Pooling mode (``"avg"`` or ``"max"``).
+            output_size: Target spatial output size(s).
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(**kwargs)
+        self.rank = rank
+        self.mode = mode
+        if isinstance(output_size, int):
+            self.output_size: tuple[int, ...] = (output_size,) * rank
+        else:
+            self.output_size = tuple(int(v) for v in output_size)
+        self.data_format = data_format or "channels_last"
+
+    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Apply adaptive pooling over the spatial dimensions of ``inputs``.
+
+        Args:
+            inputs: Input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Pooled output tensor.
+        """
+        _ = args, kwargs
+        t = _to_tensor(inputs)
+        if self.mode == "avg":
+            out = ops.adaptive_average_pool(t, self.output_size, data_format=self.data_format)
+        else:
+            out = ops.adaptive_max_pool(t, self.output_size, data_format=self.data_format)
+        return _wrap(out)
+
+    def get_config(self) -> TensorLike:
+        """Return serializable layer configuration.
+
+        Returns:
+            dict[str, TensorLike]: Configuration dictionary.
+        """
+        cfg = super().get_config()
+        cfg.update(
+            {
+                "output_size": self.output_size,
+                "data_format": self.data_format,
+            }
+        )
+        return cfg
+
+
+class AdaptiveAveragePooling1D(_AdaptivePoolingBase):
+    """Adaptive average pooling layer for 1D temporal data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveAveragePooling1D.
+
+        Args:
+            output_size: Target 1D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(1, "avg", output_size, data_format=data_format, **kwargs)
+
+
+class AdaptiveAveragePooling2D(_AdaptivePoolingBase):
+    """Adaptive average pooling layer for 2D spatial data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveAveragePooling2D.
+
+        Args:
+            output_size: Target 2D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(2, "avg", output_size, data_format=data_format, **kwargs)
+
+
+class AdaptiveAveragePooling3D(_AdaptivePoolingBase):
+    """Adaptive average pooling layer for 3D volumetric data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveAveragePooling3D.
+
+        Args:
+            output_size: Target 3D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(3, "avg", output_size, data_format=data_format, **kwargs)
+
+
+class AdaptiveMaxPooling1D(_AdaptivePoolingBase):
+    """Adaptive max pooling layer for 1D temporal data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveMaxPooling1D.
+
+        Args:
+            output_size: Target 1D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(1, "max", output_size, data_format=data_format, **kwargs)
+
+
+class AdaptiveMaxPooling2D(_AdaptivePoolingBase):
+    """Adaptive max pooling layer for 2D spatial data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveMaxPooling2D.
+
+        Args:
+            output_size: Target 2D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(2, "max", output_size, data_format=data_format, **kwargs)
+
+
+class AdaptiveMaxPooling3D(_AdaptivePoolingBase):
+    """Adaptive max pooling layer for 3D volumetric data."""
+
+    def __init__(
+        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+    ) -> None:
+        """Initialize AdaptiveMaxPooling3D.
+
+        Args:
+            output_size: Target 3D spatial output size.
+            data_format: Data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(3, "max", output_size, data_format=data_format, **kwargs)

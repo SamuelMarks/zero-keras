@@ -1,12 +1,15 @@
 """Module docstring."""
 
+from __future__ import annotations
+from zero_keras.types import TensorLike
+
 import numpy as np
 
 from zero_keras import layers, models
 from zero_keras.core_layers import Functional, Input
 
 
-def test_clone_model_functional():
+def test_clone_model_functional() -> TensorLike:
     """Function docstring."""
     inp1 = Input(shape=(10,), name="in1")
     inp2 = Input(shape=(10,), name="in2")
@@ -32,7 +35,7 @@ def test_clone_model_functional():
     y_clone = cloned([x1, x2])
 
 
-def test_model_from_json_functional():
+def test_model_from_json_functional() -> TensorLike:
     """Function docstring."""
     json_str = """
     {
