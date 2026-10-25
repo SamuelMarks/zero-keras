@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""ConvNeXt architectures (Tiny, Small, Base, Large, XLarge) for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 from zero_keras import backend, initializers, layers, ops, random
 from zero_keras.applications import imagenet_utils
@@ -150,25 +150,28 @@ class StochasticDepth(Layer):
       Tensor either with the residual path dropped or kept.
     """
 
-    def __init__(self, drop_path_rate: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, drop_path_rate: float, **kwargs: TensorLike) -> None:
+        """Initialize the StochasticDepth layer.
 
         Args:
-            drop_path_rate: Description.
-            kwargs: Description.
+            drop_path_rate: Probability of dropping paths in ``[0, 1]``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.drop_path_rate = drop_path_rate
+        self.drop_path_rate = float(drop_path_rate)
 
-    def call(self, x: TensorLike, training: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def call(self, x: TensorLike, training: bool | None = None) -> TensorLike:
+        """Apply stochastic depth drop-path to ``x`` during training.
 
         Args:
-            x: Description.
-            training: Description.
+            x: Input residual tensor.
+            training: Whether the layer is running in training mode.
+
+        Returns:
+            TensorLike: Output tensor with drop-path applied when ``training=True``.
         """
         if training:
-            keep_prob = 1.0 - float(self.drop_path_rate)  # type: ignore[arg-type]
+            keep_prob = 1.0 - self.drop_path_rate
             shape = (ops.shape(x)[0],) + (1,) * (len(ops.shape(x)) - 1)
             random_tensor = ops.add(keep_prob, random.uniform(shape, 0.0, 1.0))
             random_tensor = ops.floor(random_tensor)
@@ -176,7 +179,11 @@ class StochasticDepth(Layer):
         return x
 
     def get_config(self) -> TensorLike:
-        """Function docstring."""
+        """Return the serializable configuration of the StochasticDepth layer.
+
+        Returns:
+            TensorLike: Configuration dictionary containing ``drop_path_rate``.
+        """
         config = super().get_config()
         config.update({"drop_path_rate": self.drop_path_rate})
         return config
@@ -197,25 +204,23 @@ class LayerScale(Layer):
         Tensor multiplied to the scale.
     """
 
-    def __init__(
-        self, init_values: TensorLike, projection_dim: TensorLike, **kwargs: TensorLike
-    ) -> None:
-        """Function docstring.
+    def __init__(self, init_values: float, projection_dim: int, **kwargs: TensorLike) -> None:
+        """Initialize the LayerScale layer.
 
         Args:
-            init_values: Description.
-            projection_dim: Description.
-            kwargs: Description.
+            init_values: Initial scalar value for the learnable channel scale vector.
+            projection_dim: Number of output channels.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.init_values = init_values
         self.projection_dim = projection_dim
 
-    def build(self, _: TensorLike) -> TensorLike:
-        """Function docstring.
+    def build(self, _: TensorLike) -> None:
+        """Create the learnable ``gamma`` scale weight vector.
 
         Args:
-            _: Description.
+            _: Input shape tuple (unused).
         """
         self.gamma = self.add_weight(
             shape=(self.projection_dim,),
@@ -224,15 +229,22 @@ class LayerScale(Layer):
         )
 
     def call(self, x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Multiply ``x`` channel-wise by the learnable scale ``self.gamma``.
 
         Args:
-            x: Description.
+            x: Input feature tensor.
+
+        Returns:
+            TensorLike: Scaled feature tensor.
         """
         return ops.multiply(x, self.gamma)
 
     def get_config(self) -> TensorLike:
-        """Function docstring."""
+        """Return the serializable configuration of the LayerScale layer.
+
+        Returns:
+            TensorLike: Configuration dictionary containing ``init_values`` and ``projection_dim``.
+        """
         config = super().get_config()
         config.update(
             {
@@ -244,10 +256,10 @@ class LayerScale(Layer):
 
 
 def ConvNeXtBlock(
-    projection_dim: TensorLike,
-    drop_path_rate: TensorLike = 0.0,
-    layer_scale_init_value: TensorLike = 1e-6,
-    name: TensorLike = None,
+    projection_dim: int,
+    drop_path_rate: float = 0.0,
+    layer_scale_init_value: float | None = 1e-6,
+    name: str | None = None,
 ) -> TensorLike:
     """ConvNeXt block.
 
@@ -276,10 +288,13 @@ def ConvNeXtBlock(
         name = f"prestem{backend.get_uid('prestem')!s}"
 
     def apply(inputs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the ConvNeXt block transformation to ``inputs``.
 
         Args:
-            inputs: Description.
+            inputs: Input feature tensor.
+
+        Returns:
+            TensorLike: Residual block output tensor.
         """
         x = inputs
 
@@ -311,20 +326,26 @@ def ConvNeXtBlock(
     return apply
 
 
-def PreStem(name: TensorLike = None) -> TensorLike:
+def PreStem(name: str | None = None) -> TensorLike:
     """Normalizes inputs with ImageNet-1k mean and std.
 
     Args:
-        name: Input parameter ``name``.
+        name: Optional name prefix for the normalization layer.
+
+    Returns:
+        TensorLike: Callable applying ImageNet-1k normalization.
     """
     if name is None:
         name = "prestem{}".format(str(backend.get_uid("prestem")))
 
     def apply(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Normalize input image tensor ``x`` using ImageNet-1k statistics.
 
         Args:
-            x: Description.
+            x: Input image tensor in ``[0, 255]``.
+
+        Returns:
+            TensorLike: Normalized image tensor.
         """
         x = layers.Normalization(
             mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
@@ -341,9 +362,9 @@ def PreStem(name: TensorLike = None) -> TensorLike:
 
 
 def Head(
-    num_classes: TensorLike = 1000,
-    classifier_activation: TensorLike = None,
-    name: TensorLike = None,
+    num_classes: int = 1000,
+    classifier_activation: str | TensorLike | None = None,
+    name: str | None = None,
 ) -> TensorLike:
     """Implementation of classification head of ConvNeXt.
 
@@ -359,10 +380,13 @@ def Head(
         name = str(backend.get_uid("head"))
 
     def apply(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply global average pooling, layer normalization, and classification Dense head.
 
         Args:
-            x: Description.
+            x: Feature map tensor from the final ConvNeXt stage.
+
+        Returns:
+            TensorLike: Class prediction tensor.
         """
         x = layers.GlobalAveragePooling2D(name=f"{name}_head_gap")(x)
         x = layers.LayerNormalization(epsilon=1e-6, name=f"{name}_head_layernorm")(x)
@@ -379,24 +403,24 @@ def Head(
 def ConvNeXt(
     depths: TensorLike,
     projection_dims: TensorLike,
-    drop_path_rate: TensorLike = 0.0,
-    layer_scale_init_value: TensorLike = 1e-6,
-    default_size: TensorLike = 224,
-    name: TensorLike = "convnext",
-    include_preprocessing: TensorLike = True,
-    include_top: TensorLike = True,
-    weights: TensorLike = None,
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    weights_name: TensorLike = None,
+    drop_path_rate: float = 0.0,
+    layer_scale_init_value: float = 1e-6,
+    default_size: int = 224,
+    name: str = "convnext",
+    include_preprocessing: bool = True,
+    include_top: bool = True,
+    weights: str | None = None,
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    weights_name: str | None = None,
 ) -> TensorLike:
     """Instantiates ConvNeXt architecture given specific configuration.
 
     Args:
-        weights_name: Input parameter ``weights_name``.
+        weights_name: Pretrained weights key identifier.
         depths: An iterable containing depths for each individual stages.
         projection_dims: An iterable containing output number of channels of
         each individual stages.
@@ -623,28 +647,31 @@ def ConvNeXt(
 
 
 def ConvNeXtTiny(
-    include_top: TensorLike = True,
-    include_preprocessing: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "convnext_tiny",
+    include_top: bool = True,
+    include_preprocessing: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "convnext_tiny",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the ConvNeXtTiny architecture.
 
     Args:
-        include_top: Description.
-        include_preprocessing: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        name: Description.
+        include_top: Whether to include the classification head at the top.
+        include_preprocessing: Whether to include the PreStem normalization layer.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ConvNeXtTiny Functional model.
     """
     return ConvNeXt(
         weights_name="convnext_tiny",
@@ -666,28 +693,31 @@ def ConvNeXtTiny(
 
 
 def ConvNeXtSmall(
-    include_top: TensorLike = True,
-    include_preprocessing: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "convnext_small",
+    include_top: bool = True,
+    include_preprocessing: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "convnext_small",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the ConvNeXtSmall architecture.
 
     Args:
-        include_top: Description.
-        include_preprocessing: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        name: Description.
+        include_top: Whether to include the classification head at the top.
+        include_preprocessing: Whether to include the PreStem normalization layer.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ConvNeXtSmall Functional model.
     """
     return ConvNeXt(
         weights_name="convnext_small",
@@ -709,28 +739,31 @@ def ConvNeXtSmall(
 
 
 def ConvNeXtBase(
-    include_top: TensorLike = True,
-    include_preprocessing: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "convnext_base",
+    include_top: bool = True,
+    include_preprocessing: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "convnext_base",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the ConvNeXtBase architecture.
 
     Args:
-        include_top: Description.
-        include_preprocessing: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        name: Description.
+        include_top: Whether to include the classification head at the top.
+        include_preprocessing: Whether to include the PreStem normalization layer.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ConvNeXtBase Functional model.
     """
     return ConvNeXt(
         weights_name="convnext_base",
@@ -752,28 +785,31 @@ def ConvNeXtBase(
 
 
 def ConvNeXtLarge(
-    include_top: TensorLike = True,
-    include_preprocessing: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "convnext_large",
+    include_top: bool = True,
+    include_preprocessing: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "convnext_large",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the ConvNeXtLarge architecture.
 
     Args:
-        include_top: Description.
-        include_preprocessing: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        name: Description.
+        include_top: Whether to include the classification head at the top.
+        include_preprocessing: Whether to include the PreStem normalization layer.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ConvNeXtLarge Functional model.
     """
     return ConvNeXt(
         weights_name="convnext_large",
@@ -795,28 +831,31 @@ def ConvNeXtLarge(
 
 
 def ConvNeXtXLarge(
-    include_top: TensorLike = True,
-    include_preprocessing: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "convnext_xlarge",
+    include_top: bool = True,
+    include_preprocessing: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "convnext_xlarge",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the ConvNeXtXLarge architecture.
 
     Args:
-        include_top: Description.
-        include_preprocessing: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        name: Description.
+        include_top: Whether to include the classification head at the top.
+        include_preprocessing: Whether to include the PreStem normalization layer.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ConvNeXtXLarge Functional model.
     """
     return ConvNeXt(
         weights_name="convnext_xlarge",
@@ -837,42 +876,28 @@ def ConvNeXtXLarge(
     )
 
 
-ConvNeXtTiny.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtTiny")
-ConvNeXtSmall.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtSmall")
-ConvNeXtBase.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtBase")
-ConvNeXtLarge.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtLarge")
-ConvNeXtXLarge.__doc__ = BASE_DOCSTRING.format(name="ConvNeXtXLarge")
-
-
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """A placeholder method for backward compatibility.
-
-    The preprocessing logic has been included in the convnext model
-    implementation. Users are no longer required to call this method to
-    normalize the input data. This method does nothing and only kept as a
-    placeholder to align the API surface between old and new version of model.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Return ``x`` unchanged as ConvNeXt models include built-in preprocessing.
 
     Args:
-        x: A floating point `numpy.array` or a tensor.
-        data_format: Optional data format of the image tensor/array. Defaults to
-            None, in which case the global setting
-            `keras.backend.image_data_format()` is used
-            (unless you changed it, it defaults to `"channels_last"`).{mode}
+        x: Input image tensor or array.
+        data_format: Optional image data format (unused).
 
     Returns:
-        Unchanged `numpy.array` or tensor.
+        TensorLike: Unchanged ``x``.
     """
+    _ = data_format
     return x
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for ConvNeXt.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

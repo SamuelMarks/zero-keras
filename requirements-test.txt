@@ -3,11 +3,4 @@ pytest-cov
 interrogate
 mypy
 ruff
-ml-ecosystem-snapshots @ https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.4/ml_ecosystem_snapshots-0.0.4-py3-none-any.whl
-numpy
-keras>=3.0.0
-# TF only provides wheels up to Python 3.12 (as of recent versions)
-tensorflow-macos>=2.16.2; sys_platform == 'darwin' and platform_machine == 'arm64' and python_version < '3.13'
-tensorflow>=2.16.2; (sys_platform != 'darwin' or platform_machine != 'arm64') and python_version < '3.13'
-jax>=0.4.30
-pydot
+ml-ecosystem-snapshots @ https://github.com/SamuelMarks/ml-ecosystem-snapshots/releases/download/v0.0.5/ml_ecosystem_snapshots-0.0.5-py3-none-any.whl

@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""DenseNet architectures (DenseNet121, DenseNet169, DenseNet201) for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 from zero_keras import backend
 
@@ -89,14 +89,14 @@ def conv_block(x: TensorLike, growth_rate: TensorLike, name: TensorLike) -> Tens
 
 def DenseNet(
     blocks: TensorLike,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "densenet",
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "densenet",
 ) -> TensorLike:
     """Instantiates the DenseNet architecture.
 
@@ -302,26 +302,29 @@ def DenseNet(
 
 
 def DenseNet121(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "densenet121",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "densenet121",
 ) -> TensorLike:
     """Instantiates the Densenet121 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated DenseNet121 Functional model.
     """
     return DenseNet(
         [6, 12, 24, 16],
@@ -337,26 +340,29 @@ def DenseNet121(
 
 
 def DenseNet169(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "densenet169",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "densenet169",
 ) -> TensorLike:
     """Instantiates the Densenet169 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated DenseNet169 Functional model.
     """
     return DenseNet(
         [6, 12, 32, 32],
@@ -372,26 +378,29 @@ def DenseNet169(
 
 
 def DenseNet201(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "densenet201",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "densenet201",
 ) -> TensorLike:
     """Instantiates the Densenet201 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated DenseNet201 Functional model.
     """
     return DenseNet(
         [6, 12, 48, 32],
@@ -406,89 +415,27 @@ def DenseNet201(
     )
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for DenseNet using Torch-style normalization.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="torch")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for DenseNet.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_TORCH,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__
-
-DOC = """
-
-Reference:
-- [Densely Connected Convolutional Networks](
-    https://arxiv.org/abs/1608.06993) (CVPR 2017)
-
-Optionally loads weights pre-trained on ImageNet.
-Note that the data format convention used by the model is
-the one specified in your Keras config at `~/.keras/keras.json`.
-
-Note: each Keras Application expects a specific kind of input preprocessing.
-For DenseNet, call `keras.applications.densenet.preprocess_input`
-on your inputs before passing them to the model.
-
-Args:
-    include_top: whether to include the fully-connected
-        layer at the top of the network.
-    weights: one of `None` (random initialization),
-        `"imagenet"` (pre-training on ImageNet),
-        or the path to the weights file to be loaded.
-        input_tensor: optional Keras tensor
-        (i.e. output of `layers.Input()`)
-        to use as image input for the model.
-    input_shape: optional shape tuple, only to be specified
-        if `include_top` is False (otherwise the input shape
-        has to be `(224, 224, 3)` (with `'channels_last'` data format)
-        or `(3, 224, 224)` (with `'channels_first'` data format).
-        It should have exactly 3 inputs channels,
-        and width and height should be no smaller than 32.
-        E.g. `(200, 200, 3)` would be one valid value.
-    pooling: Optional pooling mode for feature extraction
-        when `include_top` is `False`.
-        - `None` means that the output of the model will be
-            the 4D tensor output of the
-            last convolutional block.
-        - `avg` means that global average pooling
-            will be applied to the output of the
-            last convolutional block, and thus
-            the output of the model will be a 2D tensor.
-        - `max` means that global max pooling will
-            be applied.
-    classes: optional number of classes to classify images
-        into, only to be specified if `include_top` is `True`, and
-        if no `weights` argument is specified. Defaults to 1000.
-    classifier_activation: A `str` or callable.
-        The activation function to use
-        on the "top" layer. Ignored unless `include_top=True`. Set
-        `classifier_activation=None` to return the logits
-        of the "top" layer. When loading pretrained weights,
-        `classifier_activation` can only be `None` or `"softmax"`.
-    name: The name of the model (string).
-
-Returns:
-    A Keras model instance.
-"""
-
-DenseNet121.__doc__ = (DenseNet121.__doc__ or "") + DOC
-DenseNet169.__doc__ = (DenseNet169.__doc__ or "") + DOC
-DenseNet201.__doc__ = (DenseNet201.__doc__ or "") + DOC

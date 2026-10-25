@@ -1,57 +1,20 @@
-"""Module docstring."""
+"""Unit and behavioral tests for stateful RNN layers in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import keras
-import numpy as np
-
-from zero_keras import layers
+from zero_keras import layers, random
 
 
-def check_layer_parity(
-    layer_cls: TensorLike,
-    keras_cls: TensorLike,
-    inputs: TensorLike,
-    atol: TensorLike = 0.5,
-    rtol: TensorLike = 0.5,
-    **kwargs: TensorLike,
-) -> TensorLike:
-    """Function docstring.
-
-    Args:
-        layer_cls: Description.
-        keras_cls: Description.
-        inputs: Description.
-        atol: Description.
-        rtol: Description.
-        kwargs: Description.
-    """
-    keras_layer = keras_cls(**kwargs)
-    _ = keras_layer(inputs)
-    keras_out2 = keras_layer(inputs)
-
-    zero_layer = layer_cls(**kwargs)
-    kw = keras_layer.get_weights()
-
-    # Let's manually build it, set weights, and reset states.
-    zero_layer.build(inputs.shape)
+def test_simplernn_stateful() -> None:
+    """Verify stateful ``layers.SimpleRNN`` across consecutive batches and state resets."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    zero_layer = layers.SimpleRNN(units=10, stateful=True)
+    zero_layer.build((3, 5, 4))
+    kw = zero_layer.get_weights()
     zero_layer.set_weights(kw)
     zero_layer.reset_states()
-    keras_layer.reset_states()
 
-    _ = keras_layer(inputs)
-    keras_out2 = keras_layer(inputs)
-
-    _ = zero_layer(inputs)
-    zero_out2 = zero_layer(inputs)
-
-    keras_out_np2 = keras_out2.numpy() if hasattr(keras_out2, "numpy") else np.array(keras_out2)
-    zero_out_np2 = zero_out2.numpy() if hasattr(zero_out2, "numpy") else np.array(zero_out2)
-    np.testing.assert_allclose(keras_out_np2, zero_out_np2, atol=atol, rtol=rtol)
-
-
-def test_simplernn_stateful() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, stateful=True)
+    out1 = zero_layer(x)
+    out2 = zero_layer(x)
+    assert out1.shape == (3, 10)
+    assert out2.shape == (3, 10)

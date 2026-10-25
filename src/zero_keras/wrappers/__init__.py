@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
-from zero_keras.types import ConfigDict, ConfigValue, LayerProtocol, TensorLike
+from zero_keras.types import (
+    ConfigDict,
+    ConfigValue,
+    LayerProtocol,
+    SupportsCall,
+    TensorLike,
+)
 
 
 class _BaseSKLearnWrapper:
@@ -14,7 +18,7 @@ class _BaseSKLearnWrapper:
 
     def __init__(
         self,
-        model: LayerProtocol | Callable[..., LayerProtocol] | None = None,
+        model: LayerProtocol | SupportsCall | None = None,
         epochs: int = 1,
         batch_size: int = 32,
         verbose: int = 0,

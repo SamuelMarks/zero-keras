@@ -13,8 +13,8 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed() -> TensorLike:
-    """Function docstring."""
+def _set_seed() -> None:
+    """Verify or execute `set seed`."""
     set_seed(42)
 
 
@@ -26,17 +26,17 @@ def check_loss_parity(
     atol: TensorLike = 1e-5,
     rtol: TensorLike = 1e-5,
     **kwargs: TensorLike,
-) -> TensorLike:
-    """Function docstring.
+) -> None:
+    """Verify or execute `check loss parity`.
 
     Args:
-        loss_cls: Description.
-        keras_cls: Description.
-        y_true: Description.
-        y_pred: Description.
-        atol: Description.
-        rtol: Description.
-        kwargs: Description.
+        loss_cls: Test fixture or input parameter `loss_cls` (loss cls).
+        keras_cls: Test fixture or input parameter `keras_cls` (keras cls).
+        y_true: Test fixture or input parameter `y_true` (y true).
+        y_pred: Test fixture or input parameter `y_pred` (y pred).
+        atol: Test fixture or input parameter `atol` (atol).
+        rtol: Test fixture or input parameter `rtol` (rtol).
+        **kwargs: Keyword arguments forwarded to helper.
     """
     keras_loss = keras_cls(**kwargs)
     keras_out = keras_loss(y_true, y_pred)
@@ -47,8 +47,8 @@ def check_loss_parity(
     assert_allclose_keras_zero(keras_out, zero_out, atol=atol, rtol=rtol)
 
 
-def test_loss_BinaryCrossentropy() -> TensorLike:
-    """Function docstring."""
+def test_loss_BinaryCrossentropy() -> None:
+    """Verify or execute `test loss BinaryCrossentropy`."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(losses.BinaryCrossentropy, keras.losses.BinaryCrossentropy, y_true, y_pred)
@@ -62,8 +62,8 @@ def test_loss_BinaryCrossentropy() -> TensorLike:
     )
 
 
-def test_loss_BinaryFocalCrossentropy() -> TensorLike:
-    """Function docstring."""
+def test_loss_BinaryFocalCrossentropy() -> None:
+    """Verify or execute `test loss BinaryFocalCrossentropy`."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(
@@ -83,8 +83,8 @@ def test_loss_BinaryFocalCrossentropy() -> TensorLike:
     )
 
 
-def test_loss_CategoricalCrossentropy() -> TensorLike:
-    """Function docstring."""
+def test_loss_CategoricalCrossentropy() -> None:
+    """Verify or execute `test loss CategoricalCrossentropy`."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -103,8 +103,8 @@ def test_loss_CategoricalCrossentropy() -> TensorLike:
     )
 
 
-def test_loss_CategoricalFocalCrossentropy() -> TensorLike:
-    """Function docstring."""
+def test_loss_CategoricalFocalCrossentropy() -> None:
+    """Verify or execute `test loss CategoricalFocalCrossentropy`."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -123,8 +123,8 @@ def test_loss_CategoricalFocalCrossentropy() -> TensorLike:
     )
 
 
-def test_loss_SparseCategoricalCrossentropy() -> TensorLike:
-    """Function docstring."""
+def test_loss_SparseCategoricalCrossentropy() -> None:
+    """Verify or execute `test loss SparseCategoricalCrossentropy`."""
     y_true = np.array([0, 1])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -142,22 +142,22 @@ def test_loss_SparseCategoricalCrossentropy() -> TensorLike:
     )
 
 
-def test_loss_MeanSquaredError() -> TensorLike:
-    """Function docstring."""
+def test_loss_MeanSquaredError() -> None:
+    """Verify or execute `test loss MeanSquaredError`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.MeanSquaredError, keras.losses.MeanSquaredError, y_true, y_pred)
 
 
-def test_loss_MeanAbsoluteError() -> TensorLike:
-    """Function docstring."""
+def test_loss_MeanAbsoluteError() -> None:
+    """Verify or execute `test loss MeanAbsoluteError`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.MeanAbsoluteError, keras.losses.MeanAbsoluteError, y_true, y_pred)
 
 
-def test_loss_MeanAbsolutePercentageError() -> TensorLike:
-    """Function docstring."""
+def test_loss_MeanAbsolutePercentageError() -> None:
+    """Verify or execute `test loss MeanAbsolutePercentageError`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -168,8 +168,8 @@ def test_loss_MeanAbsolutePercentageError() -> TensorLike:
     )
 
 
-def test_loss_MeanSquaredLogarithmicError() -> TensorLike:
-    """Function docstring."""
+def test_loss_MeanSquaredLogarithmicError() -> None:
+    """Verify or execute `test loss MeanSquaredLogarithmicError`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -180,44 +180,44 @@ def test_loss_MeanSquaredLogarithmicError() -> TensorLike:
     )
 
 
-def test_loss_Huber() -> TensorLike:
-    """Function docstring."""
+def test_loss_Huber() -> None:
+    """Verify or execute `test loss Huber`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Huber, keras.losses.Huber, y_true, y_pred)
     check_loss_parity(losses.Huber, keras.losses.Huber, y_true, y_pred, delta=1.5)
 
 
-def test_loss_LogCosh() -> TensorLike:
-    """Function docstring."""
+def test_loss_LogCosh() -> None:
+    """Verify or execute `test loss LogCosh`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.LogCosh, keras.losses.LogCosh, y_true, y_pred)
 
 
-def test_loss_Hinge() -> TensorLike:
-    """Function docstring."""
+def test_loss_Hinge() -> None:
+    """Verify or execute `test loss Hinge`."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.Hinge, keras.losses.Hinge, y_true, y_pred)
 
 
-def test_loss_SquaredHinge() -> TensorLike:
-    """Function docstring."""
+def test_loss_SquaredHinge() -> None:
+    """Verify or execute `test loss SquaredHinge`."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.SquaredHinge, keras.losses.SquaredHinge, y_true, y_pred)
 
 
-def test_loss_CategoricalHinge() -> TensorLike:
-    """Function docstring."""
+def test_loss_CategoricalHinge() -> None:
+    """Verify or execute `test loss CategoricalHinge`."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(losses.CategoricalHinge, keras.losses.CategoricalHinge, y_true, y_pred)
 
 
-def test_loss_CosineSimilarity() -> TensorLike:
-    """Function docstring."""
+def test_loss_CosineSimilarity() -> None:
+    """Verify or execute `test loss CosineSimilarity`."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(losses.CosineSimilarity, keras.losses.CosineSimilarity, y_true, y_pred)
@@ -226,22 +226,22 @@ def test_loss_CosineSimilarity() -> TensorLike:
     )
 
 
-def test_loss_KLDivergence() -> TensorLike:
-    """Function docstring."""
+def test_loss_KLDivergence() -> None:
+    """Verify or execute `test loss KLDivergence`."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(losses.KLDivergence, keras.losses.KLDivergence, y_true, y_pred)
 
 
-def test_loss_Poisson() -> TensorLike:
-    """Function docstring."""
+def test_loss_Poisson() -> None:
+    """Verify or execute `test loss Poisson`."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Poisson, keras.losses.Poisson, y_true, y_pred)
 
 
-def test_loss_Loss() -> TensorLike:
-    """Function docstring."""
+def test_loss_Loss() -> None:
+    """Verify or execute `test loss Loss`."""
     # Base class fallback
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
@@ -250,8 +250,8 @@ def test_loss_Loss() -> TensorLike:
     assert np.allclose(res, 0.0) or (res.shape if hasattr(res, "shape") else None) == ()
 
 
-def test_loss_unsupported() -> TensorLike:
-    """Function docstring."""
+def test_loss_unsupported() -> None:
+    """Verify or execute `test loss unsupported`."""
     # Test losses with actual numeric output
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
@@ -280,8 +280,8 @@ def test_loss_unsupported() -> TensorLike:
     )
 
 
-def test_loss_complex_parity() -> TensorLike:
-    """Function docstring."""
+def test_loss_complex_parity() -> None:
+    """Verify or execute `test loss complex parity`."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
 

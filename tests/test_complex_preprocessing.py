@@ -1,10 +1,8 @@
-"""Module docstring."""
+"""Unit and behavioral tests for complex preprocessing in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np
-
+from zero_keras import ops
 from zero_keras.layers import (
     CategoryEncoding,
     HashedCrossing,
@@ -14,73 +12,73 @@ from zero_keras.layers import (
     TextVectorization,
 )
 
+from .conftest import assert_array_equal_zero, to_flat_floats
 
-def test_text_vectorization() -> TensorLike:
-    """Function docstring."""
+
+def test_text_vectorization() -> None:
+    """Verify or execute `test text vectorization`."""
     tv = TextVectorization(vocabulary=["[UNK]", "hello", "world"])
-    res = tv(np.array(["hello world", "hello missing", ""]))
-    assert np.array_equal(res.data, [[1, 2], [1, 0], [0, 0]])
+    res = tv(["hello world", "hello missing", ""])
+    assert_array_equal_zero(res.data, [[1, 2], [1, 0], [0, 0]])
 
     tv_mh = TextVectorization(vocabulary=["[UNK]", "hello", "world"], output_mode="multi_hot")
-    res_mh = tv_mh(np.array(["hello world", "hello missing", ""]))
-    assert np.array_equal(res_mh.data, [[0, 1, 1], [1, 1, 0], [1, 0, 0]])
+    res_mh = tv_mh(["hello world", "hello missing", ""])
+    assert_array_equal_zero(res_mh.data, [[0, 1, 1], [1, 1, 0], [1, 0, 0]])
 
 
-def test_string_lookup() -> TensorLike:
-    """Function docstring."""
+def test_string_lookup() -> None:
+    """Verify or execute `test string lookup`."""
     sl = StringLookup(vocabulary=["[UNK]", "a", "b"])
-    res = sl(np.array(["a", "b", "c", "a"]))
-    assert list(np.array(res.data).flatten()) == [1, 2, 0, 1]
+    res = sl(["a", "b", "c", "a"])
+    assert [int(v) for v in to_flat_floats(res.data)] == [1, 2, 0, 1]
 
     sl_oh = StringLookup(vocabulary=["[UNK]", "a", "b"], output_mode="one_hot")
-    res_oh = sl_oh(np.array(["a", "c"]))
-    assert np.array_equal(np.array(res_oh.data), [[0, 1, 0], [1, 0, 0]])
+    res_oh = sl_oh(["a", "c"])
+    assert_array_equal_zero(res_oh.data, [[0, 1, 0], [1, 0, 0]])
 
     sl_mh = StringLookup(vocabulary=["[UNK]", "a", "b"], output_mode="multi_hot")
-    res_mh = sl_mh(np.array([["a", "c"], ["b", "b"]]))
-    assert np.array_equal(np.array(res_mh.data), [[1, 1, 0], [0, 0, 1]])
+    res_mh = sl_mh([["a", "c"], ["b", "b"]])
+    assert_array_equal_zero(res_mh.data, [[1, 1, 0], [0, 0, 1]])
 
 
-def test_integer_lookup() -> TensorLike:
-    """Function docstring."""
-    il = IntegerLookup(
-        vocabulary=[0, 1, 2]
-    )  # 0 is UNK usually, wait IntegerLookup acts like StringLookup
-    res = il(np.array([1, 2, 3, 1]))
-    assert list(np.array(res.data).flatten()) == [1, 2, 0, 1]
+def test_integer_lookup() -> None:
+    """Verify or execute `test integer lookup`."""
+    il = IntegerLookup(vocabulary=[0, 1, 2])
+    res = il(ops.convert_to_tensor([1, 2, 3, 1]))
+    assert [int(v) for v in to_flat_floats(res.data)] == [1, 2, 0, 1]
 
 
-def test_hashing() -> TensorLike:
-    """Function docstring."""
+def test_hashing() -> None:
+    """Verify or execute `test hashing`."""
     h = Hashing(num_bins=4)
-    res = h(np.array(["a", "b", "c", "d"]))
+    res = h(["a", "b", "c", "d"])
     assert res.data.shape == (4,)
 
-    res2 = h(np.array([1, 2, 3]))
+    res2 = h(ops.convert_to_tensor([1, 2, 3]))
     assert res2.data.shape == (3,)
 
 
-def test_hashed_crossing() -> TensorLike:
-    """Function docstring."""
+def test_hashed_crossing() -> None:
+    """Verify or execute `test hashed crossing`."""
     hc = HashedCrossing(num_bins=10)
-    res = hc([np.array([1, 2]), np.array([3, 4])])
+    res = hc([ops.convert_to_tensor([1, 2]), ops.convert_to_tensor([3, 4])])
     assert res.data.shape == (2,)
 
     hc_oh = HashedCrossing(num_bins=10, output_mode="one_hot")
-    res_oh = hc_oh([np.array([1, 2]), np.array([3, 4])])
+    res_oh = hc_oh([ops.convert_to_tensor([1, 2]), ops.convert_to_tensor([3, 4])])
     assert res_oh.data.shape == (2, 10)
 
 
-def test_category_encoding() -> TensorLike:
-    """Function docstring."""
+def test_category_encoding() -> None:
+    """Verify or execute `test category encoding`."""
     ce = CategoryEncoding(num_tokens=4, output_mode="one_hot")
-    res = ce(np.array([1, 2]))
-    assert np.array_equal(res.data, [[0, 1, 0, 0], [0, 0, 1, 0]])
+    res = ce(ops.convert_to_tensor([1, 2]))
+    assert_array_equal_zero(res.data, [[0, 1, 0, 0], [0, 0, 1, 0]])
 
     ce_mh = CategoryEncoding(num_tokens=4, output_mode="multi_hot")
-    res_mh = ce_mh(np.array([[1, 2], [0, 0]]))
-    assert np.array_equal(res_mh.data, [[0, 1, 1, 0], [1, 0, 0, 0]])
+    res_mh = ce_mh(ops.convert_to_tensor([[1, 2], [0, 0]]))
+    assert_array_equal_zero(res_mh.data, [[0, 1, 1, 0], [1, 0, 0, 0]])
 
     ce_cnt = CategoryEncoding(num_tokens=4, output_mode="count")
-    res_cnt = ce_cnt(np.array([[1, 1], [0, 2]]))
-    assert np.array_equal(res_cnt.data, [[0, 2, 0, 0], [1, 0, 1, 0]])
+    res_cnt = ce_cnt(ops.convert_to_tensor([[1, 1], [0, 2]]))
+    assert_array_equal_zero(res_cnt.data, [[0, 2, 0, 0], [1, 0, 1, 0]])

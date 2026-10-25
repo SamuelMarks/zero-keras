@@ -6,7 +6,20 @@ from collections.abc import Sequence
 import math
 from typing import Union
 
+from zero_keras.saving.registry import register_classes
 from zero_keras.types import ConfigDict, ConfigValue, TensorLike
+
+
+def _step_to_float(step: int | float) -> float:
+    """Convert a step scalar into a Python float.
+
+    Args:
+        step: Integer or float representing training step.
+
+    Returns:
+        float: Evaluated step value.
+    """
+    return float(step)
 
 
 class LearningRateSchedule:
@@ -42,7 +55,7 @@ class LearningRateSchedule:
         Returns:
             LearningRateSchedule: Reconstructed schedule instance.
         """
-        return cls(**config)  # type: ignore[arg-type]
+        return cls(**config)
 
     def get_config(self) -> ConfigDict:
         """Return the schedule configuration dictionary.
@@ -64,6 +77,7 @@ class CosineDecay(LearningRateSchedule):
         name: str = "CosineDecay",
         warmup_target: float | None = None,
         warmup_steps: int = 0,
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize CosineDecay schedule.
 
@@ -74,7 +88,9 @@ class CosineDecay(LearningRateSchedule):
             name: Optional schedule name.
             warmup_target: Optional target learning rate after linear warmup.
             warmup_steps: Number of steps to warm up over.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.initial_learning_rate = float(initial_learning_rate)
         self.decay_steps = int(decay_steps)
         self.alpha = float(alpha)
@@ -91,7 +107,7 @@ class CosineDecay(LearningRateSchedule):
         Returns:
             float: Decayed learning rate.
         """
-        step_f = float(step)  # type: ignore[arg-type]
+        step_f = _step_to_float(step)
         decay_steps = float(self.decay_steps)
         if self.warmup_target is not None and self.warmup_steps > 0:
             if step_f < self.warmup_steps:
@@ -137,6 +153,7 @@ class ExponentialDecay(LearningRateSchedule):
         decay_rate: float,
         staircase: bool = False,
         name: str = "ExponentialDecay",
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize ExponentialDecay schedule.
 
@@ -146,7 +163,9 @@ class ExponentialDecay(LearningRateSchedule):
             decay_rate: Multiplicative decay factor.
             staircase: If True, decay the learning rate at discrete intervals.
             name: Optional schedule name.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.initial_learning_rate = float(initial_learning_rate)
         self.decay_steps = int(decay_steps)
         self.decay_rate = float(decay_rate)
@@ -162,7 +181,7 @@ class ExponentialDecay(LearningRateSchedule):
         Returns:
             float: Decayed learning rate.
         """
-        p = float(step) / self.decay_steps  # type: ignore[arg-type]
+        p = _step_to_float(step) / self.decay_steps
         if self.staircase:
             p = float(math.floor(p))
         return self.initial_learning_rate * math.pow(self.decay_rate, p)
@@ -192,7 +211,8 @@ class CosineDecayRestarts(LearningRateSchedule):
         t_mul: float = 2.0,
         m_mul: float = 1.0,
         alpha: float = 0.0,
-        name: str = "CosineDecayRestarts",
+        name: str = "SGDRDecay",
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize CosineDecayRestarts schedule.
 
@@ -203,7 +223,9 @@ class CosineDecayRestarts(LearningRateSchedule):
             m_mul: Initial learning rate multiplier at each restart.
             alpha: Minimum learning rate fraction.
             name: Optional schedule name.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.initial_learning_rate = float(initial_learning_rate)
         self.first_decay_steps = int(first_decay_steps)
         self.t_mul = float(t_mul)
@@ -220,7 +242,7 @@ class CosineDecayRestarts(LearningRateSchedule):
         Returns:
             float: Decayed learning rate.
         """
-        step_f = float(step)  # type: ignore[arg-type]
+        step_f = _step_to_float(step)
         first_decay_steps = float(self.first_decay_steps)
         t_mul = float(self.t_mul)
         m_mul = float(self.m_mul)
@@ -272,6 +294,7 @@ class InverseTimeDecay(LearningRateSchedule):
         decay_rate: float,
         staircase: bool = False,
         name: str = "InverseTimeDecay",
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize InverseTimeDecay schedule.
 
@@ -281,7 +304,9 @@ class InverseTimeDecay(LearningRateSchedule):
             decay_rate: Decay rate coefficient.
             staircase: Whether to apply decay in discrete staircase intervals.
             name: Optional schedule name.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.initial_learning_rate = float(initial_learning_rate)
         self.decay_steps = int(decay_steps)
         self.decay_rate = float(decay_rate)
@@ -297,7 +322,7 @@ class InverseTimeDecay(LearningRateSchedule):
         Returns:
             float: Decayed learning rate.
         """
-        p = float(step) / self.decay_steps  # type: ignore[arg-type]
+        p = _step_to_float(step) / self.decay_steps
         if self.staircase:
             p = float(math.floor(p))
         return self.initial_learning_rate / (1.0 + self.decay_rate * p)
@@ -324,7 +349,8 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         self,
         boundaries: Sequence[int | float],
         values: Sequence[float],
-        name: str = "PiecewiseConstantDecay",
+        name: str = "PiecewiseConstant",
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize PiecewiseConstantDecay schedule.
 
@@ -332,7 +358,9 @@ class PiecewiseConstantDecay(LearningRateSchedule):
             boundaries: Strictly increasing step boundaries.
             values: Learning rate values for each interval (length ``len(boundaries) + 1``).
             name: Optional schedule name.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.boundaries: list[float] = [float(b) for b in boundaries]
         self.values: list[float] = [float(v) for v in values]
         self.name = name
@@ -346,7 +374,7 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         Returns:
             float: Interval learning rate value.
         """
-        step_f = float(step)  # type: ignore[arg-type]
+        step_f = _step_to_float(step)
         for boundary, value in zip(self.boundaries, self.values):
             if step_f <= boundary:
                 return value
@@ -358,9 +386,11 @@ class PiecewiseConstantDecay(LearningRateSchedule):
         Returns:
             ConfigDict: Configuration dictionary.
         """
+        boundaries_cfg: list[ConfigValue] = [float(b) for b in self.boundaries]
+        values_cfg: list[ConfigValue] = [float(v) for v in self.values]
         return {
-            "boundaries": list(self.boundaries),  # type: ignore[dict-item]
-            "values": list(self.values),  # type: ignore[dict-item]
+            "boundaries": boundaries_cfg,
+            "values": values_cfg,
             "name": self.name,
         }
 
@@ -376,6 +406,7 @@ class PolynomialDecay(LearningRateSchedule):
         power: float = 1.0,
         cycle: bool = False,
         name: str = "PolynomialDecay",
+        **kwargs: ConfigValue,
     ) -> None:
         """Initialize PolynomialDecay schedule.
 
@@ -386,7 +417,9 @@ class PolynomialDecay(LearningRateSchedule):
             power: Polynomial power exponent.
             cycle: Whether to cycle beyond ``decay_steps``.
             name: Optional schedule name.
+            **kwargs: Additional keyword arguments.
         """
+        super().__init__(**kwargs)
         self.initial_learning_rate = float(initial_learning_rate)
         self.decay_steps = int(decay_steps)
         self.end_learning_rate = float(end_learning_rate)
@@ -403,7 +436,7 @@ class PolynomialDecay(LearningRateSchedule):
         Returns:
             float: Decayed learning rate.
         """
-        step_f = float(step)  # type: ignore[arg-type]
+        step_f = _step_to_float(step)
         decay_steps = float(self.decay_steps)
         if self.cycle:
             if step_f == 0.0:
@@ -432,6 +465,19 @@ class PolynomialDecay(LearningRateSchedule):
             "name": self.name,
         }
 
+
+register_classes(
+    "schedules",
+    {
+        "CosineDecay": CosineDecay,
+        "CosineDecayRestarts": CosineDecayRestarts,
+        "ExponentialDecay": ExponentialDecay,
+        "InverseTimeDecay": InverseTimeDecay,
+        "LearningRateSchedule": LearningRateSchedule,
+        "PiecewiseConstantDecay": PiecewiseConstantDecay,
+        "PolynomialDecay": PolynomialDecay,
+    },
+)
 
 ScheduleIdentifier = Union[LearningRateSchedule, str, ConfigDict, float, None]
 

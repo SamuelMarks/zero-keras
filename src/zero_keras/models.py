@@ -14,7 +14,15 @@ from ml_switcheroo_compiler.ops import asarray as _msc_asarray
 
 from zero_keras.core_layers import Functional, Input, Layer, Model, Variable, deserialize
 from zero_keras.ops import reshape
-from zero_keras.types import ConfigDict, ConfigValue, ShapeLike, TensorLike
+from zero_keras.saving.registry import get_object_class_name
+from zero_keras.types import (
+    ConfigDict,
+    ConfigValue,
+    ShapeLike,
+    ShapeTuple,
+    SupportsGetConfig,
+    TensorLike,
+)
 
 
 def _load_safetensors(data: bytes) -> list[tuple[list[float | int], tuple[int, ...], DType]]:
@@ -110,9 +118,12 @@ def load_model(
 class Sequential(Model):
     """``Sequential`` groups a linear stack of layers into a ``Model``."""
 
+    inputs: TensorLike | None = None
+    outputs: TensorLike | None = None
+
     def __init__(
         self,
-        layers: Sequence[Layer] | None = None,
+        layers: Sequence[Layer | TensorLike] | None = None,
         name: str | None = None,
     ) -> None:
         """Initialize a Sequential model.
@@ -122,17 +133,59 @@ class Sequential(Model):
             name: Optional name for the model.
         """
         super().__init__(name=name)
-        self.layers: list[Layer] = list(layers) if layers is not None else []
+        self.layers: list[Layer | TensorLike] = list(layers) if layers is not None else []
         self._name = name
         self.built = False
+        self._build_input_shape: ShapeTuple | None = None
 
-    def add(self, layer: Layer) -> None:
+    def add(self, layer: Layer | TensorLike) -> None:
         """Add a layer instance on top of the layer stack.
 
         Args:
             layer: Layer instance to append.
         """
         self.layers.append(layer)
+
+    def pop(self, rebuild: bool = True) -> Layer | TensorLike:
+        """Remove the last layer in the model.
+
+        Args:
+            rebuild: Whether to rebuild the model after popping the layer.
+
+        Returns:
+            Layer | TensorLike: The removed layer instance.
+
+        Raises:
+            TypeError: If there are no layers in the model.
+        """
+        _ = rebuild
+        if not self.layers:
+            raise TypeError("There are no layers in the model.")
+        return self.layers.pop()
+
+    @property
+    def input_shape(self) -> ShapeTuple | None:
+        """Return the input shape tuple of the Sequential model.
+
+        Returns:
+            ShapeTuple | None: Input shape tuple if built, else ``None``.
+        """
+        return self._build_input_shape if self.built else None
+
+    @property
+    def output_shape(self) -> ShapeTuple | None:
+        """Return the output shape tuple of the Sequential model.
+
+        Returns:
+            ShapeTuple | None: Output shape tuple if built, else ``None``.
+        """
+        if not self.built or self._build_input_shape is None:
+            return None
+        current_shape: ShapeTuple = self._build_input_shape
+        for layer in self.layers:
+            if isinstance(layer, Layer):
+                current_shape = layer.compute_output_shape(current_shape)
+        return current_shape
 
     def get_config(self) -> ConfigDict:
         """Return the serializable configuration of the Sequential model.
@@ -142,10 +195,10 @@ class Sequential(Model):
         """
         layer_configs: list[ConfigValue] = []
         for layer in self.layers:
-            l_cfg = layer.get_config() if hasattr(layer, "get_config") else {}
+            l_cfg = layer.get_config() if isinstance(layer, SupportsGetConfig) else {}
             layer_configs.append(
                 {
-                    "class_name": layer.__class__.__name__,
+                    "class_name": get_object_class_name(layer),
                     "config": l_cfg,
                 }
             )
@@ -164,19 +217,21 @@ class Sequential(Model):
         Returns:
             Sequential: Reconstructed Sequential model.
         """
-        layers_cfg = config.get("layers", [])
-        from zero_keras import layers as layers_module
+        from zero_keras.layers import LAYER_REGISTRY
 
+        layers_cfg = config.get("layers", [])
         name_val = config.get("name")
         inst = cls(name=str(name_val) if isinstance(name_val, str) else None)
         if isinstance(layers_cfg, list):
             for l_c in layers_cfg:
                 if isinstance(l_c, dict):
-                    cls_name = str(l_c.get("class_name", ""))
-                    if hasattr(layers_module, cls_name):
-                        l_cls = layers_module.__dict__[cls_name]
+                    l_cls_name = l_c.get("class_name")
+                    l_cls = (
+                        LAYER_REGISTRY.get(str(l_cls_name)) if isinstance(l_cls_name, str) else None
+                    )
+                    if l_cls is not None:
                         sub_cfg = l_c.get("config", {})
-                        inst.add(l_cls(**sub_cfg))  # type: ignore[arg-type]
+                        inst.add(l_cls(**(sub_cfg if isinstance(sub_cfg, dict) else {})))
         return inst
 
     @property
@@ -223,7 +278,7 @@ class Sequential(Model):
         """
         w: list[TensorLike] = []
         for layer in self.layers:
-            if hasattr(layer, "get_weights"):
+            if isinstance(layer, Layer):
                 w.extend(layer.get_weights())
         return w
 
@@ -235,7 +290,7 @@ class Sequential(Model):
         """
         idx = 0
         for layer in self.layers:
-            if hasattr(layer, "get_weights") and hasattr(layer, "set_weights"):
+            if isinstance(layer, Layer):
                 cw = layer.get_weights()
                 layer.set_weights(list(weights[idx : idx + len(cw)]))
                 idx += len(cw)
@@ -246,12 +301,13 @@ class Sequential(Model):
         Args:
             input_shape: Input shape tuple.
         """
+        if isinstance(input_shape, tuple):
+            self._build_input_shape = input_shape
         current_shape = input_shape
         for layer in self.layers:
-            is_built = bool(layer.built) if hasattr(layer, "built") else False
-            if not is_built and hasattr(layer, "build"):
-                layer.build(current_shape)
-            if hasattr(layer, "compute_output_shape"):
+            if isinstance(layer, Layer):
+                if not layer.built:
+                    layer.build(current_shape)
                 current_shape = layer.compute_output_shape(current_shape)
         self.built = True
 
@@ -297,24 +353,24 @@ class Sequential(Model):
         Model.save(self, filepath, overwrite=overwrite, save_format=save_format, **kwargs)
 
 
-def _default_clone_function(layer: Layer) -> Layer:
+def _default_clone_function(layer: Layer | TensorLike) -> Layer | TensorLike:
     """Clone a single layer via ``from_config(layer.get_config())``.
 
     Args:
         layer: Layer instance to clone.
 
     Returns:
-        Layer: Cloned layer instance.
+        Layer | TensorLike: Cloned layer instance.
     """
-    if hasattr(layer, "get_config"):
-        return layer.__class__.from_config(layer.get_config())
+    if isinstance(layer, Layer):
+        return type(layer).from_config(layer.get_config())
     return layer
 
 
 def clone_model(
     model: Model,
     input_tensors: Sequence[TensorLike] | TensorLike | None = None,
-    clone_function: Callable[[Layer], Layer] | None = None,
+    clone_function: Callable[[Layer | TensorLike], Layer | TensorLike] | None = None,
 ) -> Model:
     """Clone a ``Functional`` or ``Sequential`` ``Model`` instance with fresh weights.
 
@@ -351,23 +407,22 @@ def clone_model(
     tensor_map: dict[str, TensorLike] = {}
 
     for lc in layer_configs:
-        lname = str(lc.get("name", ""))  # type: ignore[union-attr]
-        cname = str(lc.get("class_name", ""))  # type: ignore[union-attr]
-        cconfig_raw = lc.get("config", {})  # type: ignore[union-attr]
+        lc_dict = lc if isinstance(lc, dict) else {}
+        lname = str(lc_dict.get("name", ""))
+        cname = str(lc_dict.get("class_name", ""))
+        cconfig_raw = lc_dict.get("config", {})
         cconfig = cconfig_raw if isinstance(cconfig_raw, dict) else {}
 
         if cname == "InputLayer":
             shape_raw = cconfig.get("batch_input_shape", (None,))
-            shape = (
-                tuple(shape_raw[1:])
-                if isinstance(shape_raw, (list, tuple))
-                and len(shape_raw) > 0
-                and shape_raw[0] is None
-                else shape_raw
+            raw_seq = list(shape_raw) if isinstance(shape_raw, (list, tuple)) else [None]
+            shape_items = raw_seq[1:] if len(raw_seq) > 0 and raw_seq[0] is None else raw_seq
+            shape: ShapeTuple = tuple(
+                int(d) if isinstance(d, (int, float)) else None for d in shape_items
             )
             dt_val = cconfig.get("dtype")
             inp_tensor = Input(
-                shape=shape,  # type: ignore[arg-type]
+                shape=shape,
                 name=lname,
                 dtype=str(dt_val) if isinstance(dt_val, str) else None,
             )
@@ -378,22 +433,22 @@ def clone_model(
             created_layers[lname] = resolved_clone_fn(orig_by_name[lname])
 
     for lc in layer_configs:
-        lname = str(lc.get("name", ""))  # type: ignore[union-attr]
-        inbound = lc.get("inbound_nodes", [])  # type: ignore[union-attr]
-        if not isinstance(inbound, list) or not inbound:
-            continue
-
-        layer_obj = created_layers[lname]
-        for connection_group in inbound:
-            if len(connection_group) == 1:  # type: ignore[arg-type]
-                src_layer, _node_idx, _tensor_idx, call_kwargs = connection_group[0]  # type: ignore[index]
-                inp_t = tensor_map[str(src_layer)]
-                kw = call_kwargs if isinstance(call_kwargs, dict) else {}
-                out_t = layer_obj(inp_t, **kw)  # type: ignore[operator]
-            else:
-                inp_ts = [tensor_map[str(c[0])] for c in connection_group]  # type: ignore[union-attr]
-                out_t = layer_obj(inp_ts)  # type: ignore[operator]
-            tensor_map[lname] = out_t
+        lc_dict = lc if isinstance(lc, dict) else {}
+        lname = str(lc_dict.get("name", ""))
+        inbound = lc_dict.get("inbound_nodes", [])
+        if isinstance(inbound, list) and inbound:
+            layer_obj = created_layers[lname]
+            for connection_group in inbound:
+                cg = list(connection_group) if isinstance(connection_group, (list, tuple)) else []
+                if len(cg) == 1:
+                    conn0 = list(cg[0]) if isinstance(cg[0], (list, tuple)) else []
+                    src_layer, call_kwargs = conn0[0], conn0[3]
+                    inp_t = tensor_map[str(src_layer)]
+                    kw = dict(call_kwargs) if isinstance(call_kwargs, dict) else {}
+                    tensor_map[lname] = layer_obj(inp_t, **kw) if callable(layer_obj) else inp_t
+                else:
+                    inp_ts = [tensor_map[str(c[0])] for c in cg if isinstance(c, (list, tuple))]
+                    tensor_map[lname] = layer_obj(inp_ts) if callable(layer_obj) else inp_ts
 
     input_layers_raw = config.get("input_layers", [])
     output_layers_raw = config.get("output_layers", [])
@@ -418,7 +473,7 @@ def clone_model(
 
 
 def save_model(
-    model: Model,
+    model: Model | TensorLike,
     filepath: str | Path,
     overwrite: bool = True,
     **kwargs: ConfigValue,
@@ -431,7 +486,7 @@ def save_model(
         overwrite: Whether to overwrite existing files.
         **kwargs: Additional save options.
     """
-    if hasattr(model, "save"):
+    if isinstance(model, Model):
         model.save(filepath, overwrite=overwrite, **kwargs)
     else:
         Model.save(model, filepath, overwrite=overwrite, **kwargs)
@@ -472,9 +527,10 @@ def model_from_json(
 
         if isinstance(layer_configs, list):
             for lc in layer_configs:
-                lname = str(lc.get("name", ""))  # type: ignore[union-attr]
-                cname = str(lc.get("class_name", ""))  # type: ignore[union-attr]
-                cconfig_raw = lc.get("config", {})  # type: ignore[union-attr]
+                lc_dict = lc if isinstance(lc, dict) else {}
+                lname = str(lc_dict.get("name", ""))
+                cname = str(lc_dict.get("class_name", ""))
+                cconfig_raw = lc_dict.get("config", {})
                 cconfig = cconfig_raw if isinstance(cconfig_raw, dict) else {}
 
                 if safe_mode and cname == "Lambda":
@@ -482,16 +538,16 @@ def model_from_json(
 
                 if cname == "InputLayer":
                     shape_raw = cconfig.get("batch_input_shape", (None,))
-                    shape = (
-                        tuple(shape_raw[1:])
-                        if isinstance(shape_raw, (list, tuple))
-                        and len(shape_raw) > 0
-                        and shape_raw[0] is None
-                        else shape_raw
+                    raw_seq = list(shape_raw) if isinstance(shape_raw, (list, tuple)) else [None]
+                    shape_items = (
+                        raw_seq[1:] if len(raw_seq) > 0 and raw_seq[0] is None else raw_seq
+                    )
+                    shape: ShapeTuple = tuple(
+                        int(d) if isinstance(d, (int, float)) else None for d in shape_items
                     )
                     dt_val = cconfig.get("dtype")
                     inp_t = Input(
-                        shape=shape,  # type: ignore[arg-type]
+                        shape=shape,
                         name=lname,
                         dtype=str(dt_val) if isinstance(dt_val, str) else None,
                     )
@@ -499,26 +555,34 @@ def model_from_json(
                     tensor_map[lname] = inp_t
                 else:
                     created_layers[lname] = deserialize(
-                        lc, custom_objects=custom_objects, safe_mode=safe_mode
+                        lc_dict, custom_objects=custom_objects, safe_mode=safe_mode
                     )
 
             for lc in layer_configs:
-                lname = str(lc.get("name", ""))  # type: ignore[union-attr]
-                inbound = lc.get("inbound_nodes", [])  # type: ignore[union-attr]
-                if not isinstance(inbound, list) or not inbound:
-                    continue
-
-                layer_obj = created_layers[lname]
-                for connection_group in inbound:
-                    if len(connection_group) == 1:  # type: ignore[arg-type]
-                        src_layer, _node_idx, _tensor_idx, call_kwargs = connection_group[0]  # type: ignore[index]
-                        inp_tensor = tensor_map[str(src_layer)]
-                        kw = call_kwargs if isinstance(call_kwargs, dict) else {}
-                        out_tensor = layer_obj(inp_tensor, **kw)  # type: ignore[operator]
-                    else:
-                        inp_tensors = [tensor_map[str(c[0])] for c in connection_group]  # type: ignore[union-attr]
-                        out_tensor = layer_obj(inp_tensors)  # type: ignore[operator]
-                    tensor_map[lname] = out_tensor
+                lc_dict = lc if isinstance(lc, dict) else {}
+                lname = str(lc_dict.get("name", ""))
+                inbound = lc_dict.get("inbound_nodes", [])
+                if isinstance(inbound, list) and inbound:
+                    layer_obj = created_layers[lname]
+                    for connection_group in inbound:
+                        cg = (
+                            list(connection_group)
+                            if isinstance(connection_group, (list, tuple))
+                            else []
+                        )
+                        if len(cg) == 1:
+                            conn0 = list(cg[0]) if isinstance(cg[0], (list, tuple)) else []
+                            src_layer, call_kwargs = conn0[0], conn0[3]
+                            inp_t = tensor_map[str(src_layer)]
+                            kw = dict(call_kwargs) if isinstance(call_kwargs, dict) else {}
+                            tensor_map[lname] = (
+                                layer_obj(inp_t, **kw) if callable(layer_obj) else inp_t
+                            )
+                        else:
+                            inp_ts = [
+                                tensor_map[str(c[0])] for c in cg if isinstance(c, (list, tuple))
+                            ]
+                            tensor_map[lname] = layer_obj(inp_ts) if callable(layer_obj) else inp_ts
 
         input_layers_raw = conf.get("input_layers", [])
         output_layers_raw = conf.get("output_layers", [])

@@ -1,13 +1,12 @@
-"""Module docstring."""
+"""Unit and behavioral tests for layers extra io in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
 from zero_keras import layers
 
 
-def test_layers_io() -> TensorLike:
-    """Function docstring."""
+def test_layers_io() -> None:
+    """Verify or execute `test layers io`."""
     layer = layers.Dense(10)
     config = layers.serialize(layer)
     assert isinstance(config, dict)
@@ -21,9 +20,9 @@ def test_layers_io() -> TensorLike:
     assert layers.deserialize(None) is None
 
 
-def test_new_layers() -> TensorLike:
-    """Function docstring."""
-    gqa = layers.GroupQueryAttention(num_heads=2, key_dim=2)
+def test_new_layers() -> None:
+    """Verify or execute `test new layers`."""
+    gqa = layers.GroupQueryAttention(head_dim=2, num_query_heads=2, num_key_value_heads=2)
     res = gqa(None, None)
     assert res is None
     res1, _res2 = gqa(None, None, return_attention_scores=True)

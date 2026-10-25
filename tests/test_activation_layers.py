@@ -1,86 +1,71 @@
-"""Module docstring."""
+"""Unit and behavioral tests for activation layers in zero_keras."""
 
 from __future__ import annotations
+
+from zero_keras import activations, layers, ops
 from zero_keras.types import TensorLike
 
-import keras
-import numpy as np
-import pytest
-
-from zero_keras import layers
-
-from .utils import assert_allclose_keras_zero, set_seed
-
-
-@pytest.fixture(autouse=True)
-def _set_seed() -> TensorLike:
-    """Function docstring."""
-    set_seed(42)
+from .conftest import assert_allclose_zero
 
 
 def get_x() -> TensorLike:
-    """Function docstring."""
-    return np.array([[-3.0, -1.0, 0.0], [0.5, 1.0, 3.0]], dtype=np.float32)
+    """Return a 2D float32 sample tensor for activation layer unit tests.
+
+    Returns:
+        TensorLike: Sample 2D input tensor.
+    """
+    return ops.convert_to_tensor([[-3.0, -1.0, 0.0], [0.5, 1.0, 3.0]], dtype="float32")
 
 
-def test_layer_Activation() -> TensorLike:
-    """Function docstring."""
+def test_layer_Activation() -> None:
+    """Verify ``layers.Activation`` matches functional ``activations``."""
     x = get_x()
-    keras_layer = keras.layers.Activation("relu")
     zero_layer = layers.Activation("relu")
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(zero_layer(x), activations.relu(x))
 
-    keras_layer = keras.layers.Activation("swish")
-    zero_layer = layers.Activation("swish")
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    zero_layer_swish = layers.Activation("swish")
+    assert_allclose_zero(zero_layer_swish(x), activations.swish(x))
 
 
-def test_layer_ELU() -> TensorLike:
-    """Function docstring."""
+def test_layer_ELU() -> None:
+    """Verify ``layers.ELU`` matches ``activations.elu``."""
     x = get_x()
-    keras_layer = keras.layers.ELU(alpha=0.5)
     zero_layer = layers.ELU(alpha=0.5)
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(zero_layer(x), activations.elu(x, alpha=0.5))
 
 
-def test_layer_LeakyReLU() -> TensorLike:
-    """Function docstring."""
+def test_layer_LeakyReLU() -> None:
+    """Verify ``layers.LeakyReLU`` matches ``activations.leaky_relu``."""
     x = get_x()
-    keras_layer = keras.layers.LeakyReLU(negative_slope=0.2)
     zero_layer = layers.LeakyReLU(negative_slope=0.2)
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(zero_layer(x), activations.leaky_relu(x, negative_slope=0.2))
 
 
-def test_layer_PReLU() -> TensorLike:
-    """Function docstring."""
+def test_layer_PReLU() -> None:
+    """Verify ``layers.PReLU`` with ones and default zeros alpha initializer."""
     x = get_x()
-    # PReLU has weights, we need to initialize them and then copy weights from keras to zero.
-    # By default, weights are initialized to zeros.
-    keras_layer = keras.layers.PReLU(alpha_initializer="ones")
     zero_layer = layers.PReLU(alpha_initializer="ones")
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(zero_layer(x), x)
 
-    # Also test default initialization
-    keras_layer2 = keras.layers.PReLU()
     zero_layer2 = layers.PReLU()
-    assert_allclose_keras_zero(keras_layer2(x), zero_layer2(x))
+    assert_allclose_zero(zero_layer2(x), activations.relu(x))
 
 
-def test_layer_ReLU() -> TensorLike:
-    """Function docstring."""
+def test_layer_ReLU() -> None:
+    """Verify ``layers.ReLU`` matches ``activations.relu`` with parameters."""
     x = get_x()
-    keras_layer = keras.layers.ReLU(max_value=1.0, negative_slope=0.1, threshold=0.5)
     zero_layer = layers.ReLU(max_value=1.0, negative_slope=0.1, threshold=0.5)
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(
+        zero_layer(x),
+        activations.relu(x, max_value=1.0, negative_slope=0.1, threshold=0.5),
+    )
 
 
-def test_layer_Softmax() -> TensorLike:
-    """Function docstring."""
+def test_layer_Softmax() -> None:
+    """Verify ``layers.Softmax`` matches ``activations.softmax`` along axes."""
     x = get_x()
-    keras_layer = keras.layers.Softmax(axis=-1)
     zero_layer = layers.Softmax(axis=-1)
-    assert_allclose_keras_zero(keras_layer(x), zero_layer(x))
+    assert_allclose_zero(zero_layer(x), activations.softmax(x, axis=-1))
 
-    keras_layer2 = keras.layers.Softmax(axis=0)
     zero_layer2 = layers.Softmax(axis=0)
-    assert_allclose_keras_zero(keras_layer2(x), zero_layer2(x))
+    assert_allclose_zero(zero_layer2(x), activations.softmax(x, axis=0))

@@ -1,63 +1,61 @@
 """Module `test_rnn_extra` for zero_keras."""
 
 from __future__ import annotations
+
+from unittest.mock import patch
+
+from zero_keras import layers, ops, random
 from zero_keras.types import TensorLike
-import numpy as np
-
-from zero_keras import layers
 
 
-def test_simplernn_isolated() -> TensorLike:
-    """Execute ``test_simplernn_isolated``."""
+def test_simplernn_isolated() -> None:
+    """Verify or execute `test simplernn isolated`."""
     cell = layers.SimpleRNNCell(4)
     layer = layers.SimpleRNN(4)
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     assert layer(x).shape == (2, 4)
 
     cell.build((None, 3))
-    out, _states = cell(x[:, 0, :], [np.zeros((2, 4), dtype=np.float32)])
+    out, _states = cell(x[:, 0, :], [ops.zeros((2, 4), dtype="float32")])
     assert out.shape == (2, 4)
 
 
-def test_gru_isolated() -> TensorLike:
-    """Execute ``test_gru_isolated``."""
-    cell = layers.GRUCell(4)
+def test_gru_isolated() -> None:
+    """Verify or execute `test gru isolated`."""
+    _cell = layers.GRUCell(4)
     layer = layers.GRU(4)
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     assert layer(x).shape == (2, 4)
 
 
-def test_lstm_isolated() -> TensorLike:
-    """Execute ``test_lstm_isolated``."""
-    cell = layers.LSTMCell(4)
+def test_lstm_isolated() -> None:
+    """Verify or execute `test lstm isolated`."""
+    _cell = layers.LSTMCell(4)
     layer = layers.LSTM(4)
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     assert layer(x).shape == (2, 4)
 
 
-def test_stacked_rnn_cells() -> TensorLike:
-    """Execute ``test_stacked_rnn_cells``."""
+def test_stacked_rnn_cells() -> None:
+    """Verify or execute `test stacked rnn cells`."""
     cells = [layers.LSTMCell(4), layers.LSTMCell(4)]
     layer = layers.RNN(layers.StackedRNNCells(cells))
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     assert layer(x).shape == (2, 4)
 
     stacked = layers.StackedRNNCells(cells)
     assert len(stacked.state_size) == 4
 
 
-def test_rnn_stateful() -> TensorLike:
-    """Execute ``test_rnn_stateful``."""
+def test_rnn_stateful() -> None:
+    """Verify or execute `test rnn stateful`."""
     layer = layers.SimpleRNN(4, stateful=True)
     layer.build((2, 5, 3))
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     out = layer(x)
     assert out.shape == (2, 4)
     out2 = layer(x)
     assert out2.shape == (2, 4)
-
-
-from unittest.mock import patch
 
 
 @patch("zero_keras.ops.gru_cell", return_value=(None, [None, None]))
@@ -65,48 +63,42 @@ from unittest.mock import patch
 @patch("zero_keras.ops.rnn")
 def test_all_rnn_and_attention_coverage(
     mock_rnn: TensorLike, mock_lstm: TensorLike, mock_gru: TensorLike
-) -> TensorLike:
-    """Execute ``test_all_rnn_and_attention_coverage``.
+) -> None:
+    """Verify or execute `test all rnn and attention coverage`.
 
     Args:
-        mock_rnn: Input parameter ``mock_rnn``.
-        mock_lstm: Input parameter ``mock_lstm``.
-        mock_gru: Input parameter ``mock_gru``.
+        mock_rnn: Test fixture or input parameter `mock_rnn` (mock rnn).
+        mock_lstm: Test fixture or input parameter `mock_lstm` (mock lstm).
+        mock_gru: Test fixture or input parameter `mock_gru` (mock gru).
     """
-    import numpy as np
+    _ = mock_lstm, mock_gru
+    mock_rnn.return_value = (ops.zeros((2, 5, 4)), [ops.zeros((2, 4)), ops.zeros((2, 4))])
 
-    from zero_keras import layers
-
-    mock_rnn.return_value = (np.zeros((2, 5, 4)), [np.zeros((2, 4)), np.zeros((2, 4))])
-
-    # RNN Cells
-    x = np.random.uniform(size=(2, 3)).astype(np.float32)
+    x = random.uniform((2, 3), dtype="float32")
 
     cell1 = layers.SimpleRNNCell(4)
     cell1.build((2, 3))
-    cell1.call(x, [np.zeros((2, 4))])
+    cell1.call(x, [ops.zeros((2, 4))])
 
     cell2 = layers.GRUCell(4)
     cell2.build((2, 3))
-    cell2.call(x, [np.zeros((2, 4))])
+    cell2.call(x, [ops.zeros((2, 4))])
 
     cell3 = layers.LSTMCell(4)
     cell3.build((2, 3))
-    cell3.call(x, [np.zeros((2, 4)), np.zeros((2, 4))])
+    cell3.call(x, [ops.zeros((2, 4)), ops.zeros((2, 4))])
 
-    # RNN Layers
-    x_seq = np.random.uniform(size=(2, 5, 3)).astype(np.float32)
+    x_seq = random.uniform((2, 5, 3), dtype="float32")
 
     for cls in [layers.SimpleRNN, layers.GRU, layers.LSTM]:
-        l = cls(4, return_sequences=True, return_state=True)
-        l(x_seq)
+        l_rnn = cls(4, return_sequences=True, return_state=True)
+        l_rnn(x_seq)
 
-    # Attention
-    l = layers.Attention()
-    l([x_seq, x_seq])
+    l_att = layers.Attention()
+    l_att([x_seq, x_seq])
 
-    l = layers.AdditiveAttention()
-    l([x_seq, x_seq])
+    l_add = layers.AdditiveAttention()
+    l_add([x_seq, x_seq])
 
-    l = layers.MultiHeadAttention(num_heads=2, key_dim=2)
-    l(x_seq, x_seq)
+    l_mha = layers.MultiHeadAttention(num_heads=2, key_dim=2)
+    l_mha(x_seq, x_seq)

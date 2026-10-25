@@ -1,4 +1,4 @@
-"""Generate ``SEMANTIC_PLAN.md`` from ``ml-ecosystem-snapshots`` (`v0.0.4`).
+"""Generate ``SEMANTIC_PLAN.md`` from ``ml-ecosystem-snapshots`` (`v0.0.5`).
 
 Loads ``keras_v3.15.1.json`` via ``ml_switcheroo_ir.schema.ghost.SnapshotEnvelope``
 and writes the categorized API checklist to ``SEMANTIC_PLAN.md``.
@@ -10,11 +10,14 @@ import json
 from pathlib import Path
 import sys
 
+from ml_ecosystem_snapshots.cli.resolver import (
+    resolve_snapshot_path as _resolve_pkg_snapshot_path,
+)
 from ml_switcheroo_ir.schema.ghost import GhostRef, SnapshotEnvelope
 
 
 def resolve_snapshot_path(explicit_path: str | Path | None = None) -> Path:
-    """Locate the ``keras_v3.15.1.json`` snapshot file.
+    """Locate the ``keras_v3.15.1.json`` snapshot file from ``ml-ecosystem-snapshots`` (`v0.0.5`) or cache.
 
     Args:
         explicit_path: Optional explicit path to the snapshot JSON file.
@@ -29,6 +32,9 @@ def resolve_snapshot_path(explicit_path: str | Path | None = None) -> Path:
         p = Path(explicit_path)
         if p.exists():
             return p
+    pkg_resolved = Path(_resolve_pkg_snapshot_path("keras_v3.15.1.json", must_exist=False))
+    if pkg_resolved.exists():
+        return pkg_resolved
     cache_path = (
         Path.home() / ".cache" / "ml_ecosystem_snapshots" / "snapshots" / "keras_v3.15.1.json"
     )
@@ -71,7 +77,7 @@ def generate_plan(
     lines: list[str] = [
         "# Zero-Keras Semantic Implementation Plan",
         "",
-        f"Total APIs tracked in `ml-ecosystem-snapshots` (`v0.0.4` / `keras_v{envelope.version}`): {total}",
+        f"Total APIs tracked in `ml-ecosystem-snapshots` (`v0.0.5` / `keras_v{envelope.version}`): {total}",
         "",
         "Check off `[x]` as you implement the behavioral logic.",
         "",

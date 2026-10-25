@@ -1,52 +1,48 @@
 """Tests for zero_keras regularizers."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np  # type: ignore
 import pytest
 
-from zero_keras import regularizers
+from zero_keras import ops, regularizers
 
 
-def test_l2_regularizer() -> TensorLike:
-    """Function docstring."""
+def test_l2_regularizer() -> None:
+    """Verify or execute `test l2 regularizer`."""
     reg = regularizers.L2(l2=0.01)
     base_reg = regularizers.Regularizer()
-    x = np.array([1.0, 2.0])
+    x = ops.convert_to_tensor([1.0, 2.0])
     assert reg(x) is not None
     assert base_reg(x) == 0.0
     assert reg.get_config() == {"l2": 0.01}
 
 
-def test_l1_regularizer() -> TensorLike:
-    """Function docstring."""
+def test_l1_regularizer() -> None:
+    """Verify or execute `test l1 regularizer`."""
     reg = regularizers.L1(l1=0.01)
-    x = np.array([1.0, 2.0])
+    x = ops.convert_to_tensor([1.0, 2.0])
     assert reg(x) is not None
     assert reg.get_config() == {"l1": 0.01}
 
 
-def test_l1_l2_regularizer() -> TensorLike:
-    """Function docstring."""
+def test_l1_l2_regularizer() -> None:
+    """Verify or execute `test l1 l2 regularizer`."""
     reg = regularizers.L1L2(l1=0.01, l2=0.01)
-    x = np.array([1.0, 2.0])
+    x = ops.convert_to_tensor([1.0, 2.0])
     assert reg(x) is not None
     assert reg.get_config() == {"l1": 0.01, "l2": 0.01}
 
-    # Test only L1
     reg1 = regularizers.L1L2(l1=0.01, l2=0.0)
     assert reg1(x) is not None
 
-    # Test only L2
     reg2 = regularizers.L1L2(l1=0.0, l2=0.01)
     assert reg2(x) is not None
 
 
-def test_orthogonal_regularizer() -> TensorLike:
-    """Function docstring."""
+def test_orthogonal_regularizer() -> None:
+    """Verify or execute `test orthogonal regularizer`."""
     reg = regularizers.OrthogonalRegularizer(factor=0.01, mode="rows")
-    x = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    x = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     assert reg(x) is not None
     assert reg.get_config() == {"factor": 0.01, "mode": "rows"}
 
@@ -54,15 +50,15 @@ def test_orthogonal_regularizer() -> TensorLike:
     assert reg_cols(x) is not None
 
     with pytest.raises(ValueError):
-        reg(np.array([1.0, 2.0]))
+        reg(ops.convert_to_tensor([1.0, 2.0]))
 
     with pytest.raises(ValueError):
         reg_bad = regularizers.OrthogonalRegularizer(mode="bad")
         reg_bad(x)
 
 
-def test_regularizer_get() -> TensorLike:
-    """Function docstring."""
+def test_regularizer_get() -> None:
+    """Verify or execute `test regularizer get`."""
     assert regularizers.get(None) is None
     reg = regularizers.L2()
     assert regularizers.get(reg) is reg
@@ -76,8 +72,8 @@ def test_regularizer_get() -> TensorLike:
     assert regularizers.get(123) == 123
 
 
-def test_serialize_deserialize() -> TensorLike:
-    """Function docstring."""
+def test_serialize_deserialize() -> None:
+    """Verify or execute `test serialize deserialize`."""
     reg = regularizers.L2(l2=0.01)
     config = regularizers.serialize(reg)
     assert isinstance(config, dict)
@@ -93,7 +89,6 @@ def test_serialize_deserialize() -> TensorLike:
     assert regularizers.deserialize("l2") is not None
     assert regularizers.deserialize(reg) is reg
 
-    # deserialize other classes
     assert isinstance(
         regularizers.deserialize({"class_name": "L1", "config": {"l1": 0.01}}),
         regularizers.L1,
@@ -113,6 +108,6 @@ def test_serialize_deserialize() -> TensorLike:
     )
 
     class Dummy:
-        """Class docstring."""
+        """Test helper class `Dummy` for regularizers."""
 
     assert isinstance(regularizers.serialize(Dummy()), dict)

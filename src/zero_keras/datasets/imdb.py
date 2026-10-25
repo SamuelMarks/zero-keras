@@ -72,7 +72,7 @@ def load_data(
         origin=f"{origin_folder}imdb.npz",
         file_hash="69664113be75683a8fe16e3ed0ab59fda8886cb3cd7ada244f7d9544e4676b9f",
     )
-    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
+    with ops.load(resolved_path, allow_pickle=True) as f:
         x_train: list[list[int]] = [list(seq) for seq in f["x_train"]]
         labels_train: list[int] = [int(lbl) for lbl in f["y_train"]]
         x_test: list[list[int]] = [list(seq) for seq in f["x_test"]]
@@ -81,12 +81,12 @@ def load_data(
     rng = random.RandomState(seed)
 
     indices = list(range(len(x_train)))
-    rng.shuffle(indices)  # type: ignore[arg-type]
+    rng.shuffle(indices)
     x_train = [x_train[i] for i in indices]
     labels_train = [labels_train[i] for i in indices]
 
     indices_test = list(range(len(x_test)))
-    rng.shuffle(indices_test)  # type: ignore[arg-type]
+    rng.shuffle(indices_test)
     x_test = [x_test[i] for i in indices_test]
     labels_test = [labels_test[i] for i in indices_test]
 

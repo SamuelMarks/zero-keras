@@ -1,13 +1,13 @@
-"""Module docstring."""
+"""Unit and behavioral tests for optimizers extra in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-from zero_keras import optimizers
+from zero_keras import ops, optimizers, random
+from zero_keras.core_layers import Variable
 
 
-def test_optimizers_io() -> TensorLike:
-    """Function docstring."""
+def test_optimizers_io() -> None:
+    """Verify or execute `test optimizers io`."""
     opt = optimizers.Adam()
     config = optimizers.serialize(opt)
     assert isinstance(config, dict)
@@ -28,21 +28,19 @@ def test_optimizers_io() -> TensorLike:
     assert optimizers.get("unknown") == "unknown"
 
 
-def test_legacy() -> TensorLike:
-    """Function docstring."""
+def test_legacy() -> None:
+    """Verify or execute `test legacy`."""
     assert hasattr(optimizers, "legacy")
 
 
-def test_optimizer_methods_extra() -> TensorLike:
-    """Execute ``test_optimizer_methods_extra``."""
+def test_optimizer_methods_extra() -> None:
+    """Verify or execute `test optimizer methods extra`."""
     from zero_keras.optimizers import Optimizer
 
     opt = Optimizer()
     opt.add_optimizer_variables([])
     assert opt.add_variable_from_reference(None) is None
     opt.apply([], [])
-    # opt.assign tested indirectly
-    # opt.assign_add tested indirectly
     opt.finalize_variable_values([])
     assert opt.get_config() == {}
     opt2 = Optimizer.from_config({})
@@ -58,25 +56,17 @@ def test_optimizer_methods_extra() -> TensorLike:
     assert opt.scale_loss(1.0) == 1.0
     opt.set_weights([])
     opt.stateless_apply([], [], [])
-    # tested indirectly
 
 
-def test_all_optimizers_coverage() -> TensorLike:
-    """Execute ``test_all_optimizers_coverage``."""
-    import numpy as np
-
-    from zero_keras import optimizers
-    from zero_keras.core_layers import Variable
-
-    # Dummy variables and gradients
+def test_all_optimizers_coverage() -> None:
+    """Verify or execute `test all optimizers coverage`."""
     var_list = [Variable("zeros", shape=(2, 2)), Variable("zeros", shape=(2, 2))]
-    from zero_keras.ops import ops
 
     for v in var_list:
         v.assign(ops.zeros((2, 2), dtype="float32"))
     grad_list = [
-        np.random.uniform(size=(2, 2)).astype(np.float32),
-        np.random.uniform(size=(2, 2)).astype(np.float32),
+        random.uniform((2, 2), dtype="float32"),
+        random.uniform((2, 2), dtype="float32"),
     ]
 
     opts = [
@@ -100,8 +90,8 @@ def test_all_optimizers_coverage() -> TensorLike:
         opt.get_config()
 
 
-def test_schedules_coverage() -> TensorLike:
-    """Execute ``test_schedules_coverage``."""
+def test_schedules_coverage() -> None:
+    """Verify or execute `test schedules coverage`."""
     from zero_keras.optimizers import schedules
 
     scheds = [

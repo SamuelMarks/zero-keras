@@ -1,17 +1,17 @@
-"""Module docstring."""
+"""Unit and behavioral tests for activations coverage in zero_keras."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
 
 
-def test_activation_coverage_extra() -> TensorLike:
-    """Function docstring."""
+def test_activation_coverage_extra() -> None:
+    """Verify or execute `test activation coverage extra`."""
     from zero_keras.activations import _to_tensor, _wrap, serialize
     from zero_keras.core_layers import KerasTensor
 
     # test 9
     class DummyTensorWithTensor:
-        """Class docstring."""
+        """Test helper class `DummyTensorWithTensor` for activations coverage."""
 
         _tensor = "dummy_tensor"
 
@@ -30,12 +30,12 @@ def test_activation_coverage_extra() -> TensorLike:
 
     # test 23
     class DummyData:
-        """Class docstring."""
+        """Test helper class `DummyData` for activations coverage."""
 
         id = 1
 
     class DummyTensorWithDataId:
-        """Class docstring."""
+        """Test helper class `DummyTensorWithDataId` for activations coverage."""
 
         data = DummyData()
         shape = (1, 2)
@@ -52,22 +52,22 @@ def test_activation_coverage_extra() -> TensorLike:
 
     # test 52
     class DummyActivationObj:
-        """Class docstring."""
+        """Test helper class `DummyActivationObj` for activations coverage."""
 
     assert serialize(DummyActivationObj()) == "DummyActivationObj"
 
 
-def test_activation_coverage_holes() -> TensorLike:
-    """Function docstring."""
+def test_activation_coverage_holes() -> None:
+    """Verify or execute `test activation coverage holes`."""
     import ml_switcheroo_compiler
 
     from zero_keras.activations import _to_tensor, deserialize, get, linear, serialize
 
     class MockTensor(ml_switcheroo_compiler.Tensor):
-        """Class docstring."""
+        """Test helper class `MockTensor` for activations coverage."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `MockTensor`."""
 
     try:
         t = MockTensor()
@@ -79,10 +79,13 @@ def test_activation_coverage_holes() -> TensorLike:
     assert get("unknown_activation") == get("linear")
 
     def my_custom_activation(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Verify or execute `my custom activation`.
 
         Args:
-            x: Description.
+            x: Test fixture or input parameter `x` (x).
+
+        Returns:
+            TensorLike: Result from `my_custom_activation`.
         """
         return x
 
@@ -94,20 +97,18 @@ def test_activation_coverage_holes() -> TensorLike:
     assert serialize("linear") == "linear"
 
     class CustomObj:
-        """Class docstring."""
+        """Test helper class `CustomObj` for activations coverage."""
 
     assert serialize(CustomObj()) == "CustomObj"
 
     assert deserialize({"config": "test"}) == {"config": "test"}
 
 
-def test_coverage_for_all_callables() -> TensorLike:
-    """Function docstring."""
-    import numpy as np
+def test_coverage_for_all_callables() -> None:
+    """Verify or execute `test coverage for all callables`."""
+    from zero_keras import activations, ops
 
-    from zero_keras import activations
-
-    x = np.array([0.5, 0.5])
+    x = ops.convert_to_tensor([0.5, 0.5])
 
     activations.linear(x)
     activations.relu(x)
@@ -143,8 +144,8 @@ def test_coverage_for_all_callables() -> TensorLike:
     activations.threshold(x, 0.5, 0.0)
 
 
-def test_get_extra() -> TensorLike:
-    """Execute ``test_get_extra``."""
+def test_get_extra() -> None:
+    """Verify or execute `test get extra`."""
     from zero_keras import activations
 
     # dict
@@ -153,10 +154,13 @@ def test_get_extra() -> TensorLike:
 
     # callable
     def my_act(x: TensorLike) -> TensorLike:
-        """Execute ``my_act``.
+        """Verify or execute `my act`.
 
         Args:
-            x: Input parameter ``x``.
+            x: Test fixture or input parameter `x` (x).
+
+        Returns:
+            TensorLike: Result from `my_act`.
         """
         return x
 
@@ -166,13 +170,11 @@ def test_get_extra() -> TensorLike:
     assert activations.get("invalid_act") == activations.linear
 
 
-def test_relu_params() -> TensorLike:
-    """Execute ``test_relu_params``."""
-    import numpy as np
+def test_relu_params() -> None:
+    """Verify or execute `test relu params`."""
+    from zero_keras import activations, ops
 
-    from zero_keras import activations
-
-    x = np.array([-2.0, 0.0, 2.0, 5.0])
+    x = ops.convert_to_tensor([-2.0, 0.0, 2.0, 5.0])
 
     # threshold != 0.0
     out = activations.relu(x, threshold=1.0)
@@ -188,17 +190,15 @@ def test_relu_params() -> TensorLike:
     out = activations.relu(x, max_value=3.0)
 
 
-def test_activations_missing() -> TensorLike:
-    """Execute ``test_activations_missing``."""
-    import numpy as np
-
-    from zero_keras import activations
+def test_activations_missing() -> None:
+    """Verify or execute `test activations missing`."""
+    from zero_keras import activations, ops
     from zero_keras.core_layers import KerasTensor
 
     # KerasTensor
-    t = KerasTensor((2, 3), data=np.array([1.0]))
+    t = KerasTensor((2, 3), data=ops.convert_to_tensor([1.0]))
     activations._to_tensor(t)
 
     # GELU approximate
-    x = np.array([-2.0, 0.0, 2.0])
+    x = ops.convert_to_tensor([-2.0, 0.0, 2.0])
     activations.gelu(x, approximate=True)

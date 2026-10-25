@@ -12,6 +12,14 @@ from zero_keras.types import ConfigDict, ConfigValue, TensorLike
 class Regularizer:
     """Regularizer base class."""
 
+    def __init__(self, **kwargs: ConfigValue) -> None:
+        """Initialize the Regularizer base instance.
+
+        Args:
+            **kwargs: Optional keyword configuration parameters.
+        """
+        _ = kwargs
+
     @classmethod
     def from_config(cls, config: ConfigDict) -> Regularizer:
         """Instantiate a regularizer from its configuration dictionary.
@@ -22,7 +30,7 @@ class Regularizer:
         Returns:
             Regularizer: Reconstructed regularizer instance.
         """
-        return cls(**config)  # type: ignore[arg-type]
+        return cls(**config)
 
     def get_config(self) -> ConfigDict:
         """Return the regularizer configuration dictionary.
@@ -275,7 +283,7 @@ def serialize(regularizer: RegularizerIdentifier) -> ConfigDict | str | None:
         return regularizer
     cfg = regularizer.get_config() if isinstance(regularizer, Regularizer) else {}
     return {
-        "class_name": regularizer.__class__.__name__,
+        "class_name": type(regularizer).__name__,
         "config": cfg,
     }
 

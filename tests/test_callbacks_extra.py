@@ -1,19 +1,19 @@
-"""Module docstring."""
+"""Unit and behavioral tests for callbacks extra in zero_keras."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
 
 import csv
+import math
 import os
 import tempfile
 
-import numpy as np
-
+from zero_keras import ops
 from zero_keras.callbacks import callbacks
 
 
-def test_history() -> TensorLike:
-    """Function docstring."""
+def test_history() -> None:
+    """Verify or execute `test history`."""
     hist = callbacks.History()
     hist.on_train_begin()
     hist.on_epoch_end(0, {"loss": 0.5})
@@ -22,8 +22,8 @@ def test_history() -> TensorLike:
     assert hist.history == {"loss": [0.5, 0.4]}
 
 
-def test_lambda_callback() -> TensorLike:
-    """Function docstring."""
+def test_lambda_callback() -> None:
+    """Verify or execute `test lambda callback`."""
     call_counts = {
         "epoch_begin": 0,
         "epoch_end": 0,
@@ -33,55 +33,55 @@ def test_lambda_callback() -> TensorLike:
         "train_end": 0,
     }
 
-    def on_epoch_begin(epoch: TensorLike, logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_epoch_begin(epoch: TensorLike, logs: TensorLike) -> None:
+        """Verify or execute `on epoch begin`.
 
         Args:
-            epoch: Description.
-            logs: Description.
+            epoch: Test fixture or input parameter `epoch` (epoch).
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["epoch_begin"] += 1
 
-    def on_epoch_end(epoch: TensorLike, logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_epoch_end(epoch: TensorLike, logs: TensorLike) -> None:
+        """Verify or execute `on epoch end`.
 
         Args:
-            epoch: Description.
-            logs: Description.
+            epoch: Test fixture or input parameter `epoch` (epoch).
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["epoch_end"] += 1
 
-    def on_batch_begin(batch: TensorLike, logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_batch_begin(batch: TensorLike, logs: TensorLike) -> None:
+        """Verify or execute `on batch begin`.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Test fixture or input parameter `batch` (batch).
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["batch_begin"] += 1
 
-    def on_batch_end(batch: TensorLike, logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_batch_end(batch: TensorLike, logs: TensorLike) -> None:
+        """Verify or execute `on batch end`.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Test fixture or input parameter `batch` (batch).
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["batch_end"] += 1
 
-    def on_train_begin(logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_train_begin(logs: TensorLike) -> None:
+        """Verify or execute `on train begin`.
 
         Args:
-            logs: Description.
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["train_begin"] += 1
 
-    def on_train_end(logs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def on_train_end(logs: TensorLike) -> None:
+        """Verify or execute `on train end`.
 
         Args:
-            logs: Description.
+            logs: Test fixture or input parameter `logs` (logs).
         """
         call_counts["train_end"] += 1
 
@@ -103,29 +103,32 @@ def test_lambda_callback() -> TensorLike:
     assert all(v == 1 for v in call_counts.values())
 
 
-def test_learning_rate_scheduler() -> TensorLike:
-    """Function docstring."""
+def test_learning_rate_scheduler() -> None:
+    """Verify or execute `test learning rate scheduler`."""
 
     class DummyOptimizer:
-        """Class docstring."""
+        """Test helper class `DummyOptimizer` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyOptimizer`."""
             self.learning_rate = 0.1
 
     class DummyModel:
-        """Class docstring."""
+        """Test helper class `DummyModel` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModel`."""
             self.optimizer = DummyOptimizer()
 
     def schedule(epoch: TensorLike, lr: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Verify or execute `schedule`.
 
         Args:
-            epoch: Description.
-            lr: Description.
+            epoch: Test fixture or input parameter `epoch` (epoch).
+            lr: Test fixture or input parameter `lr` (lr).
+
+        Returns:
+            TensorLike: Result from `schedule`.
         """
         return lr * 0.5
 
@@ -143,14 +146,14 @@ def test_learning_rate_scheduler() -> TensorLike:
     cb2.on_epoch_begin(0)
 
 
-def test_terminate_on_nan() -> TensorLike:
-    """Function docstring."""
+def test_terminate_on_nan() -> None:
+    """Verify or execute `test terminate on nan`."""
 
     class DummyModel:
-        """Class docstring."""
+        """Test helper class `DummyModel` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModel`."""
             self.stop_training = False
 
     cb = callbacks.TerminateOnNaN()
@@ -159,18 +162,18 @@ def test_terminate_on_nan() -> TensorLike:
     cb.on_batch_end(0, {"loss": 1.0})
     assert not cb.model.stop_training
 
-    cb.on_batch_end(1, {"loss": np.nan})
+    cb.on_batch_end(1, {"loss": math.nan})
     assert cb.model.stop_training
 
 
-def test_csv_logger() -> TensorLike:
-    """Function docstring."""
+def test_csv_logger() -> None:
+    """Verify or execute `test csv logger`."""
     with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as f:
         filepath = f.name
 
     cb = callbacks.CSVLogger(filepath)
     cb.on_train_begin()
-    cb.on_epoch_end(0, {"loss": 0.5, "val_loss": np.array(0.4), "arr": [1, 2]})
+    cb.on_epoch_end(0, {"loss": 0.5, "val_loss": ops.convert_to_tensor(0.4), "arr": [1, 2]})
     cb.on_epoch_end(1, {"loss": 0.4})
     cb.on_train_end()
 
@@ -193,21 +196,21 @@ def test_csv_logger() -> TensorLike:
     os.remove(filepath)
 
 
-def test_reduce_lr_on_plateau() -> TensorLike:
-    """Function docstring."""
+def test_reduce_lr_on_plateau() -> None:
+    """Verify or execute `test reduce lr on plateau`."""
 
     class DummyOptimizer:
-        """Class docstring."""
+        """Test helper class `DummyOptimizer` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyOptimizer`."""
             self.learning_rate = 0.1
 
     class DummyModel:
-        """Class docstring."""
+        """Test helper class `DummyModel` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModel`."""
             self.optimizer = DummyOptimizer()
 
     cb = callbacks.ReduceLROnPlateau(patience=2, factor=0.5, cooldown=1)
@@ -232,8 +235,8 @@ def test_reduce_lr_on_plateau() -> TensorLike:
     assert not cb.in_cooldown()
 
 
-def test_backup_and_restore() -> TensorLike:
-    """Function docstring."""
+def test_backup_and_restore() -> None:
+    """Verify or execute `test backup and restore`."""
     with tempfile.TemporaryDirectory() as d:
         cb = callbacks.BackupAndRestore(d)
         cb.on_train_begin()
@@ -242,35 +245,35 @@ def test_backup_and_restore() -> TensorLike:
         assert not os.path.exists(d)
 
 
-def test_remote_monitor() -> TensorLike:
-    """Function docstring."""
+def test_remote_monitor() -> None:
+    """Verify or execute `test remote monitor`."""
     cb = callbacks.RemoteMonitor()
     assert cb.root == "http://localhost:9000"
 
 
-def test_swap_ema_weights() -> TensorLike:
-    """Function docstring."""
+def test_swap_ema_weights() -> None:
+    """Verify or execute `test swap ema weights`."""
     cb = callbacks.SwapEMAWeights()
     assert not cb.swap_on_epoch
 
 
-def test_tensorboard() -> TensorLike:
-    """Function docstring."""
+def test_tensorboard() -> None:
+    """Verify or execute `test tensorboard`."""
     cb = callbacks.TensorBoard()
     assert cb.log_dir == "logs"
 
 
-def test_learning_rate_scheduler_missing_lr() -> TensorLike:
-    """Function docstring."""
+def test_learning_rate_scheduler_missing_lr() -> None:
+    """Verify or execute `test learning rate scheduler missing lr`."""
 
     class DummyOptimizerMissingLR:
-        """Class docstring."""
+        """Test helper class `DummyOptimizerMissingLR` for callbacks extra."""
 
     class DummyModelMissingLR:
-        """Class docstring."""
+        """Test helper class `DummyModelMissingLR` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModelMissingLR`."""
             self.optimizer = DummyOptimizerMissingLR()
 
     cb = callbacks.LearningRateScheduler(lambda e, lr: lr)
@@ -278,36 +281,39 @@ def test_learning_rate_scheduler_missing_lr() -> TensorLike:
     cb.on_epoch_begin(0)  # Should hit the second return
 
 
-def test_learning_rate_scheduler_type_error() -> TensorLike:
-    """Function docstring."""
+def test_learning_rate_scheduler_type_error() -> None:
+    """Verify or execute `test learning rate scheduler type error`."""
 
     class TypeErrorFloat:
-        """Class docstring."""
+        """Test helper class `TypeErrorFloat` for callbacks extra."""
 
         def __float__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `float` on `TypeErrorFloat`."""
             raise TypeError()
 
         def __mul__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `mul` on `TypeErrorFloat`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__mul__`.
             """
             return 0.05
 
     class DummyOptimizerTypeError:
-        """Class docstring."""
+        """Test helper class `DummyOptimizerTypeError` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyOptimizerTypeError`."""
             self.learning_rate = TypeErrorFloat()
 
     class DummyModelTypeError:
-        """Class docstring."""
+        """Test helper class `DummyModelTypeError` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModelTypeError`."""
             self.optimizer = DummyOptimizerTypeError()
 
     cb = callbacks.LearningRateScheduler(lambda e, lr: lr * 0.5)
@@ -316,8 +322,8 @@ def test_learning_rate_scheduler_type_error() -> TensorLike:
     assert cb.model.optimizer.learning_rate == 0.05
 
 
-def test_csv_logger_append_new_file() -> TensorLike:
-    """Function docstring."""
+def test_csv_logger_append_new_file() -> None:
+    """Verify or execute `test csv logger append new file`."""
     with tempfile.NamedTemporaryFile(delete=True) as f:
         filepath = f.name
     # File doesn't exist, append=True
@@ -329,21 +335,21 @@ def test_csv_logger_append_new_file() -> TensorLike:
     os.remove(filepath)
 
 
-def test_reduce_lr_on_plateau_max_mode() -> TensorLike:
-    """Function docstring."""
+def test_reduce_lr_on_plateau_max_mode() -> None:
+    """Verify or execute `test reduce lr on plateau max mode`."""
 
     class DummyOptimizer:
-        """Class docstring."""
+        """Test helper class `DummyOptimizer` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyOptimizer`."""
             self.learning_rate = 0.1
 
     class DummyModel:
-        """Class docstring."""
+        """Test helper class `DummyModel` for callbacks extra."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `DummyModel`."""
             self.optimizer = DummyOptimizer()
 
     cb = callbacks.ReduceLROnPlateau(mode="max", patience=1, factor=0.5)
@@ -358,8 +364,8 @@ def test_reduce_lr_on_plateau_max_mode() -> TensorLike:
     assert cb.model.optimizer.learning_rate == 0.05
 
 
-def test_backup_and_restore_create_dir() -> TensorLike:
-    """Function docstring."""
+def test_backup_and_restore_create_dir() -> None:
+    """Verify or execute `test backup and restore create dir`."""
     with tempfile.TemporaryDirectory() as d:
         target_dir = os.path.join(d, "new_sub_dir")
         cb = callbacks.BackupAndRestore(target_dir)
@@ -368,8 +374,8 @@ def test_backup_and_restore_create_dir() -> TensorLike:
         cb.on_train_end()
 
 
-def test_callback_methods_extra() -> TensorLike:
-    """Execute ``test_callback_methods_extra``."""
+def test_callback_methods_extra() -> None:
+    """Verify or execute `test callback methods extra`."""
     from zero_keras.callbacks.callbacks import (
         Callback,
         CallbackList,
@@ -400,8 +406,8 @@ def test_callback_methods_extra() -> TensorLike:
     assert es.get_monitor_value({"val_loss": 0.5}) == 0.5
 
 
-def test_lambda_callback_more() -> TensorLike:
-    """Execute ``test_lambda_callback_more``."""
+def test_lambda_callback_more() -> None:
+    """Verify or execute `test lambda callback more`."""
     from zero_keras.callbacks import LambdaCallback
 
     cb = LambdaCallback(
@@ -428,131 +434,131 @@ def test_lambda_callback_more() -> TensorLike:
     cb_none.on_train_end({})
 
 
-def test_callback_list_coverage() -> TensorLike:
-    """Execute ``test_callback_list_coverage``."""
+def test_callback_list_coverage() -> None:
+    """Verify or execute `test callback list coverage`."""
     from zero_keras.callbacks import Callback, CallbackList
 
     class MyCB(Callback):
         """Keras ``MyCB`` class."""
 
-        def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_train_batch_begin``.
+        def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on train batch begin` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_train_batch_end``.
+        def on_train_batch_end(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on train batch end` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_test_batch_begin``.
+        def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on test batch begin` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_test_batch_end``.
+        def on_test_batch_end(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on test batch end` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_predict_batch_begin``.
+        def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on predict batch begin` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_predict_batch_end``.
+        def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on predict batch end` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_epoch_end``.
+        def on_epoch_end(self, epoch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on epoch end` on `MyCB`.
 
             Args:
-                epoch: Input parameter ``epoch``.
-                logs: Input parameter ``logs``.
+                epoch: Test fixture or input parameter `epoch` (epoch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_train_end``.
+        def on_train_end(self, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on train end` on `MyCB`.
 
             Args:
-                logs: Input parameter ``logs``.
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_test_begin``.
+        def on_test_begin(self, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on test begin` on `MyCB`.
 
             Args:
-                logs: Input parameter ``logs``.
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_test_end(self, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_test_end``.
+        def on_test_end(self, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on test end` on `MyCB`.
 
             Args:
-                logs: Input parameter ``logs``.
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_predict_begin``.
+        def on_predict_begin(self, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on predict begin` on `MyCB`.
 
             Args:
-                logs: Input parameter ``logs``.
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_predict_end``.
+        def on_predict_end(self, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on predict end` on `MyCB`.
 
             Args:
-                logs: Input parameter ``logs``.
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_batch_begin``.
+        def on_batch_begin(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on batch begin` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
-        def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-            """Execute ``on_batch_end``.
+        def on_batch_end(self, batch: TensorLike, logs: TensorLike | None = None) -> None:
+            """Verify or execute `on batch end` on `MyCB`.
 
             Args:
-                batch: Input parameter ``batch``.
-                logs: Input parameter ``logs``.
+                batch: Test fixture or input parameter `batch` (batch).
+                logs: Test fixture or input parameter `logs` (logs).
             """
             pass
 
@@ -577,8 +583,8 @@ def test_callback_list_coverage() -> TensorLike:
     cbl.on_batch_end(0)
 
 
-def test_callback_list_coverage_more() -> TensorLike:
-    """Execute ``test_callback_list_coverage_more``."""
+def test_callback_list_coverage_more() -> None:
+    """Verify or execute `test callback list coverage more`."""
     from zero_keras.callbacks import Callback, CallbackList
 
     class MyEmptyCB(Callback):

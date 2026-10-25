@@ -21,7 +21,7 @@ repos:
     language: system
     types:
     - python
-    files: ^src/
+    files: ^(src|scripts|tests)/
     pass_filenames: false
   - id: check-docstrings
     name: Check 100% Docstrings (AST & Args)
@@ -52,15 +52,14 @@ repos:
     - python
     pass_filenames: false
   - id: check-compliance
-    name: Check Snapshot API Compliance
+    name: Check Snapshot API Compliance (ml-ecosystem-snapshots v0.0.5)
     entry: python3 scripts/check_compliance.py
     language: system
-    types:
-    - python
+    files: ^(TODO_PLAN\.md|SEMANTIC_PLAN\.md|scripts/check_compliance\.py|src/.*\.py)$
     pass_filenames: false
   - id: pytest-coverage
     name: Pytest 100% Line & Branch Coverage
-    entry: pytest --cov=src/zero_keras --cov=scripts --cov-branch --cov-fail-under=100
+    entry: pytest --cov=src/zero_keras --cov=scripts --cov-branch --cov-fail-under=100 --cov-report=json
     language: system
     types:
     - python

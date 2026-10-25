@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""Unit and behavioral tests for keras in zero_keras."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
@@ -7,8 +7,8 @@ from zero_keras.core_layers import Input, KerasTensor, Layer, Model
 from zero_keras.ops import ops
 
 
-def test_keras_tensor() -> TensorLike:
-    """Function docstring."""
+def test_keras_tensor() -> None:
+    """Verify or execute `test keras tensor`."""
     t = Input((2, 3))
     assert isinstance(t, KerasTensor)
     t.numpy()
@@ -44,34 +44,35 @@ def test_keras_tensor() -> TensorLike:
         pass
     _ = t_data == 1
 
-    import numpy as np
-
     t_numpyable = KerasTensor((1,), data=[1])
-    assert np.array(t_numpyable, copy=False) == [1]
+    assert list(t_numpyable.__array__(copy=False)) == [1]
 
-    # Hit 149 and 156 (isinstance np.ndarray and hasattr numpy)
-    t_ndarray = KerasTensor((1,), data=np.array([1]))
-    assert np.array(t_ndarray, copy=False) == [1]
+    t_ndarray = KerasTensor((1,), data=ops.convert_to_tensor([1]))
+    assert list(t_ndarray.__array__(copy=False)) == [1]
 
     class DummyHasNumpy:
-        """Class docstring."""
+        """Test helper class `DummyHasNumpy` for keras."""
 
         def numpy(self) -> TensorLike:
-            """Function docstring."""
-            return np.array([2])
+            """Verify or execute `numpy` on `DummyHasNumpy`.
+
+            Returns:
+                TensorLike: Result from `numpy`.
+            """
+            return ops.convert_to_numpy(ops.convert_to_tensor([2]))
 
     t_hasnumpy = KerasTensor((1,), data=DummyHasNumpy())
     try:
-        np.array(t_hasnumpy, copy=True)
+        t_hasnumpy.__array__(copy=True)
     except Exception:
         pass
 
     try:
-        np.array(t_bad_shape, copy=True)
+        t_bad_shape.__array__(copy=True)
     except Exception:
         pass
     try:
-        np.array(t_bad_shape, copy=False)
+        t_bad_shape.__array__(copy=False)
     except Exception:
         pass
 
@@ -86,10 +87,10 @@ def test_keras_tensor() -> TensorLike:
 
     # Hit boolean exception branch by providing data that fails bool()
     class Unboolable:
-        """Class docstring."""
+        """Test helper class `Unboolable` for keras."""
 
         def __bool__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `bool` on `Unboolable`."""
             raise ValueError("cannot bool")
 
     t_unbool = KerasTensor((1,), data=Unboolable())
@@ -107,10 +108,10 @@ def test_keras_tensor() -> TensorLike:
 
     # Hit missing node branches
     class HasHistory:
-        """Class docstring."""
+        """Test helper class `HasHistory` for keras."""
 
         def __init__(self) -> None:
-            """Function docstring."""
+            """Verify or execute `init` on `HasHistory`."""
             self._keras_history = None
 
     Node(Layer(), outputs=[HasHistory()])
@@ -118,24 +119,24 @@ def test_keras_tensor() -> TensorLike:
     Node(Layer(), outputs=t)
 
     class HasInboundNodes:
-        """Class docstring."""
+        """Test helper class `HasInboundNodes` for keras."""
 
         _inbound_nodes = []
 
     Node(HasInboundNodes(), outputs=[])
 
 
-def test_layer_build() -> TensorLike:
-    """Function docstring."""
+def test_layer_build() -> None:
+    """Verify or execute `test layer build`."""
 
     class MyLayer(Layer):
-        """Class docstring."""
+        """Test helper class `MyLayer` for keras."""
 
-        def build(self, input_shape: TensorLike) -> TensorLike:
-            """Function docstring.
+        def build(self, input_shape: TensorLike) -> None:
+            """Verify or execute `build` on `MyLayer`.
 
             Args:
-                input_shape: Description.
+                input_shape: Test fixture or input parameter `input_shape` (input shape).
             """
             self.w = 1.0
             super().build(input_shape)
@@ -146,8 +147,9 @@ def test_layer_build() -> TensorLike:
     assert layer.built
 
 
-def test_model_functional() -> TensorLike:
-    """Function docstring."""
+def test_model_functional() -> None:
+    """Verify or execute `test model functional`."""
+    from zero_keras import random
     from zero_keras.layers import Dense
 
     i = Input((2,))
@@ -157,39 +159,41 @@ def test_model_functional() -> TensorLike:
     # mock loss
     m.compile(optimizer="sgd", loss="mse")
 
-    import numpy as np
-
-    x = np.random.rand(1, 2)
-    np.random.rand(1, 1)
+    x = random.uniform((1, 2))
+    random.uniform((1, 1))
 
     class TestIterator:
-        """Class docstring."""
+        """Test helper class `TestIterator` for keras."""
 
         def __iter__(self) -> TensorLike:
-            """Function docstring."""
-            yield (np.array([[1.0, 2.0]]), np.array([[1.0]]))
-            yield (np.array([[2.0, 3.0]]), np.array([[2.0]]))
+            """Verify or execute `iter` on `TestIterator`."""
+            yield (ops.convert_to_tensor([[1.0, 2.0]]), ops.convert_to_tensor([[1.0]]))
+            yield (ops.convert_to_tensor([[2.0, 3.0]]), ops.convert_to_tensor([[2.0]]))
 
     m.fit(TestIterator(), epochs=1)
 
     class DummyMetric:
-        """Class docstring."""
+        """Test helper class `DummyMetric` for keras."""
 
         name = "dummy_metric"
 
         def reset_state(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `reset state` on `DummyMetric`."""
 
         def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `update state` on `DummyMetric`.
 
             Args:
-                y: Description.
-                y_pred: Description.
+                y: Test fixture or input parameter `y` (y).
+                y_pred: Test fixture or input parameter `y_pred` (y pred).
             """
 
         def result(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `result` on `DummyMetric`.
+
+            Returns:
+                TensorLike: Result from `result`.
+            """
             return 1.0
 
     m.compile(optimizer="sgd", loss="mse", metrics=[DummyMetric()])
@@ -197,27 +201,31 @@ def test_model_functional() -> TensorLike:
     m.predict(TestIterator())
 
     class TestTorchLikeIterator:
-        """Class docstring."""
+        """Test helper class `TestTorchLikeIterator` for keras."""
 
         __module__ = "torch.utils.data.DataLoader"
 
         def __iter__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `iter` on `TestTorchLikeIterator`."""
 
             class FakeTorchTensor:
-                """Class docstring."""
+                """Test helper class `FakeTorchTensor` for keras."""
 
                 def __init__(self, val: TensorLike) -> None:
-                    """Function docstring.
+                    """Verify or execute `init` on `FakeTorchTensor`.
 
                     Args:
-                        val: Description.
+                        val: Test fixture or input parameter `val` (val).
                     """
                     self.val = val
 
                 def numpy(self) -> TensorLike:
-                    """Function docstring."""
-                    return np.array([[self.val]])
+                    """Verify or execute `numpy` on `FakeTorchTensor`.
+
+                    Returns:
+                        TensorLike: Result from `numpy`.
+                    """
+                    return ops.convert_to_numpy(ops.convert_to_tensor([[self.val]]))
 
             yield (FakeTorchTensor(1.0), FakeTorchTensor(1.0))
             yield {"x": FakeTorchTensor(1.0)}
@@ -237,54 +245,60 @@ def test_model_functional() -> TensorLike:
         pass
 
     class TestTfLikeIterator:
-        """Class docstring."""
+        """Test helper class `TestTfLikeIterator` for keras."""
 
         __module__ = "tensorflow.python.data.ops.dataset_ops.DatasetV2"
 
         def __iter__(self) -> TensorLike:
-            """Function docstring."""
-            yield (np.array([[1.0, 2.0]]), np.array([[1.0]]))
+            """Verify or execute `iter` on `TestTfLikeIterator`."""
+            yield (ops.convert_to_tensor([[1.0, 2.0]]), ops.convert_to_tensor([[1.0]]))
 
     m.evaluate(TestTfLikeIterator())
     m.predict(TestTfLikeIterator())
 
     class UnpredictableTensor:
-        """Class docstring."""
+        """Test helper class `UnpredictableTensor` for keras."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Function docstring.
+            """Verify or execute `init` on `UnpredictableTensor`.
 
             Args:
-                val: Description.
+                val: Test fixture or input parameter `val` (val).
             """
             self.val = val
 
     # Test generator for prediction exception
     class MyPredictLayer(Layer):
-        """Class docstring."""
+        """Test helper class `MyPredictLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `MyPredictLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return UnpredictableTensor(1.0)
 
     m_pred_fail = Model(inputs=Input((2,)), outputs=MyPredictLayer()(Input((2,))))
 
     def my_gen_fail() -> TensorLike:
-        """Function docstring."""
-        yield np.array([[1.0, 2.0]])
+        """Verify or execute `my gen fail`."""
+        yield ops.convert_to_tensor([[1.0, 2.0]])
 
     class MyEvalLayer(Layer):
-        """Class docstring."""
+        """Test helper class `MyEvalLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `MyEvalLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return inputs
 
@@ -292,35 +306,42 @@ def test_model_functional() -> TensorLike:
 
     # dummy loss
     class EvalFailLoss:
-        """Class docstring."""
+        """Test helper class `EvalFailLoss` for keras."""
 
         def __call__(self, y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `EvalFailLoss`.
 
             Args:
-                y_true: Description.
-                y_pred: Description.
+                y_true: Test fixture or input parameter `y_true` (y true).
+                y_pred: Test fixture or input parameter `y_pred` (y pred).
+
+            Returns:
+                TensorLike: Result from `__call__`.
             """
             return UnpredictableTensor(1.0)
 
     class DummyMetric:
-        """Class docstring."""
+        """Test helper class `DummyMetric` for keras."""
 
         name = "dummy_metric"
 
         def reset_state(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `reset state` on `DummyMetric`."""
 
         def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `update state` on `DummyMetric`.
 
             Args:
-                y: Description.
-                y_pred: Description.
+                y: Test fixture or input parameter `y` (y).
+                y_pred: Test fixture or input parameter `y_pred` (y pred).
             """
 
         def result(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `result` on `DummyMetric`.
+
+            Returns:
+                TensorLike: Result from `result`.
+            """
             return 1.0
 
     m_eval_fail.compile(optimizer="sgd", loss=EvalFailLoss(), metrics=[DummyMetric()])
@@ -330,28 +351,32 @@ def test_model_functional() -> TensorLike:
     except Exception:
         pass
 
-    m_eval_fail.evaluate(np.array([[1.0, 2.0]]), np.array([[1.0, 2.0]]))
+    m_eval_fail.evaluate(ops.convert_to_tensor([[1.0, 2.0]]), ops.convert_to_tensor([[1.0, 2.0]]))
 
     class Unsliceable:
-        """Class docstring."""
+        """Test helper class `Unsliceable` for keras."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Function docstring.
+            """Verify or execute `init` on `Unsliceable`.
 
             Args:
-                val: Description.
+                val: Test fixture or input parameter `val` (val).
             """
             self.val = val
 
         def __len__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `len` on `Unsliceable`.
+
+            Returns:
+                TensorLike: Result from `__len__`.
+            """
             return 2
 
         def __getitem__(self, key: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `getitem` on `Unsliceable`.
 
             Args:
-                key: Description.
+                key: Test fixture or input parameter `key` (key).
             """
             raise TypeError("Not sliceable")
 
@@ -371,13 +396,16 @@ def test_model_functional() -> TensorLike:
 
     # Test TypeError branch in call
     class NoTrainingLayer(Layer):
-        """Class docstring."""
+        """Test helper class `NoTrainingLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `NoTrainingLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return inputs
 
@@ -388,8 +416,8 @@ def test_model_functional() -> TensorLike:
     m2.fit(x, x)
 
 
-def test_model_uncompiled() -> TensorLike:
-    """Function docstring."""
+def test_model_uncompiled() -> None:
+    """Verify or execute `test model uncompiled`."""
     i = Input((2,))
     layer_obj = Layer()(i)
     m = Model(inputs=i, outputs=layer_obj)
@@ -399,23 +427,23 @@ def test_model_uncompiled() -> TensorLike:
     assert "loss" in res.history
 
 
-def test_ops() -> TensorLike:
-    """Function docstring."""
+def test_ops() -> None:
+    """Verify or execute `test ops`."""
     assert isinstance(ops.add(Input((2,)), Input((2,))), KerasTensor)
 
 
-def test_layer_properties() -> TensorLike:
-    """Function docstring."""
+def test_layer_properties() -> None:
+    """Verify or execute `test layer properties`."""
     from zero_keras.core_layers import Layer
 
     class MyLayer(Layer):
-        """Class docstring."""
+        """Test helper class `MyLayer` for keras."""
 
-        def build(self, input_shape: TensorLike) -> TensorLike:
-            """Function docstring.
+        def build(self, input_shape: TensorLike) -> None:
+            """Verify or execute `build` on `MyLayer`.
 
             Args:
-                input_shape: Description.
+                input_shape: Test fixture or input parameter `input_shape` (input shape).
             """
             self.w = self.add_weight(shape=(1,), initializer="zeros", trainable=True)
             self.w2 = self.add_weight(shape=(1,), initializer="zeros", trainable=False)
@@ -442,26 +470,30 @@ def test_layer_properties() -> TensorLike:
 
     # Hit missing get_weights branch where weight lacks numpy / data.numpy
     class DummyWeightNoNumpy:
-        """Class docstring."""
+        """Test helper class `DummyWeightNoNumpy` for keras."""
 
         def __init__(self, data: TensorLike) -> None:
-            """Function docstring.
+            """Verify or execute `init` on `DummyWeightNoNumpy`.
 
             Args:
-                data: Description.
+                data: Test fixture or input parameter `data` (data).
             """
             self.data = data
             self.shape = (1,)
 
         def __float__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `float` on `DummyWeightNoNumpy`.
+
+            Returns:
+                TensorLike: Result from `__float__`.
+            """
             return float(self.data[0])
 
-        def assign(self, value: TensorLike) -> TensorLike:
-            """Function docstring.
+        def assign(self, value: TensorLike) -> None:
+            """Verify or execute `assign` on `DummyWeightNoNumpy`.
 
             Args:
-                value: Description.
+                value: Test fixture or input parameter `value` (value).
             """
             self.data = value
 
@@ -474,37 +506,45 @@ def test_layer_properties() -> TensorLike:
     m.compile(optimizer="adam", loss="mse")
 
     class DummyOpt:
-        """Class docstring."""
+        """Test helper class `DummyOpt` for keras."""
 
         variables = [DummyWeightNoNumpy([2.0])]
 
     m.optimizer = DummyOpt()
 
     class DummyWeightNoNumpyAndIterable:
-        """Class docstring."""
+        """Test helper class `DummyWeightNoNumpyAndIterable` for keras."""
 
         def __init__(self, data: TensorLike) -> None:
-            """Function docstring.
+            """Verify or execute `init` on `DummyWeightNoNumpyAndIterable`.
 
             Args:
-                data: Description.
+                data: Test fixture or input parameter `data` (data).
             """
             self.data = data
             self.shape = (1, 1)
 
         def __iter__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `iter` on `DummyWeightNoNumpyAndIterable`.
+
+            Returns:
+                TensorLike: Result from `__iter__`.
+            """
             return iter([self.data])
 
         def __float__(self) -> TensorLike:
-            """Function docstring."""
+            """Verify or execute `float` on `DummyWeightNoNumpyAndIterable`.
+
+            Returns:
+                TensorLike: Result from `__float__`.
+            """
             return float(self.data[0])
 
-        def assign(self, value: TensorLike) -> TensorLike:
-            """Function docstring.
+        def assign(self, value: TensorLike) -> None:
+            """Verify or execute `assign` on `DummyWeightNoNumpyAndIterable`.
 
             Args:
-                value: Description.
+                value: Test fixture or input parameter `value` (value).
             """
             self.data = value
 
@@ -531,8 +571,8 @@ def test_layer_properties() -> TensorLike:
     layer_obj.set_weights(layer_obj.get_weights())
 
 
-def test_sequential_properties() -> TensorLike:
-    """Function docstring."""
+def test_sequential_properties() -> None:
+    """Verify or execute `test sequential properties`."""
     from zero_keras.layers import Dense
     from zero_keras.models import Sequential
 
@@ -569,16 +609,15 @@ def test_sequential_properties() -> TensorLike:
     m.set_weights(m.get_weights())
 
 
-def test_models_sequential() -> TensorLike:
-    """Function docstring."""
-    import numpy as np
-
+def test_models_sequential() -> None:
+    """Verify or execute `test models sequential`."""
+    from zero_keras import random
     from zero_keras.layers import Dense
     from zero_keras.models import Sequential
 
     m_real = Sequential([Dense(1)])
     m_real.build((2, 5))
-    m_real(np.random.rand(2, 5))
+    m_real(random.uniform((2, 5)))
     import os
     import tempfile
 
@@ -589,9 +628,6 @@ def test_models_sequential() -> TensorLike:
     m_real.trainable_weights
     m_real.non_trainable_weights
     m_real.set_weights(m_real.get_weights())
-    import numpy as np
-
-    from zero_keras.layers import Dense
 
     # Test Sequential
     model = Sequential(name="my_seq")
@@ -612,7 +648,7 @@ def test_models_sequential() -> TensorLike:
     assert len(m2.layers) == 2
 
     # Call
-    x = np.random.rand(2, 5)
+    x = random.uniform((2, 5))
     model.build((None, 5))
     res = model(x)
     assert res is not None
@@ -622,7 +658,7 @@ def test_models_sequential() -> TensorLike:
     Sequential.from_config(cfg_miss)
 
     class DummyLayerWithoutWeights:
-        """Class docstring."""
+        """Test helper class `DummyLayerWithoutWeights` for keras."""
 
         built = True
         weights = []
@@ -630,52 +666,64 @@ def test_models_sequential() -> TensorLike:
         non_trainable_weights = []
 
         def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-            """Execute ``__call__``.
+            """Verify or execute `call` on `DummyLayerWithoutWeights`.
 
             Args:
-                inputs: Input parameter ``inputs``.
-                kwargs: Input parameter ``kwargs``.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+                **kwargs: Keyword arguments forwarded to helper.
+
+            Returns:
+                TensorLike: Result from `__call__`.
             """
             return inputs
 
         def compute_output_shape(self, shape: TensorLike) -> TensorLike:
-            """Execute ``compute_output_shape``.
+            """Verify or execute `compute output shape` on `DummyLayerWithoutWeights`.
 
             Args:
-                shape: Input parameter ``shape``.
+                shape: Test fixture or input parameter `shape` (shape).
+
+            Returns:
+                TensorLike: Result from `compute_output_shape`.
             """
             return shape
 
     class DummyLayerWithComputeShape:
-        """Class docstring."""
+        """Test helper class `DummyLayerWithComputeShape` for keras."""
 
         built = False
         weights = []
         trainable_weights = []
         non_trainable_weights = []
 
-        def build(self, shape: TensorLike) -> TensorLike:
-            """Function docstring.
+        def build(self, shape: TensorLike) -> None:
+            """Verify or execute `build` on `DummyLayerWithComputeShape`.
 
             Args:
-                shape: Description.
+                shape: Test fixture or input parameter `shape` (shape).
             """
             self.built = True
 
         def compute_output_shape(self, shape: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `compute output shape` on `DummyLayerWithComputeShape`.
 
             Args:
-                shape: Description.
+                shape: Test fixture or input parameter `shape` (shape).
+
+            Returns:
+                TensorLike: Result from `compute_output_shape`.
             """
             return shape
 
         def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `DummyLayerWithComputeShape`.
 
             Args:
-                inputs: Description.
-                kwargs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+                **kwargs: Keyword arguments forwarded to helper.
+
+            Returns:
+                TensorLike: Result from `__call__`.
             """
             return inputs
 
@@ -683,20 +731,20 @@ def test_models_sequential() -> TensorLike:
     m3.add(DummyLayerWithoutWeights())
     m3.add(DummyLayerWithComputeShape())
     m3.build((None, 5))
-    m3(np.random.rand(2, 5))
+    m3(random.uniform((2, 5)))
 
     # fake units
     class DummyLayerWithUnits:
-        """Class docstring."""
+        """Test helper class `DummyLayerWithUnits` for keras."""
 
         units = 5
         built = False
 
-        def build(self, shape: TensorLike) -> TensorLike:
-            """Function docstring.
+        def build(self, shape: TensorLike) -> None:
+            """Verify or execute `build` on `DummyLayerWithUnits`.
 
             Args:
-                shape: Description.
+                shape: Test fixture or input parameter `shape` (shape).
             """
             self.built = True
 
@@ -713,7 +761,7 @@ def test_models_sequential() -> TensorLike:
     # Weights empty properties for dummy layer
 
     class LayerNoGetWeights(Layer):
-        """Class docstring."""
+        """Test helper class `LayerNoGetWeights` for keras."""
 
     m3.add(LayerNoGetWeights())
     m3.set_weights(m3.get_weights())
@@ -805,8 +853,8 @@ def test_models_sequential() -> TensorLike:
         get("b")
 
 
-def test_model_dict_in_out() -> TensorLike:
-    """Function docstring."""
+def test_model_dict_in_out() -> None:
+    """Verify or execute `test model dict in out`."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.layers import Dense
 
@@ -826,31 +874,37 @@ def test_model_dict_in_out() -> TensorLike:
     assert len(m2.layers) == 1
 
 
-def test_model_coverage_edges() -> TensorLike:
-    """Function docstring."""
+def test_model_coverage_edges() -> None:
+    """Verify or execute `test model coverage edges`."""
     from zero_keras.core_layers import Input, Layer, Model
     from zero_keras.layers import Dense
 
     # Custom layer to take a list and a dict
     class ListLayer(Layer):
-        """Class docstring."""
+        """Test helper class `ListLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `ListLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return inputs[0] + inputs[1]
 
     class DictLayer(Layer):
-        """Class docstring."""
+        """Test helper class `DictLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `DictLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return inputs["a"] + inputs["b"]
 
@@ -864,13 +918,16 @@ def test_model_coverage_edges() -> TensorLike:
 
     # layer used twice to trigger return
     class AddLayer(Layer):
-        """Class docstring."""
+        """Test helper class `AddLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `call` on `AddLayer`.
 
             Args:
-                inputs: Description.
+                inputs: Test fixture or input parameter `inputs` (inputs).
+
+            Returns:
+                TensorLike: Result from `call`.
             """
             return inputs[0] + inputs[1]
 

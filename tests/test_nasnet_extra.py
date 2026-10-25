@@ -1,14 +1,13 @@
 """Module `test_nasnet_extra` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 import pytest
 
 from zero_keras.applications.nasnet import NASNetLarge, NASNetMobile
 
 
-def test_nasnet_extra() -> TensorLike:
-    """Execute ``test_nasnet_extra``."""
+def test_nasnet_extra() -> None:
+    """Verify or execute `test nasnet extra`."""
     from zero_keras import backend
 
     backend.set_image_data_format("channels_last")

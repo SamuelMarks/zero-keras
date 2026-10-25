@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""ImageNet preprocessing, prediction decoding, and input shape utilities."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
@@ -80,14 +80,17 @@ PREPROCESS_INPUT_RET_DOC_CAFFE = """
 
 
 def preprocess_input(
-    x: TensorLike, data_format: TensorLike = None, mode: TensorLike = "caffe"
+    x: TensorLike, data_format: str | None = None, mode: str = "caffe"
 ) -> TensorLike:
     """Preprocesses a tensor encoding a batch of images.
 
     Args:
-        x: Input parameter ``x``.
-        data_format: Input parameter ``data_format``.
-        mode: Input parameter ``mode``.
+        x: Input 3D or 4D image tensor with values in ``[0, 255]``.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+        mode: Normalization mode (``"caffe"``, ``"tf"``, or ``"torch"``).
+
+    Returns:
+        TensorLike: Preprocessed float32 image tensor.
     """
     if mode not in {"caffe", "tf", "torch"}:
         raise ValueError(
@@ -103,13 +106,6 @@ def preprocess_input(
         )
 
     return _preprocess_tensor_input(x, data_format=data_format, mode=mode)
-
-
-preprocess_input.__doc__ = PREPROCESS_INPUT_DOC.format(
-    mode=PREPROCESS_INPUT_MODE_DOC,
-    ret="",
-    error=PREPROCESS_INPUT_DEFAULT_ERROR_DOC,
-)
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
@@ -227,7 +223,7 @@ def obtain_input_shape(
     min_size: TensorLike,
     data_format: TensorLike,
     require_flatten: TensorLike,
-    weights: TensorLike = None,
+    weights: str | None = None,
 ) -> TensorLike:
     """Internal utility to compute/validate a model's input shape.
 

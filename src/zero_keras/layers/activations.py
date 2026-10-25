@@ -1,10 +1,19 @@
 """Activation layers for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
+from collections.abc import Sequence
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import (
+    ActivationSpec,
+    ConstraintSpec,
+    InitializerSpec,
+    RegularizerSpec,
+    ShapeTuple,
+    TensorLike,
+)
 
 
 class Activation(Layer):
@@ -25,12 +34,12 @@ class Activation(Layer):
 
     """
 
-    def __init__(self, activation: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, activation: ActivationSpec, **kwargs: TensorLike) -> None:
+        """Initialize the Activation layer.
 
         Args:
-            activation: Description.
-            kwargs: Description.
+            activation: Activation function or identifier string.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         from zero_keras.activations import get
@@ -38,15 +47,14 @@ class Activation(Layer):
         self.activation = get(activation)
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply ``self.activation`` to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Activated output tensor.
         """
         return self.activation(inputs)
 
@@ -67,26 +75,25 @@ class ELU(Layer):
 
     """
 
-    def __init__(self, alpha: TensorLike = 1.0, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, alpha: float = 1.0, **kwargs: TensorLike) -> None:
+        """Initialize the ELU activation layer.
 
         Args:
-            alpha: Description.
-            kwargs: Description.
+            alpha: Scale factor for negative inputs. Defaults to ``1.0``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.alpha = alpha
+        self.alpha = float(alpha)
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply the Exponential Linear Unit activation to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: ELU-activated tensor.
         """
         from zero_keras import activations
 
@@ -119,70 +126,59 @@ class PReLU(Layer):
 
     def __init__(
         self,
-        alpha_initializer: TensorLike = "zeros",
-        alpha_regularizer: TensorLike = None,
-        alpha_constraint: TensorLike = None,
-        shared_axes: TensorLike = None,
+        alpha_initializer: InitializerSpec = "Zeros",
+        alpha_regularizer: RegularizerSpec = None,
+        alpha_constraint: ConstraintSpec = None,
+        shared_axes: int | Sequence[int] | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the PReLU activation layer.
 
         Args:
-            alpha_initializer: Description.
-            alpha_regularizer: Description.
-            alpha_constraint: Description.
-            shared_axes: Description.
-            kwargs: Description.
+            alpha_initializer: Initializer for the learnable ``alpha`` slope weight.
+            alpha_regularizer: Optional regularizer for ``alpha``.
+            alpha_constraint: Optional constraint for ``alpha``.
+            shared_axes: Axis or axes along which ``alpha`` parameters are shared.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.alpha_initializer = alpha_initializer
         self.shared_axes = shared_axes
         self.alpha_regularizer = alpha_regularizer
         self.alpha_constraint = alpha_constraint
+        self.alpha: TensorLike | None = None
         from zero_keras.initializers import get
 
         self._alpha_init_fn = get(alpha_initializer)
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Allocate the learnable ``alpha`` slope weight tensor.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple of the input tensor.
         """
         if input_shape is not None:
             shape = input_shape[1:]
         else:
             shape = ()
-        # Actually in zero_keras we might not have variables, just return a tensor
         self.alpha = self._alpha_init_fn(shape=shape)
-        self.shared_axes = self.shared_axes if hasattr(self, "shared_axes") else None
         super().build(input_shape)
-        self.shared_axes = self.shared_axes if hasattr(self, "shared_axes") else None
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply Parametric ReLU with slope ``self.alpha`` to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: PReLU-activated tensor.
         """
         from zero_keras import ops as backend_ops
         from zero_keras.activations import _to_tensor, _wrap
 
         inputs_t = _to_tensor(inputs)
-        alpha_t = (
-            (self.alpha.data if hasattr(self.alpha, "data") else None)
-            if hasattr(self, "alpha")
-            else None
-        )
+        alpha_t = self.alpha.data if hasattr(self.alpha, "data") else None
         if alpha_t is None:
             alpha_t = 0.0
         alpha_t = _to_tensor(alpha_t)
@@ -231,35 +227,34 @@ class ReLU(Layer):
 
     def __init__(
         self,
-        max_value: TensorLike = None,
-        negative_slope: TensorLike = 0.0,
-        threshold: TensorLike = 0.0,
+        max_value: float | None = None,
+        negative_slope: float = 0.0,
+        threshold: float = 0.0,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the ReLU activation layer.
 
         Args:
-            max_value: Description.
-            negative_slope: Description.
-            threshold: Description.
-            kwargs: Description.
+            max_value: Optional maximum saturation value.
+            negative_slope: Slope coefficient for values below ``threshold``.
+            threshold: Threshold below which ``negative_slope`` applies.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.max_value = max_value
-        self.negative_slope = negative_slope
-        self.threshold = threshold
+        self.negative_slope = float(negative_slope)
+        self.threshold = float(threshold)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply Rectified Linear Unit activation to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: ReLU-activated tensor.
         """
         from zero_keras import activations
 
@@ -303,27 +298,26 @@ class Softmax(Layer):
 
     """
 
-    def __init__(self, axis: TensorLike = -1, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, axis: int | Sequence[int] = -1, **kwargs: TensorLike) -> None:
+        """Initialize the Softmax activation layer.
 
         Args:
-            axis: Description.
-            kwargs: Description.
+            axis: Axis or axes along which softmax normalization is computed.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.axis = axis
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply softmax normalization to ``inputs`` along ``self.axis``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input logits tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Probability distribution tensor summing to 1 along ``self.axis``.
         """
         from zero_keras import activations
 
@@ -358,26 +352,54 @@ class LeakyReLU(Layer):
 
     """
 
-    def __init__(self, negative_slope: TensorLike = 0.3, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, negative_slope: float = 0.3, **kwargs: TensorLike) -> None:
+        """Initialize the LeakyReLU activation layer.
 
         Args:
-            negative_slope: Description.
-            kwargs: Description.
+            negative_slope: Slope coefficient for negative inputs. Defaults to ``0.3``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.negative_slope = negative_slope
+        self.negative_slope = float(negative_slope)
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply LeakyReLU activation to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: LeakyReLU-activated tensor.
         """
         inputs = _to_tensor(inputs)
         return _wrap(ops.maximum(inputs, ops.multiply(_to_tensor(self.negative_slope), inputs)))
+
+
+class ThresholdedReLU(Layer):
+    """Thresholded Rectified Linear Unit activation layer."""
+
+    def __init__(self, theta: float = 1.0, **kwargs: TensorLike) -> None:
+        """Initialize the ThresholdedReLU activation layer.
+
+        Args:
+            theta: Float >= 0.0 threshold location of activation.
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(**kwargs)
+        self.theta = float(theta)
+
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Apply ThresholdedReLU activation to ``inputs``.
+
+        Args:
+            inputs: Input tensor.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Thresholded tensor.
+        """
+        _ = kwargs
+        from zero_keras import activations
+
+        return activations.threshold(inputs, threshold=self.theta, default_value=0.0)

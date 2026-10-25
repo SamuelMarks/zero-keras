@@ -1,16 +1,14 @@
-"""Module docstring."""
+"""Unit and behavioral tests for metrics mismatch in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np
 import pytest
 
-from zero_keras import metrics
+from zero_keras import metrics, ops
 
 
-def test_confusion_matrix_invalid_type() -> TensorLike:
-    """Function docstring."""
+def test_confusion_matrix_invalid_type() -> None:
+    """Verify or execute `test confusion matrix invalid type`."""
     with pytest.raises(ValueError):
         m = metrics._ConfusionMatrixMetric(metric_type="INVALID")
         m.update_state([0], [0])
@@ -20,34 +18,31 @@ def test_confusion_matrix_invalid_type() -> TensorLike:
         m2.update_state([0], [0])
 
 
-def test_metric_shape_mismatch() -> TensorLike:
-    """Function docstring."""
+def test_metric_shape_mismatch() -> None:
+    """Verify or execute `test metric shape mismatch`."""
     m = metrics.MeanSquaredError()
-    # It might broadcast or fail depending on ops. Let's see what happens.
     try:
-        m.update_state(np.ones((2, 2)), np.zeros((3, 3)))
+        m.update_state(ops.ones((2, 2)), ops.zeros((3, 3)))
     except Exception:
         pass
 
     m2 = metrics.Accuracy()
     try:
-        m2.update_state(np.ones((2, 2)), np.zeros((3, 3)))
+        m2.update_state(ops.ones((2, 2)), ops.zeros((3, 3)))
     except Exception:
         pass
 
 
-def test_confusion_matrix_list_thresholds() -> TensorLike:
-    """Function docstring."""
+def test_confusion_matrix_list_thresholds() -> None:
+    """Verify or execute `test confusion matrix list thresholds`."""
     m = metrics._ConfusionMatrixMetric(thresholds=[0.5, 0.8], metric_type="FP")
     m.update_state([0, 0, 1], [0.6, 0.9, 0.9], sample_weight=[1, 1, 1])
-    # For threshold 0.5: FP are 0.6 and 0.9 for true 0 -> count = 2
-    # For threshold 0.8: FP is 0.9 for true 0 -> count = 1
     res = m.result()
     assert res is not None
 
 
-def test_confusion_matrix_coverage() -> TensorLike:
-    """Function docstring."""
+def test_confusion_matrix_coverage() -> None:
+    """Verify or execute `test confusion matrix coverage`."""
     types = ["TP", "TN", "FP", "FN"]
     for t in types:
         m = metrics._ConfusionMatrixMetric(metric_type=t)

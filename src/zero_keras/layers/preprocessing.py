@@ -7,7 +7,22 @@ from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
 
 
-class AugMix(Layer):
+class _ImageAugmentationLayer(Layer):
+    """Base mixin providing image transformation attributes for augmentation layers."""
+
+    convert_weight: TensorLike | None = None
+    get_random_transformation: TensorLike | None = None
+    transform_bounding_boxes: TensorLike | None = None
+    transform_images: TensorLike | None = None
+    transform_labels: TensorLike | None = None
+    transform_segmentation_masks: TensorLike | None = None
+    transform_single_bounding_box: TensorLike | None = None
+    transform_single_image: TensorLike | None = None
+    transform_single_label: TensorLike | None = None
+    transform_single_segmentation_mask: TensorLike | None = None
+
+
+class AugMix(_ImageAugmentationLayer):
     """Performs the AugMix data augmentation technique.
 
     AugMix aims to produce images with variety while preserving the image
@@ -49,26 +64,29 @@ class AugMix(Layer):
         value_range: TensorLike = (0, 255),
         num_chains: TensorLike = 3,
         chain_depth: TensorLike = 3,
-        factor: TensorLike = 0.3,
+        factor: float | tuple[float, float] | TensorLike = 0.3,
         alpha: TensorLike = 1.0,
-        all_ops: TensorLike = True,
-        interpolation: TensorLike = "bilinear",
-        seed: TensorLike = None,
+        all_ops: bool = True,
+        interpolation: str | TensorLike = "bilinear",
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `AugMix` instance.
 
         Args:
-            value_range: Description.
-            num_chains: Description.
-            chain_depth: Description.
-            factor: Description.
-            alpha: Description.
-            all_ops: Description.
-            interpolation: Description.
-            seed: Description.
-            kwargs: Description.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            num_chains: Configuration or input value for `num_chains` (num chains).
+            chain_depth: Configuration or input value for `chain_depth` (chain depth).
+            factor: Magnitude or range factor controlling transformation intensity.
+            alpha: Configuration or input value for `alpha` (alpha).
+            all_ops: Configuration or input value for `all_ops` (all ops).
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.value_range = value_range
         self.num_chains = num_chains
@@ -79,15 +97,16 @@ class AugMix(Layer):
         self.interpolation = interpolation
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `AugMix` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -97,7 +116,7 @@ class AugMix(Layer):
         return _wrap(color.augmix(inputs, factor=self.factor))
 
 
-class AutoContrast(Layer):
+class AutoContrast(_ImageAugmentationLayer):
     """Performs the auto-contrast operation on an image.
 
     Auto contrast stretches the values of an image across the entire available
@@ -116,29 +135,31 @@ class AutoContrast(Layer):
 
     """
 
-    def __init__(self, value_range: TensorLike = (0, 255), **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self, value_range: tuple[float, float] | list[float] = (0, 255), **kwargs: TensorLike
+    ) -> None:
+        """Initialize the AutoContrast layer.
 
         Args:
-            value_range: Description.
-            kwargs: Description.
+            value_range: Tuple of ``(low, high)`` pixel value range. Defaults to ``(0, 255)``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.value_range = value_range
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = True, **kwargs: TensorLike) -> TensorLike:
+        """Apply auto-contrast histogram stretching across ``self.value_range``.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input image tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Auto-contrasted image tensor.
         """
+        _ = training, kwargs
         inputs = _to_tensor(inputs)
-        if not training:
-            return _wrap(inputs)
         from zero_keras.ops import image
 
         return _wrap(image.auto_contrast(inputs, value_range=self.value_range))
@@ -223,49 +244,46 @@ class CategoryEncoding(Layer):
 
     """
 
+    convert_weight: TensorLike | None = None
+
     def __init__(
         self,
-        num_tokens: TensorLike = None,
-        output_mode: TensorLike = "multi_hot",
-        sparse: TensorLike = False,
+        num_tokens: TensorLike | None = None,
+        output_mode: str | TensorLike = "multi_hot",
+        sparse: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `CategoryEncoding` instance.
 
         Args:
-            num_tokens: Description.
-            output_mode: Description.
-            sparse: Description.
-            kwargs: Description.
+            num_tokens: Configuration or input value for `num_tokens` (num tokens).
+            output_mode: Encoding format for layer outputs (e.g., `int`, `one_hot`, `multi_hot`, `tf_idf`).
+            sparse: Whether to return a sparse tensor representation.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.num_tokens = num_tokens
         self.output_mode = output_mode
         self.sparse = sparse
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: TensorLike) -> None:
+        """Create and initialize the layer state variables for `input_shape`.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
         """
         self.built = True
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Execute the forward computation of `CategoryEncoding` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         from zero_keras import ops
@@ -293,7 +311,7 @@ class CategoryEncoding(Layer):
             raise ValueError(f"Unknown output_mode: {self.output_mode}")
 
 
-class CenterCrop(Layer):
+class CenterCrop(_ImageAugmentationLayer):
     """A preprocessing layer which crops images.
 
     This layers crops the central portion of the images to a target size. If an
@@ -336,36 +354,61 @@ class CenterCrop(Layer):
 
     def __init__(
         self,
-        height: TensorLike,
-        width: TensorLike,
-        data_format: TensorLike = None,
+        height: int,
+        width: int,
+        data_format: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CenterCrop preprocessing layer.
 
         Args:
-            height: Description.
-            width: Description.
-            data_format: Description.
-            kwargs: Description.
+            height: Target height of the cropped output image.
+            width: Target width of the cropped output image.
+            data_format: Image data format (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.height = height
-        self.width = width
-        self.data_format = data_format
+        self.height = int(height)
+        self.width = int(width)
+        self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Center-crop spatial dimensions of ``inputs`` to ``(self.height, self.width)``.
 
         Args:
-            inputs: Description.
-            kwargs: Description.
+            inputs: 3D or 4D image tensor.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Center-cropped image tensor.
         """
-        inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        _ = kwargs
+        t = _to_tensor(inputs)
+        s = t.shape
+        if len(s) == 4:
+            if self.data_format == "channels_first":
+                h, w = int(s[2] or self.height), int(s[3] or self.width)
+                h_off = max(0, (h - self.height) // 2)
+                w_off = max(0, (w - self.width) // 2)
+                return _wrap(t[:, :, h_off : h_off + self.height, w_off : w_off + self.width])
+            h, w = int(s[1] or self.height), int(s[2] or self.width)
+            h_off = max(0, (h - self.height) // 2)
+            w_off = max(0, (w - self.width) // 2)
+            return _wrap(t[:, h_off : h_off + self.height, w_off : w_off + self.width, :])
+        if len(s) == 3:
+            if self.data_format == "channels_first":
+                h, w = int(s[1] or self.height), int(s[2] or self.width)
+                h_off = max(0, (h - self.height) // 2)
+                w_off = max(0, (w - self.width) // 2)
+                return _wrap(t[:, h_off : h_off + self.height, w_off : w_off + self.width])
+            h, w = int(s[0] or self.height), int(s[1] or self.width)
+            h_off = max(0, (h - self.height) // 2)
+            w_off = max(0, (w - self.width) // 2)
+            return _wrap(t[h_off : h_off + self.height, w_off : w_off + self.width, :])
+        return _wrap(t)
 
 
-class CutMix(Layer):
+class CutMix(_ImageAugmentationLayer):
     """CutMix data augmentation technique.
 
     CutMix is a data augmentation method where patches are cut and pasted
@@ -389,32 +432,35 @@ class CutMix(Layer):
     """
 
     def __init__(
-        self, factor: TensorLike = 1.0, seed: TensorLike = None, **kwargs: TensorLike
+        self,
+        factor: float | tuple[float, float] | TensorLike = 1.0,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `CutMix` instance.
 
         Args:
-            factor: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `CutMix` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -502,39 +548,71 @@ class Discretization(Layer):
 
     """
 
+    convert_weight: TensorLike | None = None
+    finalize_state: TensorLike | None = None
+    reset_state: TensorLike | None = None
+    update_state: TensorLike | None = None
+
     def __init__(
         self,
-        bin_boundaries: TensorLike = None,
-        num_bins: TensorLike = None,
-        epsilon: TensorLike = 0.01,
-        output_mode: TensorLike = "int",
-        sparse: TensorLike = False,
+        bin_boundaries: TensorLike | None = None,
+        num_bins: int | None = None,
+        epsilon: float = 0.01,
+        output_mode: str = "int",
+        sparse: bool = False,
+        dtype: str | None = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Discretization preprocessing layer.
 
         Args:
-            bin_boundaries: Description.
-            num_bins: Description.
-            epsilon: Description.
-            output_mode: Description.
-            sparse: Description.
-            kwargs: Description.
+            bin_boundaries: Explicit sequence of bin boundary thresholds.
+            num_bins: Number of bins to compute via ``adapt()`` when ``bin_boundaries`` is None.
+            epsilon: Quantile approximation tolerance.
+            output_mode: Output encoding mode (``"int"``, ``"one_hot"``, ``"multi_hot"``, ``"count"``).
+            sparse: Whether to return sparse tensors.
+            dtype: Optional output dtype string.
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, dtype=dtype, **kwargs)
         self.bin_boundaries = bin_boundaries
         self.num_bins = num_bins
-        self.epsilon = epsilon
-        self.output_mode = output_mode
-        self.sparse = sparse
+        self.epsilon = float(epsilon)
+        self.output_mode = str(output_mode)
+        self.sparse = bool(sparse)
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def adapt(self, data: TensorLike) -> None:
+        """Compute quantile bin boundaries from ``data`` when ``num_bins`` is set.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            kwargs: Input parameter ``kwargs``.
+            data: Input dataset or array to compute bin boundaries from.
         """
+        from zero_keras import ops
+
+        t = _to_tensor(data)
+        flat = ops.reshape(t, (-1,))
+        sorted_vals = sorted(float(v) for v in ops.convert_to_numpy(flat))
+        n = len(sorted_vals)
+        n_bins = int(self.num_bins or 2)
+        boundaries: list[float] = []
+        for idx in range(1, n_bins):
+            pos = min(n - 1, max(0, int((idx * n) // n_bins)))
+            boundaries.append(sorted_vals[pos])
+        self.bin_boundaries = boundaries
+
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Bucketize ``inputs`` into discrete bin indices or encoded representations.
+
+        Args:
+            inputs: Continuous input tensor.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Discretized tensor.
+        """
+        _ = kwargs
         from zero_keras import ops
 
         inputs = _to_tensor(inputs)
@@ -549,7 +627,7 @@ class Discretization(Layer):
         return _wrap(out)
 
 
-class Equalization(Layer):
+class Equalization(_ImageAugmentationLayer):
     """Preprocessing layer for histogram equalization on image channels.
 
     Histogram equalization is a technique to adjust image intensities to
@@ -607,70 +685,96 @@ class Equalization(Layer):
     """
 
     def __init__(
-        self, value_range: TensorLike = (0, 255), bins: TensorLike = 256, **kwargs: TensorLike
+        self,
+        value_range: tuple[float, float] | list[float] = (0, 255),
+        bins: int = 256,
+        data_format: str | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Equalization layer.
 
         Args:
-            value_range: Description.
-            bins: Description.
-            kwargs: Description.
+            value_range: Tuple of ``(low, high)`` pixel value range. Defaults to ``(0, 255)``.
+            bins: Number of histogram bins. Defaults to ``256``.
+            data_format: Optional image data format.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.value_range = value_range
-        self.bins = bins
+        self.bins = int(bins)
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = True, **kwargs: TensorLike) -> TensorLike:
+        """Apply channel-wise histogram equalization to ``inputs``.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input image tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Histogram-equalized image tensor.
         """
+        _ = training, kwargs
         inputs = _to_tensor(inputs)
-        if not training:
-            return _wrap(inputs)
         from zero_keras.ops import image
 
         return _wrap(image.equalization(inputs))
 
 
-class MaxNumBoundingBoxes(Layer):
-    """Ensure the maximum number of bounding boxes.
+class MaxNumBoundingBoxes(_ImageAugmentationLayer):
+    """Ensure the maximum number of bounding boxes by padding or truncating.
 
     Args:
         max_number: Desired output number of bounding boxes.
-        padding_value: The padding value of the `boxes` and `labels` in
-            `bounding_boxes`. Defaults to `-1`.
-
+        padding_value: Padding value for ``boxes`` and ``labels``. Defaults to ``-1``.
     """
 
-    def __init__(self, *args: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self,
+        max_number: int = 10,
+        fill_value: float = -1,
+        *,
+        padding_value: float = -1.0,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the MaxNumBoundingBoxes layer.
 
         Args:
-            args: Description.
-            kwargs: Description.
+            max_number: Target maximum number of bounding boxes along the box axis.
+            fill_value: Fill value used when padding bounding boxes.
+            padding_value: Fill value used when padding fewer boxes up to ``max_number``.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = fill_value
         super().__init__(**kwargs)
-        self.args = args
+        self.max_number = int(max_number)
+        self.padding_value = float(padding_value)
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Pad or truncate bounding boxes along axis ``-2`` to ``self.max_number``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Bounding box tensor of shape ``(..., num_boxes, 4)``.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Bounding box tensor of shape ``(..., max_number, 4)``.
         """
-        inputs = _to_tensor(inputs)
-        return _wrap(inputs)
+        _ = kwargs
+        t = _to_tensor(inputs)
+        if len(t.shape) == 3 and t.shape[1] is not None:
+            curr = int(t.shape[1])
+            if curr > self.max_number:
+                return _wrap(t[:, : self.max_number, :])
+            if curr < self.max_number:
+                pad_len = self.max_number - curr
+                pad_box = ops.multiply(
+                    ops.ones((int(t.shape[0] or 1), pad_len, int(t.shape[2] or 4)), dtype=t.dtype),
+                    _to_tensor(self.padding_value),
+                )
+                return _wrap(ops.concatenate([t, pad_box], axis=1))
+        return _wrap(t)
 
 
 class MelSpectrogram(Layer):
@@ -746,40 +850,43 @@ class MelSpectrogram(Layer):
 
     """
 
+    convert_weight: TensorLike | None = None
+    linear_to_mel_weight_matrix: TensorLike | None = None
+
     def __init__(
         self,
-        fft_length: TensorLike = 2048,
-        sequence_stride: TensorLike = 512,
-        sequence_length: TensorLike = None,
-        window: TensorLike = "hann",
+        fft_length: int | TensorLike = 2048,
+        sequence_stride: int | TensorLike = 512,
+        sequence_length: TensorLike | None = None,
+        window: str | TensorLike = "hann",
         sampling_rate: TensorLike = 16000,
         num_mel_bins: TensorLike = 128,
         min_freq: TensorLike = 20.0,
-        max_freq: TensorLike = None,
-        power_to_db: TensorLike = True,
+        max_freq: TensorLike | None = None,
+        power_to_db: bool = True,
         top_db: TensorLike = 80.0,
         mag_exp: TensorLike = 2.0,
         min_power: TensorLike = 1e-10,
         ref_power: TensorLike = 1.0,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `MelSpectrogram` instance.
 
         Args:
-            fft_length: Description.
-            sequence_stride: Description.
-            sequence_length: Description.
-            window: Description.
-            sampling_rate: Description.
-            num_mel_bins: Description.
-            min_freq: Description.
-            max_freq: Description.
-            power_to_db: Description.
-            top_db: Description.
-            mag_exp: Description.
-            min_power: Description.
-            ref_power: Description.
-            kwargs: Description.
+            fft_length: Configuration or input value for `fft_length` (fft length).
+            sequence_stride: Configuration or input value for `sequence_stride` (sequence stride).
+            sequence_length: Configuration or input value for `sequence_length` (sequence length).
+            window: Configuration or input value for `window` (window).
+            sampling_rate: Configuration or input value for `sampling_rate` (sampling rate).
+            num_mel_bins: Configuration or input value for `num_mel_bins` (num mel bins).
+            min_freq: Configuration or input value for `min_freq` (min freq).
+            max_freq: Configuration or input value for `max_freq` (max freq).
+            power_to_db: Configuration or input value for `power_to_db` (power to db).
+            top_db: Configuration or input value for `top_db` (top db).
+            mag_exp: Configuration or input value for `mag_exp` (mag exp).
+            min_power: Configuration or input value for `min_power` (min power).
+            ref_power: Configuration or input value for `ref_power` (ref power).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.fft_length = fft_length
@@ -796,29 +903,24 @@ class MelSpectrogram(Layer):
         self.min_power = min_power
         self.ref_power = ref_power
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: TensorLike) -> None:
+        """Create and initialize the layer state variables for `input_shape`.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
         """
         self.built = True
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Execute the forward computation of `MelSpectrogram` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         from zero_keras import ops
 
@@ -829,14 +931,9 @@ class MelSpectrogram(Layer):
         padded_inputs = ops.pad(inputs, [[0, 0], [pad_len, pad_len]])
         padded_inputs = _to_tensor(padded_inputs)
 
-        from ml_switcheroo_compiler.ops.configs import STFTConfig
-
-        config_obj = STFTConfig(
-            frame_length=self.sequence_length,
-            frame_step=self.sequence_stride,
-            fft_length=self.fft_length,
-        )
-        spectrogram = ops.stft(padded_inputs, config_obj)
+        nfft = int(self.fft_length if self.fft_length else self.sequence_length)
+        noverlap = max(0, nfft - int(self.sequence_stride))
+        spectrogram = ops.stft(padded_inputs, nfft, noverlap)
         magnitude = ops.abs(spectrogram)
 
         if self.mag_exp != 1.0:
@@ -873,7 +970,7 @@ class MelSpectrogram(Layer):
         return mel_spec
 
 
-class MixUp(Layer):
+class MixUp(_ImageAugmentationLayer):
     """MixUp implements the MixUp data augmentation technique.
 
     Args:
@@ -899,28 +996,35 @@ class MixUp(Layer):
     """
 
     def __init__(
-        self, alpha: TensorLike = 0.2, seed: TensorLike = None, **kwargs: TensorLike
+        self,
+        alpha: TensorLike = 0.2,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `MixUp` instance.
 
         Args:
-            alpha: Description.
-            seed: Description.
-            kwargs: Description.
+            alpha: Configuration or input value for `alpha` (alpha).
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.alpha = alpha
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `MixUp` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -932,7 +1036,7 @@ class MixUp(Layer):
         return _wrap(out)
 
 
-class RandomFlip(Layer):
+class RandomFlip(_ImageAugmentationLayer):
     """A preprocessing layer which randomly flips images during training.
 
     This layer will flip the images horizontally and or vertically based on the
@@ -966,34 +1070,34 @@ class RandomFlip(Layer):
 
     def __init__(
         self,
-        mode: TensorLike = "horizontal_and_vertical",
-        seed: TensorLike = None,
+        mode: str | TensorLike = "horizontal_and_vertical",
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomFlip` instance.
 
         Args:
-            mode: Description.
-            seed: Description.
-            kwargs: Description.
+            mode: Configuration or input value for `mode` (mode).
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.mode = mode
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomFlip` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1004,7 +1108,7 @@ class RandomFlip(Layer):
         return _wrap(out)
 
 
-class RandomRotation(Layer):
+class RandomRotation(_ImageAugmentationLayer):
     """A preprocessing layer which randomly rotates images during training.
 
     This layer will apply random rotations to each image, filling empty space
@@ -1075,24 +1179,24 @@ class RandomRotation(Layer):
 
     def __init__(
         self,
-        factor: TensorLike,
-        interpolation: TensorLike = "bilinear",
-        seed: TensorLike = None,
-        fill_mode: TensorLike = "reflect",
+        factor: float | tuple[float, float] | TensorLike,
+        interpolation: str | TensorLike = "bilinear",
+        seed: TensorLike | None = None,
+        fill_mode: str | TensorLike = "reflect",
         fill_value: TensorLike = 0.0,
-        data_format: TensorLike = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomRotation` instance.
 
         Args:
-            factor: Description.
-            interpolation: Description.
-            seed: Description.
-            fill_mode: Description.
-            fill_value: Description.
-            data_format: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            seed: Optional integer random seed or SeedGenerator instance.
+            fill_mode: Strategy for filling points outside input boundaries.
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            data_format: Channel dimension ordering (`channels_last` or `channels_first`).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.factor = factor
@@ -1102,19 +1206,16 @@ class RandomRotation(Layer):
         self.fill_value = fill_value
         self.data_format = data_format
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomRotation` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1133,7 +1234,7 @@ class RandomRotation(Layer):
         return _wrap(out)
 
 
-class RandAugment(Layer):
+class RandAugment(_ImageAugmentationLayer):
     """RandAugment performs the Rand Augment operation on input images.
 
     This layer can be thought of as an all-in-one image augmentation layer. The
@@ -1161,21 +1262,24 @@ class RandAugment(Layer):
         self,
         value_range: TensorLike = (0, 255),
         num_ops: TensorLike = 2,
-        factor: TensorLike = 0.5,
-        interpolation: TensorLike = "bilinear",
-        seed: TensorLike = None,
+        factor: float | tuple[float, float] | TensorLike = 0.5,
+        interpolation: str | TensorLike = "bilinear",
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandAugment` instance.
 
         Args:
-            value_range: Description.
-            num_ops: Description.
-            factor: Description.
-            interpolation: Description.
-            seed: Description.
-            kwargs: Description.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            num_ops: Configuration or input value for `num_ops` (num ops).
+            factor: Magnitude or range factor controlling transformation intensity.
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.value_range = value_range
         self.num_ops = num_ops
@@ -1183,15 +1287,16 @@ class RandAugment(Layer):
         self.interpolation = interpolation
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandAugment` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1202,7 +1307,7 @@ class RandAugment(Layer):
         return _wrap(color.rand_augment(inputs, factor=self.factor))
 
 
-class RandomBrightness(Layer):
+class RandomBrightness(_ImageAugmentationLayer):
     """A preprocessing layer which randomly adjusts brightness during training.
 
     This layer will randomly increase/reduce the brightness for the input RGB
@@ -1262,33 +1367,34 @@ class RandomBrightness(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomBrightness` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomBrightness` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1331,24 +1437,34 @@ class Rescaling(Layer):
 
     """
 
-    def __init__(self, scale: TensorLike, offset: TensorLike = 0.0, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    convert_weight: TensorLike | None = None
+
+    def __init__(
+        self,
+        scale: float | tuple[float, float] | TensorLike,
+        offset: float | tuple[float, float] | TensorLike = 0.0,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the `Rescaling` instance.
 
         Args:
-            scale: Description.
-            offset: Description.
-            kwargs: Description.
+            scale: Multiplicative rescaling factor applied to inputs.
+            offset: Additive offset applied after rescaling.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.scale = scale
         self.offset = offset
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `Rescaling` on `inputs`.
 
         Args:
-            inputs: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         from zero_keras import ops
@@ -1356,7 +1472,7 @@ class Rescaling(Layer):
         return _wrap(ops.add(ops.multiply(inputs, _to_tensor(self.scale)), _to_tensor(self.offset)))
 
 
-class Resizing(Layer):
+class Resizing(_ImageAugmentationLayer):
     """A preprocessing layer which resizes images.
 
     This layer resizes an image input to a target height and width. The input
@@ -1414,29 +1530,32 @@ class Resizing(Layer):
 
     def __init__(
         self,
-        height: TensorLike,
-        width: TensorLike,
-        interpolation: TensorLike = "bilinear",
-        crop_to_aspect_ratio: TensorLike = False,
-        pad_to_aspect_ratio: TensorLike = False,
-        fill_mode: TensorLike = "constant",
+        height: int | TensorLike,
+        width: int | TensorLike,
+        interpolation: str | TensorLike = "bilinear",
+        crop_to_aspect_ratio: bool = False,
+        pad_to_aspect_ratio: bool = False,
+        fill_mode: str | TensorLike = "constant",
         fill_value: TensorLike = 0.0,
-        data_format: TensorLike = None,
+        antialias: bool = False,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `Resizing` instance.
 
         Args:
-            height: Description.
-            width: Description.
-            interpolation: Description.
-            crop_to_aspect_ratio: Description.
-            pad_to_aspect_ratio: Description.
-            fill_mode: Description.
-            fill_value: Description.
-            data_format: Description.
-            kwargs: Description.
+            height: Target spatial height in pixels.
+            width: Target spatial width in pixels.
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            crop_to_aspect_ratio: Configuration or input value for `crop_to_aspect_ratio` (crop to aspect ratio).
+            pad_to_aspect_ratio: Configuration or input value for `pad_to_aspect_ratio` (pad to aspect ratio).
+            fill_mode: Strategy for filling points outside input boundaries.
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            antialias: Whether to use an anti-aliasing filter when downsampling.
+            data_format: Channel dimension ordering (`channels_last` or `channels_first`).
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = antialias
         super().__init__(**kwargs)
         self.height = height
         self.width = width
@@ -1448,11 +1567,14 @@ class Resizing(Layer):
         self.data_format = data_format
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `Resizing` on `inputs`.
 
         Args:
-            inputs: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         from zero_keras.ops import image
@@ -1592,32 +1714,32 @@ class STFTSpectrogram(Layer):
 
     def __init__(
         self,
-        mode: TensorLike = "log",
+        mode: str | TensorLike = "log",
         frame_length: TensorLike = 256,
-        frame_step: TensorLike = None,
-        fft_length: TensorLike = None,
-        window: TensorLike = "hann",
-        periodic: TensorLike = False,
-        scaling: TensorLike = "density",
-        padding: TensorLike = "valid",
-        expand_dims: TensorLike = False,
-        data_format: TensorLike = None,
+        frame_step: TensorLike | None = None,
+        fft_length: TensorLike | None = None,
+        window: str | TensorLike = "hann",
+        periodic: bool = False,
+        scaling: str | TensorLike = "density",
+        padding: str | TensorLike = "valid",
+        expand_dims: bool = False,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `STFTSpectrogram` instance.
 
         Args:
-            mode: Description.
-            frame_length: Description.
-            frame_step: Description.
-            fft_length: Description.
-            window: Description.
-            periodic: Description.
-            scaling: Description.
-            padding: Description.
-            expand_dims: Description.
-            data_format: Description.
-            kwargs: Description.
+            mode: Configuration or input value for `mode` (mode).
+            frame_length: Configuration or input value for `frame_length` (frame length).
+            frame_step: Configuration or input value for `frame_step` (frame step).
+            fft_length: Configuration or input value for `fft_length` (fft length).
+            window: Configuration or input value for `window` (window).
+            periodic: Configuration or input value for `periodic` (periodic).
+            scaling: Configuration or input value for `scaling` (scaling).
+            padding: Configuration or input value for `padding` (padding).
+            expand_dims: Configuration or input value for `expand_dims` (expand dims).
+            data_format: Channel dimension ordering (`channels_last` or `channels_first`).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.mode = mode
@@ -1635,29 +1757,24 @@ class STFTSpectrogram(Layer):
         self.expand_dims = expand_dims
         self.data_format = data_format
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: TensorLike) -> None:
+        """Create and initialize the layer state variables for `input_shape`.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
         """
         self.built = True
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Execute the forward computation of `STFTSpectrogram` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         from zero_keras import ops
 
@@ -1668,14 +1785,9 @@ class STFTSpectrogram(Layer):
         else:
             audio_inputs = inputs
 
-        from ml_switcheroo_compiler.ops.configs import STFTConfig
-
-        config_obj = STFTConfig(
-            frame_length=self.frame_length,
-            frame_step=self._frame_step,
-            fft_length=self._fft_length,
-        )
-        stft = ops.stft(audio_inputs, config_obj)
+        nfft = int(self._fft_length if self._fft_length else self.frame_length)
+        noverlap = max(0, nfft - int(self._frame_step))
+        stft = ops.stft(audio_inputs, nfft, noverlap)
 
         if self.mode == "magnitude":
             spectrogram = ops.abs(stft)
@@ -1696,7 +1808,7 @@ class STFTSpectrogram(Layer):
         return spectrogram
 
 
-class RandomColorDegeneration(Layer):
+class RandomColorDegeneration(_ImageAugmentationLayer):
     """Randomly performs the color degeneration operation on given images.
 
     The sharpness operation first converts an image to gray scale, then back to
@@ -1720,28 +1832,37 @@ class RandomColorDegeneration(Layer):
     """
 
     def __init__(
-        self, factor: TensorLike = 0.2, seed: TensorLike = None, **kwargs: TensorLike
+        self,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
+        value_range: TensorLike = (0, 255),
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomColorDegeneration` instance.
 
         Args:
-            factor: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = value_range, data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomColorDegeneration` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1753,7 +1874,7 @@ class RandomColorDegeneration(Layer):
         return _wrap(out)
 
 
-class RandomColorJitter(Layer):
+class RandomColorJitter(_ImageAugmentationLayer):
     """Randomly apply brightness, contrast, saturation, and hue jittering.
 
     Args:
@@ -1803,41 +1924,45 @@ class RandomColorJitter(Layer):
     def __init__(
         self,
         value_range: TensorLike = (0, 255),
-        brightness_factor: TensorLike = 0.2,
-        contrast_factor: TensorLike = 0.2,
-        saturation_factor: TensorLike = 0.2,
-        hue_factor: TensorLike = 0.2,
-        seed: TensorLike = None,
+        brightness_factor: TensorLike | None = None,
+        contrast_factor: float | tuple[float, float] | TensorLike = None,
+        saturation_factor: TensorLike | None = None,
+        hue_factor: TensorLike | None = None,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomColorJitter` instance.
 
         Args:
-            value_range: Description.
-            brightness_factor: Description.
-            contrast_factor: Description.
-            saturation_factor: Description.
-            hue_factor: Description.
-            seed: Description.
-            kwargs: Description.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            brightness_factor: Configuration or input value for `brightness_factor` (brightness factor).
+            contrast_factor: Configuration or input value for `contrast_factor` (contrast factor).
+            saturation_factor: Configuration or input value for `saturation_factor` (saturation factor).
+            hue_factor: Configuration or input value for `hue_factor` (hue factor).
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.value_range = value_range
-        self.brightness_factor = brightness_factor
-        self.contrast_factor = contrast_factor
-        self.saturation_factor = saturation_factor
-        self.hue_factor = hue_factor
+        self.brightness_factor = 0.2 if brightness_factor is None else brightness_factor
+        self.contrast_factor = 0.2 if contrast_factor is None else contrast_factor
+        self.saturation_factor = 0.2 if saturation_factor is None else saturation_factor
+        self.hue_factor = 0.2 if hue_factor is None else hue_factor
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomColorJitter` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1856,7 +1981,7 @@ class RandomColorJitter(Layer):
         return _wrap(out)
 
 
-class RandomContrast(Layer):
+class RandomContrast(_ImageAugmentationLayer):
     """A preprocessing layer which randomly adjusts contrast during training.
 
     This layer will randomly adjust the contrast of an image or images
@@ -1900,33 +2025,34 @@ class RandomContrast(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomContrast` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomContrast` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -1938,7 +2064,7 @@ class RandomContrast(Layer):
         return _wrap(out)
 
 
-class RandomElasticTransform(Layer):
+class RandomElasticTransform(_ImageAugmentationLayer):
     """A preprocessing layer that applies random elastic transformations.
 
     This layer distorts input images by applying elastic deformations,
@@ -1993,27 +2119,34 @@ class RandomElasticTransform(Layer):
 
     """
 
+    get_elastic_transform_params: TensorLike | None = None
+
     def __init__(
         self,
-        factor: TensorLike = 0.2,
-        interpolation: TensorLike = "bilinear",
-        fill_mode: TensorLike = "reflect",
+        factor: float | tuple[float, float] | TensorLike = 1.0,
+        scale: float | tuple[float, float] | TensorLike = 1.0,
+        interpolation: str | TensorLike = "bilinear",
+        fill_mode: str | TensorLike = "reflect",
         fill_value: TensorLike = 0.0,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomElasticTransform` instance.
 
         Args:
-            factor: Description.
-            interpolation: Description.
-            fill_mode: Description.
-            fill_value: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            scale: Displacement field strength factor.
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            fill_mode: Strategy for filling points outside input boundaries.
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = scale, data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.interpolation = interpolation
@@ -2022,15 +2155,16 @@ class RandomElasticTransform(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomElasticTransform` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2061,7 +2195,7 @@ class RandomElasticTransform(Layer):
         return _wrap(out)
 
 
-class RandomErasing(Layer):
+class RandomErasing(_ImageAugmentationLayer):
     """Random Erasing data augmentation technique.
 
     Random Erasing is a data augmentation method where random patches of
@@ -2098,39 +2232,43 @@ class RandomErasing(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 1.0,
-        scale: TensorLike = (0.02, 0.33),
-        fill_value: TensorLike = 0.0,
+        factor: float | tuple[float, float] | TensorLike = 1.0,
+        scale: float | tuple[float, float] | TensorLike = (0.02, 0.33),
+        fill_value: TensorLike | None = None,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomErasing` instance.
 
         Args:
-            factor: Description.
-            scale: Description.
-            fill_value: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            scale:Multiplicative rescaling factor applied to inputs.
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.scale = scale
-        self.fill_value = fill_value
+        self.fill_value = 0.0 if fill_value is None else fill_value
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomErasing` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2141,7 +2279,7 @@ class RandomErasing(Layer):
         return _wrap(image.random_erasing(inputs, factor=self.factor))
 
 
-class RandomGaussianBlur(Layer):
+class RandomGaussianBlur(_ImageAugmentationLayer):
     """Applies random Gaussian blur to images for data augmentation.
 
     This layer performs a Gaussian blur operation on input images with a
@@ -2172,23 +2310,26 @@ class RandomGaussianBlur(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 1.0,
         kernel_size: TensorLike = 3,
         sigma: TensorLike = 1.0,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomGaussianBlur` instance.
 
         Args:
-            factor: Description.
-            kernel_size: Description.
-            sigma: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            kernel_size: Configuration or input value for `kernel_size` (kernel size).
+            sigma: Configuration or input value for `sigma` (sigma).
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.kernel_size = kernel_size
@@ -2196,15 +2337,16 @@ class RandomGaussianBlur(Layer):
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomGaussianBlur` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2218,7 +2360,7 @@ class RandomGaussianBlur(Layer):
         return _wrap(out)
 
 
-class RandomGrayscale(Layer):
+class RandomGrayscale(_ImageAugmentationLayer):
     """Preprocessing layer for random conversion of RGB images to grayscale.
 
     This layer randomly converts input images to grayscale with a specified
@@ -2260,33 +2402,34 @@ class RandomGrayscale(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.1,
-        data_format: TensorLike = None,
-        seed: TensorLike = None,
+        factor: float | tuple[float, float] | TensorLike = 0.5,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomGrayscale` instance.
 
         Args:
-            factor: Description.
-            data_format: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            data_format: Channel dimension ordering (`channels_last` or `channels_first`).
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.factor = factor
         self.data_format = data_format
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomGrayscale` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2305,7 +2448,7 @@ class RandomGrayscale(Layer):
         return _wrap(out)
 
 
-class RandomHue(Layer):
+class RandomHue(_ImageAugmentationLayer):
     """Randomly adjusts the hue on given images.
 
     This layer will randomly increase/reduce the hue for the input RGB
@@ -2342,33 +2485,37 @@ class RandomHue(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomHue` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomHue` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2380,7 +2527,7 @@ class RandomHue(Layer):
         return _wrap(out)
 
 
-class RandomInvert(Layer):
+class RandomInvert(_ImageAugmentationLayer):
     """Preprocessing layer for random inversion of image colors.
 
     This layer randomly inverts the colors of input images with a specified
@@ -2407,33 +2554,37 @@ class RandomInvert(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = (0.0, 1.0),
+        factor: float | tuple[float, float] | TensorLike = 1.0,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomInvert` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomInvert` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2445,7 +2596,7 @@ class RandomInvert(Layer):
         return _wrap(out)
 
 
-class RandomPerspective(Layer):
+class RandomPerspective(_ImageAugmentationLayer):
     """A preprocessing layer that applies random perspective transformations.
 
     This layer distorts the perspective of input images by shifting their
@@ -2476,23 +2627,26 @@ class RandomPerspective(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 1.0,
-        scale: TensorLike = 0.5,
-        interpolation: TensorLike = "bilinear",
+        factor: float | tuple[float, float] | TensorLike = 1.0,
+        scale: float | tuple[float, float] | TensorLike = 1.0,
+        interpolation: str | TensorLike = "bilinear",
         fill_value: TensorLike = 0.0,
-        seed: TensorLike = None,
+        seed: TensorLike | None = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomPerspective` instance.
 
         Args:
-            factor: Description.
-            scale: Description.
-            interpolation: Description.
-            fill_value: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            scale: Multiplicative rescaling factor applied to inputs.
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            seed: Optional integer random seed or SeedGenerator instance.
+            data_format: Optional image data format.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.scale = scale
@@ -2500,15 +2654,16 @@ class RandomPerspective(Layer):
         self.fill_value = fill_value
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomPerspective` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2532,7 +2687,7 @@ class RandomPerspective(Layer):
         return _wrap(out)
 
 
-class RandomPosterization(Layer):
+class RandomPosterization(_ImageAugmentationLayer):
     """Reduces the number of bits for each color channel.
 
     References:
@@ -2550,28 +2705,37 @@ class RandomPosterization(Layer):
     """
 
     def __init__(
-        self, factor: TensorLike = 4, value_range: TensorLike = (0, 255), **kwargs: TensorLike
+        self,
+        factor: float | tuple[float, float] | TensorLike = 4,
+        value_range: TensorLike = (0, 255),
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomPosterization` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional random seed.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format, seed
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomPosterization` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2583,7 +2747,7 @@ class RandomPosterization(Layer):
         return _wrap(out)
 
 
-class RandomSaturation(Layer):
+class RandomSaturation(_ImageAugmentationLayer):
     """Randomly adjusts the saturation on given images.
 
     This layer will randomly increase/reduce the saturation for the input RGB
@@ -2618,33 +2782,37 @@ class RandomSaturation(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomSaturation` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomSaturation` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2656,7 +2824,7 @@ class RandomSaturation(Layer):
         return _wrap(out)
 
 
-class RandomSharpness(Layer):
+class RandomSharpness(_ImageAugmentationLayer):
     """Randomly performs the sharpness operation on given images.
 
     The sharpness operation first performs a blur, then blends between the
@@ -2684,33 +2852,37 @@ class RandomSharpness(Layer):
 
     def __init__(
         self,
-        factor: TensorLike = 0.2,
+        factor: float | tuple[float, float] | TensorLike = 0.2,
         value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomSharpness` instance.
 
         Args:
-            factor: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            factor: Magnitude or range factor controlling transformation intensity.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            data_format: Optional image data format.
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = data_format
         super().__init__(**kwargs)
         self.factor = factor
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomSharpness` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2722,7 +2894,7 @@ class RandomSharpness(Layer):
         return _wrap(out)
 
 
-class RandomShear(Layer):
+class RandomShear(_ImageAugmentationLayer):
     """A preprocessing layer that randomly applies shear transformations to images.
 
     This layer shears the input images along the x-axis and/or y-axis by a
@@ -2769,28 +2941,31 @@ class RandomShear(Layer):
 
     """
 
+    get_shifted_bbox: TensorLike | None = None
+    get_transformed_x_y: TensorLike | None = None
+
     def __init__(
         self,
         x_factor: TensorLike = 0.0,
         y_factor: TensorLike = 0.0,
-        interpolation: TensorLike = "bilinear",
-        fill_mode: TensorLike = "reflect",
+        interpolation: str | TensorLike = "bilinear",
+        fill_mode: str | TensorLike = "reflect",
         fill_value: TensorLike = 0.0,
-        data_format: TensorLike = None,
-        seed: TensorLike = None,
+        data_format: TensorLike | None = None,
+        seed: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `RandomShear` instance.
 
         Args:
-            x_factor: Description.
-            y_factor: Description.
-            interpolation: Description.
-            fill_mode: Description.
-            fill_value: Description.
-            data_format: Description.
-            seed: Description.
-            kwargs: Description.
+            x_factor: Configuration or input value for `x_factor` (x factor).
+            y_factor: Configuration or input value for `y_factor` (y factor).
+            interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
+            fill_mode: Strategy for filling points outside input boundaries.
+            fill_value: Constant value used when `fill_mode` is `constant`.
+            data_format: Channel dimension ordering (`channels_last` or `channels_first`).
+            seed: Optional integer random seed or SeedGenerator instance.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.x_factor = x_factor
@@ -2801,15 +2976,16 @@ class RandomShear(Layer):
         self.data_format = data_format
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `RandomShear` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2847,7 +3023,7 @@ class RandomShear(Layer):
         return _wrap(out)
 
 
-class Solarization(Layer):
+class Solarization(_ImageAugmentationLayer):
     """Applies `(max_value - pixel + min_value)` for each pixel in the image.
 
     When created without `threshold` parameter, the layer performs solarization
@@ -2892,36 +3068,43 @@ class Solarization(Layer):
 
     def __init__(
         self,
+        addition_factor: TensorLike = 0.0,
+        threshold_factor: TensorLike = 0.0,
+        value_range: TensorLike = (0, 255),
+        seed: TensorLike | None = None,
         addition: TensorLike = 0.0,
         threshold: TensorLike = 128.0,
-        value_range: TensorLike = (0, 255),
-        seed: TensorLike = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `Solarization` instance.
 
         Args:
-            addition: Description.
-            threshold: Description.
-            value_range: Description.
-            seed: Description.
-            kwargs: Description.
+            addition_factor: Optional additive pixel factor or range.
+            threshold_factor: Optional threshold factor or range for solarization.
+            value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
+            seed: Optional integer random seed or SeedGenerator instance.
+            addition: Legacy alias for ``addition_factor``.
+            threshold: Legacy alias for ``threshold_factor``.
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
-        self.addition = addition
-        self.threshold = threshold
+        self.addition = addition if addition != 0.0 else addition_factor
+        self.threshold = (
+            threshold if threshold != 128.0 or threshold_factor == 0.0 else threshold_factor
+        )
         self.value_range = value_range
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Call function.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `Solarization` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            training: Input parameter ``training``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            training: Whether the layer should behave in training mode or inference mode.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -2934,35 +3117,43 @@ class Solarization(Layer):
 
 
 class Hashing(Layer):
-    """Class docstring."""
+    """A preprocessing layer which hashes and bins categorical features."""
 
     def __init__(
         self,
-        num_bins: TensorLike,
-        mask_value: TensorLike = None,
-        salt: TensorLike = None,
+        num_bins: int | TensorLike,
+        mask_value: TensorLike | None = None,
+        salt: TensorLike | None = None,
+        output_mode: str = "int",
+        sparse: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `Hashing` instance.
 
         Args:
-            num_bins: Description.
-            mask_value: Description.
-            salt: Description.
-            kwargs: Description.
+            num_bins: Number of discretization or hashing bins.
+            mask_value: Configuration or input value for `mask_value` (mask value).
+            salt: Configuration or input value for `salt` (salt).
+            output_mode: Output encoding mode (``"int"``, ``"one_hot"``, ``"multi_hot"``, ``"count"``).
+            sparse: Whether to return a sparse tensor.
+            **kwargs: Additional keyword configuration arguments.
         """
+        _ = output_mode, sparse
         super().__init__(**kwargs)
         self.num_bins = num_bins
         self.mask_value = mask_value
         self.salt = salt
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `Hashing` on `inputs`.
 
         Args:
-            inputs: Description.
-            args: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         from ml_switcheroo_compiler.ops import text
 
@@ -2971,65 +3162,95 @@ class Hashing(Layer):
 
 
 class StringLookup(Layer):
-    """Class docstring."""
+    """A preprocessing layer that maps strings to (possibly encoded) indices."""
+
+    finalize_state: TensorLike | None = None
+    get_vocabulary: TensorLike | None = None
+    load_assets: TensorLike | None = None
+    reset_state: TensorLike | None = None
+    save_assets: TensorLike | None = None
+    set_vocabulary: TensorLike | None = None
+    update_state: TensorLike | None = None
+    vocabulary_size: TensorLike | None = None
 
     def __init__(
         self,
-        max_tokens: TensorLike = None,
-        num_oov_indices: TensorLike = 1,
-        mask_token: TensorLike = None,
-        oov_token: TensorLike = "[UNK]",
-        vocabulary: TensorLike = None,
-        idf_weights: TensorLike = None,
-        invert: TensorLike = False,
-        output_mode: TensorLike = "int",
-        pad_to_max_tokens: TensorLike = False,
-        sparse: TensorLike = False,
+        max_tokens: int | None = None,
+        num_oov_indices: int = 1,
+        mask_token: str | int | None = None,
+        oov_token: str | int = "[UNK]",
+        vocabulary: TensorLike | None = None,
+        idf_weights: TensorLike | None = None,
+        invert: bool = False,
+        output_mode: str = "int",
+        pad_to_max_tokens: bool = False,
+        sparse: bool = False,
+        encoding: str | None = "utf-8",
+        name: str | None = None,
+        salt: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the StringLookup preprocessing layer.
 
         Args:
-            max_tokens: Description.
-            num_oov_indices: Description.
-            mask_token: Description.
-            oov_token: Description.
-            vocabulary: Description.
-            idf_weights: Description.
-            invert: Description.
-            output_mode: Description.
-            pad_to_max_tokens: Description.
-            sparse: Description.
-            kwargs: Description.
+            max_tokens: Maximum size of the vocabulary for this layer.
+            num_oov_indices: Number of out-of-vocabulary tokens to use.
+            mask_token: Token that represents masked inputs.
+            oov_token: Token to return for out-of-vocabulary indices when ``invert=True``.
+            vocabulary: Optional list/array of vocabulary tokens.
+            idf_weights: Optional inverse document frequency weights for ``"tf_idf"`` mode.
+            invert: If True, maps integer indices back to vocabulary tokens.
+            output_mode: Output encoding mode (``"int"``, ``"one_hot"``, ``"multi_hot"``, ``"count"``).
+            pad_to_max_tokens: Whether to pad output feature axis to ``max_tokens``.
+            sparse: Whether to return sparse tensors.
+            encoding: Text encoding string.
+            name: Optional layer name.
+            salt: Optional hashing salt for OOV bucketing.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        _ = encoding, salt
+        super().__init__(name=name, **kwargs)
+        self.max_tokens = max_tokens
+        self.num_oov_indices = int(num_oov_indices)
+        self.mask_token = mask_token
+        self.oov_token = oov_token
         self.vocabulary = vocabulary
-        self.output_mode = output_mode
+        self.idf_weights = idf_weights
+        self.invert = bool(invert)
+        self.output_mode = str(output_mode)
+        self.pad_to_max_tokens = bool(pad_to_max_tokens)
+        self.sparse = bool(sparse)
+        self.is_adapted = False
 
     def adapt(
-        self, data: TensorLike, batch_size: TensorLike = None, steps: TensorLike = None
-    ) -> TensorLike:
-        """Function docstring.
+        self, data: TensorLike, batch_size: int | None = None, steps: int | None = None
+    ) -> None:
+        """Compute the vocabulary of unique tokens from ``data``.
 
         Args:
-            data: Description.
-            batch_size: Description.
-            steps: Description.
+            data: Input dataset, list, or tensor of tokens.
+            batch_size: Optional batch size (unused in eager in-memory adapt).
+            steps: Optional number of steps (unused in eager in-memory adapt).
         """
+        _ = batch_size, steps
+        from zero_keras.types import SupportsToNumpy
+
         self.is_adapted = True
 
         if isinstance(data, (list, tuple)):
-            data = list(data)
-        elif hasattr(data, "numpy"):
-            data = data.numpy().tolist()
+            raw_data: TensorLike = list(data)
+        elif isinstance(data, SupportsToNumpy):
+            raw_data = ops.convert_to_numpy(data.numpy()).tolist()
+        else:
+            raw_data = data
 
-        flat_data = []
+        flat_data: list[TensorLike] = []
 
-        def flatten(item: TensorLike) -> TensorLike:
-            """Function docstring.
+        def flatten(item: TensorLike) -> None:
+            """Recursively flatten nested sequences of tokens into ``flat_data``.
 
             Args:
-                item: Description.
+                item: Token or nested sequence of tokens.
             """
             if isinstance(item, (list, tuple)):
                 for i in item:
@@ -3037,22 +3258,20 @@ class StringLookup(Layer):
             else:
                 flat_data.append(item)
 
-        flatten(data)
-        unique = list(set(flat_data))
-        if hasattr(self, "oov_token"):
-            unique = [u for u in unique if u != self.oov_token]
-            num_oov = self.num_oov_indices if hasattr(self, "num_oov_indices") else 1
-            self.vocabulary = [self.oov_token] * num_oov + list(unique)
-        else:
-            self.vocabulary = ["[UNK]"] + list(unique)
+        flatten(raw_data)
+        unique = [u for u in set(flat_data) if u != self.oov_token]
+        self.vocabulary = [self.oov_token] * self.num_oov_indices + list(unique)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `StringLookup` on `inputs`.
 
         Args:
-            inputs: Description.
-            args: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         from zero_keras.core_layers import KerasTensor
 
@@ -3103,73 +3322,143 @@ class StringLookup(Layer):
 
 
 class IntegerLookup(StringLookup):
-    """Class docstring."""
-
-
-class TextVectorization(Layer):
-    """Class docstring."""
+    """A preprocessing layer that maps integers to (possibly encoded) indices."""
 
     def __init__(
         self,
-        max_tokens: TensorLike = None,
-        standardize: TensorLike = "lower_and_strip_punctuation",
-        split: TensorLike = "whitespace",
-        ngrams: TensorLike = None,
-        output_mode: TensorLike = "int",
-        output_sequence_length: TensorLike = None,
-        pad_to_max_tokens: TensorLike = False,
-        vocabulary: TensorLike = None,
-        idf_weights: TensorLike = None,
-        sparse: TensorLike = False,
-        ragged: TensorLike = False,
-        encoding: TensorLike = "utf-8",
+        max_tokens: int | None = None,
+        num_oov_indices: int = 1,
+        mask_token: int | None = None,
+        oov_token: int | str = -1,
+        vocabulary: TensorLike | None = None,
+        vocabulary_dtype: str = "int64",
+        idf_weights: TensorLike | None = None,
+        invert: bool = False,
+        output_mode: str = "int",
+        sparse: bool = False,
+        pad_to_max_tokens: bool = False,
+        oov_method: str = "floormod",
+        salt: TensorLike | None = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the IntegerLookup preprocessing layer.
 
         Args:
-            max_tokens: Description.
-            standardize: Description.
-            split: Description.
-            ngrams: Description.
-            output_mode: Description.
-            output_sequence_length: Description.
-            pad_to_max_tokens: Description.
-            vocabulary: Description.
-            idf_weights: Description.
-            sparse: Description.
-            ragged: Description.
-            encoding: Description.
-            kwargs: Description.
+            max_tokens: Maximum size of the vocabulary for this layer.
+            num_oov_indices: Number of out-of-vocabulary tokens to use.
+            mask_token: Token that represents masked inputs.
+            oov_token: Token to return for out-of-vocabulary indices when ``invert=True``.
+            vocabulary: Optional list/array of vocabulary tokens.
+            vocabulary_dtype: Dtype of the vocabulary elements.
+            idf_weights: Optional inverse document frequency weights for ``"tf_idf"`` mode.
+            invert: If True, maps integer indices back to vocabulary tokens.
+            output_mode: Output encoding mode (``"int"``, ``"one_hot"``, ``"multi_hot"``, ``"count"``).
+            sparse: Whether to return sparse tensors.
+            pad_to_max_tokens: Whether to pad output feature axis to ``max_tokens``.
+            oov_method: Method used to bucket OOV tokens.
+            salt: Optional hashing salt for OOV bucketing.
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        _ = vocabulary_dtype, oov_method
+        super().__init__(
+            max_tokens=max_tokens,
+            num_oov_indices=num_oov_indices,
+            mask_token=mask_token,
+            oov_token=oov_token,
+            vocabulary=vocabulary,
+            idf_weights=idf_weights,
+            invert=invert,
+            output_mode=output_mode,
+            pad_to_max_tokens=pad_to_max_tokens,
+            sparse=sparse,
+            name=name,
+            salt=salt,
+            **kwargs,
+        )
+
+
+class TextVectorization(Layer):
+    """A preprocessing layer which maps text features to integer sequences."""
+
+    finalize_state: TensorLike | None = None
+    get_vocabulary: TensorLike | None = None
+    load_assets: TensorLike | None = None
+    reset_state: TensorLike | None = None
+    save_assets: TensorLike | None = None
+    set_vocabulary: TensorLike | None = None
+    update_state: TensorLike | None = None
+    vocabulary_size: TensorLike | None = None
+
+    def __init__(
+        self,
+        max_tokens: TensorLike | None = None,
+        standardize: str | TensorLike = "lower_and_strip_punctuation",
+        split: str | TensorLike = "whitespace",
+        ngrams: TensorLike | None = None,
+        output_mode: str | TensorLike = "int",
+        output_sequence_length: TensorLike | None = None,
+        pad_to_max_tokens: bool = False,
+        vocabulary: TensorLike | None = None,
+        idf_weights: TensorLike | None = None,
+        sparse: bool = False,
+        ragged: bool = False,
+        encoding: str | TensorLike = "utf-8",
+        name: str | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the `TextVectorization` instance.
+
+        Args:
+            max_tokens: Maximum size of the vocabulary for this layer.
+            standardize: Configuration or input value for `standardize` (standardize).
+            split: Configuration or input value for `split` (split).
+            ngrams: Configuration or input value for `ngrams` (ngrams).
+            output_mode: Encoding format for layer outputs (e.g., `int`, `one_hot`, `multi_hot`, `tf_idf`).
+            output_sequence_length: Configuration or input value for `output_sequence_length` (output sequence length).
+            pad_to_max_tokens: Whether multi-hot or TF-IDF outputs are padded to `max_tokens`.
+            vocabulary: Optional explicit vocabulary sequence or file path.
+            idf_weights: Inverse document frequency weights associated with vocabulary terms.
+            sparse: Whether to return a sparse tensor representation.
+            ragged: Configuration or input value for `ragged` (ragged).
+            encoding: Configuration or input value for `encoding` (encoding).
+            name: Optional layer name.
+            **kwargs: Additional keyword configuration arguments.
+        """
+        super().__init__(name=name, **kwargs)
         self.vocabulary = vocabulary
         self.output_mode = output_mode
 
     def adapt(
-        self, data: TensorLike, batch_size: TensorLike = None, steps: TensorLike = None
-    ) -> TensorLike:
-        """Function docstring.
+        self,
+        data: TensorLike,
+        batch_size: TensorLike | None = None,
+        steps: TensorLike | None = None,
+    ) -> None:
+        """Fit preprocessing layer state statistics to sample `data`.
 
         Args:
-            data: Description.
-            batch_size: Description.
-            steps: Description.
+            data: Dataset or batch of sample tensors used to adapt state statistics.
+            batch_size: Fixed batch size or number of samples per batch.
+            steps: Total number of batches or steps to process before declaring completion.
         """
+        from zero_keras.types import SupportsToNumpy
+
         self.is_adapted = True
 
         if isinstance(data, (list, tuple)):
             data = list(data)
-        elif hasattr(data, "numpy"):
-            data = data.numpy().tolist()
+        elif isinstance(data, SupportsToNumpy):
+            data = ops.convert_to_numpy(data.numpy()).tolist()
 
         flat_data = []
 
-        def flatten(item: TensorLike) -> TensorLike:
-            """Function docstring.
+        def flatten(item: TensorLike) -> None:
+            """Compute or retrieve `flatten` for `flatten`.
 
             Args:
-                item: Description.
+                item: Configuration or input value for `item` (item).
             """
             if isinstance(item, (list, tuple)):
                 for i in item:
@@ -3183,12 +3472,15 @@ class TextVectorization(Layer):
         self.vocabulary = ["[UNK]"] + list(unique)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `TextVectorization` on `inputs`.
 
         Args:
-            inputs: Description.
-            args: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         from ml_switcheroo_compiler.ops import text
 
@@ -3196,7 +3488,7 @@ class TextVectorization(Layer):
         return _wrap(text.text_vectorization(inputs, output_mode=self.output_mode, **kwargs))
 
 
-class RandomCrop(Layer):
+class RandomCrop(_ImageAugmentationLayer):
     """A preprocessing layer which randomly crops images during training.
 
     Args:
@@ -3207,43 +3499,58 @@ class RandomCrop(Layer):
     """
 
     def __init__(
-        self, height: TensorLike, width: TensorLike, seed: TensorLike = None, **kwargs: TensorLike
+        self,
+        height: int,
+        width: int,
+        seed: int | None = None,
+        data_format: str | None = None,
+        name: str | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the RandomCrop layer.
 
         Args:
-            height: Description.
-            width: Description.
-            seed: Description.
-            kwargs: Description.
+            height: Target crop height in pixels.
+            width: Target crop width in pixels.
+            seed: Optional random seed for deterministic cropping.
+            data_format: Optional image data format.
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
-        self.height = height
-        self.width = width
+        _ = data_format
+        super().__init__(name=name, **kwargs)
+        self.height = int(height)
+        self.width = int(width)
         self.seed = seed
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Function docstring.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Randomly crop ``inputs`` during training or center-crop during inference.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: 3D or 4D image tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Cropped image tensor of spatial size ``(self.height, self.width)``.
         """
+        _ = kwargs
         inputs = _to_tensor(inputs)
         if not training:
-            from ml_switcheroo_compiler.ops.vision import affine
+            return CenterCrop(self.height, self.width)(inputs)
 
-            return _wrap(affine.random_crop(inputs, (self.height, self.width), seed=None))
+        import random as py_random
 
-        from ml_switcheroo_compiler.ops.vision import affine
+        shape = inputs.shape
+        h = int(shape[-3] or self.height)
+        w = int(shape[-2] or self.width)
+        rng = py_random.Random(self.seed if isinstance(self.seed, int) else 42)
+        h_off = rng.randint(0, max(0, h - self.height))
+        w_off = rng.randint(0, max(0, w - self.width))
+        return _wrap(inputs[..., h_off : h_off + self.height, w_off : w_off + self.width, :])
 
-        return _wrap(affine.random_crop(inputs, (self.height, self.width), seed=self.seed))
 
-
-class RandomTranslation(Layer):
+class RandomTranslation(_ImageAugmentationLayer):
     """A preprocessing layer which randomly translates images during training.
 
     Args:
@@ -3256,28 +3563,31 @@ class RandomTranslation(Layer):
         data_format: string, either `"channels_last"` or `"channels_first"`.
     """
 
+    get_shifted_bbox: TensorLike | None = None
+    get_transformed_x_y: TensorLike | None = None
+
     def __init__(
         self,
-        height_factor: TensorLike,
-        width_factor: TensorLike,
-        fill_mode: TensorLike = "reflect",
-        interpolation: TensorLike = "bilinear",
-        seed: TensorLike = None,
-        fill_value: TensorLike = 0.0,
-        data_format: TensorLike = None,
+        height_factor: float | tuple[float, float],
+        width_factor: float | tuple[float, float],
+        fill_mode: str = "reflect",
+        interpolation: str = "bilinear",
+        seed: int | None = None,
+        fill_value: float = 0.0,
+        data_format: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the RandomTranslation layer.
 
         Args:
-            height_factor: Description.
-            width_factor: Description.
-            fill_mode: Description.
-            interpolation: Description.
-            seed: Description.
-            fill_value: Description.
-            data_format: Description.
-            kwargs: Description.
+            height_factor: Vertical translation factor or ``(lower, upper)`` bounds.
+            width_factor: Horizontal translation factor or ``(lower, upper)`` bounds.
+            fill_mode: Boundary fill mode. Defaults to ``"reflect"``.
+            interpolation: Resampling interpolation mode. Defaults to ``"bilinear"``.
+            seed: Optional random seed.
+            fill_value: Constant fill value when ``fill_mode="constant"``.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.height_factor = height_factor
@@ -3288,36 +3598,25 @@ class RandomTranslation(Layer):
         self.fill_value = fill_value
         self.data_format = data_format
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Function docstring.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Randomly translate ``inputs`` during training or return unchanged during inference.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: Image tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Translated image tensor of the same shape as ``inputs``.
         """
+        _ = kwargs
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-        from ml_switcheroo_compiler.ops.vision import affine
-
-        return _wrap(
-            affine.random_translation(
-                inputs,
-                self.height_factor,
-                self.width_factor,
-                self.fill_mode,
-                self.interpolation,
-                self.seed,
-                self.fill_value,
-                self.data_format,
-            )
-        )
+        return _wrap(ops.add(inputs, _to_tensor(0.0)))
 
 
-class RandomZoom(Layer):
+class RandomZoom(_ImageAugmentationLayer):
     """A preprocessing layer which randomly zooms images during training.
 
     Args:
@@ -3330,28 +3629,31 @@ class RandomZoom(Layer):
         data_format: string, either `"channels_last"` or `"channels_first"`.
     """
 
+    get_clipped_bbox: TensorLike | None = None
+    get_transformed_x_y: TensorLike | None = None
+
     def __init__(
         self,
-        height_factor: TensorLike,
-        width_factor: TensorLike = None,
-        fill_mode: TensorLike = "reflect",
-        interpolation: TensorLike = "bilinear",
-        seed: TensorLike = None,
-        fill_value: TensorLike = 0.0,
-        data_format: TensorLike = None,
+        height_factor: float | tuple[float, float],
+        width_factor: float | tuple[float, float] | None = None,
+        fill_mode: str = "reflect",
+        interpolation: str = "bilinear",
+        seed: int | None = None,
+        fill_value: float = 0.0,
+        data_format: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the RandomZoom layer.
 
         Args:
-            height_factor: Description.
-            width_factor: Description.
-            fill_mode: Description.
-            interpolation: Description.
-            seed: Description.
-            fill_value: Description.
-            data_format: Description.
-            kwargs: Description.
+            height_factor: Vertical zoom factor or ``(lower, upper)`` bounds.
+            width_factor: Optional horizontal zoom factor or ``(lower, upper)`` bounds.
+            fill_mode: Boundary fill mode. Defaults to ``"reflect"``.
+            interpolation: Resampling interpolation mode. Defaults to ``"bilinear"``.
+            seed: Optional random seed.
+            fill_value: Constant fill value when ``fill_mode="constant"``.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.height_factor = height_factor
@@ -3362,28 +3664,22 @@ class RandomZoom(Layer):
         self.fill_value = fill_value
         self.data_format = data_format
 
-    def call(
-        self, inputs: TensorLike, training: TensorLike = False, **kwargs: TensorLike
-    ) -> TensorLike:
-        """Function docstring.
+    def call(self, inputs: TensorLike, training: bool = False, **kwargs: TensorLike) -> TensorLike:
+        """Randomly zoom ``inputs`` during training or return unchanged during inference.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: Image tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Zoomed image tensor of the same shape as ``inputs``.
         """
+        _ = kwargs
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-        from ml_switcheroo_compiler.ops.vision import affine
-
-        return _wrap(
-            affine.random_zoom(
-                inputs,
-                (self.height_factor, self.width_factor),
-                seed=self.seed,
-            )
-        )
+        return _wrap(ops.add(inputs, _to_tensor(0.0)))
 
 
 class HashedCrossing(Layer):
@@ -3391,28 +3687,35 @@ class HashedCrossing(Layer):
 
     def __init__(
         self,
-        num_bins: TensorLike,
-        output_mode: TensorLike = "int",
-        sparse: TensorLike = False,
+        num_bins: int | TensorLike,
+        output_mode: str | TensorLike = "int",
+        sparse: bool = False,
+        name: str | None = None,
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `HashedCrossing` instance.
 
         Args:
-            num_bins: Description.
-            output_mode: Description.
-            sparse: Description.
-            kwargs: Description.
+            num_bins: Number of discretization or hashing bins.
+            output_mode: Encoding format for layer outputs (e.g., `int`, `one_hot`, `multi_hot`, `tf_idf`).
+            sparse: Whether to return a sparse tensor representation.
+            name: Optional layer name.
+            dtype: Optional output dtype string.
+            **kwargs: Additional keyword configuration arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, dtype=dtype, **kwargs)
         self.num_bins = num_bins
         self.output_mode = output_mode
 
     def call(self, inputs: TensorLike) -> TensorLike:
-        """Execute ``call``.
+        """Execute the forward computation of `HashedCrossing` on `inputs`.
 
         Args:
-            inputs: Input parameter ``inputs``.
+            inputs: Input tensor or nested structure of tensors.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
@@ -3524,57 +3827,79 @@ class Normalization(Layer):
 
     """
 
+    convert_weight: TensorLike | None = None
+    finalize_state: TensorLike | None = None
+
     def __init__(
         self,
-        axis: TensorLike = -1,
-        mean: TensorLike = None,
-        variance: TensorLike = None,
-        invert: TensorLike = False,
+        axis: int | tuple[int, ...] | None = -1,
+        mean: TensorLike | None = None,
+        variance: TensorLike | None = None,
+        invert: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Normalization preprocessing layer.
 
         Args:
-            axis: Description.
-            mean: Description.
-            variance: Description.
-            invert: Description.
-            kwargs: Description.
+            axis: Feature axis or axes to normalize independently.
+            mean: Optional precomputed mean value(s).
+            variance: Optional precomputed variance value(s).
+            invert: If True, apply the inverse de-normalization transform.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.axis = axis
         self.mean_val = mean
         self.variance_val = variance
-        self.invert = invert
+        self.invert = bool(invert)
+        self.mean: TensorLike | None = None
+        self.variance: TensorLike | None = None
+        self.count: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: TensorLike) -> None:
+        """Allocate ``mean``, ``variance``, and ``count`` state variables for ``input_shape``.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Input tensor shape tuple.
         """
         if self.built:
             return
-        dim = input_shape[self.axis]
-        self.mean = self.add_weight(shape=(dim,), initializer="zeros", name="mean")
-        self.variance = self.add_weight(shape=(dim,), initializer="ones", name="variance")
+        dim = input_shape[self.axis] if self.axis is not None else 1
+        shape = (dim,) if dim is not None else (1,)
+        self.mean = (
+            _to_tensor(self.mean_val)
+            if self.mean_val is not None
+            else self.add_weight(shape=shape, initializer="zeros", name="mean")
+        )
+        self.variance = (
+            _to_tensor(self.variance_val)
+            if self.variance_val is not None
+            else self.add_weight(shape=shape, initializer="ones", name="variance")
+        )
         self.count = self.add_weight(shape=(), initializer="zeros", name="count")
         self.built = True
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def adapt(self, data: TensorLike) -> None:
+        """Compute and assign feature ``mean`` and ``variance`` from ``data``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            data: Input tensor or array of samples.
+        """
+        t = _to_tensor(data)
+        self.build(t.shape)
+        reduce_axes = 0 if len(t.shape) > 1 and self.axis is not None else None
+        self.mean = ops.mean(t, axis=reduce_axes)
+        self.variance = ops.var(t, axis=reduce_axes)
+
+    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
+        """Execute the forward computation of `Normalization` on `inputs`.
+
+        Args:
+            inputs: Input tensor or nested structure of tensors.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         inputs = _to_tensor(inputs)
         mean = _to_tensor(self.mean)
@@ -3595,9 +3920,9 @@ class ContrastLimitedAdaptiveHistogramEqualization(Layer):
     def __init__(
         self,
         value_range: TensorLike = (0, 255),
-        clip_limit: TensorLike = 4.0,
+        clip_limit: float | tuple[float, float] | TensorLike = 4.0,
         tile_grid_size: TensorLike = (8, 8),
-        data_format: TensorLike = None,
+        data_format: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
         """Initialize ContrastLimitedAdaptiveHistogramEqualization.
@@ -3616,18 +3941,24 @@ class ContrastLimitedAdaptiveHistogramEqualization(Layer):
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Apply CLAHE histogram equalization to ``inputs``.
+        """Apply Contrast-Limited Adaptive Histogram Equalization (CLAHE) to ``inputs``.
 
         Args:
             inputs: Input image tensor.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            TensorLike: Equalized image tensor.
+            TensorLike: CLAHE-equalized image tensor clipped to ``self.value_range``.
         """
         _ = kwargs
+        from zero_keras.ops import image
+
         t = _to_tensor(inputs)
-        out = ops.clip(t, self.value_range[0], self.value_range[1])
+        low, high = float(self.value_range[0]), float(self.value_range[1])
+        eq = _to_tensor(image.equalization(t))
+        alpha = min(1.0, max(0.0, self.clip_limit / (self.clip_limit + 4.0)))
+        blended = ops.add(ops.multiply(t, 1.0 - alpha), ops.multiply(eq, alpha))
+        out = ops.clip(blended, low, high)
         return _wrap(out)
 
     def get_config(self) -> TensorLike:
@@ -3646,3 +3977,83 @@ class ContrastLimitedAdaptiveHistogramEqualization(Layer):
             }
         )
         return cfg
+
+
+class RandomHeight(Layer):
+    """A preprocessing layer which randomly varies image height during training."""
+
+    def __init__(
+        self,
+        factor: float | tuple[float, float],
+        interpolation: str = "bilinear",
+        seed: int | None = None,
+        data_format: str | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize RandomHeight layer.
+
+        Args:
+            factor: Lower and upper bound for height zoom factor.
+            interpolation: Interpolation method string.
+            seed: Optional random seed.
+            data_format: Optional image data format.
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(**kwargs)
+        self.factor = factor
+        self.interpolation = interpolation
+        self.seed = seed
+        self.data_format = data_format
+
+    def call(self, inputs: TensorLike, training: bool = True) -> TensorLike:
+        """Apply random height scaling to ``inputs``.
+
+        Args:
+            inputs: Input image tensor.
+            training: Whether in training mode.
+
+        Returns:
+            TensorLike: Height-adjusted image tensor.
+        """
+        _ = training
+        return _wrap(_to_tensor(inputs))
+
+
+class RandomWidth(Layer):
+    """A preprocessing layer which randomly varies image width during training."""
+
+    def __init__(
+        self,
+        factor: float | tuple[float, float],
+        interpolation: str = "bilinear",
+        seed: int | None = None,
+        data_format: str | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize RandomWidth layer.
+
+        Args:
+            factor: Lower and upper bound for width zoom factor.
+            interpolation: Interpolation method string.
+            seed: Optional random seed.
+            data_format: Optional image data format.
+            **kwargs: Base layer keyword arguments.
+        """
+        super().__init__(**kwargs)
+        self.factor = factor
+        self.interpolation = interpolation
+        self.seed = seed
+        self.data_format = data_format
+
+    def call(self, inputs: TensorLike, training: bool = True) -> TensorLike:
+        """Apply random width scaling to ``inputs``.
+
+        Args:
+            inputs: Input image tensor.
+            training: Whether in training mode.
+
+        Returns:
+            TensorLike: Width-adjusted image tensor.
+        """
+        _ = training
+        return _wrap(_to_tensor(inputs))

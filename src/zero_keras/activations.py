@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import math
 from typing import Protocol, Union, runtime_checkable
 
@@ -10,7 +9,21 @@ from ml_switcheroo_compiler.core.tensor import Tensor
 from ml_switcheroo_compiler.ops import asarray as _msc_asarray
 
 from zero_keras import ops
-from zero_keras.types import ConfigDict, ConfigValue, TensorLike
+from zero_keras.saving.registry import get_object_class_name
+from zero_keras.types import (
+    ConfigDict,
+    ConfigValue,
+    SupportsCall,
+    SupportsUnderlyingTensor,
+    TensorLike,
+)
+
+
+@runtime_checkable
+class _HasNodeIdProtocol(Protocol):
+    """Protocol for symbolic graph node objects exposing an ``id``."""
+
+    id: str | int
 
 
 @runtime_checkable
@@ -22,7 +35,14 @@ class _HasSymbolicDataProtocol(Protocol):
     data: TensorLike
 
 
-def _to_tensor(x: TensorLike | None) -> TensorLike:
+@runtime_checkable
+class _NamedCallableProtocol(Protocol):
+    """Protocol for callables exposing a ``__name__`` attribute."""
+
+    __name__: str
+
+
+def _to_tensor(x: TensorLike | SupportsUnderlyingTensor | None) -> TensorLike:
     """Convert ``x`` into a backend ``Tensor`` or symbolic ``KerasTensor``.
 
     Args:
@@ -38,8 +58,8 @@ def _to_tensor(x: TensorLike | None) -> TensorLike:
         raise ValueError(
             "Attempt to convert a value (None) with an unsupported type (<class 'NoneType'>) to a Tensor."
         )
-    if hasattr(x, "_tensor"):
-        return x._tensor  # type: ignore[union-attr]
+    if isinstance(x, SupportsUnderlyingTensor):
+        return x._tensor
     if isinstance(x, Tensor):
         return x
     if isinstance(x, _HasSymbolicDataProtocol) and "KerasTensor" in type(x).__name__:
@@ -58,12 +78,12 @@ def _wrap(x: TensorLike) -> TensorLike:
     """
     from zero_keras.core_layers import KerasTensor
 
-    if isinstance(x, _HasSymbolicDataProtocol) and hasattr(x.data, "id"):
+    if isinstance(x, _HasSymbolicDataProtocol) and isinstance(x.data, _HasNodeIdProtocol):
         return KerasTensor(x.shape, x.dtype, data=x)
     return x
 
 
-ActivationCallable = Callable[..., TensorLike]
+ActivationCallable = SupportsCall
 ActivationIdentifier = Union[ActivationCallable, str, ConfigDict, int, None]
 
 _ACTIVATIONS: dict[str, ActivationCallable] = {}
@@ -104,9 +124,9 @@ def serialize(activation: ActivationIdentifier) -> str:
     """
     if isinstance(activation, str):
         return activation
-    if callable(activation) and hasattr(activation, "__name__"):
+    if callable(activation) and isinstance(activation, _NamedCallableProtocol):
         return str(activation.__name__)
-    return activation.__class__.__name__
+    return str(get_object_class_name(activation))
 
 
 def deserialize(
@@ -469,7 +489,7 @@ def glu(x: TensorLike, axis: int = -1) -> TensorLike:
     """
     t = _to_tensor(x)
     parts = ops.split(t, 2, int(axis))
-    a, b = parts[0], parts[1]  # type: ignore[index]
+    a, b = parts[0], parts[1]
     gate = ops.divide(1.0, ops.add(1.0, ops.exp(ops.negative(b))))
     return _wrap(ops.multiply(a, gate))
 
@@ -573,7 +593,7 @@ def sparsemax(x: TensorLike, axis: int = -1) -> TensorLike:
     return _wrap(ops.maximum(ops.subtract(t, tau), ops.zeros_like(t)))
 
 
-def squareplus(x: TensorLike, b: float = 4.0) -> TensorLike:
+def squareplus(x: TensorLike, b: int = 4) -> TensorLike:
     """Apply the Squareplus activation ``0.5 * (x + sqrt(x^2 + b))``.
 
     Args:

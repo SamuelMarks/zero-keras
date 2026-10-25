@@ -1,24 +1,22 @@
-"""Module docstring."""
+"""Unit and behavioral tests for datasets in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
 from unittest import mock
 
-import numpy as np
 import pytest
 
-from zero_keras import datasets
+from zero_keras import datasets, ops, random
 
 
-def test_boston_housing() -> TensorLike:
-    """Function docstring."""
-    x_dummy = np.random.rand(100, 13)
-    y_dummy = np.random.rand(100)
+def test_boston_housing() -> None:
+    """Verify or execute `test boston housing`."""
+    x_dummy = random.uniform((100, 13))
+    y_dummy = random.uniform((100,))
 
     with mock.patch("zero_keras.datasets.boston_housing.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {"x": x_dummy, "y": y_dummy}
 
             (x_train, y_train), (x_test, y_test) = datasets.boston_housing.load_data()
@@ -29,10 +27,10 @@ def test_boston_housing() -> TensorLike:
             assert y_test.shape == (20,)
 
 
-def test_cifar10() -> TensorLike:
-    """Function docstring."""
-    x_dummy = np.random.rand(10000, 3, 32, 32)
-    y_dummy = np.random.rand(10000)
+def test_cifar10() -> None:
+    """Verify or execute `test cifar10`."""
+    x_dummy = random.uniform((10000, 3, 32, 32))
+    y_dummy = random.uniform((10000,))
 
     with mock.patch("zero_keras.datasets.cifar10.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
@@ -51,10 +49,10 @@ def test_cifar10() -> TensorLike:
             assert y_test.shape == (10000, 1)
 
 
-def test_cifar100() -> TensorLike:
-    """Function docstring."""
-    x_dummy = np.random.rand(10000, 3, 32, 32)
-    y_dummy = np.random.rand(10000)
+def test_cifar100() -> None:
+    """Verify or execute `test cifar100`."""
+    x_dummy = random.uniform((10000, 3, 32, 32))
+    y_dummy = random.uniform((10000,))
 
     with mock.patch("zero_keras.datasets.cifar100.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
@@ -67,19 +65,14 @@ def test_cifar100() -> TensorLike:
         ):
             (x_train, y_train), (_x_test, _y_test) = datasets.cifar100.load_data()
 
-            assert x_train.shape == (
-                10000,
-                32,
-                32,
-                3,
-            )  # Wait, cifar100 load_batch should return 50k for train
+            assert x_train.shape == (10000, 32, 32, 3)
             assert y_train.shape == (10000, 1)
 
 
-def test_cifar100_coarse() -> TensorLike:
-    """Function docstring."""
-    x_dummy = np.random.rand(10000, 3, 32, 32)
-    y_dummy = np.random.rand(10000)
+def test_cifar100_coarse() -> None:
+    """Verify or execute `test cifar100 coarse`."""
+    x_dummy = random.uniform((10000, 3, 32, 32))
+    y_dummy = random.uniform((10000,))
 
     with mock.patch("zero_keras.datasets.cifar100.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy_dir"
@@ -101,14 +94,14 @@ def test_cifar100_coarse() -> TensorLike:
         datasets.cifar100.load_data(label_mode="invalid")
 
 
-def test_mnist() -> TensorLike:
-    """Function docstring."""
-    x_train_d, y_train_d = np.zeros((60000, 28, 28)), np.zeros((60000,))
-    x_test_d, y_test_d = np.zeros((10000, 28, 28)), np.zeros((10000,))
+def test_mnist() -> None:
+    """Verify or execute `test mnist`."""
+    x_train_d, y_train_d = ops.zeros((60000, 28, 28)), ops.zeros((60000,))
+    x_test_d, y_test_d = ops.zeros((10000, 28, 28)), ops.zeros((10000,))
 
     with mock.patch("zero_keras.datasets.mnist.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {
                 "x_train": x_train_d,
                 "y_train": y_train_d,
@@ -124,13 +117,12 @@ def test_mnist() -> TensorLike:
             assert y_test.shape == (10000,)
 
 
-def test_cifar_load_batch() -> TensorLike:
-    """Function docstring."""
+def test_cifar_load_batch() -> None:
+    """Verify or execute `test cifar load batch`."""
     import os
     import pickle
 
-    # Create dummy data
-    dummy_data = np.zeros((10, 3072), dtype="uint8")
+    dummy_data = ops.zeros((10, 3072), dtype="uint8")
     dummy_labels = [0] * 10
     dummy_dict = {b"data": dummy_data, b"labels": dummy_labels}
 
@@ -146,13 +138,12 @@ def test_cifar_load_batch() -> TensorLike:
             os.remove("dummy_batch.bin")
 
 
-def test_cifar100_load_batch() -> TensorLike:
-    """Function docstring."""
+def test_cifar100_load_batch() -> None:
+    """Verify or execute `test cifar100 load batch`."""
     import os
     import pickle
 
-    # Create dummy data
-    dummy_data = np.zeros((10, 3072), dtype="uint8")
+    dummy_data = ops.zeros((10, 3072), dtype="uint8")
     dummy_labels = [0] * 10
     dummy_dict = {b"data": dummy_data, b"fine_labels": dummy_labels}
 
@@ -168,17 +159,16 @@ def test_cifar100_load_batch() -> TensorLike:
             os.remove("dummy_batch100.bin")
 
 
-def test_fashion_mnist() -> TensorLike:
-    """Function docstring."""
-    x_train_d = np.zeros(60000 * 28 * 28 + 16, dtype=np.uint8).tobytes()
-    y_train_d = np.zeros(60000 + 8, dtype=np.uint8).tobytes()
-    x_test_d = np.zeros(10000 * 28 * 28 + 16, dtype=np.uint8).tobytes()
-    y_test_d = np.zeros(10000 + 8, dtype=np.uint8).tobytes()
+def test_fashion_mnist() -> None:
+    """Verify or execute `test fashion mnist`."""
+    x_train_d = b"\x00" * (60000 * 28 * 28 + 16)
+    y_train_d = b"\x00" * (60000 + 8)
+    x_test_d = b"\x00" * (10000 * 28 * 28 + 16)
+    y_test_d = b"\x00" * (10000 + 8)
 
     with mock.patch("zero_keras.datasets.fashion_mnist.get_file") as mock_get_file:
         mock_get_file.side_effect = ["p0", "p1", "p2", "p3"]
         with mock.patch("gzip.open") as mock_gzip:
-            # We mock the return value of gzip.open().read() sequentially
             mock_file0 = mock.MagicMock()
             mock_file0.read.return_value = y_train_d
             mock_file1 = mock.MagicMock()
@@ -203,16 +193,16 @@ def test_fashion_mnist() -> TensorLike:
             assert y_test.shape == (10000,)
 
 
-def test_imdb() -> TensorLike:
-    """Function docstring."""
-    x_train_d = np.array([[1, 2, 3], [4, 5, 6], [1] * 50], dtype="object")
-    y_train_d = np.array([0, 1, 1])
-    x_test_d = np.array([[1, 2], [3, 4], [2] * 50], dtype="object")
-    y_test_d = np.array([0, 1, 0])
+def test_imdb() -> None:
+    """Verify or execute `test imdb`."""
+    x_train_d = [[1, 2, 3], [4, 5, 6], [1] * 50]
+    y_train_d = [0, 1, 1]
+    x_test_d = [[1, 2], [3, 4], [2] * 50]
+    y_test_d = [0, 1, 0]
 
     with mock.patch("zero_keras.datasets.imdb.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {
                 "x_train": x_train_d,
                 "y_train": y_train_d,
@@ -220,19 +210,16 @@ def test_imdb() -> TensorLike:
                 "y_test": y_test_d,
             }
 
-            # test standard
-            (x_train, y_train), (x_test, y_test) = datasets.imdb.load_data()
+            (x_train, _y_train), (x_test, _y_test) = datasets.imdb.load_data()
             assert len(x_train) == 3
             assert len(x_test) == 3
 
-            # test kwargs (maxlen)
-            (x_train, y_train), (x_test, y_test) = datasets.imdb.load_data(
+            (x_train, _y_train), (x_test, _y_test) = datasets.imdb.load_data(
                 maxlen=10, num_words=10, skip_top=1
             )
             assert len(x_train) == 2
             assert len(x_test) == 2
 
-            # test no index_from
             (x_train, _y_train), (x_test, _y_test) = datasets.imdb.load_data(
                 start_char=None, index_from=None, maxlen=10, oov_char=None
             )
@@ -245,29 +232,26 @@ def test_imdb() -> TensorLike:
             assert res == {"test": 1}
 
 
-def test_reuters() -> TensorLike:
-    """Function docstring."""
-    x_d = np.array([[1, 2, 3], [4, 5, 6], [1] * 50, [2] * 3], dtype="object")
-    y_d = np.array([0, 1, 1, 0])
+def test_reuters() -> None:
+    """Verify or execute `test reuters`."""
+    x_d = [[1, 2, 3], [4, 5, 6], [1] * 50, [2] * 3]
+    y_d = [0, 1, 1, 0]
 
     with mock.patch("zero_keras.datasets.reuters.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {"x": x_d, "y": y_d}
 
-            # test standard
-            (x_train, y_train), (x_test, y_test) = datasets.reuters.load_data()
+            (x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data()
             assert len(x_train) == 3
             assert len(x_test) == 1
 
-            # test kwargs (maxlen)
-            (x_train, y_train), (x_test, y_test) = datasets.reuters.load_data(
+            (x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data(
                 maxlen=10, num_words=10, skip_top=1
             )
             assert len(x_train) == 2
             assert len(x_test) == 1
 
-            # test no index_from
             (x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data(
                 start_char=None, index_from=None, maxlen=10, oov_char=None
             )
@@ -282,16 +266,16 @@ def test_reuters() -> TensorLike:
     assert len(datasets.reuters.get_label_names()) == 46
 
 
-def test_imdb_edge_cases() -> TensorLike:
-    """Function docstring."""
-    x_train_d = np.array([[1, 2, 3]], dtype="object")
-    y_train_d = np.array([0])
-    x_test_d = np.array([[1, 2]], dtype="object")
-    y_test_d = np.array([0])
+def test_imdb_edge_cases() -> None:
+    """Verify or execute `test imdb edge cases`."""
+    x_train_d = [[1, 2, 3]]
+    y_train_d = [0]
+    x_test_d = [[1, 2]]
+    y_test_d = [0]
 
     with mock.patch("zero_keras.datasets.imdb.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {
                 "x_train": x_train_d,
                 "y_train": y_train_d,
@@ -299,43 +283,39 @@ def test_imdb_edge_cases() -> TensorLike:
                 "y_test": y_test_d,
             }
 
-            # test start_char=None but index_from > 0
             (x_train, _y_train), (_x_test, _y_test) = datasets.imdb.load_data(
                 start_char=None, index_from=3
             )
             assert list(x_train[0]) == [4, 5, 2]
 
-            # test value error
             with pytest.raises(ValueError):
                 datasets.imdb.load_data(maxlen=1)
 
 
-def test_reuters_edge_cases() -> TensorLike:
-    """Function docstring."""
-    x_d = np.array([[1, 2, 3]], dtype="object")
-    y_d = np.array([0])
+def test_reuters_edge_cases() -> None:
+    """Verify or execute `test reuters edge cases`."""
+    x_d = [[1, 2, 3]]
+    y_d = [0]
 
     with mock.patch("zero_keras.datasets.reuters.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {"x": x_d, "y": y_d}
 
-            # test start_char=None but index_from > 0
             (_x_train, _y_train), (x_test, _y_test) = datasets.reuters.load_data(
                 start_char=None, index_from=3
             )
-            # test_split=0.2 so 1 sample -> 1 * 0.8 = 0 for train, 1 for test
             assert list(x_test[0]) == [4, 5, 2]
 
 
-def test_california_housing() -> TensorLike:
-    """Function docstring."""
-    x_dummy = np.random.rand(100, 8)
-    y_dummy = np.random.rand(100)
+def test_california_housing() -> None:
+    """Verify or execute `test california housing`."""
+    x_dummy = random.uniform((100, 8))
+    y_dummy = random.uniform((100,))
 
     with mock.patch("zero_keras.datasets.california_housing.get_file") as mock_get_file:
         mock_get_file.return_value = "dummy.npz"
-        with mock.patch("numpy.load") as mock_load:
+        with mock.patch("zero_keras.ops.load") as mock_load:
             mock_load.return_value.__enter__.return_value = {"x": x_dummy, "y": y_dummy}
 
             (x_train, y_train), (x_test, y_test) = datasets.california_housing.load_data()
@@ -345,5 +325,4 @@ def test_california_housing() -> TensorLike:
             assert x_test.shape == (20, 8)
             assert y_test.shape == (20,)
 
-            # Test passing version='small' to increase coverage of branch logic
             datasets.california_housing.load_data(version="small")

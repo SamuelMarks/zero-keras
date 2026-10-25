@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""NASNet architectures (NASNetMobile, NASNetLarge) for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 
 from zero_keras import backend, layers
@@ -18,20 +18,20 @@ NASNET_LARGE_WEIGHT_PATH_NO_TOP = f"{BASE_WEIGHTS_PATH}NASNet-large-no-top.h5"
 
 
 def NASNet(
-    input_shape: TensorLike = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
     penultimate_filters: TensorLike = 4032,
     num_blocks: TensorLike = 6,
     stem_block_filters: TensorLike = 96,
-    skip_reduction: TensorLike = True,
+    skip_reduction: bool = True,
     filter_multiplier: TensorLike = 2,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    default_size: TensorLike = None,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "NASNet",
+    default_size: int | None = None,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "NASNet",
 ) -> TensorLike:
     """Instantiates a NASNet model.
 
@@ -283,14 +283,14 @@ def NASNet(
 
 
 def NASNetMobile(
-    input_shape: TensorLike = None,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    pooling: TensorLike = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "nasnet_mobile",
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "nasnet_mobile",
 ) -> TensorLike:
     """Instantiates a Mobile NASNet model in ImageNet mode.
 
@@ -367,14 +367,14 @@ def NASNetMobile(
 
 
 def NASNetLarge(
-    input_shape: TensorLike = None,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    pooling: TensorLike = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "nasnet_large",
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "nasnet_large",
 ) -> TensorLike:
     """Instantiates a NASNet model in ImageNet mode.
 
@@ -453,7 +453,7 @@ def _separable_conv_block(
     filters: TensorLike,
     kernel_size: TensorLike = (3, 3),
     strides: TensorLike = (1, 1),
-    block_id: TensorLike = None,
+    block_id: str | int | None = None,
 ) -> TensorLike:
     """Adds 2 blocks of [relu-separable conv-batchnorm].
 
@@ -511,7 +511,7 @@ def _separable_conv_block(
 
 
 def _adjust_block(
-    p: TensorLike, ip: TensorLike, filters: TensorLike, block_id: TensorLike = None
+    p: TensorLike, ip: TensorLike, filters: TensorLike, block_id: str | int | None = None
 ) -> TensorLike:
     """Adjusts the input `previous path` to match the shape of the `input`.
 
@@ -553,7 +553,7 @@ def _adjust_block(
 
 
 def _normal_a_cell(
-    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: TensorLike = None
+    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: str | int | None = None
 ) -> TensorLike:
     """Adds a Normal cell for NASNet-A (Fig. 4 in the paper).
 
@@ -640,7 +640,7 @@ def _normal_a_cell(
 
 
 def _reduction_a_cell(
-    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: TensorLike = None
+    ip: TensorLike, p: TensorLike, filters: TensorLike, block_id: str | int | None = None
 ) -> TensorLike:
     """Adds a Reduction cell for NASNet-A (Fig. 4 in the paper).
 
@@ -757,29 +757,27 @@ def _reduction_a_cell(
         return x, ip
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for NASNet by scaling pixels between -1 and 1.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for NASNet.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_TF,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

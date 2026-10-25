@@ -11,9 +11,9 @@ from zero_keras import ops
 from zero_keras.utils import dataset_utils
 
 
-def test_array_to_img() -> TensorLike:
+def test_array_to_img() -> None:
     # RGB
-    """Execute ``test_array_to_img``."""
+    """Verify or execute `test array to img`."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.array_to_img(arr, scale=True)
     assert isinstance(img, dataset_utils.GenericImage)
@@ -43,8 +43,8 @@ def test_array_to_img() -> TensorLike:
         dataset_utils.array_to_img(ops.zeros((32,)))
 
 
-def test_img_to_array() -> TensorLike:
-    """Execute ``test_img_to_array``."""
+def test_img_to_array() -> None:
+    """Verify or execute `test img to array`."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
     res = dataset_utils.img_to_array(img)
@@ -60,17 +60,15 @@ def test_img_to_array() -> TensorLike:
     assert res3.shape == (32, 32, 1)
 
 
-def test_load_img(tmpdir: TensorLike) -> TensorLike:
-    """Execute ``test_load_img``.
+def test_load_img(tmpdir: TensorLike) -> None:
+    """Verify or execute `test load img`.
 
     Args:
-        tmpdir: Input parameter ``tmpdir``.
+        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
     """
     path = str(tmpdir.join("test_img.jpg"))
 
-    from PIL import Image
-
-    Image.new("RGB", (256, 256)).save(path)
+    dataset_utils.save_img(path, ops.zeros((256, 256, 3)))
 
     # test load
     loaded = dataset_utils.load_img(path)
@@ -90,11 +88,11 @@ def test_load_img(tmpdir: TensorLike) -> TensorLike:
     assert loaded_rs.size == (32, 32)
 
 
-def test_generic_image(tmpdir: TensorLike) -> TensorLike:
-    """Execute ``test_generic_image``.
+def test_generic_image(tmpdir: TensorLike) -> None:
+    """Verify or execute `test generic image`.
 
     Args:
-        tmpdir: Input parameter ``tmpdir``.
+        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
     """
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
@@ -114,11 +112,11 @@ def test_generic_image(tmpdir: TensorLike) -> TensorLike:
     assert img_empty.size == (0, 0)
 
 
-def test_save_img(tmpdir: TensorLike) -> TensorLike:
-    """Execute ``test_save_img``.
+def test_save_img(tmpdir: TensorLike) -> None:
+    """Verify or execute `test save img`.
 
     Args:
-        tmpdir: Input parameter ``tmpdir``.
+        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
     """
     path = str(tmpdir.join("test_save2.jpg"))
     arr = ops.zeros((32, 32, 3))
@@ -126,9 +124,9 @@ def test_save_img(tmpdir: TensorLike) -> TensorLike:
     assert os.path.exists(path)
 
 
-def test_smart_resize() -> TensorLike:
+def test_smart_resize() -> None:
     # MOCK ops.slice to avoid ml_switcheroo_compiler bug and ops.image.resize
-    """Execute ``test_smart_resize``."""
+    """Verify or execute `test smart resize`."""
     with (
         mock.patch("zero_keras.ops.slice", return_value=ops.zeros((50, 50, 3))),
         mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((50, 50, 3))),

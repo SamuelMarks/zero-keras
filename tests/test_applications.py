@@ -1,13 +1,12 @@
-"""Module docstring."""
+"""Unit and behavioral tests for applications in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-from zero_keras import applications
+from zero_keras import applications, random
 
 
-def test_applications() -> TensorLike:
-    """Function docstring."""
+def test_applications() -> None:
+    """Verify or execute `test applications`."""
     funcs = [
         applications.convnext.ConvNeXtTiny,
         applications.convnext.ConvNeXtSmall,
@@ -54,17 +53,15 @@ def test_applications() -> TensorLike:
         fn(weights=None)
 
 
-def test_resnet50_extra() -> TensorLike:
-    """Execute ``test_resnet50_extra``."""
-    import numpy as np
-
+def test_resnet50_extra() -> None:
+    """Verify or execute `test resnet50 extra`."""
     from zero_keras.applications import resnet50
 
     assert resnet50.ResNet50(weights=None) is not None
     try:
-        resnet50.decode_predictions(np.random.rand(1, 1000))
+        resnet50.decode_predictions(random.uniform((1, 1000)))
     except Exception:
         try:
-            resnet50.preprocess_input(np.random.rand(1, 224, 224, 3))
+            resnet50.preprocess_input(random.uniform((1, 224, 224, 3)))
         except Exception:
             pass

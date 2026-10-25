@@ -1,114 +1,134 @@
-"""Module docstring."""
+"""Unit and behavioral tests for missing layers vision in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np
-
-from zero_keras import layers
+from zero_keras import layers, ops, random
 
 
-def test_equalization() -> TensorLike:
-    """Function docstring."""
+def test_equalization() -> None:
+    """Verify or execute `test equalization`."""
     layer = layers.Equalization()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_augmix() -> TensorLike:
-    """Function docstring."""
+def test_augmix() -> None:
+    """Verify or execute `test augmix`."""
     layer = layers.AugMix()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_auto_contrast() -> TensorLike:
-    """Function docstring."""
+def test_auto_contrast() -> None:
+    """Verify or execute `test auto contrast`."""
     layer = layers.AutoContrast()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_center_crop() -> TensorLike:
-    """Function docstring."""
+def test_center_crop() -> None:
+    """Test CenterCrop across 3D and 4D inputs and both data formats."""
     layer = layers.CenterCrop(height=5, width=5)
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
-    layer(x, training=True)
-    layer(x, training=False)
+    out4 = layer(random.uniform((2, 10, 10, 3), dtype="float32"))
+    assert out4.shape == (2, 5, 5, 3)
+
+    out3 = layer(random.uniform((10, 10, 3), dtype="float32"))
+    assert out3.shape == (5, 5, 3)
+
+    layer_cf = layers.CenterCrop(height=5, width=5, data_format="channels_first")
+    out4_cf = layer_cf(random.uniform((2, 3, 10, 10), dtype="float32"))
+    assert out4_cf.shape == (2, 3, 5, 5)
+
+    out3_cf = layer_cf(random.uniform((3, 10, 10), dtype="float32"))
+    assert out3_cf.shape == (3, 5, 5)
+
+    out2 = layer(ops.ones((4, 4), dtype="float32"))
+    assert out2.shape == (4, 4)
+
+    disc = layers.Discretization(num_bins=3)
+    disc.adapt(ops.convert_to_tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype="float32"))
+    assert disc.bin_boundaries is not None
+    assert len(disc.bin_boundaries) == 2
+
+    norm_preset = layers.Normalization(mean=[1.0, 2.0], variance=[0.5, 1.5])
+    norm_preset.build((None, 2))
+    norm_adapt = layers.Normalization()
+    norm_adapt.adapt(ops.convert_to_tensor([[1.0, 2.0], [3.0, 4.0]], dtype="float32"))
+    assert norm_adapt.built is True
 
 
-def test_cutmix() -> TensorLike:
-    """Function docstring."""
+def test_cutmix() -> None:
+    """Verify or execute `test cutmix`."""
     layer = layers.CutMix()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_mixup() -> TensorLike:
-    """Function docstring."""
+def test_mixup() -> None:
+    """Verify or execute `test mixup`."""
     layer = layers.MixUp()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_random_flip() -> TensorLike:
-    """Function docstring."""
+def test_random_flip() -> None:
+    """Verify or execute `test random flip`."""
     layer = layers.RandomFlip()
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_random_rotation() -> TensorLike:
-    """Function docstring."""
+def test_random_rotation() -> None:
+    """Verify or execute `test random rotation`."""
     layer = layers.RandomRotation(0.2)
-    x = np.random.uniform(size=(2, 10, 10, 3)).astype(np.float32)
+    x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_resizing() -> TensorLike:
-    """Function docstring."""
+def test_resizing() -> None:
+    """Verify or execute `test resizing`."""
     layer = layers.Resizing(10, 10)
-    x = np.random.uniform(size=(2, 20, 20, 3)).astype(np.float32)
+    x = random.uniform((2, 20, 20, 3), dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
 
-def test_category_encoding() -> TensorLike:
-    """Function docstring."""
+def test_category_encoding() -> None:
+    """Verify or execute `test category encoding`."""
     layer = layers.CategoryEncoding(num_tokens=4, output_mode="one_hot")
-    x = np.array([1, 2]).astype(np.int32)
-    out = layer(x)
+    x = ops.convert_to_tensor([1, 2], dtype="int32")
+    _out = layer(x)
 
     layer = layers.CategoryEncoding(num_tokens=4, output_mode="multi_hot")
-    x = np.array([[1, 2], [0, 3]]).astype(np.int32)
-    out = layer(x)
+    x = ops.convert_to_tensor([[1, 2], [0, 3]], dtype="int32")
+    _out = layer(x)
 
     layer = layers.CategoryEncoding(num_tokens=4, output_mode="count")
-    x = np.array([[1, 2], [0, 3]]).astype(np.int32)
-    out = layer(x)
+    x = ops.convert_to_tensor([[1, 2], [0, 3]], dtype="int32")
+    _out = layer(x)
 
     layer = layers.CategoryEncoding(output_mode="count")
-    x = np.array([[1, 2], [0, 3]]).astype(np.int32)
-    out = layer(x)
+    x = ops.convert_to_tensor([[1, 2], [0, 3]], dtype="int32")
+    _out = layer(x)
 
 
-def test_multi_head_attention() -> TensorLike:
-    """Function docstring."""
+def test_multi_head_attention() -> None:
+    """Verify or execute `test multi head attention`."""
     layer = layers.MultiHeadAttention(num_heads=2, key_dim=2)
-    q = np.random.uniform(size=(2, 10, 4)).astype(np.float32)
-    v = np.random.uniform(size=(2, 5, 4)).astype(np.float32)
+    q = random.uniform((2, 10, 4), dtype="float32")
+    v = random.uniform((2, 5, 4), dtype="float32")
     layer(q, v, use_causal_mask=True, return_attention_scores=True)
-    layer(q, v, attention_mask=np.zeros((2, 2, 10, 5)).astype(np.float32))
+    layer(q, v, attention_mask=ops.zeros((2, 2, 10, 5), dtype="float32"))
 
 
-def test_alpha_dropout() -> TensorLike:
-    """Function docstring."""
+def test_alpha_dropout() -> None:
+    """Verify or execute `test alpha dropout`."""
     layer = layers.AlphaDropout(0.5)
-    layer(np.random.uniform(size=(2, 10)).astype(np.float32), training=True)
+    layer(random.uniform((2, 10), dtype="float32"), training=True)

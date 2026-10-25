@@ -1,16 +1,13 @@
-"""Module docstring."""
+"""Unit and behavioral tests for missing models in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np
-
-from zero_keras import layers, models
+from zero_keras import layers, models, ops
 from zero_keras.core_layers import Functional, Input
 
 
-def test_clone_model_functional() -> TensorLike:
-    """Function docstring."""
+def test_clone_model_functional() -> None:
+    """Verify or execute `test clone model functional`."""
     inp1 = Input(shape=(10,), name="in1")
     inp2 = Input(shape=(10,), name="in2")
 
@@ -28,15 +25,14 @@ def test_clone_model_functional() -> TensorLike:
     assert len(cloned.inputs) == 2
     assert isinstance(cloned.outputs, list) or hasattr(cloned.outputs, "shape")
 
-    # Check outputs work
-    x1 = np.ones((2, 10), dtype="float32")
-    x2 = np.ones((2, 10), dtype="float32")
-    y_orig = model([x1, x2])
-    y_clone = cloned([x1, x2])
+    x1 = ops.ones((2, 10), dtype="float32")
+    x2 = ops.ones((2, 10), dtype="float32")
+    _y_orig = model([x1, x2])
+    _y_clone = cloned([x1, x2])
 
 
-def test_model_from_json_functional() -> TensorLike:
-    """Function docstring."""
+def test_model_from_json_functional() -> None:
+    """Verify or execute `test model from json functional`."""
     json_str = """
     {
         "class_name": "Functional",
@@ -53,6 +49,6 @@ def test_model_from_json_functional() -> TensorLike:
     """
     model = models.model_from_json(json_str)
     assert model.name == "model1"
-    x = np.ones((2, 10), dtype="float32")
+    x = ops.ones((2, 10), dtype="float32")
     y = model(x)
     assert y.shape == (2, 5)

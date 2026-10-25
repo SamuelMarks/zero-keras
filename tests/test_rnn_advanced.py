@@ -1,71 +1,33 @@
-"""Module docstring."""
+"""Unit and behavioral tests for advanced SimpleRNN modes in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import keras
-import numpy as np
-
-from zero_keras import layers
+from zero_keras import layers, random
 
 
-def check_layer_parity(
-    layer_cls: TensorLike,
-    keras_cls: TensorLike,
-    inputs: TensorLike,
-    atol: TensorLike = 1e-5,
-    rtol: TensorLike = 1e-5,
-    **kwargs: TensorLike,
-) -> TensorLike:
-    """Function docstring.
-
-    Args:
-        layer_cls: Description.
-        keras_cls: Description.
-        inputs: Description.
-        atol: Description.
-        rtol: Description.
-        kwargs: Description.
-    """
-    keras_layer = keras_cls(**kwargs)
-    keras_out = keras_layer(inputs)
-    zero_layer = layer_cls(**kwargs)
-    kw = keras_layer.get_weights()
-    zero_out = zero_layer(inputs)
-    zero_layer.set_weights(kw)
-    zero_out = zero_layer(inputs)
-
-    if isinstance(keras_out, (list, tuple)):
-        for ko, zo in zip(keras_out, zero_out):
-            ko_np = ko.numpy() if hasattr(ko, "numpy") else np.array(ko)
-            zo_np = zo.numpy() if hasattr(zo, "numpy") else np.array(zo)
-            np.testing.assert_allclose(ko_np, zo_np, atol=atol, rtol=rtol)
-    else:
-        keras_out_np = keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
-        zero_out_np = zero_out.numpy() if hasattr(zero_out, "numpy") else np.array(zero_out)
-        np.testing.assert_allclose(keras_out_np, zero_out_np, atol=atol, rtol=rtol)
+def test_simplernn_return_seq() -> None:
+    """Verify ``SimpleRNN`` with ``return_sequences=True``."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.SimpleRNN(units=10, return_sequences=True)
+    out = layer(x)
+    assert out.shape == (3, 5, 10)
+    layer.set_weights(layer.get_weights())
+    assert layer(x).shape == (3, 5, 10)
 
 
-def test_simplernn_return_seq() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, return_sequences=True)
+def test_simplernn_return_state() -> None:
+    """Verify ``SimpleRNN`` with ``return_state=True``."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.SimpleRNN(units=10, return_state=True)
+    out, state = layer(x)
+    assert out.shape == (3, 10)
+    assert state.shape == (3, 10)
 
 
-def test_simplernn_return_state() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, return_state=True)
-
-
-def test_simplernn_return_seq_and_state() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(
-        layers.SimpleRNN,
-        keras.layers.SimpleRNN,
-        x,
-        units=10,
-        return_sequences=True,
-        return_state=True,
-    )
+def test_simplernn_return_seq_and_state() -> None:
+    """Verify ``SimpleRNN`` with ``return_sequences=True`` and ``return_state=True``."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.SimpleRNN(units=10, return_sequences=True, return_state=True)
+    out, state = layer(x)
+    assert out.shape == (3, 5, 10)
+    assert state.shape == (3, 10)

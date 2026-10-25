@@ -1,11 +1,10 @@
 """Module `test_backend` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 from zero_keras import backend
 
 
-def test_backend() -> TensorLike:
+def test_backend() -> None:
     """Test backend module."""
     assert backend.backend() == "numpy"
     assert backend.epsilon() == 1e-7

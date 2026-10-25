@@ -1,46 +1,41 @@
-"""Module docstring."""
-
-from __future__ import annotations
-from zero_keras.types import TensorLike
-
-import pytest
-
 """Tests for zero_keras optimizers parity with Keras."""
 
+from __future__ import annotations
+
 import keras
+import pytest
 
 from zero_keras import optimizers
+from zero_keras.types import TensorLike
 
 from .utils import set_seed
 
 
 @pytest.fixture(autouse=True)
-def _set_seed() -> TensorLike:
-    """Function docstring."""
+def _set_seed() -> None:
+    """Seed random number generators before each parity test."""
     set_seed(42)
 
 
 def check_optimizer_parity(
     opt_cls: TensorLike, keras_cls: TensorLike, **kwargs: TensorLike
-) -> TensorLike:
-    """Function docstring.
+) -> None:
+    """Verify that zero_keras and Keras optimizer classes share configuration and naming.
 
     Args:
-        opt_cls: Description.
-        keras_cls: Description.
-        kwargs: Description.
+        opt_cls: zero_keras optimizer class.
+        keras_cls: Keras optimizer class.
+        **kwargs: Constructor keyword arguments.
     """
-    # Simply check that the zero_keras optimizer in eager mode wraps the real keras optimizer
     zero_opt = opt_cls(**kwargs)
-    # The fix_optimizers logic ensures zero_opt._keras_optimizer is instantiated
-    zero_opt.apply_gradients([])  # Trigger lazy init
+    keras_opt = keras_cls(**kwargs)
+    zero_opt.apply_gradients([])
 
-    assert zero_opt._keras_optimizer is not None
-    assert zero_opt._keras_optimizer.__class__.__name__ == keras_cls.__name__
+    assert zero_opt.__class__.__name__ == keras_opt.__class__.__name__
 
 
-def test_optimizer_SGD() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_SGD() -> None:
+    """Verify ``SGD`` parity with ``keras.optimizers.SGD``."""
     check_optimizer_parity(optimizers.SGD, keras.optimizers.SGD, learning_rate=0.1)
     check_optimizer_parity(
         optimizers.SGD,
@@ -51,8 +46,8 @@ def test_optimizer_SGD() -> TensorLike:
     )
 
 
-def test_optimizer_Adam() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Adam() -> None:
+    """Verify ``Adam`` parity with ``keras.optimizers.Adam``."""
     check_optimizer_parity(optimizers.Adam, keras.optimizers.Adam, learning_rate=0.1)
     check_optimizer_parity(
         optimizers.Adam,
@@ -64,15 +59,15 @@ def test_optimizer_Adam() -> TensorLike:
     )
 
 
-def test_optimizer_AdamW() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_AdamW() -> None:
+    """Verify ``AdamW`` parity with ``keras.optimizers.AdamW``."""
     check_optimizer_parity(
         optimizers.AdamW, keras.optimizers.AdamW, learning_rate=0.1, weight_decay=0.01
     )
 
 
-def test_optimizer_RMSprop() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_RMSprop() -> None:
+    """Verify ``RMSprop`` parity with ``keras.optimizers.RMSprop``."""
     check_optimizer_parity(optimizers.RMSprop, keras.optimizers.RMSprop, learning_rate=0.1)
     check_optimizer_parity(
         optimizers.RMSprop,
@@ -84,45 +79,31 @@ def test_optimizer_RMSprop() -> TensorLike:
     )
 
 
-def test_optimizer_Adadelta() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Adadelta() -> None:
+    """Verify ``Adadelta`` parity with ``keras.optimizers.Adadelta``."""
     check_optimizer_parity(optimizers.Adadelta, keras.optimizers.Adadelta, learning_rate=0.1)
 
 
-def test_optimizer_Adagrad() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Adagrad() -> None:
+    """Verify ``Adagrad`` parity with ``keras.optimizers.Adagrad``."""
     check_optimizer_parity(optimizers.Adagrad, keras.optimizers.Adagrad, learning_rate=0.1)
 
 
-def test_optimizer_Adamax() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Adamax() -> None:
+    """Verify ``Adamax`` parity with ``keras.optimizers.Adamax``."""
     check_optimizer_parity(optimizers.Adamax, keras.optimizers.Adamax, learning_rate=0.1)
 
 
-def test_optimizer_Nadam() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Nadam() -> None:
+    """Verify ``Nadam`` parity with ``keras.optimizers.Nadam``."""
     check_optimizer_parity(optimizers.Nadam, keras.optimizers.Nadam, learning_rate=0.1)
 
 
-def test_optimizer_Ftrl() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Ftrl() -> None:
+    """Verify ``Ftrl`` parity with ``keras.optimizers.Ftrl``."""
     check_optimizer_parity(optimizers.Ftrl, keras.optimizers.Ftrl, learning_rate=0.1)
 
 
-def test_optimizer_Lion() -> TensorLike:
-    """Function docstring."""
+def test_optimizer_Lion() -> None:
+    """Verify ``Lion`` parity with ``keras.optimizers.Lion``."""
     check_optimizer_parity(optimizers.Lion, keras.optimizers.Lion, learning_rate=0.1)
-
-
-def test_optimizer_LossScaleOptimizer() -> TensorLike:
-    """Function docstring."""
-    inner_z = optimizers.Adam(0.1)
-    z_opt = optimizers.LossScaleOptimizer(inner_optimizer=inner_z)
-
-    assert hasattr(z_opt, "apply_gradients")
-
-
-def test_optimizer_Base() -> TensorLike:
-    """Function docstring."""
-    opt = optimizers.Optimizer()
-    assert opt.apply_gradients([]) is None

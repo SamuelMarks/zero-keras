@@ -1,10 +1,11 @@
 """Regularization and noise layers (`SpatialDropout1D/2D/3D`, `GaussianDropout`, `GaussianNoise`, `AlphaDropout`, `ActivityRegularization`) for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import DataFormatSpec, ShapeTuple, TensorLike
 
 
 class ActivityRegularization(Layer):
@@ -24,31 +25,30 @@ class ActivityRegularization(Layer):
 
     """
 
-    def __init__(self, l1: TensorLike = 0.0, l2: TensorLike = 0.0, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, l1: float = 0.0, l2: float = 0.0, **kwargs: TensorLike) -> None:
+        """Initialize the ActivityRegularization layer.
 
         Args:
-            l1: Description.
-            l2: Description.
-            kwargs: Description.
+            l1: L1 activity regularization factor. Defaults to ``0.0``.
+            l2: L2 activity regularization factor. Defaults to ``0.0``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.l1 = l1
-        self.l2 = l2
+        self.l1 = float(l1)
+        self.l2 = float(l2)
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Call function.
+        """Register L1/L2 activity regularization loss and return ``inputs`` unchanged.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Input tensor unchanged.
         """
         inputs = _to_tensor(inputs)
 
@@ -94,37 +94,36 @@ class AlphaDropout(Layer):
 
     def __init__(
         self,
-        rate: TensorLike,
-        noise_shape: TensorLike = None,
-        seed: TensorLike = None,
+        rate: float,
+        noise_shape: ShapeTuple | None = None,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the AlphaDropout layer.
 
         Args:
-            rate: Description.
-            noise_shape: Description.
-            seed: Description.
-            kwargs: Description.
+            rate: Drop probability in ``[0, 1]``.
+            noise_shape: Optional shape tuple for broadcasting the dropout mask.
+            seed: Optional integer random seed.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.rate = rate
+        self.rate = float(rate)
         self.noise_shape = noise_shape
         self.seed = seed
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Call function.
+        """Apply AlphaDropout to ``inputs`` when ``training=True``.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Dropped-out tensor in training mode, or unchanged input in inference.
         """
         inputs = _to_tensor(inputs)
         if training:
@@ -152,29 +151,35 @@ class GaussianDropout(Layer):
 
     """
 
-    def __init__(self, rate: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self,
+        rate: float,
+        seed: int | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the GaussianDropout layer.
 
         Args:
-            rate: Description.
-            kwargs: Description.
+            rate: Drop probability determining multiplicative Gaussian noise variance.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.rate = rate
+        self.rate = float(rate)
+        self.seed = seed
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Call function.
+        """Apply multiplicative Gaussian noise to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Regularized output tensor.
         """
         inputs = _to_tensor(inputs)
         return _wrap(inputs)
@@ -201,29 +206,35 @@ class GaussianNoise(Layer):
 
     """
 
-    def __init__(self, stddev: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self,
+        stddev: float,
+        seed: int | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the GaussianNoise layer.
 
         Args:
-            stddev: Description.
-            kwargs: Description.
+            stddev: Standard deviation of the additive Gaussian noise.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.stddev = stddev
+        self.stddev = float(stddev)
+        self.seed = seed
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Call function.
+        """Apply additive zero-centered Gaussian noise to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Regularized output tensor.
         """
         inputs = _to_tensor(inputs)
         return _wrap(inputs)
@@ -261,29 +272,42 @@ class SpatialDropout1D(Layer):
     """
 
     def __init__(
-        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        rate: float,
+        seed: int | None = None,
+        name: str | None = None,
+        dtype: str | None = None,
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SpatialDropout1D layer.
 
         Args:
-            rate: Description.
-            data_format: Description.
-            kwargs: Description.
+            rate: Fraction of 1D feature maps to drop in ``[0, 1]``.
+            seed: Optional random seed.
+            name: Optional layer name.
+            dtype: Optional layer dtype.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
-        self.rate = rate
+        super().__init__(name=name, dtype=dtype, **kwargs)
+        self.rate = float(rate)
+        self.seed = seed
         self.data_format = data_format or "channels_last"
         self.rank = 1
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Function docstring.
+        """Apply 1D spatial dropout across whole feature maps during training.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: 3D input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Spatially dropped-out tensor in training mode, or unchanged input in inference.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -338,29 +362,42 @@ class SpatialDropout2D(Layer):
     """
 
     def __init__(
-        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        rate: float,
+        data_format: DataFormatSpec = None,
+        seed: int | None = None,
+        name: str | None = None,
+        dtype: str | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SpatialDropout2D layer.
 
         Args:
-            rate: Description.
-            data_format: Description.
-            kwargs: Description.
+            rate: Fraction of 2D feature maps to drop in ``[0, 1]``.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            seed: Optional random seed.
+            name: Optional layer name.
+            dtype: Optional layer dtype.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
-        self.rate = rate
+        super().__init__(name=name, dtype=dtype, **kwargs)
+        self.rate = float(rate)
+        self.seed = seed
         self.data_format = data_format or "channels_last"
         self.rank = 2
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Function docstring.
+        """Apply 2D spatial dropout across whole feature maps during training.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: 4D input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Spatially dropped-out tensor in training mode, or unchanged input in inference.
         """
         inputs = _to_tensor(inputs)
         if not training:
@@ -415,29 +452,42 @@ class SpatialDropout3D(Layer):
     """
 
     def __init__(
-        self, rate: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        rate: float,
+        data_format: DataFormatSpec = None,
+        seed: int | None = None,
+        name: str | None = None,
+        dtype: str | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SpatialDropout3D layer.
 
         Args:
-            rate: Description.
-            data_format: Description.
-            kwargs: Description.
+            rate: Fraction of 3D feature maps to drop in ``[0, 1]``.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            seed: Optional random seed.
+            name: Optional layer name.
+            dtype: Optional layer dtype.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
-        self.rate = rate
+        super().__init__(name=name, dtype=dtype, **kwargs)
+        self.rate = float(rate)
+        self.seed = seed
         self.data_format = data_format or "channels_last"
         self.rank = 3
 
     def call(
-        self, inputs: TensorLike, training: TensorLike = None, **kwargs: TensorLike
+        self, inputs: TensorLike, training: bool | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Function docstring.
+        """Apply 3D spatial dropout across whole feature maps during training.
 
         Args:
-            inputs: Description.
-            training: Description.
-            kwargs: Description.
+            inputs: 5D input tensor.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Spatially dropped-out tensor in training mode, or unchanged input in inference.
         """
         inputs = _to_tensor(inputs)
         if not training:

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from zero_keras import ops, random
+
+from .conftest import assert_allclose_zero, assert_array_equal_zero
 
 
 def test_random() -> None:
@@ -19,7 +19,6 @@ def test_random() -> None:
     rng_state.shuffle(seq)
     assert sorted(seq) == [1, 2, 3, 4]
 
-    # Distributions with and without dtype and shape forms
     assert tuple(random.beta(None, 1.0, 1.0).shape) == (1,)
     assert tuple(random.beta(3, 1.0, 1.0, dtype="float32").shape) == (3,)
     assert tuple(random.binomial((2, 2), 1, 0.5, dtype="float32").shape) == (2, 2)
@@ -31,17 +30,16 @@ def test_random() -> None:
     assert tuple(random.truncated_normal((2,), dtype="float32").shape) == (2,)
     assert tuple(random.uniform((2,), dtype="float32").shape) == (2,)
 
-    # Shuffle: 0D, 1-element, and multi-element with int seed, SeedGenerator, Tensor seed, and None
     scalar_t = ops.convert_to_tensor(5.0)
     assert float(ops.convert_to_numpy(random.shuffle(scalar_t))) == 5.0
 
     single_t = ops.convert_to_tensor([10.0])
-    np.testing.assert_allclose(ops.convert_to_numpy(random.shuffle(single_t)), [10.0])
+    assert_allclose_zero(ops.convert_to_numpy(random.shuffle(single_t)), [10.0])
 
     arr = ops.convert_to_tensor([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], dtype="int32")
     shuf1 = ops.convert_to_numpy(random.shuffle(arr, seed=123))
     shuf2 = ops.convert_to_numpy(random.shuffle(arr, seed=123))
-    np.testing.assert_array_equal(shuf1, shuf2)
+    assert_array_equal_zero(shuf1, shuf2)
     assert sorted(shuf1.tolist()) == list(range(10))
     assert shuf1.tolist() != list(range(10))
 
@@ -53,7 +51,6 @@ def test_random() -> None:
     )
     assert sorted(shuf_tensor_seed.tolist()) == list(range(10))
 
-    # Negative axis shuffle
     mat = ops.convert_to_tensor([[1, 2, 3, 4], [5, 6, 7, 8]], dtype="int32")
-    shuf_neg_axis = ops.convert_to_numpy(random.shuffle(mat, axis=-1, seed="ignored"))  # type: ignore[arg-type]
+    shuf_neg_axis = ops.convert_to_numpy(random.shuffle(mat, axis=-1, seed="ignored"))
     assert shuf_neg_axis.shape == (2, 4)

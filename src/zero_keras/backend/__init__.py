@@ -22,7 +22,7 @@ def backend() -> str:
     Returns:
         str: Active backend identifier string.
     """
-    return backend_name()
+    return str(backend_name())
 
 
 def is_float_dtype(dtype: DTypeLike) -> bool:

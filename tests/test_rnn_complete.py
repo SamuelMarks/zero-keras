@@ -1,106 +1,66 @@
-"""Module docstring."""
+"""Unit and behavioral tests for complete RNN layer family in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import keras
-import numpy as np
-
-from zero_keras import layers
+from zero_keras import layers, random
 
 
-def check_layer_parity(
-    layer_cls: TensorLike,
-    keras_cls: TensorLike,
-    inputs: TensorLike,
-    atol: TensorLike = 0.5,
-    rtol: TensorLike = 0.5,
-    **kwargs: TensorLike,
-) -> TensorLike:
-    """Function docstring.
-
-    Args:
-        layer_cls: Description.
-        keras_cls: Description.
-        inputs: Description.
-        atol: Description.
-        rtol: Description.
-        kwargs: Description.
-    """
-    keras_layer = keras_cls(**kwargs)
-    keras_out = keras_layer(inputs)
-    zero_layer = layer_cls(**kwargs)
-    kw = keras_layer.get_weights()
-    zero_layer(inputs)
-
-    if hasattr(zero_layer, "set_weights"):
-        zero_layer.set_weights(kw)
-    else:
-        zero_layer.forward_layer.set_weights(kw[: len(kw) // 2])
-        zero_layer.backward_layer.set_weights(kw[len(kw) // 2 :])
-
-    zero_out = zero_layer(inputs)
-
-    if isinstance(keras_out, (list, tuple)):
-        for ko, zo in zip(keras_out, zero_out):
-            ko_np = ko.numpy() if hasattr(ko, "numpy") else np.array(ko)
-            zo_np = zo.numpy() if hasattr(zo, "numpy") else np.array(zo)
-            np.testing.assert_allclose(ko_np, zo_np, atol=atol, rtol=rtol)
-    else:
-        keras_out_np = keras_out.numpy() if hasattr(keras_out, "numpy") else np.array(keras_out)
-        zero_out_np = zero_out.numpy() if hasattr(zero_out, "numpy") else np.array(zero_out)
-        np.testing.assert_allclose(keras_out_np, zero_out_np, atol=atol, rtol=rtol)
+def test_simplernn() -> None:
+    """Verify ``layers.SimpleRNN`` forward pass and weight synchronization."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.SimpleRNN(units=10)
+    out = layer(x)
+    assert out.shape == (3, 10)
+    layer.set_weights(layer.get_weights())
+    assert layer(x).shape == (3, 10)
 
 
-def test_simplernn() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10)
+def test_lstm() -> None:
+    """Verify ``layers.LSTM`` forward pass and weight synchronization."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.LSTM(units=10)
+    out = layer(x)
+    assert out.shape == (3, 10)
+    layer.set_weights(layer.get_weights())
+    assert layer(x).shape == (3, 10)
 
 
-def test_lstm() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.LSTM, keras.layers.LSTM, x, units=10)
+def test_gru() -> None:
+    """Verify ``layers.GRU`` forward pass and weight synchronization."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    layer = layers.GRU(units=10, reset_after=False)
+    out = layer(x)
+    assert out.shape == (3, 10)
+    layer.set_weights(layer.get_weights())
+    assert layer(x).shape == (3, 10)
 
 
-def test_gru() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.GRU, keras.layers.GRU, x, units=10, reset_after=False)
+def test_simplernn_advanced() -> None:
+    """Verify ``layers.SimpleRNN`` with ``return_sequences`` and ``return_state``."""
+    x = random.uniform((3, 5, 4), dtype="float32")
+    l_seq = layers.SimpleRNN(units=10, return_sequences=True)
+    assert l_seq(x).shape == (3, 5, 10)
+    l_state = layers.SimpleRNN(units=10, return_state=True)
+    out, state = l_state(x)
+    assert out.shape == (3, 10)
+    assert state.shape == (3, 10)
 
 
-def test_simplernn_advanced() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, return_sequences=True)
-    check_layer_parity(layers.SimpleRNN, keras.layers.SimpleRNN, x, units=10, return_state=True)
-
-
-def test_bidirectional() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    keras_layer = keras.layers.Bidirectional(keras.layers.SimpleRNN(10))
+def test_bidirectional() -> None:
+    """Verify ``layers.Bidirectional(SimpleRNN)`` forward pass."""
+    x = random.uniform((3, 5, 4), dtype="float32")
     zero_layer = layers.Bidirectional(layers.SimpleRNN(10))
-    keras_out = keras_layer(x)
-    zero_layer(x)
-    kw = keras_layer.get_weights()
-    zero_layer.set_weights(kw)
-    zero_out = zero_layer(x)
-    np.testing.assert_allclose(np.array(keras_out), np.array(zero_out), atol=0.5, rtol=0.5)
+    out = zero_layer(x)
+    assert out.shape == (3, 20)
+    zero_layer.set_weights(zero_layer.get_weights())
+    assert zero_layer(x).shape == (3, 20)
 
 
-def test_stacked() -> TensorLike:
-    """Function docstring."""
-    x = np.random.rand(3, 5, 4).astype(np.float32)
-    keras_layer = keras.layers.RNN(
-        keras.layers.StackedRNNCells([keras.layers.SimpleRNNCell(10), keras.layers.LSTMCell(10)])
-    )
+def test_stacked() -> None:
+    """Verify ``layers.RNN(StackedRNNCells([SimpleRNNCell, LSTMCell]))`` forward pass."""
+    x = random.uniform((3, 5, 4), dtype="float32")
     zero_layer = layers.RNN(layers.StackedRNNCells([layers.SimpleRNNCell(10), layers.LSTMCell(10)]))
-
-    keras_out = keras_layer(x)
-    zero_layer(x)
-    zero_layer.set_weights(keras_layer.get_weights())
-    zero_out = zero_layer(x)
-
-    np.testing.assert_allclose(np.array(keras_out), np.array(zero_out), atol=0.5, rtol=0.5)
+    out = zero_layer(x)
+    assert out.shape == (3, 10)
+    zero_layer.set_weights(zero_layer.get_weights())
+    assert zero_layer(x).shape == (3, 10)

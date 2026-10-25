@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from zero_keras.types import TensorLike
-
+from collections.abc import Sequence
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import ConfigDict, DataFormatSpec, TensorLike
 
 
 class AveragePooling1D(Layer):
@@ -79,40 +79,41 @@ class AveragePooling1D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int],
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the AveragePooling1D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 1D average pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 1
         self.pool_size = (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 1 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 1D average pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 3D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 3D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -220,40 +221,41 @@ class AveragePooling2D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int],
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the AveragePooling2D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 2D average pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 2
         self.pool_size = (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 2 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 2D average pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 4D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 4D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -337,40 +339,41 @@ class AveragePooling3D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int],
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the AveragePooling3D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 3D average pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 3
         self.pool_size = (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 3 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 3D average pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 5D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 5D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -462,40 +465,41 @@ class MaxPooling1D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int] = 2,
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MaxPooling1D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 1D max pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 1
         self.pool_size = (pool_size,) * 1 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 1 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 1D max pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 3D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 3D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -603,40 +607,41 @@ class MaxPooling2D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int] = (2, 2),
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MaxPooling2D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 2D max pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 2
         self.pool_size = (pool_size,) * 2 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 2 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 2D max pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 4D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 4D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -720,40 +725,41 @@ class MaxPooling3D(Layer):
 
     def __init__(
         self,
-        pool_size: TensorLike = 2,
-        strides: TensorLike = None,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
+        pool_size: int | Sequence[int] = (2, 2, 2),
+        strides: int | Sequence[int] | None = None,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        name: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MaxPooling3D layer.
 
         Args:
-            pool_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            kwargs: Description.
+            pool_size: Window size of the 3D max pooling operation.
+            strides: Stride step size; defaults to ``pool_size``.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            name: Optional layer name.
+            **kwargs: Base layer keyword arguments.
         """
-        super().__init__(**kwargs)
+        super().__init__(name=name, **kwargs)
         self.rank = 3
         self.pool_size = (pool_size,) * 3 if isinstance(pool_size, int) else tuple(pool_size)
         self.strides = strides if strides is not None else self.pool_size
         self.strides = (self.strides,) * 3 if isinstance(self.strides, int) else tuple(self.strides)
-        self.padding = padding
+        self.padding = str(padding)
         self.data_format = data_format or "channels_last"
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Apply 3D max pooling to ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 5D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Downsampled 5D tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -824,31 +830,30 @@ class GlobalAveragePooling1D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalAveragePooling1D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global mean across the 1D temporal axis of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 3D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 3D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -908,31 +913,30 @@ class GlobalAveragePooling2D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalAveragePooling2D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global mean across the 2D spatial axes of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 4D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 4D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -993,31 +997,30 @@ class GlobalAveragePooling3D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalAveragePooling3D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global mean across the 3D spatial axes of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 5D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 5D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -1076,31 +1079,30 @@ class GlobalMaxPooling1D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalMaxPooling1D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 1
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global maximum across the 1D temporal axis of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 3D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 3D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -1160,31 +1162,30 @@ class GlobalMaxPooling2D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalMaxPooling2D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 2
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global maximum across the 2D spatial axes of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 4D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 4D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -1245,31 +1246,30 @@ class GlobalMaxPooling3D(Layer):
     """
 
     def __init__(
-        self, data_format: TensorLike = None, keepdims: TensorLike = False, **kwargs: TensorLike
+        self, data_format: DataFormatSpec = None, keepdims: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the GlobalMaxPooling3D layer.
 
         Args:
-            data_format: Description.
-            keepdims: Description.
-            kwargs: Description.
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            keepdims: Whether to retain reduced spatial dimensions with size 1.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.rank = 3
         self.data_format = data_format or "channels_last"
-        self.keepdims = keepdims
+        self.keepdims = bool(keepdims)
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Compute the global maximum across the 3D spatial axes of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: 5D input tensor.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Pooled 2D (or 5D if ``keepdims=True``) tensor.
         """
         inputs = _to_tensor(inputs)
 
@@ -1290,8 +1290,8 @@ class _AdaptivePoolingBase(Layer):
         self,
         rank: int,
         mode: str,
-        output_size: int | tuple[int, ...] | list[int],
-        data_format: str | None = None,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
         **kwargs: TensorLike,
     ) -> None:
         """Initialize the adaptive pooling base layer.
@@ -1331,11 +1331,11 @@ class _AdaptivePoolingBase(Layer):
             out = ops.adaptive_max_pool(t, self.output_size, data_format=self.data_format)
         return _wrap(out)
 
-    def get_config(self) -> TensorLike:
+    def get_config(self) -> ConfigDict:
         """Return serializable layer configuration.
 
         Returns:
-            dict[str, TensorLike]: Configuration dictionary.
+            ConfigDict: Configuration dictionary.
         """
         cfg = super().get_config()
         cfg.update(
@@ -1351,7 +1351,10 @@ class AdaptiveAveragePooling1D(_AdaptivePoolingBase):
     """Adaptive average pooling layer for 1D temporal data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveAveragePooling1D.
 
@@ -1367,7 +1370,10 @@ class AdaptiveAveragePooling2D(_AdaptivePoolingBase):
     """Adaptive average pooling layer for 2D spatial data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveAveragePooling2D.
 
@@ -1383,7 +1389,10 @@ class AdaptiveAveragePooling3D(_AdaptivePoolingBase):
     """Adaptive average pooling layer for 3D volumetric data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveAveragePooling3D.
 
@@ -1399,7 +1408,10 @@ class AdaptiveMaxPooling1D(_AdaptivePoolingBase):
     """Adaptive max pooling layer for 1D temporal data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveMaxPooling1D.
 
@@ -1415,7 +1427,10 @@ class AdaptiveMaxPooling2D(_AdaptivePoolingBase):
     """Adaptive max pooling layer for 2D spatial data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveMaxPooling2D.
 
@@ -1431,7 +1446,10 @@ class AdaptiveMaxPooling3D(_AdaptivePoolingBase):
     """Adaptive max pooling layer for 3D volumetric data."""
 
     def __init__(
-        self, output_size: TensorLike, data_format: TensorLike = None, **kwargs: TensorLike
+        self,
+        output_size: int | Sequence[int],
+        data_format: DataFormatSpec = None,
+        **kwargs: TensorLike,
     ) -> None:
         """Initialize AdaptiveMaxPooling3D.
 

@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-from zero_keras.types import ConfigDict, ConfigValue
+from zero_keras.saving.registry import deserialize_from_registry, serialize_with_config
+from zero_keras.types import ConfigDict, ConfigValue, SupportsGetConfig, TensorLike
 
 
 def deserialize_keras_object(
     identifier: ConfigValue,
     custom_objects: dict[str, ConfigValue] | None = None,
     **kwargs: ConfigValue,
-) -> ConfigValue:
+) -> TensorLike | SupportsGetConfig | ConfigValue:
     """Deserialize a legacy Keras object specification.
 
     Args:
@@ -18,22 +19,22 @@ def deserialize_keras_object(
         **kwargs: Additional deserialization options.
 
     Returns:
-        ConfigValue: Deserialized object or identifier.
+        TensorLike | SupportsGetConfig | ConfigValue: Deserialized object or identifier.
     """
-    _ = custom_objects, kwargs
-    return identifier
+    _ = kwargs
+    return deserialize_from_registry("layers", identifier, custom_objects=custom_objects)
 
 
-def serialize_keras_object(obj: ConfigValue) -> ConfigDict:
-    """Serialize an object into a legacy class-name dictionary.
+def serialize_keras_object(obj: TensorLike | SupportsGetConfig | ConfigValue) -> ConfigDict:
+    """Serialize an object into a legacy class-name and configuration dictionary.
 
     Args:
         obj: Object instance to serialize.
 
     Returns:
-        ConfigDict: Dictionary containing ``class_name``.
+        ConfigDict: Dictionary containing ``class_name`` and optional ``config``.
     """
-    return {"class_name": obj.__class__.__name__}
+    return serialize_with_config(obj)
 
 
 __all__ = ["deserialize_keras_object", "serialize_keras_object"]

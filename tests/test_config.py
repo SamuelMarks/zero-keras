@@ -1,11 +1,10 @@
 """Module `test_config` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 from zero_keras import config
 
 
-def test_config() -> TensorLike:
+def test_config() -> None:
     """Test config module."""
     # Test default values
     assert config.backend() == "numpy"

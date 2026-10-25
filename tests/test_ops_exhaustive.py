@@ -100,7 +100,12 @@ def test_all_top_level_and_image_ops_symbolic() -> None:
 
     with mock.patch("zero_keras.ops.compute_shape_propagation", return_value=(2, 4)):
         for name, fn in list(ops.__dict__.items()):
-            if not callable(fn) or isinstance(fn, type) or name in skip_special:
+            if (
+                name.startswith("_")
+                or not callable(fn)
+                or isinstance(fn, type)
+                or name in skip_special
+            ):
                 continue
             if fn.__module__ != "zero_keras.ops":
                 continue
@@ -112,15 +117,15 @@ def test_all_top_level_and_image_ops_symbolic() -> None:
         assert _ORIG_CONV2D_T(kt, kt) is not None
         assert _ORIG_CONV3D_T(kt, kt) is not None
 
-        for name, fn in list(ops.image.__dict__.items()):
-            if name.startswith("_") or name in (
+        for name in ops.image.__all__:
+            if name in (
                 "resize",
                 "scale_and_translate",
                 "sobel_edges",
                 "ssim",
             ):
                 continue
-            static_fn = ops.image.__dict__[name].__func__
+            static_fn = vars(ops.image)[name]
             out_img = static_fn(kt, (2, 2))
             assert isinstance(out_img, (KerasTensor, list))
 
@@ -157,9 +162,11 @@ def test_custom_composed_ops_branches() -> None:
     seq = ops.convert_to_tensor([1.0, 2.0, 3.0, 4.0], dtype="float32")
     assert ops.extract_sequences(seq, 2, 1).shape == (3, 2)
 
-    # get_item (Tensor, list, raw scalar/nested)
+    # get_item (Tensor, KerasTensor, list, raw scalar/nested)
     assert ops.get_item(x, 0) is not None
+    assert ops.get_item(kt, 0) is not None
     assert ops.get_item([10, 20], 1) == 20
+    assert ops.get_item([10, 20], x) == 10
     assert ops.get_item(ops.array([5, 6]).data, 0) is not None
 
     # is_tensor
@@ -234,8 +241,8 @@ def test_custom_composed_ops_branches() -> None:
 
     # sort & split (with axis and with dim)
     assert ops.sort(x, axis=-1) is not None
-    assert len(ops.split(x, 2, axis=0)) == 2  # type: ignore[arg-type]
-    assert len(ops.split(x, 2, dim=0)) == 2  # type: ignore[arg-type]
+    assert len(ops.split(x, 2, axis=0)) == 2
+    assert len(ops.split(x, 2, dim=0)) == 2
 
     # sparse_top_k_categorical_accuracy & top_k_categorical_accuracy
     y_pred_logits = ops.convert_to_tensor([[0.1, 0.9, 0.0], [0.8, 0.1, 0.1]], dtype="float32")
@@ -307,3 +314,83 @@ def test_activation_wrappers_and_image_ops_in_ops() -> None:
     assert ops.image.sobel_edges(images=img4) is not None
     assert ops.image.ssim(img4, img4) is not None
     assert ops.image.ssim(image1=img4, image2=img4) is not None
+
+    # ops.load with KerasTensor and with mock archive context manager
+    kt_load = KerasTensor((2,), dtype="float32")
+    assert ops.load(kt_load) is kt_load
+
+    class DummyArchive:
+        """Mock archive context manager."""
+
+        def __enter__(self) -> dict[str, TensorLike]:
+            """Enter archive context.
+
+            Returns:
+                dict[str, TensorLike]: Dummy archive dictionary.
+            """
+            return {"arr": ops.zeros((2,))}
+
+        def __exit__(
+            self,
+            exc_type: type[BaseException] | None,
+            exc_val: BaseException | None,
+            exc_tb: TensorLike | None = None,
+        ) -> None:
+            """Exit archive context.
+
+            Args:
+                exc_type: Exception type.
+                exc_val: Exception instance.
+                exc_tb: Traceback.
+            """
+            _ = exc_type, exc_val, exc_tb
+
+    with mock.patch("ml_switcheroo_compiler.ops.load", return_value=DummyArchive()):
+        with ops.load("dummy.npz") as arch:
+            assert "arr" in arch
+
+    # Variable._tensor with shape=None and _value=None
+    v_noshape = Variable("zeros", shape=None)
+    v_noshape._value = None
+    assert v_noshape._tensor.shape == ()
+
+    # Layers: Attention scale, Dense unbuilt call, InputLayer input_tensor, InputSpec, TimeDistributed, MaxNumberBoundingBoxes 2D, and Pooling channels_last
+    from zero_keras import layers
+
+    add_att_scale = layers.AdditiveAttention(use_scale=True)
+    assert add_att_scale([ops.ones((1, 2, 3)), ops.ones((1, 2, 3))]).shape == (1, 2, 3)
+    add_att_noscale = layers.AdditiveAttention(use_scale=False)
+    assert add_att_noscale([ops.ones((1, 2, 3)), ops.ones((1, 2, 3))]).shape == (1, 2, 3)
+
+    d_unbuilt = layers.Dense(2)
+    assert d_unbuilt.call(ops.ones((1, 3))).shape == (1, 2)
+    d_unbuilt.build((1, 3))
+
+    il_with_tensor = layers.InputLayer(input_tensor=kt_load)
+    assert il_with_tensor.input_tensor is kt_load
+
+    ispec = layers.InputSpec(dtype="float32", shape=(None, 4), ndim=2)
+    assert ispec.dtype == "float32" and ispec.ndim == 2
+
+    td_layer = layers.TimeDistributed(layers.Dense(2))
+    assert td_layer(ops.ones((2, 3, 4))).shape == (2, 3, 2)
+
+    mnb = layers.MaxNumBoundingBoxes(max_number=5)
+    assert mnb(ops.ones((2, 4))).shape == (2, 4)
+
+    for p_cls, shp in [
+        (layers.AveragePooling1D, (1, 4, 2)),
+        (layers.AveragePooling3D, (1, 4, 4, 4, 2)),
+        (layers.MaxPooling1D, (1, 4, 2)),
+        (layers.MaxPooling3D, (1, 4, 4, 4, 2)),
+        (layers.GlobalAveragePooling1D, (1, 4, 2)),
+        (layers.GlobalAveragePooling3D, (1, 4, 4, 4, 2)),
+        (layers.GlobalMaxPooling1D, (1, 4, 2)),
+        (layers.GlobalMaxPooling3D, (1, 4, 4, 4, 2)),
+    ]:
+        p_l = (
+            p_cls(data_format="channels_last")
+            if "Global" in p_cls.__name__
+            else p_cls(pool_size=2, data_format="channels_last")
+        )
+        assert p_l(ops.ones(shp)) is not None

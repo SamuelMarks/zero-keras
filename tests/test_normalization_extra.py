@@ -1,47 +1,50 @@
 """Module `test_normalization_extra` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
-import numpy as np
 
-from zero_keras import layers
+from zero_keras import layers, random
 
 
-def test_group_normalization_edge_cases() -> TensorLike:
-    """Execute ``test_group_normalization_edge_cases``."""
+def test_group_normalization_edge_cases() -> None:
+    """Verify or execute `test group normalization edge cases`."""
     layer = layers.GroupNormalization(groups=2, axis=1, scale=False, center=False)
-    x = np.random.rand(2, 4, 3, 3).astype(np.float32)
+    x = random.uniform((2, 4, 3, 3), dtype="float32")
     out = layer(x)
     assert out.shape == (2, 4, 3, 3)
 
 
-def test_rms_normalization_built_twice() -> TensorLike:
-    """Execute ``test_rms_normalization_built_twice``."""
+def test_rms_normalization_built_twice() -> None:
+    """Verify or execute `test rms normalization built twice`."""
     layer = layers.RMSNormalization(axis=-1)
     layer.build((2, 5, 3))
     layer.build((2, 5, 3))
     assert layer.built
 
 
-def test_unit_normalization() -> TensorLike:
-    """Execute ``test_unit_normalization``."""
+def test_unit_normalization() -> None:
+    """Verify or execute `test unit normalization`."""
     layer = layers.UnitNormalization(axis=-1)
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     out = layer(x)
     assert out.shape == (2, 5, 3)
 
 
-def test_spectral_normalization() -> TensorLike:
-    """Execute ``test_spectral_normalization``."""
+def test_spectral_normalization() -> None:
+    """Test SpectralNormalization in inference and training modes (power iteration)."""
     layer = layers.SpectralNormalization(layers.Dense(4))
-    x = np.random.rand(2, 5, 3).astype(np.float32)
+    x = random.uniform((2, 5, 3), dtype="float32")
     out = layer(x)
     assert out.shape == (2, 5, 4)
+    out_train = layer(x, training=True)
+    assert out_train.shape == (2, 5, 4)
+    sn_no_k = layers.SpectralNormalization(layers.Dropout(0.1))
+    sn_no_k.build((2, 5, 3))
+    sn_no_k.normalize_weights()
 
 
-def test_group_normalization_axis_last() -> TensorLike:
-    """Execute ``test_group_normalization_axis_last``."""
+def test_group_normalization_axis_last() -> None:
+    """Verify or execute `test group normalization axis last`."""
     layer = layers.GroupNormalization(groups=2, axis=3)
-    x = np.random.rand(2, 4, 3, 4).astype(np.float32)
+    x = random.uniform((2, 4, 3, 4), dtype="float32")
     out = layer(x)
     assert out.shape == (2, 4, 3, 4)

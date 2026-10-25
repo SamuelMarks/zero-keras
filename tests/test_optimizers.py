@@ -1,11 +1,11 @@
-"""Module docstring."""
+"""Unit and behavioral tests for optimizers in zero_keras."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
 
 
-def test_optimizers() -> TensorLike:
-    """Function docstring."""
+def test_optimizers() -> None:
+    """Verify or execute `test optimizers`."""
     import ml_switcheroo_compiler.core.dtype as dtypes
     from ml_switcheroo_compiler.ops.creation.frontend import ones
 
@@ -23,12 +23,12 @@ def test_optimizers() -> TensorLike:
     from ml_switcheroo_compiler.core import tensor
 
     # First, test where assign works
-    def fake_assign(self: TensorLike, val: TensorLike) -> TensorLike:
-        """Function docstring.
+    def fake_assign(self: TensorLike, val: TensorLike) -> None:
+        """Verify or execute `fake assign`.
 
         Args:
-            self: Tensor instance.
-            val: Description.
+            self: Target tensor instance.
+            val: Test fixture or input parameter `val` (val).
         """
 
     tensor.Tensor.assign = fake_assign
@@ -48,8 +48,8 @@ def test_optimizers() -> TensorLike:
     adam.apply_gradients([(g, v)])
 
 
-def test_new_optimizers() -> TensorLike:
-    """Function docstring."""
+def test_new_optimizers() -> None:
+    """Verify or execute `test new optimizers`."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
 
@@ -76,8 +76,8 @@ def test_new_optimizers() -> TensorLike:
         opt.apply_gradients([(grad, var)])
 
 
-def test_other_optimizers() -> TensorLike:
-    """Function docstring."""
+def test_other_optimizers() -> None:
+    """Verify or execute `test other optimizers`."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
 
@@ -106,8 +106,8 @@ def test_other_optimizers() -> TensorLike:
     loss_scale_opt.apply_gradients([(grad, var)])
 
 
-def test_all_opts_cov() -> TensorLike:
-    """Function docstring."""
+def test_all_opts_cov() -> None:
+    """Verify or execute `test all opts cov`."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -138,8 +138,8 @@ def test_all_opts_cov() -> TensorLike:
     opt.apply_gradients(zip([grad], [var]))
 
 
-def test_opt_edge_cases() -> TensorLike:
-    """Function docstring."""
+def test_opt_edge_cases() -> None:
+    """Verify or execute `test opt edge cases`."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -188,8 +188,8 @@ def test_opt_edge_cases() -> TensorLike:
     o.build([var])
 
 
-def test_opt_attribute_error_pass() -> TensorLike:
-    """Function docstring."""
+def test_opt_attribute_error_pass() -> None:
+    """Verify or execute `test opt attribute error pass`."""
     import warnings
 
     from ml_switcheroo_compiler import ops
@@ -229,20 +229,20 @@ def test_opt_attribute_error_pass() -> TensorLike:
             pass
 
 
-def test_opt_assign_coverage() -> TensorLike:
-    """Function docstring."""
+def test_opt_assign_coverage() -> None:
+    """Verify or execute `test opt assign coverage`."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
 
     class MockVar:
-        """Class docstring."""
+        """Test helper class `MockVar` for optimizers."""
 
         def __init__(self, t: TensorLike) -> None:
-            """Function docstring.
+            """Verify or execute `init` on `MockVar`.
 
             Args:
-                t: Description.
+                t: Test fixture or input parameter `t` (t).
             """
             self.t = t
             self.shape = t.shape
@@ -276,66 +276,90 @@ def test_opt_assign_coverage() -> TensorLike:
             _ = val
 
         def __add__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `add` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__add__`.
             """
             return self.t + (other.t if hasattr(other, "t") else other)
 
         def __radd__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `radd` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__radd__`.
             """
             return (other.t if hasattr(other, "t") else other) + self.t
 
         def __sub__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `sub` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__sub__`.
             """
             return self.t - (other.t if hasattr(other, "t") else other)
 
         def __rsub__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `rsub` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__rsub__`.
             """
             return (other.t if hasattr(other, "t") else other) - self.t
 
         def __mul__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `mul` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__mul__`.
             """
             return self.t * (other.t if hasattr(other, "t") else other)
 
         def __rmul__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `rmul` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__rmul__`.
             """
             return (other.t if hasattr(other, "t") else other) * self.t
 
         def __truediv__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `truediv` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__truediv__`.
             """
             return self.t / (other.t if hasattr(other, "t") else other)
 
         def __rtruediv__(self, other: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Verify or execute `rtruediv` on `MockVar`.
 
             Args:
-                other: Description.
+                other: Test fixture or input parameter `other` (other).
+
+            Returns:
+                TensorLike: Result from `__rtruediv__`.
             """
             return (other.t if hasattr(other, "t") else other) / self.t
 
@@ -347,18 +371,21 @@ def test_opt_assign_coverage() -> TensorLike:
     def mock_add_variable(
         self: TensorLike,
         shape: TensorLike,
-        dtype: TensorLike = "float32",
-        initializer: TensorLike = "zeros",
-        name: TensorLike = None,
+        dtype: str | TensorLike = "float32",
+        initializer: str | TensorLike = "zeros",
+        name: TensorLike | None = None,
     ) -> TensorLike:
-        """Function docstring.
+        """Verify or execute `mock add variable`.
 
         Args:
             self: Optimizer instance.
-            shape: Description.
-            dtype: Description.
-            initializer: Description.
-            name: Description.
+            shape: Test fixture or input parameter `shape` (shape).
+            dtype: Test fixture or input parameter `dtype` (dtype).
+            initializer: Test fixture or input parameter `initializer` (initializer).
+            name: Test fixture or input parameter `name` (name).
+
+        Returns:
+            TensorLike: Result from `mock_add_variable`.
         """
         t = original_add_var(self, shape, dtype, initializer, name)
         return MockVar(t)
@@ -390,8 +417,8 @@ def test_opt_assign_coverage() -> TensorLike:
     optimizers.Optimizer.add_variable = original_add_var
 
 
-def test_muon_edge_cases() -> TensorLike:
-    """Function docstring."""
+def test_muon_edge_cases() -> None:
+    """Verify or execute `test muon edge cases`."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -407,8 +434,8 @@ def test_muon_edge_cases() -> TensorLike:
     m.apply_gradients([(None, var)])  # hits 1779
 
 
-def test_schedules_config() -> TensorLike:
-    """Function docstring."""
+def test_schedules_config() -> None:
+    """Verify or execute `test schedules config`."""
     import json
 
     from zero_keras.optimizers import schedules
@@ -429,8 +456,8 @@ def test_schedules_config() -> TensorLike:
         s_cls.from_config(cfg)
 
 
-def test_schedules_call() -> TensorLike:
-    """Function docstring."""
+def test_schedules_call() -> None:
+    """Verify or execute `test schedules call`."""
     from zero_keras.optimizers import schedules
 
     scheds = [
@@ -448,8 +475,8 @@ def test_schedules_call() -> TensorLike:
         s(15)
 
 
-def test_schedules_coverage() -> TensorLike:
-    """Function docstring."""
+def test_schedules_coverage() -> None:
+    """Verify or execute `test schedules coverage`."""
     from zero_keras.optimizers import schedules
 
     # Base class coverage

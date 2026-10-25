@@ -1,11 +1,10 @@
 """Module `test_preprocessing` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 from zero_keras import preprocessing
 
 
-def test_preprocessing() -> TensorLike:
+def test_preprocessing() -> None:
     """Test preprocessing module."""
     # The functions are just imported, checking their existence is enough to cover the __init__.py files
     assert hasattr(preprocessing, "image")

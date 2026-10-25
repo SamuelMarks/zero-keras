@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""Unit and behavioral tests for saving export in zero_keras."""
 
 from __future__ import annotations
 from zero_keras.types import TensorLike
@@ -10,16 +10,16 @@ from zero_keras.export import export_api
 from zero_keras.saving import saving_api
 
 
-def test_saving_model() -> TensorLike:
-    """Function docstring."""
+def test_saving_model() -> None:
+    """Verify or execute `test saving model`."""
     model = Model()
     with mock.patch("ml_switcheroo_compiler.serialization.save_model") as mock_save:
         saving_api.save_model(model, "test.keras", overwrite=False, zipped=True)
         mock_save.assert_called_once_with(model, "test.keras", overwrite=False, zipped=True)
 
 
-def test_loading_model() -> TensorLike:
-    """Function docstring."""
+def test_loading_model() -> None:
+    """Verify or execute `test loading model`."""
     with mock.patch(
         "ml_switcheroo_compiler.serialization.load_model", return_value="model"
     ) as mock_load:
@@ -32,12 +32,12 @@ def test_loading_model() -> TensorLike:
         )
 
 
-def test_decorators_and_scopes() -> TensorLike:
-    """Function docstring."""
+def test_decorators_and_scopes() -> None:
+    """Verify or execute `test decorators and scopes`."""
 
     @saving_api.register_keras_serializable(package="P", name="N")
     class A:
-        """Class docstring."""
+        """Test helper class `A` for saving export."""
 
     assert A.__name__ == "A"
 
@@ -45,12 +45,16 @@ def test_decorators_and_scopes() -> TensorLike:
         pass
 
 
-def test_export_archive() -> TensorLike:
-    """Function docstring."""
+def test_export_archive(tmp_path: TensorLike) -> None:
+    """Verify or execute `test export archive`.
+
+    Args:
+        tmp_path: Temporary directory fixture.
+    """
     archive = export_api.ExportArchive()
 
     class Res:
-        """Class docstring."""
+        """Test helper class `Res` for saving export."""
 
     res = Res()
     archive.track(res)
@@ -59,24 +63,24 @@ def test_export_archive() -> TensorLike:
     archive.add_endpoint("ep", lambda x: x)
     assert "ep" in archive.endpoints
 
-    archive.write_out("path")
+    archive.write_out(str(tmp_path / "path"))
     archive.add_variable_collection("vars", [])
 
 
-def test_layer_weights() -> TensorLike:
-    """Function docstring."""
+def test_layer_weights() -> None:
+    """Verify or execute `test layer weights`."""
     from zero_keras.core_layers import Model
 
     model = Model()
 
     class FakeWeight:
-        """Class docstring."""
+        """Test helper class `FakeWeight` for saving export."""
 
-        def assign(self, w: TensorLike) -> TensorLike:
-            """Function docstring.
+        def assign(self, w: TensorLike) -> None:
+            """Verify or execute `assign` on `FakeWeight`.
 
             Args:
-                w: Description.
+                w: Test fixture or input parameter `w` (w).
             """
             self.val = w
 
@@ -105,8 +109,8 @@ def test_layer_weights() -> TensorLike:
         mock_load.assert_called_once()
 
 
-def test_export_archive_methods() -> TensorLike:
-    """Execute ``test_export_archive_methods``."""
+def test_export_archive_methods() -> None:
+    """Verify or execute `test export archive methods`."""
     from zero_keras.export.export_api import ExportArchive
 
     archive = ExportArchive()

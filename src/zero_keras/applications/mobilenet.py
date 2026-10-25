@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""MobileNet v1 architecture for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 import warnings
 
@@ -16,17 +16,17 @@ BASE_WEIGHT_PATH = "https://storage.googleapis.com/tensorflow/keras-applications
 
 
 def MobileNet(
-    input_shape: TensorLike = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
     alpha: TensorLike = 1.0,
     depth_multiplier: TensorLike = 1,
     dropout: TensorLike = 1e-3,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = None,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = None,
 ) -> TensorLike:
     """Instantiates the MobileNet architecture.
 
@@ -401,29 +401,27 @@ def _depthwise_conv_block(
     return layers.ReLU(6.0, name="conv_pw_%d_relu" % block_id)(x)
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for MobileNet by scaling pixels between -1 and 1.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for MobileNet.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_TF,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

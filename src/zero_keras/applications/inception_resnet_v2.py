@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""Inception-ResNet-v2 architecture for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 from zero_keras import backend
 
@@ -17,14 +17,14 @@ BASE_WEIGHT_URL = (
 
 
 def InceptionResNetV2(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "inception_resnet_v2",
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "inception_resnet_v2",
 ) -> TensorLike:
     """Instantiates the Inception-ResNet v2 architecture.
 
@@ -234,10 +234,10 @@ def conv2d_bn(
     filters: TensorLike,
     kernel_size: TensorLike,
     strides: TensorLike = 1,
-    padding: TensorLike = "same",
-    activation: TensorLike = "relu",
-    use_bias: TensorLike = False,
-    name: TensorLike = None,
+    padding: str | TensorLike = "same",
+    activation: str | TensorLike | None = "relu",
+    use_bias: bool = False,
+    name: str | None = None,
 ) -> TensorLike:
     """Utility function to apply conv + BN.
 
@@ -274,29 +274,36 @@ def conv2d_bn(
 
 
 class CustomScaleLayer(Layer):
-    """Class docstring."""
+    """Residual scaling layer that computes ``inputs[0] + inputs[1] * scale``."""
 
-    def __init__(self, scale: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, scale: float, **kwargs: TensorLike) -> None:
+        """Initialize the CustomScaleLayer.
 
         Args:
-            scale: Description.
-            kwargs: Description.
+            scale: Scalar multiplier applied to the residual branch ``inputs[1]``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.scale = scale
 
     def get_config(self) -> TensorLike:
-        """Function docstring."""
+        """Return the serializable configuration of the CustomScaleLayer.
+
+        Returns:
+            TensorLike: Configuration dictionary containing ``scale``.
+        """
         config = super().get_config()
         config.update({"scale": self.scale})
         return config
 
     def call(self, inputs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Add ``inputs[0]`` and ``inputs[1]`` scaled by ``self.scale``.
 
         Args:
-            inputs: Description.
+            inputs: Sequence of two tensors ``(shortcut, residual)``.
+
+        Returns:
+            TensorLike: Scaled residual sum tensor.
         """
         return inputs[0] + inputs[1] * self.scale
 
@@ -306,7 +313,7 @@ def inception_resnet_block(
     scale: TensorLike,
     block_type: TensorLike,
     block_idx: TensorLike,
-    activation: TensorLike = "relu",
+    activation: str | TensorLike | None = "relu",
 ) -> TensorLike:
     """Adds an Inception-ResNet block.
 
@@ -376,29 +383,27 @@ def inception_resnet_block(
     return x
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for InceptionResNetV2 by scaling pixels between -1 and 1.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for InceptionResNetV2.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_TF,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

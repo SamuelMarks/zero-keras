@@ -12,13 +12,13 @@ from .utils import assert_allclose_keras_zero
 
 def check_schedule_parity(
     schedule_cls: TensorLike, keras_cls: TensorLike, **kwargs: TensorLike
-) -> TensorLike:
-    """Function docstring.
+) -> None:
+    """Verify or execute `check schedule parity`.
 
     Args:
-        schedule_cls: Description.
-        keras_cls: Description.
-        kwargs: Description.
+        schedule_cls: Test fixture or input parameter `schedule_cls` (schedule cls).
+        keras_cls: Test fixture or input parameter `keras_cls` (keras cls).
+        **kwargs: Keyword arguments forwarded to helper.
     """
     keras_sched = keras_cls(**kwargs)
     zero_sched = schedule_cls(**kwargs)
@@ -30,8 +30,8 @@ def check_schedule_parity(
     assert_allclose_keras_zero(keras_vals, zero_vals, atol=1e-5, rtol=1e-5)
 
 
-def test_schedule_CosineDecay() -> TensorLike:
-    """Function docstring."""
+def test_schedule_CosineDecay() -> None:
+    """Verify or execute `test schedule CosineDecay`."""
     check_schedule_parity(
         schedules.CosineDecay,
         keras.optimizers.schedules.CosineDecay,
@@ -48,8 +48,8 @@ def test_schedule_CosineDecay() -> TensorLike:
     )
 
 
-def test_schedule_ExponentialDecay() -> TensorLike:
-    """Function docstring."""
+def test_schedule_ExponentialDecay() -> None:
+    """Verify or execute `test schedule ExponentialDecay`."""
     check_schedule_parity(
         schedules.ExponentialDecay,
         keras.optimizers.schedules.ExponentialDecay,
@@ -67,8 +67,8 @@ def test_schedule_ExponentialDecay() -> TensorLike:
     )
 
 
-def test_schedule_CosineDecayRestarts() -> TensorLike:
-    """Function docstring."""
+def test_schedule_CosineDecayRestarts() -> None:
+    """Verify or execute `test schedule CosineDecayRestarts`."""
     schedules.CosineDecayRestarts(0.1, 100, t_mul=1.0)(5)
     check_schedule_parity(
         schedules.CosineDecayRestarts,
@@ -78,8 +78,8 @@ def test_schedule_CosineDecayRestarts() -> TensorLike:
     )
 
 
-def test_schedule_InverseTimeDecay() -> TensorLike:
-    """Function docstring."""
+def test_schedule_InverseTimeDecay() -> None:
+    """Verify or execute `test schedule InverseTimeDecay`."""
     check_schedule_parity(
         schedules.InverseTimeDecay,
         keras.optimizers.schedules.InverseTimeDecay,
@@ -97,8 +97,8 @@ def test_schedule_InverseTimeDecay() -> TensorLike:
     )
 
 
-def test_schedule_PiecewiseConstantDecay() -> TensorLike:
-    """Function docstring."""
+def test_schedule_PiecewiseConstantDecay() -> None:
+    """Verify or execute `test schedule PiecewiseConstantDecay`."""
     check_schedule_parity(
         schedules.PiecewiseConstantDecay,
         keras.optimizers.schedules.PiecewiseConstantDecay,
@@ -107,8 +107,8 @@ def test_schedule_PiecewiseConstantDecay() -> TensorLike:
     )
 
 
-def test_schedule_PolynomialDecay() -> TensorLike:
-    """Function docstring."""
+def test_schedule_PolynomialDecay() -> None:
+    """Verify or execute `test schedule PolynomialDecay`."""
     check_schedule_parity(
         schedules.PolynomialDecay,
         keras.optimizers.schedules.PolynomialDecay,
@@ -128,7 +128,7 @@ def test_schedule_PolynomialDecay() -> TensorLike:
     )
 
 
-def test_schedule_LearningRateSchedule() -> TensorLike:
-    """Function docstring."""
+def test_schedule_LearningRateSchedule() -> None:
+    """Verify or execute `test schedule LearningRateSchedule`."""
     s = schedules.LearningRateSchedule()
     assert s(0) == 0.0

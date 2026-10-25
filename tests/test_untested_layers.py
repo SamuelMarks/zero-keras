@@ -1,15 +1,12 @@
-"""Module docstring."""
+"""Unit and behavioral tests for untested layers in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
-import numpy as np
-
-from zero_keras import layers
+from zero_keras import layers, ops, random
 
 
-def test_instantiate_and_call_all_untested_layers() -> TensorLike:
-    """Function docstring."""
+def test_instantiate_and_call_all_untested_layers() -> None:
+    """Verify or execute `test instantiate and call all untested layers`."""
     untested_shapes = {
         "Convolution1D": ((2, 10, 3), {"filters": 4, "kernel_size": 3}),
         "Convolution1DTranspose": ((2, 10, 3), {"filters": 4, "kernel_size": 3}),
@@ -70,43 +67,42 @@ def test_instantiate_and_call_all_untested_layers() -> TensorLike:
         except Exception:
             pass
 
-        x = np.random.uniform(size=shape).astype(np.float32)
+        x = random.uniform(shape, dtype="float32")
         try:
             layer(x)
         except Exception as e:
             print(f"Call failed for {name}: {e}")
 
 
-def test_string_lookup_vocab() -> TensorLike:
-    """Function docstring."""
+def test_string_lookup_vocab() -> None:
+    """Verify or execute `test string lookup vocab`."""
     layer = layers.StringLookup(vocabulary=["a", "b", "c"])
-    layer(np.array(["a", "d"]))
+    layer(["a", "d"])
 
 
-def test_hashing_call() -> TensorLike:
-    """Function docstring."""
+def test_hashing_call() -> None:
+    """Verify or execute `test hashing call`."""
     layer = layers.Hashing(num_bins=10)
-    layer(np.array(["a", "d"]))
+    layer(["a", "d"])
 
 
-def test_text_vectorization_call() -> TensorLike:
-    """Function docstring."""
+def test_text_vectorization_call() -> None:
+    """Verify or execute `test text vectorization call`."""
     layer = layers.TextVectorization()
-    layer(np.array(["a", "d"]))
+    layer(["a", "d"])
 
 
-def test_mha_coverage() -> TensorLike:
-    """Function docstring."""
+def test_mha_coverage() -> None:
+    """Verify or execute `test mha coverage`."""
     layer = layers.MultiHeadAttention(num_heads=2, key_dim=2, value_dim=3, output_shape=(4,))
-    q = np.random.uniform(size=(2, 10, 4)).astype(np.float32)
-    v = np.random.uniform(size=(2, 5, 4)).astype(np.float32)
-    # test build branch
+    q = random.uniform((2, 10, 4), dtype="float32")
+    v = random.uniform((2, 5, 4), dtype="float32")
     layer.build((q.shape, v.shape))
     _out, _scores = layer(
         q,
         v,
         key=v,
-        attention_mask=np.ones((2, 10, 5)),
+        attention_mask=ops.ones((2, 10, 5)),
         return_attention_scores=True,
         use_causal_mask=True,
     )
@@ -114,49 +110,49 @@ def test_mha_coverage() -> TensorLike:
     layer2(q, v)
 
 
-def test_integer_lookup() -> TensorLike:
-    """Function docstring."""
+def test_integer_lookup() -> None:
+    """Verify or execute `test integer lookup`."""
     layer = layers.IntegerLookup(vocabulary=[1, 2])
-    layer(np.array([1, 3]))
+    layer(ops.convert_to_tensor([1, 3]))
 
 
-def test_rand_augment() -> TensorLike:
-    """Function docstring."""
+def test_rand_augment() -> None:
+    """Verify or execute `test rand augment`."""
     layer = layers.RandAugment(factor=0.2)
-    layer(np.ones((2, 10, 10, 3)), training=False)
+    layer(ops.ones((2, 10, 10, 3)), training=False)
 
 
-def test_random_contrast() -> TensorLike:
-    """Function docstring."""
+def test_random_contrast() -> None:
+    """Verify or execute `test random contrast`."""
     layer = layers.RandomContrast(factor=0.2)
-    layer(np.ones((2, 10, 10, 3)), training=True)
+    layer(ops.ones((2, 10, 10, 3)), training=True)
 
 
-def test_random_grayscale() -> TensorLike:
-    """Function docstring."""
+def test_random_grayscale() -> None:
+    """Verify or execute `test random grayscale`."""
     layer = layers.RandomGrayscale()
-    layer(np.ones((2, 10, 10, 3)), training=False)
+    layer(ops.ones((2, 10, 10, 3)), training=False)
 
 
-def test_random_invert() -> TensorLike:
-    """Function docstring."""
+def test_random_invert() -> None:
+    """Verify or execute `test random invert`."""
     layer = layers.RandomInvert()
-    layer(np.ones((2, 10, 10, 3)), training=False)
+    layer(ops.ones((2, 10, 10, 3)), training=False)
 
 
-def test_missing_layer_coverage() -> TensorLike:
-    """Function docstring."""
+def test_missing_layer_coverage() -> None:
+    """Verify or execute `test missing layer coverage`."""
     layer = layers.RandomFlip()
-    layer(np.ones((2, 10, 10, 3)), training=True)
+    layer(ops.ones((2, 10, 10, 3)), training=True)
     layer = layers.RandomRotation(0.2)
-    layer(np.ones((2, 10, 10, 3)), training=True)
+    layer(ops.ones((2, 10, 10, 3)), training=True)
     layer = layers.Rescaling(0.5)
-    layer(np.ones((2, 10, 10, 3)))
+    layer(ops.ones((2, 10, 10, 3)))
     layer = layers.Resizing(10, 10, interpolation="nearest")
-    layer(np.ones((2, 10, 10, 3)))
+    layer(ops.ones((2, 10, 10, 3)))
     layer = layers.Resizing(10, 10, interpolation="bicubic")
-    layer(np.ones((2, 10, 10, 3)))
+    layer(ops.ones((2, 10, 10, 3)))
     layer = layers.Resizing(10, 10, interpolation="lanczos3")
-    layer(np.ones((2, 10, 10, 3)))
+    layer(ops.ones((2, 10, 10, 3)))
     layer = layers.StringLookup()
-    layer(np.array(["a", "b"]))
+    layer(["a", "b"])

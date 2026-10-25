@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import sys
-
-sys.setrecursionlimit(10000)
-
 from ml_switcheroo_compiler.core.config import config as msc_config
 
 msc_config.eager_mode = True

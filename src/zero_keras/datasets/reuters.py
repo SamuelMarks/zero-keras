@@ -67,13 +67,13 @@ def load_data(
         origin=f"{origin_folder}reuters.npz",
         file_hash="d6586e694ee56d7a4e65172e12b3e987c03096cb01eab99753921ef915959916",
     )
-    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
+    with ops.load(resolved_path, allow_pickle=True) as f:
         xs: list[list[int]] = [list(seq) for seq in f["x"]]
         labels: list[int] = [int(lbl) for lbl in f["y"]]
 
     rng = random.RandomState(seed)
     indices = list(range(len(xs)))
-    rng.shuffle(indices)  # type: ignore[arg-type]
+    rng.shuffle(indices)
     xs = [xs[i] for i in indices]
     labels = [labels[i] for i in indices]
 

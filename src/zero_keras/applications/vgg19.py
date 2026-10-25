@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""VGG19 architecture for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 from zero_keras import backend
 
@@ -22,14 +22,14 @@ WEIGHTS_PATH_NO_TOP = (
 
 
 def VGG19(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "vgg19",
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "vgg19",
 ) -> TensorLike:
     """Instantiates the VGG19 model.
 
@@ -205,29 +205,27 @@ def VGG19(
     return model
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for VGG19 using Caffe BGR zero-centering.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="caffe")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for VGG19.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_CAFFE,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

@@ -96,9 +96,10 @@ def test_generic_utils_and_vis_utils_coverage(tmp_path: Path) -> None:
         """Container with unnamed layer."""
 
         name = "c"
-        layers = [UnnamedLayer()]
+        layers: list[TensorLike] = [UnnamedLayer()]
 
-    dot_custom = vis_utils.model_to_dot(CustomContainer())  # type: ignore[arg-type]
+    custom_cont: TensorLike = CustomContainer()
+    dot_custom = vis_utils.model_to_dot(custom_cont)
     assert "layer_0" in dot_custom.to_string()
 
     out_plot = tmp_path / "subdir" / "model.png"
@@ -216,7 +217,7 @@ def test_random_constraints_schedules_distribution_dtype_activations_initializer
     # random
     rs = random.RandomState(42)
     items: list[int] = [1, 2, 3]
-    rs.shuffle(items)  # type: ignore[arg-type]
+    rs.shuffle(items)
     sg = random.SeedGenerator(seed=10)
     assert sg.next().shape == (2,)
     assert random._resolve_shape(None) == (1,)
@@ -270,7 +271,7 @@ def test_random_constraints_schedules_distribution_dtype_activations_initializer
             """Initialize wrapper."""
             self._tensor = ops.zeros((1, 2))
 
-    assert activations._to_tensor(HasUnderlyingTensor()) is not None  # type: ignore[arg-type]
+    assert activations._to_tensor(HasUnderlyingTensor()) is not None
 
     # initializers
     class SymbolicMock:
@@ -284,7 +285,7 @@ def test_random_constraints_schedules_distribution_dtype_activations_initializer
 
             id = "node_1"
 
-    assert isinstance(initializers._wrap(SymbolicMock()), KerasTensor)  # type: ignore[arg-type]
+    assert isinstance(initializers._wrap(SymbolicMock()), KerasTensor)
     assert initializers._wrap(123) == 123
     assert initializers._normalize_shape(3) == (3,)
     z = initializers.Zeros()

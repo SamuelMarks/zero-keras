@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from zero_keras import constraints, ops
 from zero_keras.types import TensorLike
+
+from .conftest import assert_allclose_zero
 
 
 def test_constraints_methods() -> None:
@@ -23,16 +23,14 @@ def test_constraints_methods() -> None:
     base_from = Constraint.from_config({})
     assert isinstance(base_from, Constraint)
     w = ops.convert_to_tensor([[3.0, -4.0], [-1.0, 2.0]], dtype="float32")
-    np.testing.assert_allclose(ops.convert_to_numpy(base(w)), [[3.0, -4.0], [-1.0, 2.0]])
+    assert_allclose_zero(base(w), [[3.0, -4.0], [-1.0, 2.0]])
 
-    # NonNeg clamps negative entries to 0
     nn = NonNeg()
     assert nn.get_config() == {}
     assert isinstance(NonNeg.from_config({}), NonNeg)
     nn_out = ops.convert_to_numpy(nn(w))
-    np.testing.assert_allclose(nn_out, [[3.0, 0.0], [0.0, 2.0]])
+    assert_allclose_zero(nn_out, [[3.0, 0.0], [0.0, 2.0]])
 
-    # UnitNorm normalizes along axis
     un = UnitNorm(axis=1)
     assert un.get_config() == {"axis": 1}
     un_list = UnitNorm(axis=[0, 1])
@@ -44,9 +42,8 @@ def test_constraints_methods() -> None:
     un_from_invalid = UnitNorm.from_config({"axis": "bad"})
     assert un_from_invalid.axis == 0
     un_out = ops.convert_to_numpy(un(ops.convert_to_tensor([[3.0, 4.0]], dtype="float32")))
-    np.testing.assert_allclose(un_out, [[0.6, 0.8]], rtol=1e-5, atol=1e-5)
+    assert_allclose_zero(un_out, [[0.6, 0.8]], rtol=1e-5, atol=1e-5)
 
-    # MaxNorm scales down vectors exceeding max_value
     mn = MaxNorm(max_value=2.5, axis=1)
     assert mn.get_config() == {"max_value": 2.5, "axis": 1}
     mn_list = MaxNorm(max_value=2.0, axis=[0, 1])
@@ -58,9 +55,8 @@ def test_constraints_methods() -> None:
     assert mn_from_bad.max_value == 2.0
     assert mn_from_bad.axis == 0
     mn_out = ops.convert_to_numpy(mn(ops.convert_to_tensor([[3.0, 4.0]], dtype="float32")))
-    np.testing.assert_allclose(mn_out, [[1.5, 2.0]], rtol=1e-5, atol=1e-5)
+    assert_allclose_zero(mn_out, [[1.5, 2.0]], rtol=1e-5, atol=1e-5)
 
-    # MinMaxNorm clamps norm between min_value and max_value
     mmn = MinMaxNorm(min_value=1.0, max_value=2.5, rate=1.0, axis=1)
     assert mmn.get_config() == {
         "min_value": 1.0,
@@ -83,9 +79,8 @@ def test_constraints_methods() -> None:
     assert mmn_from_bad.min_value == 0.0
     assert mmn_from_bad.axis == 0
     mmn_out = ops.convert_to_numpy(mmn(ops.convert_to_tensor([[3.0, 4.0]], dtype="float32")))
-    np.testing.assert_allclose(mmn_out, [[1.5, 2.0]], rtol=1e-5, atol=1e-5)
+    assert_allclose_zero(mmn_out, [[1.5, 2.0]], rtol=1e-5, atol=1e-5)
 
-    # Functional aliases and serialization/deserialization
     assert isinstance(constraints.max_norm(3.0), MaxNorm)
     assert isinstance(constraints.min_max_norm(0.1, 2.0), MinMaxNorm)
     assert isinstance(constraints.non_neg(), NonNeg)
@@ -108,7 +103,7 @@ def test_constraints_methods() -> None:
         "class_name": "UnknownConstraint"
     }
     assert constraints.deserialize({"not_a_class": 1}) == {"not_a_class": 1}
-    assert constraints.deserialize(123) == 123  # type: ignore[arg-type]
+    assert constraints.deserialize(123) == 123
 
     class CustomConstraint(Constraint):
         """Custom test constraint."""
@@ -151,4 +146,4 @@ def test_constraints_methods() -> None:
     assert constraints.get(mn) is mn
     assert isinstance(constraints.get("unit_norm"), UnitNorm)
     assert isinstance(constraints.get(ser), MaxNorm)
-    assert constraints.get(123) == 123  # type: ignore[arg-type]
+    assert constraints.get(123) == 123

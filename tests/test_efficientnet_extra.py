@@ -1,16 +1,15 @@
 """Module `test_efficientnet_extra` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 import pytest
 
 from zero_keras.applications.efficientnet import EfficientNet
 from zero_keras.applications.efficientnet_v2 import EfficientNetV2
 
 
-def test_efficientnet_extra_coverage() -> TensorLike:
+def test_efficientnet_extra_coverage() -> None:
     # EfficientNet custom args
-    """Execute ``test_efficientnet_extra_coverage``."""
+    """Verify or execute `test efficientnet extra coverage`."""
     model = EfficientNet(
         width_coefficient=1.0,
         depth_coefficient=1.0,

@@ -16,42 +16,89 @@ import re
 import sys
 
 
-def _extract_documented_args(docstring: str) -> set[str]:
-    """Extract parameter names documented under the ``Args:`` or ``Arguments:`` section.
+_DISALLOWED_FUNC_PREFIXES: tuple[str, ...] = (
+    "Function docstring.",
+    "Docstring.",
+    "Call function.",
+    "Build function.",
+    "Execute ``",
+)
+
+_DISALLOWED_ARG_DESC_RE = re.compile(
+    r"^\*{0,2}([A-Za-z_][A-Za-z0-9_]*)\s*(?:\([^)]*\))?\s*:\s*"
+    r"(?:Description\.|Parameter\s+[A-Za-z0-9_]+\.|Input parameter\s+``[A-Za-z0-9_]+``\.|"
+    r"Variable length argument list\.|Arbitrary keyword arguments\.)\s*$"
+)
+
+_DISALLOWED_RETURN_DESC_RE = re.compile(r"^(?:TensorLike:\s*Return value\.|Return value\.)\s*$")
+
+
+def _has_non_none_return(func_node: ast.FunctionDef | ast.AsyncFunctionDef) -> bool:
+    """Check whether a function has an explicit return statement with a non-None value.
+
+    Args:
+        func_node: AST function node to inspect.
+
+    Returns:
+        bool: True if the function returns a non-None expression.
+    """
+    stack: list[ast.AST] = list(func_node.body)
+    while stack:
+        curr = stack.pop()
+        if isinstance(curr, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            continue
+        if isinstance(curr, ast.Return) and curr.value is not None:
+            if not (isinstance(curr.value, ast.Constant) and curr.value.value is None):
+                return True
+        stack.extend(ast.iter_child_nodes(curr))
+    return False
+
+
+def _extract_documented_args(docstring: str) -> tuple[set[str], list[str], bool]:
+    """Extract parameter names and validate placeholder descriptions in a docstring.
 
     Args:
         docstring: Raw function or method docstring.
 
     Returns:
-        set[str]: Set of documented argument names (stripped of leading ``*``).
+        tuple[set[str], list[str], bool]: Tuple of ``(documented_arg_names, placeholder_errors, has_returns_section)``.
     """
     documented: set[str] = set()
+    placeholder_errors: list[str] = []
     in_args = False
+    in_returns = False
+    has_returns = False
     for line in docstring.splitlines():
         stripped = line.strip()
         if stripped in ("Args:", "Arguments:", "Parameters:"):
             in_args = True
+            in_returns = False
+            continue
+        if stripped in ("Returns:", "Yields:"):
+            in_args = False
+            in_returns = True
+            has_returns = True
+            continue
+        if stripped in ("Raises:", "Examples:", "Example:", "Notes:", "Note:"):
+            in_args = False
+            in_returns = False
             continue
         if in_args:
-            if stripped in (
-                "Returns:",
-                "Raises:",
-                "Yields:",
-                "Examples:",
-                "Example:",
-                "Notes:",
-                "Note:",
-            ):
-                in_args = False
-                continue
             match = re.match(r"^\*{0,2}([A-Za-z_][A-Za-z0-9_]*)\s*(?:\([^)]*\))?\s*:", stripped)
             if match:
                 documented.add(match.group(1))
-    return documented
+                if _DISALLOWED_ARG_DESC_RE.match(stripped):
+                    placeholder_errors.append(
+                        f"Placeholder Args description for '{match.group(1)}'"
+                    )
+        elif in_returns and stripped:
+            if _DISALLOWED_RETURN_DESC_RE.match(stripped):
+                placeholder_errors.append("Placeholder Returns description")
+    return documented, placeholder_errors, has_returns
 
 
 def check_file_docstrings(py_file: Path, require_args: bool = True) -> list[str]:
-    """Check a single Python file for missing module, class, function, or argument docstrings.
+    """Check a single Python file for missing or placeholder module, class, function, or argument docstrings.
 
     Args:
         py_file: Path to the Python file to validate.
@@ -64,13 +111,21 @@ def check_file_docstrings(py_file: Path, require_args: bool = True) -> list[str]
     source = py_file.read_text(encoding="utf-8")
     tree = ast.parse(source, filename=str(py_file))
 
-    if not ast.get_docstring(tree):
+    mod_doc = ast.get_docstring(tree)
+    if not mod_doc:
         violations.append(f"{py_file}:1: Missing module docstring")
+    elif mod_doc.strip() == "Module docstring.":
+        violations.append(f"{py_file}:1: Placeholder module docstring 'Module docstring.'")
 
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef):
-            if not ast.get_docstring(node):
+            cls_doc = ast.get_docstring(node)
+            if not cls_doc:
                 violations.append(f"{py_file}:{node.lineno}: Class '{node.name}' missing docstring")
+            elif cls_doc.strip() == "Class docstring.":
+                violations.append(
+                    f"{py_file}:{node.lineno}: Class '{node.name}' has placeholder docstring"
+                )
         elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             doc = ast.get_docstring(node)
             if not doc:
@@ -78,6 +133,14 @@ def check_file_docstrings(py_file: Path, require_args: bool = True) -> list[str]
                     f"{py_file}:{node.lineno}: Function '{node.name}' missing docstring"
                 )
                 continue
+            stripped_doc = doc.strip()
+            if any(stripped_doc.startswith(pref) for pref in _DISALLOWED_FUNC_PREFIXES):
+                violations.append(
+                    f"{py_file}:{node.lineno}: Function '{node.name}' has placeholder docstring"
+                )
+            doc_args, placeholder_errs, has_returns = _extract_documented_args(doc)
+            for err in placeholder_errs:
+                violations.append(f"{py_file}:{node.lineno}: Function '{node.name}': {err}")
             if require_args:
                 param_names: list[str] = [
                     a.arg
@@ -89,12 +152,15 @@ def check_file_docstrings(py_file: Path, require_args: bool = True) -> list[str]
                 if node.args.kwarg and not node.args.kwarg.arg.startswith("_"):
                     param_names.append(node.args.kwarg.arg)
                 if param_names:
-                    doc_args = _extract_documented_args(doc)
                     missing_params = [p for p in param_names if p not in doc_args]
                     if missing_params:
                         violations.append(
                             f"{py_file}:{node.lineno}: Function '{node.name}' missing Args doc for: {', '.join(missing_params)}"
                         )
+                if _has_non_none_return(node) and not has_returns:
+                    violations.append(
+                        f"{py_file}:{node.lineno}: Function '{node.name}' returns a value but is missing Returns section"
+                    )
     return violations
 
 

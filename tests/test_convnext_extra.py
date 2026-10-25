@@ -1,15 +1,14 @@
 """Module `test_convnext_extra` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 import pytest
 
 from zero_keras.applications.convnext import ConvNeXt
 
 
-def test_convnext_extra_coverage() -> TensorLike:
+def test_convnext_extra_coverage() -> None:
     # layer_scale_init_value=None, include_preprocessing=False
-    """Execute ``test_convnext_extra_coverage``."""
+    """Verify or execute `test convnext extra coverage`."""
     model = ConvNeXt(
         depths=[1, 1, 1, 1],
         projection_dims=[16, 32, 64, 128],

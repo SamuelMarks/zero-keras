@@ -1,400 +1,337 @@
-"""Module docstring."""
+"""Training, evaluation, and prediction lifecycle callbacks for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
+from collections.abc import Callable, Iterable, Sequence
+import csv
+import math
+import os
+import shutil
+from typing import Protocol, runtime_checkable
+
+from zero_keras.types import (
+    ConfigValue,
+    EpochLogCallbackProtocol,
+    ScheduleFnProtocol,
+    TensorLike,
+)
+
+
+@runtime_checkable
+class _HasNdimProtocol(Protocol):
+    """Protocol for array-like objects exposing an ``ndim`` attribute."""
+
+    ndim: int
+
+
+@runtime_checkable
+class _HasOptimizerProtocol(Protocol):
+    """Protocol for model objects exposing an ``optimizer`` attribute."""
+
+    optimizer: TensorLike
+
+
+@runtime_checkable
+class _HasLearningRateProtocol(Protocol):
+    """Protocol for optimizer objects exposing a ``learning_rate`` attribute."""
+
+    learning_rate: TensorLike
+
+
+@runtime_checkable
+class _HasSaveWeightsProtocol(Protocol):
+    """Protocol for model objects exposing ``save_weights``."""
+
+    def save_weights(self, filepath: str) -> None:
+        """Save model weights to ``filepath``.
+
+        Args:
+            filepath: Target file path.
+        """
+
+
+@runtime_checkable
+class _HasLoadWeightsProtocol(Protocol):
+    """Protocol for model objects exposing ``load_weights``."""
+
+    def load_weights(self, filepath: str) -> None:
+        """Load model weights from ``filepath``.
+
+        Args:
+            filepath: Source file path.
+        """
 
 
 class Callback:
     """Base class used to build new callbacks.
 
-    Callbacks can be passed to keras methods such as `fit()`, `evaluate()`, and
-    `predict()` in order to hook into the various stages of the model training,
+    Callbacks can be passed to keras methods such as ``fit()``, ``evaluate()``, and
+    ``predict()`` in order to hook into the various stages of the model training,
     evaluation, and inference lifecycle.
-
-    To create a custom callback, subclass `keras.callbacks.Callback` and
-    override the method associated with the stage of interest.
-
-    Example:
-    >>> training_finished = False
-    >>> class MyCallback(Callback):
-    ...   def on_train_end(self, logs=None):
-    ...     global training_finished
-    ...     training_finished = True
-    >>> model = Sequential([
-    ...     layers.Dense(1, input_shape=(1,))])
-    >>> model.compile(loss='mean_squared_error')
-    >>> model.fit(np.array([[1.0]]), np.array([[1.0]]),
-    ...           callbacks=[MyCallback()])
-    >>> assert training_finished == True
-
-    If you want to use `Callback` objects in a custom training loop:
-
-    1. You should pack all your callbacks into a single `callbacks.CallbackList`
-       so they can all be called together.
-    2. You will need to manually call all the `on_*` methods at the appropriate
-       locations in your loop. Like this:
-
-    Example:
-    ```python
-    callbacks =  keras.callbacks.CallbackList([...])
-    callbacks.append(...)
-    callbacks.on_train_begin(...)
-    for epoch in range(EPOCHS):
-        callbacks.on_epoch_begin(epoch)
-        for i, data in dataset.enumerate():
-        callbacks.on_train_batch_begin(i)
-        batch_logs = model.train_step(data)
-        callbacks.on_train_batch_end(i, batch_logs)
-        epoch_logs = ...
-        callbacks.on_epoch_end(epoch, epoch_logs)
-    final_logs=...
-    callbacks.on_train_end(final_logs)
-    ```
-
-    Attributes:
-        params: Dict. Training parameters
-            (eg. verbosity, batch size, number of epochs...).
-        model: Instance of `Model`.
-            Reference of the model being trained.
-
-    The `logs` dictionary that callback methods
-    take as argument will contain keys for quantities relevant to
-    the current batch or epoch (see method-specific docstrings).
-
     """
 
     def __init__(self) -> None:
-        """Function docstring."""
+        """Initialize the base Callback instance."""
+        self._model: TensorLike | None = None
+        self.params: dict[str, ConfigValue] | TensorLike = {}
 
     @property
     def model(self) -> TensorLike:
-        """Model docstring."""
-        return self._model if hasattr(self, "_model") else None
+        """Return the reference to the Keras model being trained or evaluated.
+
+        Returns:
+            TensorLike: Attached model instance or ``None``.
+        """
+        return self._model
 
     @model.setter
-    def model(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def model(self, value: TensorLike) -> None:
+        """Attach a Keras model instance to this callback.
 
         Args:
-            value: Input parameter ``value``.
+            value: Model instance to attach.
         """
         self._model = value
 
-    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_predict_batch_begin docstring.
+    def on_predict_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of a batch in ``predict`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current prediction run.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_predict_batch_end docstring.
+    def on_predict_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of a batch in ``predict`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current prediction run.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
-        """on_predict_begin docstring.
+    def on_predict_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of prediction.
 
         Args:
-            logs: Logs.
+            logs: Optional log dictionary at prediction start.
         """
+        _ = logs
 
-    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
-        """on_predict_end docstring.
+    def on_predict_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of prediction.
 
         Args:
-            logs: Logs.
+            logs: Optional log dictionary at prediction completion.
         """
+        _ = logs
 
-    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_test_batch_begin docstring.
+    def on_test_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of a batch in ``evaluate`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current evaluation run.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_test_batch_end docstring.
+    def on_test_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of a batch in ``evaluate`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current evaluation run.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
-        """on_test_begin docstring.
+    def on_test_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of evaluation or validation.
 
         Args:
-            logs: Logs.
+            logs: Optional log dictionary at evaluation start.
         """
+        _ = logs
 
-    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
-        """on_test_end docstring.
+    def on_test_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of evaluation or validation.
 
         Args:
-            logs: Logs.
+            logs: Optional log dictionary at evaluation completion.
         """
+        _ = logs
 
-    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_train_batch_begin docstring.
+    def on_train_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of a training batch in ``fit`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current epoch.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_train_batch_end docstring.
+    def on_train_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of a training batch in ``fit`` methods.
 
         Args:
-            batch: Batch.
-            logs: Logs.
+            batch: Integer index of batch within the current epoch.
+            logs: Optional metric/log dictionary for the current batch.
         """
+        _ = batch, logs
 
-    def set_model(self, model: TensorLike) -> TensorLike:
-        """set_model function.
+    def set_model(self, model: TensorLike) -> None:
+        """Set the model reference tracked by this callback.
 
         Args:
-        model: Parameter model.
-
-        Returns:
-        TensorLike: Return value.
-
+            model: Model instance being trained or evaluated.
         """
         self.model = model
 
-    def set_params(self, params: TensorLike) -> TensorLike:
-        """set_params function.
+    def set_params(self, params: dict[str, ConfigValue] | TensorLike) -> None:
+        """Set training configuration parameters on this callback.
 
         Args:
-        params: Parameter params.
-
-        Returns:
-        TensorLike: Return value.
-
+            params: Dictionary of training parameters (e.g., ``epochs``, ``steps``).
         """
         self.params = params
 
-    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the start of an epoch.
-
-        Subclasses should override for any actions to run. This function should
-        only be called during TRAIN mode.
+    def on_epoch_begin(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the start of an epoch during training.
 
         Args:
-            epoch: Integer, index of epoch.
-            logs: Dict. Currently no data is passed to this argument for this
-              method but that may change in the future.
-
+            epoch: Integer index of the starting epoch.
+            logs: Optional dictionary of logs.
         """
+        _ = epoch, logs
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
-
-        Subclasses should override for any actions to run. This function should
-        only be called during TRAIN mode.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of an epoch during training.
 
         Args:
-            epoch: Integer, index of epoch.
-            logs: Dict, metric results for this training epoch, and for the
-              validation epoch if validation is performed. Validation result
-              keys are prefixed with `val_`. For training epoch, the values of
-              the `Model`'s metrics are returned. Example:
-              `{'loss': 0.2, 'accuracy': 0.7}`.
-
+            epoch: Integer index of the completed epoch.
+            logs: Dictionary of metric results for this training/validation epoch.
         """
+        _ = epoch, logs
 
-    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """A backwards compatibility alias for `on_train_batch_begin`.
+    def on_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Backwards-compatible alias for ``on_train_batch_begin``.
 
         Args:
-            batch: Input parameter ``batch``.
-            logs: Input parameter ``logs``.
+            batch: Integer index of the starting batch.
+            logs: Optional dictionary of batch logs.
         """
+        _ = batch, logs
 
-    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """A backwards compatibility alias for `on_train_batch_end`.
+    def on_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Backwards-compatible alias for ``on_train_batch_end``.
 
         Args:
-            batch: Input parameter ``batch``.
-            logs: Input parameter ``logs``.
+            batch: Integer index of the completed batch.
+            logs: Optional dictionary of batch logs.
         """
+        _ = batch, logs
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
-
-        Subclasses should override for any actions to run.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the beginning of model training.
 
         Args:
-            logs: Dict. Currently no data is passed to this argument for this
-              method but that may change in the future.
-
+            logs: Optional dictionary of initial training logs.
         """
+        _ = logs
 
-    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of training.
-
-        Subclasses should override for any actions to run.
+    def on_train_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Called at the end of model training.
 
         Args:
-            logs: Dict. Currently the output of the last call to
-              `on_epoch_end()` is passed to this argument for this method but
-              that may change in the future.
-
+            logs: Optional dictionary of final training logs.
         """
+        _ = logs
 
 
 class EarlyStopping(Callback):
-    """Stop training when a monitored metric has stopped improving.
+    """Stop training when a monitored metric has stopped improving."""
 
-    Assuming the goal of a training is to minimize the loss. With this, the
-    metric to be monitored would be `'loss'`, and mode would be `'min'`. A
-    `model.fit()` training loop will check at end of every epoch whether
-    the loss is no longer decreasing, considering the `min_delta` and
-    `patience` if applicable. Once it's found no longer decreasing,
-    `model.stop_training` is marked True and the training terminates.
-
-    The quantity to be monitored needs to be available in `logs` dict.
-    To make it so, pass the loss or metrics at `model.compile()`.
-
-    Args:
-        monitor: Quantity to be monitored. Defaults to `"val_loss"`.
-        min_delta: Minimum change in the monitored quantity to qualify as an
-            improvement, i.e. an absolute change of less than min_delta, will
-            count as no improvement. Defaults to `0`.
-        patience: Number of epochs with no improvement after which training will
-            be stopped. Defaults to `0`.
-        verbose: Verbosity mode, 0 or 1. Mode 0 is silent, and mode 1 displays
-            messages when the callback takes an action. Defaults to `0`.
-        mode: One of `{"auto", "min", "max"}`. In `min` mode, training will stop
-            when the quantity monitored has stopped decreasing; in `"max"` mode
-            it will stop when the quantity monitored has stopped increasing; in
-            `"auto"` mode, the direction is automatically inferred from the name
-            of the monitored quantity. Defaults to `"auto"`.
-        baseline: Baseline value for the monitored quantity. If not `None`,
-            training will stop if the model doesn't show improvement over the
-            baseline. Defaults to `None`.
-        restore_best_weights: Whether to restore model weights from the epoch
-            with the best value of the monitored quantity. If `False`, the model
-            weights obtained at the last step of training are used. An epoch
-            will be restored regardless of the performance relative to the
-            `baseline`. If no epoch improves on `baseline`, training will run
-            for `patience` epochs and restore weights from the best epoch in
-            that set. Defaults to `False`.
-        start_from_epoch: Number of epochs to wait before starting to monitor
-            improvement. This allows for a warm-up period in which no
-            improvement is expected and thus training will not be stopped.
-            Defaults to `0`.
-
-    Example:
-    >>> callback = keras.callbacks.EarlyStopping(monitor='loss',
-    ...                                               patience=3)
-    >>> # This callback will stop the training when there is no improvement in
-    >>> # the loss for three consecutive epochs.
-    >>> model = keras.models.Sequential([keras.layers.Dense(10)])
-    >>> model.compile(keras.optimizers.SGD(), loss='mse')
-    >>> history = model.fit(np.arange(100).reshape(5, 20), np.zeros(5),
-    ...                     epochs=10, batch_size=1, callbacks=[callback],
-    ...                     verbose=0)
-    >>> len(history.history['loss'])  # Only 4 epochs are run.
-    4
-
-    """
-
-    def get_monitor_value(self, logs: TensorLike) -> TensorLike:
-        """get_monitor_value docstring.
+    def get_monitor_value(self, logs: dict[str, TensorLike]) -> TensorLike:
+        """Retrieve the monitored metric value from ``logs``.
 
         Args:
-            logs: Logs.
+            logs: Epoch metric dictionary.
+
+        Returns:
+            TensorLike: Monitored metric value or ``None``.
         """
         return logs.get(self.monitor)
 
     def __init__(
         self,
-        monitor: TensorLike = "val_loss",
-        min_delta: TensorLike = 0,
-        patience: TensorLike = 0,
-        verbose: TensorLike = 0,
-        mode: TensorLike = "auto",
-        baseline: TensorLike = None,
-        restore_best_weights: TensorLike = False,
-        start_from_epoch: TensorLike = 0,
+        monitor: str = "val_loss",
+        min_delta: float = 0.0,
+        patience: int = 0,
+        verbose: int = 0,
+        mode: str = "auto",
+        baseline: float | None = None,
+        restore_best_weights: bool = False,
+        start_from_epoch: int = 0,
     ) -> None:
-        """Function docstring.
+        """Initialize the EarlyStopping callback.
 
         Args:
-            monitor: Description.
-            min_delta: Description.
-            patience: Description.
-            verbose: Description.
-            mode: Description.
-            baseline: Description.
-            restore_best_weights: Description.
-            start_from_epoch: Description.
+            monitor: Quantity name to monitor in ``logs``.
+            min_delta: Minimum change in monitored quantity to qualify as improvement.
+            patience: Number of epochs with no improvement before stopping training.
+            verbose: Verbosity mode (0 or 1).
+            mode: One of ``{"auto", "min", "max"}``.
+            baseline: Optional baseline value that the monitored quantity must beat.
+            restore_best_weights: Whether to restore model weights from the best epoch.
+            start_from_epoch: Number of warm-up epochs before monitoring begins.
         """
         super().__init__()
-        self.monitor = monitor
-        self.min_delta = min_delta
-        self.patience = patience
-        self.verbose = verbose
-        self.mode = mode
+        self.monitor = str(monitor)
+        self.min_delta = float(min_delta)
+        self.patience = int(patience)
+        self.verbose = int(verbose)
+        self.mode = str(mode)
         self.baseline = baseline
-        self.restore_best_weights = restore_best_weights
-        self.start_from_epoch = start_from_epoch
+        self.restore_best_weights = bool(restore_best_weights)
+        self.start_from_epoch = int(start_from_epoch)
         self.wait = 0
         self.stopped_epoch = 0
         self.best = (
             float("inf")
-            if mode == "min" or (mode == "auto" and "acc" not in monitor)
+            if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor)
             else -float("inf")
         )
-        self.best_weights = None
+        self.best_weights: list[TensorLike] | None = None
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
-
-        Subclasses should override for any actions to run.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Reset wait counters at the beginning of training.
 
         Args:
-            logs: Dict. Currently no data is passed to this argument for this
-              method but that may change in the future.
-
+            logs: Optional dictionary of initial training logs.
         """
+        _ = logs
         self.wait = 0
         self.stopped_epoch = 0
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
-
-        Subclasses should override for any actions to run. This function should
-        only be called during TRAIN mode.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Check monitored metric at epoch end and stop training if patience is exceeded.
 
         Args:
-            epoch: Integer, index of epoch.
-            logs: Dict, metric results for this training epoch, and for the
-              validation epoch if validation is performed. Validation result
-              keys are prefixed with `val_`. For training epoch, the values of
-              the `Model`'s metrics are returned. Example:
-              `{'loss': 0.2, 'accuracy': 0.7}`.
-
+            epoch: Integer index of the completed epoch.
+            logs: Dictionary of epoch metric results.
         """
-        logs = logs or {}
-        current = logs.get(self.monitor)
+        resolved_logs = logs or {}
+        current = resolved_logs.get(self.monitor)
         if current is None:
             return
 
         if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor):
-            improved = current < self.best - self.min_delta
+            improved = float(current) < self.best - self.min_delta
         else:
-            improved = current > self.best + self.min_delta
+            improved = float(current) > self.best + self.min_delta
 
         if improved:
-            self.best = current
+            self.best = float(current)
             self.wait = 0
             if self.restore_best_weights:
                 self.best_weights = [w.data for w in self.model.weights]
@@ -409,316 +346,111 @@ class EarlyStopping(Callback):
 
 
 class ModelCheckpoint(Callback):
-    """Callback to save the Keras model or model weights at some frequency.
-
-    `ModelCheckpoint` callback is used in conjunction with training using
-    `model.fit()` to save a model or weights (in a checkpoint file) at some
-    interval, so the model or weights can be loaded later to continue the
-    training from the state saved.
-
-    A few options this callback provides include:
-
-    - Whether to only keep the model that has achieved the "best performance" so
-      far, or whether to save the model at the end of every epoch regardless of
-      performance.
-    - Definition of "best"; which quantity to monitor and whether it should be
-      maximized or minimized.
-    - The frequency it should save at. Currently, the callback supports saving
-      at the end of every epoch, or after a fixed number of training batches.
-    - Whether only weights are saved, or the whole model is saved.
-
-    Example:
-    ```python
-    model.compile(loss=..., optimizer=...,
-                  metrics=['accuracy'])
-
-    EPOCHS = 10
-    checkpoint_filepath = '/tmp/ckpt/checkpoint.model.keras'
-    model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_filepath,
-        monitor='val_accuracy',
-        mode='max',
-        save_best_only=True)
-
-    # Model is saved at the end of every epoch, if it's the best seen so far.
-    model.fit(epochs=EPOCHS, callbacks=[model_checkpoint_callback])
-
-    # The model (that are considered the best) can be loaded as -
-    keras.models.load_model(checkpoint_filepath)
-
-    # Alternatively, one could checkpoint just the model weights as -
-    checkpoint_filepath = '/tmp/ckpt/checkpoint.weights.h5'
-    model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
-        filepath=checkpoint_filepath,
-        save_weights_only=True,
-        monitor='val_accuracy',
-        mode='max',
-        save_best_only=True)
-
-    # Model weights are saved at the end of every epoch, if it's the best seen
-    # so far.
-    model.fit(epochs=EPOCHS, callbacks=[model_checkpoint_callback])
-
-    # The model weights (that are considered the best) can be loaded as -
-    model.load_weights(checkpoint_filepath)
-    ```
-
-    Args:
-        filepath: string or `PathLike`, path to save the model file.
-            `filepath` can contain named formatting options,
-            which will be filled the value of `epoch` and keys in `logs`
-            (passed in `on_epoch_end`).
-            The `filepath` name needs to end with `".weights.h5"` when
-            `save_weights_only=True` or should end with `".keras"` or `".h5"`
-            when checkpoint saving the whole model (default).
-            For example:
-            if `filepath` is `"{epoch:02d}-{val_loss:.2f}.keras"` or
-            "{epoch:02d}-{val_loss:.2f}.weights.h5"`, then the model
-            checkpoints will be saved with the epoch number and the validation
-            loss in the filename. The directory of the filepath
-            should not be reused by any other callbacks to avoid conflicts.
-        monitor: The metric name to monitor. Typically the metrics are set by
-            the `Model.compile` method. Note:
-            * Prefix the name with `"val_"` to monitor validation metrics.
-            * Use `"loss"` or `"val_loss"` to monitor the model's total loss.
-            * If you specify metrics as strings, like `"accuracy"`, pass the
-                same string (with or without the `"val_"` prefix).
-            * If you pass `metrics.Metric` objects, `monitor` should be set to
-                `metric.name`
-            * If you're not sure about the metric names you can check the
-                contents of the `history.history` dictionary returned by
-                `history = model.fit()`
-            * Multi-output models set additional prefixes on the metric names.
-        verbose: Verbosity mode, 0 or 1. Mode 0 is silent, and mode 1
-            displays messages when the callback takes an action.
-        save_best_only: if `save_best_only=True`, it only saves when the model
-            is considered the "best" and the latest best model according to the
-            quantity monitored will not be overwritten. If `filepath` doesn't
-            contain formatting options like `{epoch}` then `filepath` will be
-            overwritten by each new better model.
-        mode: one of {`"auto"`, `"min"`, `"max"`}. If `save_best_only=True`, the
-            decision to overwrite the current save file is made based on either
-            the maximization or the minimization of the monitored quantity.
-            For `val_acc`, this should be `"max"`, for `val_loss` this should be
-            `"min"`, etc. In `"auto"` mode, the mode is set to `"max"` if the
-            quantities monitored are `"acc"` or start with `"fmeasure"` and are
-            set to `"min"` for the rest of the quantities.
-        save_weights_only: if `True`, then only the model's weights will be
-            saved (`model.save_weights(filepath)`), else the full model is
-            saved (`model.save(filepath)`).
-        save_freq: `"epoch"` or integer. When using `"epoch"`, the callback
-            saves the model after each epoch. When using integer, the callback
-            saves the model at end of this many batches. If the `Model` is
-            compiled with `steps_per_execution=N`, then the saving criteria will
-            be checked every Nth batch. Note that if the saving isn't aligned to
-            epochs, the monitored metric may potentially be less reliable (it
-            could reflect as little as 1 batch, since the metrics get reset
-            every epoch). Defaults to `"epoch"`.
-        initial_value_threshold: Floating point initial "best" value of the
-            metric to be monitored. Only applies if `save_best_value=True`. Only
-            overwrites the model weights already saved if the performance of
-            current model is better than this value.
-
-    """
+    """Callback to save the Keras model or model weights at some frequency."""
 
     def __init__(
         self,
-        filepath: TensorLike,
-        monitor: TensorLike = "val_loss",
-        verbose: TensorLike = 0,
-        save_best_only: TensorLike = False,
-        save_weights_only: TensorLike = False,
-        mode: TensorLike = "auto",
-        save_freq: TensorLike = "epoch",
-        initial_value_threshold: TensorLike = None,
+        filepath: str,
+        monitor: str = "val_loss",
+        verbose: int = 0,
+        save_best_only: bool = False,
+        save_weights_only: bool = False,
+        mode: str = "auto",
+        save_freq: str | int = "epoch",
+        initial_value_threshold: float | None = None,
     ) -> None:
-        """Function docstring.
+        """Initialize the ModelCheckpoint callback.
 
         Args:
-            filepath: Description.
-            monitor: Description.
-            verbose: Description.
-            save_best_only: Description.
-            save_weights_only: Description.
-            mode: Description.
-            save_freq: Description.
-            initial_value_threshold: Description.
+            filepath: String path to save the model or weight file.
+            monitor: Metric name to monitor.
+            verbose: Verbosity mode (0 or 1).
+            save_best_only: If True, only save when the monitored metric improves.
+            save_weights_only: If True, call ``model.save_weights`` instead of ``model.save``.
+            mode: One of ``{"auto", "min", "max"}``.
+            save_freq: ``"epoch"`` or integer number of batches between saves.
+            initial_value_threshold: Initial best value threshold for ``monitor``.
         """
         super().__init__()
-        self.filepath = filepath
-        self.monitor = monitor
-        self.verbose = verbose
-        self.save_best_only = save_best_only
-        self.save_weights_only = save_weights_only
-        self.mode = mode
+        self.filepath = str(filepath)
+        self.monitor = str(monitor)
+        self.verbose = int(verbose)
+        self.save_best_only = bool(save_best_only)
+        self.save_weights_only = bool(save_weights_only)
+        self.mode = str(mode)
         self.save_freq = save_freq
         self.best = (
-            initial_value_threshold
+            float(initial_value_threshold)
             if initial_value_threshold is not None
             else (
                 float("inf")
-                if mode == "min" or (mode == "auto" and "acc" not in monitor)
+                if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor)
                 else -float("inf")
             )
         )
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
-
-        Subclasses should override for any actions to run. This function should
-        only be called during TRAIN mode.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Evaluate checkpoint criteria at the end of an epoch and save model or weights.
 
         Args:
-            epoch: Integer, index of epoch.
-            logs: Dict, metric results for this training epoch, and for the
-              validation epoch if validation is performed. Validation result
-              keys are prefixed with `val_`. For training epoch, the values of
-              the `Model`'s metrics are returned. Example:
-              `{'loss': 0.2, 'accuracy': 0.7}`.
-
+            epoch: Integer index of the completed epoch.
+            logs: Dictionary of epoch metric results.
         """
-        logs = logs or {}
-        filepath = self.filepath.format(epoch=epoch + 1, **logs)
+        resolved_logs = logs or {}
+        filepath = self.filepath.format(epoch=epoch + 1, **resolved_logs)
 
-        save_model = False
-        current = logs.get(self.monitor)
+        should_save = False
+        improved = False
+        current = resolved_logs.get(self.monitor)
         if current is not None:
             if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor):
-                improved = current < self.best
+                improved = float(current) < self.best
             else:
-                improved = current > self.best
+                improved = float(current) > self.best
 
             if improved:
-                self.best = current
+                self.best = float(current)
 
-        if not self.save_best_only or current is not None and improved:
-            save_model = True
+        if not self.save_best_only or (current is not None and improved):
+            should_save = True
 
-        if save_model and self.model is not None:
-            import os
-
+        if should_save and self.model is not None:
             os.makedirs(os.path.dirname(os.path.abspath(filepath)) or ".", exist_ok=True)
-            self.model.save(filepath)
+            if self.save_weights_only and isinstance(self.model, _HasSaveWeightsProtocol):
+                self.model.save_weights(filepath)
+            else:
+                self.model.save(filepath)
 
 
 class History(Callback):
-    """Callback that records events into a `History` object."""
+    """Callback that records events into a ``History`` object."""
 
     def __init__(self) -> None:
-        """Function docstring."""
-
-    @property
-    def model(self) -> TensorLike:
-        """Model docstring."""
-        return self._model if hasattr(self, "_model") else None
-
-    @model.setter
-    def model(self, value: TensorLike) -> TensorLike:
-        """Docstring.
-
-        Args:
-            value: Input parameter ``value``.
-        """
-        self._model = value
-
-    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_predict_batch_begin docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
-
-    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_predict_batch_end docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
-
-    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
-        """on_predict_begin docstring.
-
-        Args:
-            logs: Logs.
-        """
-
-    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
-        """on_predict_end docstring.
-
-        Args:
-            logs: Logs.
-        """
-
-    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_test_batch_begin docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
-
-    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_test_batch_end docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
-
-    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
-        """on_test_begin docstring.
-
-        Args:
-            logs: Logs.
-        """
-
-    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
-        """on_test_end docstring.
-
-        Args:
-            logs: Logs.
-        """
-
-    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_train_batch_begin docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
-
-    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """on_train_batch_end docstring.
-
-        Args:
-            batch: Batch.
-            logs: Logs.
-        """
+        """Initialize the History callback with empty ``history`` and ``epoch`` tracking."""
         super().__init__()
+        self.history: dict[str, list[TensorLike]] = {}
+        self.epoch: list[int] = []
+
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Reset recorded ``history`` and ``epoch`` lists at the start of training.
+
+        Args:
+            logs: Optional initial training log dictionary.
+        """
+        _ = logs
         self.history = {}
         self.epoch = []
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Append epoch index and metric values from ``logs`` into ``self.history``.
 
         Args:
-            logs: Input parameter ``logs``.
+            epoch: Completed epoch index.
+            logs: Dictionary of metric values for the epoch.
         """
-        self.history = {}
-        self.epoch = []
-
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
-
-        Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
-        """
-        logs = logs or {}
+        resolved_logs = logs or {}
         self.epoch.append(epoch)
-        for k, v in logs.items():
+        for k, v in resolved_logs.items():
             self.history.setdefault(k, []).append(v)
 
 
@@ -727,27 +459,27 @@ class LambdaCallback(Callback):
 
     def __init__(
         self,
-        on_epoch_begin: TensorLike = None,
-        on_epoch_end: TensorLike = None,
-        on_batch_begin: TensorLike = None,
-        on_batch_end: TensorLike = None,
-        on_train_begin: TensorLike = None,
-        on_train_end: TensorLike = None,
-        **kwargs: TensorLike,
+        on_epoch_begin: EpochLogCallbackProtocol | None = None,
+        on_epoch_end: EpochLogCallbackProtocol | None = None,
+        on_batch_begin: EpochLogCallbackProtocol | None = None,
+        on_batch_end: EpochLogCallbackProtocol | None = None,
+        on_train_begin: EpochLogCallbackProtocol | None = None,
+        on_train_end: EpochLogCallbackProtocol | None = None,
+        **kwargs: ConfigValue,
     ) -> None:
-        """Function docstring.
+        """Initialize LambdaCallback with optional hook callables.
 
         Args:
-            on_epoch_begin: Description.
-            on_epoch_end: Description.
-            on_batch_begin: Description.
-            on_batch_end: Description.
-            on_train_begin: Description.
-            on_train_end: Description.
-            kwargs: Description.
+            on_epoch_begin: Callable invoked at the start of every epoch.
+            on_epoch_end: Callable invoked at the end of every epoch.
+            on_batch_begin: Callable invoked at the start of every batch.
+            on_batch_end: Callable invoked at the end of every batch.
+            on_train_begin: Callable invoked at the start of training.
+            on_train_end: Callable invoked at the end of training.
+            **kwargs: Additional keyword configuration stored in ``extra_callbacks``.
         """
         super().__init__()
-        self.__dict__.update(kwargs)
+        self.extra_callbacks: dict[str, ConfigValue] = dict(kwargs)
         self._on_epoch_begin = on_epoch_begin
         self._on_epoch_end = on_epoch_end
         self._on_batch_begin = on_batch_begin
@@ -755,92 +487,93 @@ class LambdaCallback(Callback):
         self._on_train_begin = on_train_begin
         self._on_train_end = on_train_end
 
-    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the start of an epoch.
+    def on_epoch_begin(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_epoch_begin`` callable if provided.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Starting epoch index.
+            logs: Optional epoch logs.
         """
         if self._on_epoch_begin is not None:
             self._on_epoch_begin(epoch, logs)
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_epoch_end`` callable if provided.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Completed epoch index.
+            logs: Optional epoch logs.
         """
         if self._on_epoch_end is not None:
             self._on_epoch_end(epoch, logs)
 
-    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the start of a batch.
+    def on_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_batch_begin`` callable if provided.
 
         Args:
-            batch: Input parameter ``batch``.
-            logs: Input parameter ``logs``.
+            batch: Starting batch index.
+            logs: Optional batch logs.
         """
         if self._on_batch_begin is not None:
             self._on_batch_begin(batch, logs)
 
-    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of a batch.
+    def on_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_batch_end`` callable if provided.
 
         Args:
-            batch: Input parameter ``batch``.
-            logs: Input parameter ``logs``.
+            batch: Completed batch index.
+            logs: Optional batch logs.
         """
         if self._on_batch_end is not None:
             self._on_batch_end(batch, logs)
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_train_begin`` callable if provided.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional training start logs.
         """
         if self._on_train_begin is not None:
             self._on_train_begin(logs)
 
-    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of training.
+    def on_train_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Invoke the ``on_train_end`` callable if provided.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional training completion logs.
         """
         if self._on_train_end is not None:
             self._on_train_end(logs)
 
 
 class LearningRateScheduler(Callback):
-    """Learning rate scheduler."""
+    """Learning rate scheduler callback."""
 
-    def __init__(self, schedule: TensorLike, verbose: TensorLike = 0) -> None:
-        """Function docstring.
+    def __init__(self, schedule: ScheduleFnProtocol, verbose: int = 0) -> None:
+        """Initialize LearningRateScheduler.
 
         Args:
-            schedule: Description.
-            verbose: Description.
+            schedule: Function taking ``(epoch, current_lr)`` and returning a new learning rate.
+            verbose: Verbosity mode (0 or 1).
         """
         super().__init__()
         self.schedule = schedule
-        self.verbose = verbose
+        self.verbose = int(verbose)
 
-    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the start of an epoch.
+    def on_epoch_begin(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Update the model optimizer's ``learning_rate`` at the start of ``epoch``.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Starting epoch index.
+            logs: Optional epoch logs.
         """
-        if not hasattr(self.model, "optimizer"):
-            return
-        if not hasattr(self.model.optimizer, "learning_rate"):
+        _ = logs
+        if not isinstance(self.model, _HasOptimizerProtocol) or not isinstance(
+            self.model.optimizer, _HasLearningRateProtocol
+        ):
             return
         try:
-            lr = float(self.model.optimizer.learning_rate)
+            lr: TensorLike = float(self.model.optimizer.learning_rate)
         except TypeError:
             lr = self.model.optimizer.learning_rate
         lr = self.schedule(epoch, lr)
@@ -848,94 +581,99 @@ class LearningRateScheduler(Callback):
 
 
 class TerminateOnNaN(Callback):
-    """Callback that terminates training when a NaN loss is encountered."""
+    """Callback that terminates training when a ``NaN`` or ``Inf`` loss is encountered."""
 
-    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of a batch.
+    def on_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Inspect ``loss`` in ``logs`` and set ``model.stop_training = True`` if non-finite.
 
         Args:
-            batch: Input parameter ``batch``.
-            logs: Input parameter ``logs``.
+            batch: Completed batch index.
+            logs: Dictionary containing batch ``loss``.
         """
-        import math
-
-        logs = logs or {}
-        loss = logs.get("loss")
-        if loss is not None:
-            if math.isnan(loss) or math.isinf(loss):
-                self.model.stop_training = True
+        _ = batch
+        resolved_logs = logs or {}
+        loss = resolved_logs.get("loss")
+        if loss is not None and (math.isnan(float(loss)) or math.isinf(float(loss))):
+            self.model.stop_training = True
 
 
 class CSVLogger(Callback):
     """Callback that streams epoch results to a CSV file."""
 
     def __init__(
-        self, filename: TensorLike, separator: TensorLike = ",", append: TensorLike = False
+        self,
+        filename: str,
+        separator: str = ",",
+        append: bool = False,
     ) -> None:
-        """Function docstring.
+        """Initialize the CSVLogger callback.
 
         Args:
-            filename: Description.
-            separator: Description.
-            append: Description.
+            filename: Path of the destination CSV file.
+            separator: Delimiter string used between CSV fields.
+            append: If True, append to an existing file rather than overwriting.
         """
         super().__init__()
-        self.filename = filename
-        self.separator = separator
-        self.append = append
-        self.csv_file = None
-        self.writer = None
-        self.keys = None
+        self.filename = str(filename)
+        self.separator = str(separator)
+        self.append = bool(append)
+        self.csv_file: TensorLike | None = None
+        self.writer: TensorLike | None = None
+        self.keys: list[str] | None = None
         self.append_header = True
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Open the CSV file handle at the start of training.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional initial training logs.
         """
-        import os
-
+        _ = logs
         if self.append:
             if os.path.exists(self.filename):
-                with open(self.filename, "r") as f:
+                with open(self.filename, "r", encoding="utf-8") as f:
                     self.append_header = not bool(len(f.readline()))
             else:
                 self.append_header = True
         else:
             self.append_header = True
-        self.csv_file = open(self.filename, "a" if self.append else "w", newline="")
+        self.csv_file = open(
+            self.filename,
+            "a" if self.append else "w",
+            newline="",
+            encoding="utf-8",
+        )
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Write a row of epoch metrics to the open CSV file.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Completed epoch index.
+            logs: Dictionary of epoch metric results.
         """
-        import csv
-
-        logs = logs or {}
+        resolved_logs = logs or {}
 
         def handle_value(k: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Format a metric value ``k`` for CSV serialization.
 
             Args:
-                k: Description.
+                k: Metric value from ``logs``.
+
+            Returns:
+                TensorLike: Formatted scalar or string value.
             """
-            is_zero_dim_ndarray = hasattr(k, "ndim") and k.ndim == 0
+            is_zero_dim_ndarray = isinstance(k, _HasNdimProtocol) and k.ndim == 0
             if isinstance(k, str):
                 return k
-            elif hasattr(k, "__iter__") and not is_zero_dim_ndarray:
+            if isinstance(k, Iterable) and not is_zero_dim_ndarray:
                 return f'"[{", ".join(map(str, k))}]"'
-            else:
-                return k
+            return k
 
         if self.keys is None:
-            self.keys = sorted(logs.keys())
+            self.keys = sorted(resolved_logs.keys())
 
             class CustomDialect(csv.excel):
-                """Class docstring."""
+                """Custom CSV dialect configured with ``self.separator``."""
 
                 delimiter = self.separator
 
@@ -947,88 +685,93 @@ class CSVLogger(Callback):
             if self.append_header:
                 self.writer.writeheader()
 
-        row_dict = {"epoch": epoch}
-        row_dict.update((key, handle_value(logs[key])) for key in self.keys if key in logs)
+        row_dict: dict[str, TensorLike] = {"epoch": epoch}
+        row_dict.update(
+            (key, handle_value(resolved_logs[key])) for key in self.keys if key in resolved_logs
+        )
         self.writer.writerow(row_dict)
         self.csv_file.flush()
 
-    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of training.
+    def on_train_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Close the CSV file handle at the end of training.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional final training logs.
         """
-        if (self.csv_file if hasattr(self, "csv_file") else None) is not None:
+        _ = logs
+        if self.csv_file is not None:
             self.csv_file.close()
 
-    def __del__(self) -> TensorLike:
-        """Destructor to ensure file is closed."""
-        if (
-            self.csv_file if hasattr(self, "csv_file") else None
-        ) is not None and not self.csv_file.closed:
+    def __del__(self) -> None:
+        """Ensure the CSV file handle is closed upon garbage collection."""
+        if self.csv_file is not None and not self.csv_file.closed:
             self.csv_file.close()
 
 
 class ReduceLROnPlateau(Callback):
     """Reduce learning rate when a metric has stopped improving."""
 
-    def get_monitor_value(self, logs: TensorLike) -> TensorLike:
-        """get_monitor_value docstring.
+    def get_monitor_value(self, logs: dict[str, TensorLike]) -> TensorLike:
+        """Retrieve the monitored metric value from ``logs``.
 
         Args:
-            logs: Logs.
+            logs: Epoch metric dictionary.
+
+        Returns:
+            TensorLike: Monitored metric value or ``None``.
         """
         return logs.get(self.monitor)
 
     def __init__(
         self,
-        monitor: TensorLike = "val_loss",
-        factor: TensorLike = 0.1,
-        patience: TensorLike = 10,
-        verbose: TensorLike = 0,
-        mode: TensorLike = "auto",
-        min_delta: TensorLike = 1e-4,
-        cooldown: TensorLike = 0,
-        min_lr: TensorLike = 0,
+        monitor: str = "val_loss",
+        factor: float = 0.1,
+        patience: int = 10,
+        verbose: int = 0,
+        mode: str = "auto",
+        min_delta: float = 1e-4,
+        cooldown: int = 0,
+        min_lr: float = 0.0,
     ) -> None:
-        """Function docstring.
+        """Initialize the ReduceLROnPlateau callback.
 
         Args:
-            monitor: Description.
-            factor: Description.
-            patience: Description.
-            verbose: Description.
-            mode: Description.
-            min_delta: Description.
-            cooldown: Description.
-            min_lr: Description.
+            monitor: Metric quantity name to monitor.
+            factor: Multiplicative factor by which the learning rate will be reduced.
+            patience: Number of epochs with no improvement before reducing learning rate.
+            verbose: Verbosity mode (0 or 1).
+            mode: One of ``{"auto", "min", "max"}``.
+            min_delta: Threshold for measuring new optimum.
+            cooldown: Number of epochs to wait before resuming normal operation after LR reduction.
+            min_lr: Lower bound on the learning rate.
         """
         super().__init__()
-        self.monitor = monitor
-        self.factor = factor
-        self.min_lr = min_lr
-        self.patience = patience
-        self.verbose = verbose
-        self.cooldown = cooldown
+        self.monitor = str(monitor)
+        self.factor = float(factor)
+        self.min_lr = float(min_lr)
+        self.patience = int(patience)
+        self.verbose = int(verbose)
+        self.cooldown = int(cooldown)
         self.cooldown_counter = 0
         self.wait = 0
-        self.best = 0
-        self.mode = mode
-        self.min_delta = min_delta
+        self.best = 0.0
+        self.mode = str(mode)
+        self.min_delta = float(min_delta)
 
-        if mode == "min" or (mode == "auto" and "acc" not in monitor):
-            self.monitor_op = lambda a, b: a < (b - self.min_delta)
+        if self.mode == "min" or (self.mode == "auto" and "acc" not in self.monitor):
+            self.monitor_op: Callable[[float, float], bool] = lambda a, b: a < (b - self.min_delta)
             self.best = float("inf")
         else:
             self.monitor_op = lambda a, b: a > (b + self.min_delta)
             self.best = -float("inf")
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Reset wait and cooldown counters at the start of training.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional initial training logs.
         """
+        _ = logs
         self.wait = 0
         self.cooldown_counter = 0
         self.best = (
@@ -1037,15 +780,16 @@ class ReduceLROnPlateau(Callback):
             else -float("inf")
         )
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Evaluate plateau criteria at epoch end and reduce learning rate if triggered.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Completed epoch index.
+            logs: Dictionary of epoch metric results.
         """
-        logs = logs or {}
-        current = logs.get(self.monitor)
+        _ = epoch
+        resolved_logs = logs or {}
+        current = resolved_logs.get(self.monitor)
         if current is None:
             return
 
@@ -1053,77 +797,82 @@ class ReduceLROnPlateau(Callback):
             self.cooldown_counter -= 1
             self.wait = 0
 
-        if self.monitor_op(current, self.best):
-            self.best = current
+        if self.monitor_op(float(current), self.best):
+            self.best = float(current)
             self.wait = 0
         elif not self.in_cooldown():
             self.wait += 1
             if self.wait >= self.patience:
-                if hasattr(self.model, "optimizer") and hasattr(
-                    self.model.optimizer, "learning_rate"
+                if isinstance(self.model, _HasOptimizerProtocol) and isinstance(
+                    self.model.optimizer, _HasLearningRateProtocol
                 ):
                     old_lr = float(self.model.optimizer.learning_rate)
                     if old_lr > self.min_lr:
-                        new_lr = old_lr * self.factor
-                        new_lr = max(new_lr, self.min_lr)
+                        new_lr = max(old_lr * self.factor, self.min_lr)
                         self.model.optimizer.learning_rate = new_lr
                         self.cooldown_counter = self.cooldown
                         self.wait = 0
 
-    def in_cooldown(self) -> TensorLike:
-        """in_cooldown."""
+    def in_cooldown(self) -> bool:
+        """Return True if the callback is currently in its cooldown window.
+
+        Returns:
+            bool: True when ``cooldown_counter > 0``.
+        """
         return self.cooldown_counter > 0
 
 
 class BackupAndRestore(Callback):
-    """Callback to back up and restore the training state."""
+    """Callback to back up and restore the training state across interruptions."""
 
     def __init__(
         self,
-        backup_dir: TensorLike,
-        save_freq: TensorLike = "epoch",
-        delete_checkpoint: TensorLike = True,
+        backup_dir: str,
+        save_freq: str | int = "epoch",
+        delete_checkpoint: bool = True,
     ) -> None:
-        """Function docstring.
+        """Initialize the BackupAndRestore callback.
 
         Args:
-            backup_dir: Description.
-            save_freq: Description.
-            delete_checkpoint: Description.
+            backup_dir: Directory path where backup checkpoints are stored.
+            save_freq: ``"epoch"`` or integer number of batches between backups.
+            delete_checkpoint: Whether to delete the backup directory when training finishes.
         """
         super().__init__()
-        self.backup_dir = backup_dir
+        self.backup_dir = str(backup_dir)
         self.save_freq = save_freq
-        self.delete_checkpoint = delete_checkpoint
+        self.delete_checkpoint = bool(delete_checkpoint)
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the beginning of training.
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Ensure ``backup_dir`` exists at the beginning of training.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional initial training logs.
         """
-        import os
-
+        _ = logs
         if not os.path.exists(self.backup_dir):
             os.makedirs(self.backup_dir)
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of an epoch.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Save backup checkpoint weights at the end of an epoch.
 
         Args:
-            epoch: Input parameter ``epoch``.
-            logs: Input parameter ``logs``.
+            epoch: Completed epoch index.
+            logs: Optional epoch metric logs.
         """
+        _ = epoch, logs
+        if isinstance(self.model, _HasSaveWeightsProtocol):
+            ckpt_path = os.path.join(self.backup_dir, "checkpoint.weights.h5")
+            self.model.save_weights(ckpt_path)
 
-    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-        """Called at the end of training.
+    def on_train_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Remove ``backup_dir`` at the end of training when ``delete_checkpoint=True``.
 
         Args:
-            logs: Input parameter ``logs``.
+            logs: Optional final training logs.
         """
+        _ = logs
         if self.delete_checkpoint:
-            import shutil
-
             shutil.rmtree(self.backup_dir, ignore_errors=True)
 
 
@@ -1132,40 +881,40 @@ class RemoteMonitor(Callback):
 
     def __init__(
         self,
-        root: TensorLike = "http://localhost:9000",
-        path: TensorLike = "/publish/epoch/end/",
-        field: TensorLike = "data",
-        headers: TensorLike = None,
-        send_as_json: TensorLike = False,
+        root: str = "http://localhost:9000",
+        path: str = "/publish/epoch/end/",
+        field: str = "data",
+        headers: dict[str, str] | None = None,
+        send_as_json: bool = False,
     ) -> None:
-        """Function docstring.
+        """Initialize the RemoteMonitor callback.
 
         Args:
-            root: Description.
-            path: Description.
-            field: Description.
-            headers: Description.
-            send_as_json: Description.
+            root: Root URL of the target server.
+            path: Endpoint path relative to ``root``.
+            field: Form field name under which payload data is sent.
+            headers: Optional dictionary of custom HTTP headers.
+            send_as_json: Whether the request should be sent as ``application/json``.
         """
         super().__init__()
-        self.root = root
-        self.path = path
-        self.field = field
+        self.root = str(root)
+        self.path = str(path)
+        self.field = str(field)
         self.headers = headers
-        self.send_as_json = send_as_json
+        self.send_as_json = bool(send_as_json)
 
 
 class SwapEMAWeights(Callback):
-    """Swaps model weights with their exponential moving average."""
+    """Swaps model weights with their exponential moving average during evaluation."""
 
-    def __init__(self, swap_on_epoch: TensorLike = False) -> None:
-        """Function docstring.
+    def __init__(self, swap_on_epoch: bool = False) -> None:
+        """Initialize the SwapEMAWeights callback.
 
         Args:
-            swap_on_epoch: Description.
+            swap_on_epoch: Whether to swap weights at the end of each epoch for validation.
         """
         super().__init__()
-        self.swap_on_epoch = swap_on_epoch
+        self.swap_on_epoch = bool(swap_on_epoch)
 
 
 class TensorBoard(Callback):
@@ -1173,240 +922,264 @@ class TensorBoard(Callback):
 
     def __init__(
         self,
-        log_dir: TensorLike = "logs",
-        histogram_freq: TensorLike = 0,
-        write_graph: TensorLike = True,
-        write_images: TensorLike = False,
-        write_steps_per_second: TensorLike = False,
-        update_freq: TensorLike = "epoch",
-        profile_batch: TensorLike = 0,
-        embeddings_freq: TensorLike = 0,
-        embeddings_metadata: TensorLike = None,
+        log_dir: str = "logs",
+        histogram_freq: int = 0,
+        write_graph: bool = True,
+        write_images: bool = False,
+        write_steps_per_second: bool = False,
+        update_freq: str | int = "epoch",
+        profile_batch: int = 0,
+        embeddings_freq: int = 0,
+        embeddings_metadata: dict[str, str] | str | None = None,
     ) -> None:
-        """Function docstring.
+        """Initialize the TensorBoard callback.
 
         Args:
-            log_dir: Description.
-            histogram_freq: Description.
-            write_graph: Description.
-            write_images: Description.
-            write_steps_per_second: Description.
-            update_freq: Description.
-            profile_batch: Description.
-            embeddings_freq: Description.
-            embeddings_metadata: Description.
+            log_dir: Path of the directory where to save the log files to be parsed by TensorBoard.
+            histogram_freq: Frequency (in epochs) at which to compute weight histograms.
+            write_graph: Whether to visualize the graph in TensorBoard.
+            write_images: Whether to write model weights to visualize as image in TensorBoard.
+            write_steps_per_second: Whether to log training steps per second.
+            update_freq: ``"batch"``, ``"epoch"``, or integer number of batches.
+            profile_batch: Profile the batch(es) to sample compute characteristics.
+            embeddings_freq: Frequency (in epochs) at which embedding layers will be visualized.
+            embeddings_metadata: Optional metadata mapping for embedding layer names.
         """
         super().__init__()
-        self.log_dir = log_dir
-        self.histogram_freq = histogram_freq
-        self.write_graph = write_graph
-        self.write_images = write_images
-        self.write_steps_per_second = write_steps_per_second
+        self.log_dir = str(log_dir)
+        self.histogram_freq = int(histogram_freq)
+        self.write_graph = bool(write_graph)
+        self.write_images = bool(write_images)
+        self.write_steps_per_second = bool(write_steps_per_second)
         self.update_freq = update_freq
-        self.profile_batch = profile_batch
-        self.embeddings_freq = embeddings_freq
+        self.profile_batch = int(profile_batch)
+        self.embeddings_freq = int(embeddings_freq)
         self.embeddings_metadata = embeddings_metadata
 
 
 class CallbackList:
-    """Class docstring."""
+    """Container abstracting a list of callbacks and dispatching lifecycle events."""
 
-    @property
-    def model(self) -> TensorLike:
-        """Model docstring."""
-        return self._model if hasattr(self, "_model") else None
-
-    @model.setter
-    def model(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def __init__(
+        self,
+        callbacks: Sequence[Callback] | None = None,
+        model: TensorLike | None = None,
+    ) -> None:
+        """Initialize CallbackList with a sequence of ``Callback`` instances.
 
         Args:
-            value: Input parameter ``value``.
+            callbacks: Optional sequence of callbacks.
+            model: Optional model instance to attach to all callbacks.
         """
-        self._model = value
-
-    def set_model(self, model: TensorLike) -> TensorLike:
-        """set_model docstring.
-
-        Args:
-            model: Model.
-        """
-        self.model = model
-
-    def set_params(self, params: TensorLike) -> TensorLike:
-        """set_params docstring.
-
-        Args:
-            params: Params.
-        """
-        self.params = params
-
-    def __init__(self, callbacks: TensorLike = None, model: TensorLike = None) -> None:
-        """Function docstring.
-
-        Args:
-            callbacks: Description.
-            model: Description.
-        """
-        self.callbacks = callbacks or []
-        self.model = model
+        self._model: TensorLike | None = model
+        self.params: dict[str, ConfigValue] | TensorLike = {}
+        self.callbacks: list[Callback] = list(callbacks) if callbacks is not None else []
         for cb in self.callbacks:
             cb.model = model
 
-    def on_train_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    @property
+    def model(self) -> TensorLike:
+        """Return the model attached to this callback list.
+
+        Returns:
+            TensorLike: Attached model instance or ``None``.
+        """
+        return self._model
+
+    @model.setter
+    def model(self, value: TensorLike) -> None:
+        """Set the model reference on this list.
 
         Args:
-            logs: Description.
+            value: Model instance to attach.
+        """
+        self._model = value
+
+    def set_model(self, model: TensorLike) -> None:
+        """Set the model reference on this list and all child callbacks.
+
+        Args:
+            model: Model instance to attach.
+        """
+        self.model = model
+
+    def set_params(self, params: dict[str, ConfigValue] | TensorLike) -> None:
+        """Set training parameters on this callback list.
+
+        Args:
+            params: Dictionary of training parameters.
+        """
+        self.params = params
+
+    def on_train_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_train_begin`` to all callbacks.
+
+        Args:
+            logs: Optional initial training logs.
         """
         for cb in self.callbacks:
             cb.on_train_begin(logs)
 
-    def on_epoch_begin(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_epoch_begin(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_epoch_begin`` to all callbacks.
 
         Args:
-            epoch: Description.
-            logs: Description.
+            epoch: Starting epoch index.
+            logs: Optional epoch logs.
         """
         for cb in self.callbacks:
             cb.on_epoch_begin(epoch, logs)
 
-    def on_train_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_train_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_train_batch_begin`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Starting training batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_train_batch_begin(batch, logs)
 
-    def on_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_batch_begin`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Starting batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_batch_begin(batch, logs)
 
-    def on_train_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_train_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_train_batch_end`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Completed training batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_train_batch_end(batch, logs)
 
-    def on_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_batch_end`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Completed batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_batch_end(batch, logs)
 
-    def on_epoch_end(self, epoch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_epoch_end(self, epoch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_epoch_end`` to all callbacks.
 
         Args:
-            epoch: Description.
-            logs: Description.
+            epoch: Completed epoch index.
+            logs: Optional epoch logs.
         """
         for cb in self.callbacks:
             cb.on_epoch_end(epoch, logs)
 
-    def on_train_end(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_train_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_train_end`` to all callbacks.
 
         Args:
-            logs: Description.
+            logs: Optional final training logs.
         """
         for cb in self.callbacks:
             cb.on_train_end(logs)
 
-    def on_test_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_test_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_test_begin`` to all callbacks.
 
         Args:
-            logs: Description.
+            logs: Optional evaluation start logs.
         """
         for cb in self.callbacks:
             cb.on_test_begin(logs)
 
-    def on_test_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_test_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_test_batch_begin`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Starting evaluation batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_test_batch_begin(batch, logs)
 
-    def on_test_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_test_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_test_batch_end`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Completed evaluation batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_test_batch_end(batch, logs)
 
-    def on_test_end(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_test_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_test_end`` to all callbacks.
 
         Args:
-            logs: Description.
+            logs: Optional evaluation completion logs.
         """
         for cb in self.callbacks:
             cb.on_test_end(logs)
 
-    def on_predict_begin(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_predict_begin(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_predict_begin`` to all callbacks.
 
         Args:
-            logs: Description.
+            logs: Optional prediction start logs.
         """
         for cb in self.callbacks:
             cb.on_predict_begin(logs)
 
-    def on_predict_batch_begin(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_predict_batch_begin(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_predict_batch_begin`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Starting prediction batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_predict_batch_begin(batch, logs)
 
-    def on_predict_batch_end(self, batch: TensorLike, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_predict_batch_end(self, batch: int, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_predict_batch_end`` to all callbacks.
 
         Args:
-            batch: Description.
-            logs: Description.
+            batch: Completed prediction batch index.
+            logs: Optional batch logs.
         """
         for cb in self.callbacks:
             cb.on_predict_batch_end(batch, logs)
 
-    def on_predict_end(self, logs: TensorLike = None) -> TensorLike:
-        """Function docstring.
+    def on_predict_end(self, logs: dict[str, TensorLike] | None = None) -> None:
+        """Dispatch ``on_predict_end`` to all callbacks.
 
         Args:
-            logs: Description.
+            logs: Optional prediction completion logs.
         """
         for cb in self.callbacks:
             cb.on_predict_end(logs)
 
 
-class ProgbarLogger:
-    """Class docstring."""
+class ProgbarLogger(Callback):
+    """Callback that prints metrics to stdout during training and evaluation."""
+
+    def __init__(
+        self, count_mode: str = "samples", stateful_metrics: Sequence[str] | None = None
+    ) -> None:
+        """Initialize the ProgbarLogger callback.
+
+        Args:
+            count_mode: One of ``"samples"`` or ``"steps"``.
+            stateful_metrics: Optional iterable of metric names that should not be averaged.
+        """
+        super().__init__()
+        self.count_mode = str(count_mode)
+        self.stateful_metrics: list[str] = (
+            list(stateful_metrics) if stateful_metrics is not None else []
+        )

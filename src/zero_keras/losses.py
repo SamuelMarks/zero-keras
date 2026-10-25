@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from zero_keras.types import TensorLike
+from zero_keras.types import ConfigDict, TensorLike
 
 from zero_keras import ops
 
@@ -10,18 +10,17 @@ from .activations import _to_tensor, _wrap
 
 
 def _reduce(
-    loss: TensorLike, reduction: str, sample_weight: TensorLike | None = None
+    loss: TensorLike, reduction: str | None, sample_weight: TensorLike | None = None
 ) -> TensorLike:
-    """_reduce function.
+    """Apply loss reduction and optional sample weighting across batch elements.
 
     Args:
-    loss: Parameter loss.
-    reduction: Parameter reduction.
-    sample_weight: Parameter sample_weight.
+        loss: Unreduced per-sample loss tensor.
+        reduction: Reduction mode (``"none"``, ``None``, ``"sum"``, or ``"sum_over_batch_size"``/``"mean"``).
+        sample_weight: Optional per-sample weight tensor.
 
     Returns:
-    TensorLike: Return value.
-
+        TensorLike: Reduced scalar or unreduced per-sample loss tensor.
     """
     loss = _to_tensor(loss)
     if sample_weight is not None:
@@ -150,7 +149,7 @@ def mean_squared_logarithmic_error(y_true: TensorLike, y_pred: TensorLike) -> Te
     return ops.mean(ops.square(first_log - second_log), axis=-1)
 
 
-def huber(y_true: TensorLike, y_pred: TensorLike, delta: TensorLike = 1.0) -> TensorLike:
+def huber(y_true: TensorLike, y_pred: TensorLike, delta: float = 1.0) -> TensorLike:
     """Computes Huber loss value.
 
     Formula:
@@ -382,7 +381,7 @@ def kl_divergence(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
     return ops.sum(y_true * ops.log(y_true / y_pred), axis=-1)
 
 
-def cosine_similarity(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike = -1) -> TensorLike:
+def cosine_similarity(y_true: TensorLike, y_pred: TensorLike, axis: int = -1) -> TensorLike:
     """Computes the cosine similarity between labels and predictions.
 
     Formula:
@@ -422,8 +421,8 @@ def cosine_similarity(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike =
 def binary_crossentropy(
     y_true: TensorLike,
     y_pred: TensorLike,
-    from_logits: TensorLike = False,
-    label_smoothing: TensorLike = 0.0,
+    from_logits: bool = False,
+    label_smoothing: float = 0.0,
 ) -> TensorLike:
     """Computes the binary crossentropy loss.
 
@@ -470,8 +469,8 @@ def binary_crossentropy(
 def categorical_crossentropy(
     y_true: TensorLike,
     y_pred: TensorLike,
-    from_logits: TensorLike = False,
-    label_smoothing: TensorLike = 0.0,
+    from_logits: bool = False,
+    label_smoothing: float = 0.0,
 ) -> TensorLike:
     """Computes the categorical crossentropy loss.
 
@@ -517,8 +516,8 @@ def categorical_crossentropy(
 def sparse_categorical_crossentropy(
     y_true: TensorLike,
     y_pred: TensorLike,
-    from_logits: TensorLike = False,
-    ignore_class: TensorLike = None,
+    from_logits: bool = False,
+    ignore_class: int | None = None,
 ) -> TensorLike:
     """Computes the sparse categorical crossentropy loss.
 
@@ -547,6 +546,7 @@ def sparse_categorical_crossentropy(
     array([0.0513, 2.303], dtype=float32)
 
     """
+    _ = ignore_class
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     y_true_int = ops.cast(ops.expand_dims(y_true, -1), dtype="int32")
     if from_logits:
@@ -564,10 +564,10 @@ def sparse_categorical_crossentropy(
 def binary_focal_crossentropy(
     y_true: TensorLike,
     y_pred: TensorLike,
-    alpha: TensorLike = 0.25,
-    gamma: TensorLike = 2.0,
-    from_logits: TensorLike = False,
-    label_smoothing: TensorLike = 0.0,
+    alpha: float | None = 0.25,
+    gamma: float = 2.0,
+    from_logits: bool = False,
+    label_smoothing: float = 0.0,
 ) -> TensorLike:
     """Computes the binary focal crossentropy loss.
 
@@ -660,10 +660,10 @@ def binary_focal_crossentropy(
 def categorical_focal_crossentropy(
     y_true: TensorLike,
     y_pred: TensorLike,
-    alpha: TensorLike = 0.25,
-    gamma: TensorLike = 2.0,
-    from_logits: TensorLike = False,
-    label_smoothing: TensorLike = 0.0,
+    alpha: float | TensorLike = 0.25,
+    gamma: float = 2.0,
+    from_logits: bool = False,
+    label_smoothing: float = 0.0,
 ) -> TensorLike:
     """Computes the categorical focal crossentropy loss.
 
@@ -719,6 +719,15 @@ def categorical_focal_crossentropy(
     return ops.sum(focal_loss, axis=-1)
 
 
+class Reduction:
+    """Types of loss reduction."""
+
+    AUTO: str = "auto"
+    NONE: str | None = None
+    SUM: str = "sum"
+    SUM_OVER_BATCH_SIZE: str = "sum_over_batch_size"
+
+
 class Loss:
     """Loss base class.
 
@@ -755,55 +764,71 @@ class Loss:
 
     """
 
+    dtype: str | None = None
+
     def call(self, y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-        """Call docstring.
+        """Compute the unreduced per-sample loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: y_true.
-            y_pred: y_pred.
+            y_true: Ground truth target tensor.
+            y_pred: Predicted output tensor.
+
+        Returns:
+            TensorLike: Unreduced loss tensor.
         """
         return y_pred
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """from_config docstring.
+        """Instantiate a ``Loss`` from its configuration dictionary.
 
         Args:
-            config: Config.
+            config: Configuration dictionary.
+
+        Returns:
+            TensorLike: Reconstructed ``Loss`` instance.
         """
         return cls(**config)
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
-        return {"name": (self.name if hasattr(self, "name") else None)}
+        """Return the serializable configuration of the ``Loss``.
+
+        Returns:
+            TensorLike: Configuration dictionary containing ``name``.
+        """
+        return {"name": self.name}
 
     def __init__(
         self,
-        reduction: str = "sum_over_batch_size",
+        reduction: str | None = "sum_over_batch_size",
         name: str | None = None,
         dtype: str | None = None,
     ) -> None:
-        """Function docstring.
+        """Initialize the base ``Loss`` instance.
 
         Args:
-            reduction: Description.
-            name: Description.
-            dtype: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: Optional name for the loss instance.
+            dtype: Computation dtype string; defaults to ``"float32"``.
         """
-        self.reduction = reduction
-        self.name = name
-        self.dtype = dtype
+        self.reduction: str | None = reduction
+        self.name: str = name if name is not None else type(self).__name__
+        self.dtype: str | None = dtype
 
     def __call__(
         self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute reduced loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth target values.
+            y_pred: Predicted values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced loss value.
         """
+        _ = y_true, y_pred
         return _reduce(_to_tensor(0.0), self.reduction, sample_weight)
 
 
@@ -900,39 +925,45 @@ class BinaryCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits: TensorLike = False,
-        label_smoothing: TensorLike = 0.0,
-        axis: TensorLike = -1,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "binary_crossentropy",
+        from_logits: bool = False,
+        label_smoothing: float = 0.0,
+        axis: int = -1,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "binary_crossentropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the BinaryCrossentropy loss.
 
         Args:
-            from_logits: Description.
-            label_smoothing: Description.
-            axis: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            from_logits: Whether ``y_pred`` contains unnormalized logits.
+            label_smoothing: Label smoothing factor in ``[0, 1]``.
+            axis: Feature axis along which crossentropy is computed.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
+        _ = kwargs
         if not 0 <= label_smoothing <= 1:
             raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
-        super().__init__(reduction=reduction, name=name)
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
         self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute binary crossentropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth binary targets.
+            y_pred: Predicted probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced binary crossentropy loss tensor.
         """
         loss = binary_crossentropy(
             y_true,
@@ -972,28 +1003,34 @@ class MeanSquaredError(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "mean_squared_error",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "mean_squared_error",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MeanSquaredError loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute mean squared error loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth target values.
+            y_pred: Predicted values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced mean squared error loss tensor.
         """
         loss = mean_squared_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -1142,32 +1179,35 @@ class BinaryFocalCrossentropy(Loss):
 
     def __init__(
         self,
-        apply_class_balancing: TensorLike = False,
-        alpha: TensorLike = 0.25,
-        gamma: TensorLike = 2.0,
-        from_logits: TensorLike = False,
-        label_smoothing: TensorLike = 0.0,
-        axis: TensorLike = -1,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "binary_focal_crossentropy",
+        apply_class_balancing: bool = False,
+        alpha: float = 0.25,
+        gamma: float = 2.0,
+        from_logits: bool = False,
+        label_smoothing: float = 0.0,
+        axis: int = -1,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "binary_focal_crossentropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the BinaryFocalCrossentropy loss.
 
         Args:
-            apply_class_balancing: Description.
-            alpha: Description.
-            gamma: Description.
-            from_logits: Description.
-            label_smoothing: Description.
-            axis: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            apply_class_balancing: Whether to apply alpha class balancing.
+            alpha: Weighting factor for the positive class in ``[0, 1]``.
+            gamma: Focusing parameter for hard-example weighting.
+            from_logits: Whether ``y_pred`` contains unnormalized logits.
+            label_smoothing: Label smoothing factor in ``[0, 1]``.
+            axis: Feature axis along which crossentropy is computed.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
+        _ = kwargs
         if not 0 <= label_smoothing <= 1:
             raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
-        super().__init__(reduction=reduction, name=name)
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.apply_class_balancing = apply_class_balancing
         self.alpha = alpha
         self.gamma = gamma
@@ -1176,14 +1216,17 @@ class BinaryFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute binary focal crossentropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth binary targets.
+            y_pred: Predicted probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced binary focal crossentropy loss tensor.
         """
         loss = binary_focal_crossentropy(
             y_true,
@@ -1217,18 +1260,38 @@ class CTC(Loss):
 
     """
 
-    def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
-    ) -> TensorLike:
-        """Call self as a function.
+    def __init__(
+        self,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "ctc",
+        dtype: str | None = None,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the CTC loss.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
+        """
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
+
+    def __call__(
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
+    ) -> TensorLike:
+        """Compute Connectionist Temporal Classification loss.
+
+        Args:
+            y_true: Ground-truth sequence labels.
+            y_pred: Predicted sequence log-probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced CTC loss tensor.
         """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        # Proper CTC requires backend support. Using a placeholder math here.
         loss = ops.mean(ops.abs(ops.subtract(y_true, y_pred)), axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
 
@@ -1304,39 +1367,45 @@ class CategoricalCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits: TensorLike = False,
-        label_smoothing: TensorLike = 0.0,
-        axis: TensorLike = -1,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "categorical_crossentropy",
+        from_logits: bool = False,
+        label_smoothing: float = 0.0,
+        axis: int = -1,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "categorical_crossentropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CategoricalCrossentropy loss.
 
         Args:
-            from_logits: Description.
-            label_smoothing: Description.
-            axis: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            from_logits: Whether ``y_pred`` contains unnormalized logits.
+            label_smoothing: Label smoothing factor in ``[0, 1]``.
+            axis: Feature axis along which crossentropy is computed.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
+        _ = kwargs
         if not 0 <= label_smoothing <= 1:
             raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
-        super().__init__(reduction=reduction, name=name)
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.label_smoothing = label_smoothing
         self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute categorical crossentropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: One-hot ground-truth targets.
+            y_pred: Predicted class probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced categorical crossentropy loss tensor.
         """
         loss = categorical_crossentropy(
             y_true,
@@ -1459,30 +1528,33 @@ class CategoricalFocalCrossentropy(Loss):
 
     def __init__(
         self,
-        alpha: TensorLike = 0.25,
-        gamma: TensorLike = 2.0,
-        from_logits: TensorLike = False,
-        label_smoothing: TensorLike = 0.0,
-        axis: TensorLike = -1,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "categorical_focal_crossentropy",
+        alpha: float | TensorLike = 0.25,
+        gamma: float = 2.0,
+        from_logits: bool = False,
+        label_smoothing: float = 0.0,
+        axis: int = -1,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "categorical_focal_crossentropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CategoricalFocalCrossentropy loss.
 
         Args:
-            alpha: Description.
-            gamma: Description.
-            from_logits: Description.
-            label_smoothing: Description.
-            axis: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            alpha: Class balancing weight scalar or sequence.
+            gamma: Focusing parameter for hard-example weighting.
+            from_logits: Whether ``y_pred`` contains unnormalized logits.
+            label_smoothing: Label smoothing factor in ``[0, 1]``.
+            axis: Feature axis along which crossentropy is computed.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
+        _ = kwargs
         if not 0 <= label_smoothing <= 1:
             raise ValueError(f"label_smoothing must be between 0 and 1. Got: {label_smoothing}")
-        super().__init__(reduction=reduction, name=name)
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.alpha = alpha
         self.gamma = gamma
         self.from_logits = from_logits
@@ -1490,14 +1562,17 @@ class CategoricalFocalCrossentropy(Loss):
         self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute categorical focal crossentropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: One-hot ground-truth targets.
+            y_pred: Predicted class probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced categorical focal crossentropy loss tensor.
         """
         loss = categorical_focal_crossentropy(
             y_true,
@@ -1564,31 +1639,37 @@ class CategoricalGeneralizedCrossEntropy(Loss):
 
     def __init__(
         self,
-        q: TensorLike = 0.5,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "categorical_generalized_cross_entropy",
+        q: float = 0.5,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "categorical_generalized_cross_entropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CategoricalGeneralizedCrossEntropy loss.
 
         Args:
-            q: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            q: Noise robustness exponent in ``(0, 1)``.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.q = q
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute generalized cross-entropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: One-hot ground-truth targets.
+            y_pred: Predicted class probabilities.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced generalized cross-entropy loss tensor.
         """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
 
@@ -1634,28 +1715,34 @@ class CategoricalHinge(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "categorical_hinge",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "categorical_hinge",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CategoricalHinge loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute categorical hinge loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: One-hot ground-truth targets.
+            y_pred: Predicted class scores.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced categorical hinge loss tensor.
         """
         loss = categorical_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -1719,40 +1806,46 @@ class Circle(Loss):
 
     def __init__(
         self,
-        gamma: TensorLike = 80.0,
-        margin: TensorLike = 0.4,
-        reduction: TensorLike = "sum_over_batch_size",
-        remove_diagonal: TensorLike = True,
-        name: TensorLike = "circle",
+        gamma: float = 80.0,
+        margin: float = 0.4,
+        remove_diagonal: bool = True,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "circle",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Circle loss.
 
         Args:
-            gamma: Description.
-            margin: Description.
-            reduction: Description.
-            remove_diagonal: Description.
-            name: Description.
-            kwargs: Description.
+            gamma: Scale factor for similarity scores.
+            margin: Relaxation margin around decision boundary.
+            remove_diagonal: Whether to exclude self-similarity entries.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.gamma = gamma
         self.margin = margin
         self.remove_diagonal = remove_diagonal
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Circle loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth integer class labels.
+            y_pred: L2-normalized embedding predictions.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced Circle loss tensor.
         """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
-        # Simple placeholder for pair-wise circle loss since real circle loss is very complex
+        _ = y_true
         diff = ops.subtract(y_pred, _to_tensor(self.margin))
         loss = ops.mean(ops.multiply(_to_tensor(self.gamma), ops.square(diff)), axis=-1)
         return _reduce(loss, self.reduction, sample_weight)
@@ -1796,31 +1889,37 @@ class CosineSimilarity(Loss):
 
     def __init__(
         self,
-        axis: TensorLike = -1,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "cosine_similarity",
+        axis: int = -1,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "cosine_similarity",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the CosineSimilarity loss.
 
         Args:
-            axis: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            axis: Feature axis along which cosine similarity is computed.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute cosine similarity loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth target values.
+            y_pred: Predicted values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced cosine similarity loss tensor.
         """
         loss = cosine_similarity(y_true, y_pred, axis=self.axis)
         return _reduce(loss, self.reduction, sample_weight)
@@ -1882,41 +1981,47 @@ class Dice(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "dice",
-        axis: TensorLike = None,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "dice",
+        axis: int | tuple[int, ...] | None = None,
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Dice loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            axis: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            axis: Axis or axes along which Dice overlap is computed.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.axis = axis if axis is not None else -1
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Dice overlap loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth segmentation mask or binary targets.
+            y_pred: Predicted probabilities or segmentation mask.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced Dice loss tensor.
         """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         intersection = ops.sum(ops.multiply(y_true, y_pred), axis=self.axis)
         sum_y = ops.sum(ops.add(y_true, y_pred), axis=self.axis)
         eps = _to_tensor(1e-7)
-        dice = ops.divide(
+        dice_val = ops.divide(
             ops.add(ops.multiply(_to_tensor(2.0), intersection), eps),
             ops.add(sum_y, eps),
         )
-        loss = ops.subtract(_to_tensor(1.0), dice)
+        loss = ops.subtract(_to_tensor(1.0), dice_val)
         return _reduce(loss, self.reduction, sample_weight)
 
 
@@ -1952,28 +2057,34 @@ class Hinge(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "hinge",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "hinge",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Hinge loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute hinge loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth targets in ``{-1, 1}`` or ``{0, 1}``.
+            y_pred: Predicted decision scores.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced hinge loss tensor.
         """
         loss = hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2017,31 +2128,37 @@ class Huber(Loss):
 
     def __init__(
         self,
-        delta: TensorLike = 1.0,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "huber_loss",
+        delta: float = 1.0,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "huber_loss",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Huber loss.
 
         Args:
-            delta: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            delta: Threshold at which loss transitions from quadratic to linear.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.delta = delta
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Huber loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth regression targets.
+            y_pred: Predicted regression values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced Huber loss tensor.
         """
         loss = huber(y_true, y_pred, delta=self.delta)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2080,28 +2197,34 @@ class KLDivergence(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "k_l_divergence",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "kl_divergence",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the KLDivergence loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Kullback-Leibler divergence loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth probability distribution targets.
+            y_pred: Predicted probability distributions.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced KL divergence loss tensor.
         """
         loss = kl_divergence(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2138,28 +2261,34 @@ class LogCosh(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "log_cosh",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "log_cosh",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the LogCosh loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute log-cosh loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth regression targets.
+            y_pred: Predicted regression values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced log-cosh loss tensor.
         """
         loss = log_cosh(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2194,28 +2323,34 @@ class MeanAbsoluteError(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "mean_absolute_error",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "mean_absolute_error",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MeanAbsoluteError loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute mean absolute error loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth regression targets.
+            y_pred: Predicted regression values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced mean absolute error loss tensor.
         """
         loss = mean_absolute_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2250,28 +2385,34 @@ class MeanAbsolutePercentageError(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "mean_absolute_percentage_error",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "mean_absolute_percentage_error",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MeanAbsolutePercentageError loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute mean absolute percentage error loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth regression targets.
+            y_pred: Predicted regression values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced mean absolute percentage error loss tensor.
         """
         loss = mean_absolute_percentage_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2306,28 +2447,34 @@ class MeanSquaredLogarithmicError(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "mean_squared_logarithmic_error",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "mean_squared_logarithmic_error",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MeanSquaredLogarithmicError loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute mean squared logarithmic error loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth regression targets.
+            y_pred: Predicted regression values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced mean squared logarithmic error loss tensor.
         """
         loss = mean_squared_logarithmic_error(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2362,28 +2509,34 @@ class Poisson(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "poisson",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "poisson",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Poisson loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Poisson loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth count targets.
+            y_pred: Predicted rate values.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced Poisson loss tensor.
         """
         loss = poisson(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2459,34 +2612,43 @@ class SparseCategoricalCrossentropy(Loss):
 
     def __init__(
         self,
-        from_logits: TensorLike = False,
-        ignore_class: TensorLike = None,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "sparse_categorical_crossentropy",
+        from_logits: bool = False,
+        ignore_class: int | None = None,
+        reduction: str | None = "sum_over_batch_size",
+        axis: int = -1,
+        name: str = "sparse_categorical_crossentropy",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SparseCategoricalCrossentropy loss.
 
         Args:
-            from_logits: Description.
-            ignore_class: Description.
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            from_logits: Whether ``y_pred`` contains unnormalized logits.
+            ignore_class: Optional class index to ignore during loss calculation.
+            reduction: Reduction mode applied across batch samples.
+            axis: Feature axis along which crossentropy is computed.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.from_logits = from_logits
         self.ignore_class = ignore_class
+        self.axis = axis
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute sparse categorical crossentropy loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth integer class indices.
+            y_pred: Predicted class probabilities or logits.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced sparse categorical crossentropy loss tensor.
         """
         loss = sparse_categorical_crossentropy(
             y_true, y_pred, from_logits=self.from_logits, ignore_class=self.ignore_class
@@ -2526,28 +2688,34 @@ class SquaredHinge(Loss):
 
     def __init__(
         self,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "squared_hinge",
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "squared_hinge",
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SquaredHinge loss.
 
         Args:
-            reduction: Description.
-            name: Description.
-            kwargs: Description.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute squared hinge loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth targets in ``{-1, 1}`` or ``{0, 1}``.
+            y_pred: Predicted decision scores.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced squared hinge loss tensor.
         """
         loss = squared_hinge(y_true, y_pred)
         return _reduce(loss, self.reduction, sample_weight)
@@ -2593,37 +2761,43 @@ class Tversky(Loss):
 
     def __init__(
         self,
-        alpha: TensorLike = 0.5,
-        beta: TensorLike = 0.5,
-        reduction: TensorLike = "sum_over_batch_size",
-        name: TensorLike = "tversky",
-        axis: TensorLike = None,
+        alpha: float = 0.5,
+        beta: float = 0.5,
+        reduction: str | None = "sum_over_batch_size",
+        name: str = "tversky",
+        axis: int | tuple[int, ...] | None = None,
+        dtype: str | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Tversky loss.
 
         Args:
-            alpha: Description.
-            beta: Description.
-            reduction: Description.
-            name: Description.
-            axis: Description.
-            kwargs: Description.
+            alpha: False negative penalty weight.
+            beta: False positive penalty weight.
+            reduction: Reduction mode applied across batch samples.
+            name: String name for the loss instance.
+            axis: Axis or axes along which Tversky index is computed.
+            dtype: Optional computation dtype string.
+            **kwargs: Additional keyword arguments.
         """
-        super().__init__(reduction=reduction, name=name)
+        _ = kwargs
+        super().__init__(reduction=reduction, name=name, dtype=dtype)
         self.alpha = alpha
         self.beta = beta
         self.axis = axis if axis is not None else -1
 
     def __call__(
-        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self, y_true: TensorLike, y_pred: TensorLike, sample_weight: TensorLike | None = None
     ) -> TensorLike:
-        """Call self as a function.
+        """Compute Tversky overlap loss between ``y_true`` and ``y_pred``.
 
         Args:
-            y_true: Input parameter ``y_true``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
+            y_true: Ground-truth segmentation mask or binary targets.
+            y_pred: Predicted probabilities or segmentation mask.
+            sample_weight: Optional per-sample weight tensor.
+
+        Returns:
+            TensorLike: Reduced Tversky loss tensor.
         """
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         true_pos = ops.sum(ops.multiply(y_true, y_pred), axis=self.axis)
@@ -2642,34 +2816,70 @@ class Tversky(Loss):
                 ops.multiply(_to_tensor(self.beta), false_pos),
             ),
         )
-        tversky = ops.divide(ops.add(true_pos, eps), ops.add(denom, eps))
-        loss = ops.subtract(_to_tensor(1.0), tversky)
+        tversky_val = ops.divide(ops.add(true_pos, eps), ops.add(denom, eps))
+        loss = ops.subtract(_to_tensor(1.0), tversky_val)
         return _reduce(loss, self.reduction, sample_weight)
 
 
+_LOSS_REGISTRY: dict[str, type[Loss]] = {
+    "BinaryCrossentropy": BinaryCrossentropy,
+    "BinaryFocalCrossentropy": BinaryFocalCrossentropy,
+    "CTC": CTC,
+    "CategoricalCrossentropy": CategoricalCrossentropy,
+    "CategoricalFocalCrossentropy": CategoricalFocalCrossentropy,
+    "CategoricalGeneralizedCrossEntropy": CategoricalGeneralizedCrossEntropy,
+    "CategoricalHinge": CategoricalHinge,
+    "Circle": Circle,
+    "CosineSimilarity": CosineSimilarity,
+    "Dice": Dice,
+    "Hinge": Hinge,
+    "Huber": Huber,
+    "KLDivergence": KLDivergence,
+    "LogCosh": LogCosh,
+    "Loss": Loss,
+    "MeanAbsoluteError": MeanAbsoluteError,
+    "MeanAbsolutePercentageError": MeanAbsolutePercentageError,
+    "MeanSquaredError": MeanSquaredError,
+    "MeanSquaredLogarithmicError": MeanSquaredLogarithmicError,
+    "Poisson": Poisson,
+    "SparseCategoricalCrossentropy": SparseCategoricalCrossentropy,
+    "SquaredHinge": SquaredHinge,
+    "Tversky": Tversky,
+}
+
+
 def serialize(loss: TensorLike) -> TensorLike:
-    """Serialize a loss.
+    """Serialize a loss instance or identifier into a configuration dictionary.
 
     Args:
-        loss: Input parameter ``loss``.
+        loss: Loss instance, callable, or string identifier.
+
+    Returns:
+        TensorLike: Serialized loss dictionary, string, or None.
     """
     if loss is None:
         return None
     if isinstance(loss, str):
         return loss
     return {
-        "class_name": loss.__class__.__name__,
-        "config": loss.get_config() if hasattr(loss, "get_config") else {},
+        "class_name": type(loss).__name__,
+        "config": loss.get_config() if isinstance(loss, Loss) else {},
     }
 
 
-def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
-    """Deserialize a loss.
+def deserialize(
+    config: TensorLike, custom_objects: ConfigDict | TensorLike | None = None
+) -> TensorLike:
+    """Deserialize a loss from its configuration dictionary or string identifier.
 
     Args:
-        config: Input parameter ``config``.
-        custom_objects: Input parameter ``custom_objects``.
+        config: Serialized loss configuration dictionary or string name.
+        custom_objects: Optional mapping of custom loss classes.
+
+    Returns:
+        TensorLike: Reconstructed loss instance or original config.
     """
+    _ = custom_objects
     if config is None:
         return None
     if isinstance(config, str):
@@ -2677,8 +2887,8 @@ def deserialize(config: TensorLike, custom_objects: TensorLike = None) -> Tensor
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
-        cls = globals().get(class_name)
-        if cls:
+        cls = _LOSS_REGISTRY.get(str(class_name)) if isinstance(class_name, str) else None
+        if cls is not None and isinstance(conf, dict):
             return cls(**conf)
     return config
 
@@ -2687,7 +2897,10 @@ def get(identifier: TensorLike) -> TensorLike:
     """Retrieve a Keras loss object via an identifier.
 
     Args:
-        identifier: Input parameter ``identifier``.
+        identifier: Loss instance, callable, or string identifier.
+
+    Returns:
+        TensorLike: Resolved loss instance, callable, or None.
     """
     if identifier is None:
         return None
@@ -2729,16 +2942,16 @@ def get(identifier: TensorLike) -> TensorLike:
     return identifier
 
 
-# Additional esoteric Keras losses
-
-
-def dice(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike = -1) -> TensorLike:
-    """Function docstring.
+def dice(y_true: TensorLike, y_pred: TensorLike, axis: int | tuple[int, ...] = -1) -> TensorLike:
+    """Compute functional Dice loss between ``y_true`` and ``y_pred``.
 
     Args:
-        y_true: Description.
-        y_pred: Description.
-        axis: Description.
+        y_true: Ground-truth segmentation mask or binary targets.
+        y_pred: Predicted probabilities or segmentation mask.
+        axis: Axis or axes along which Dice overlap is computed.
+
+    Returns:
+        TensorLike: Dice loss tensor.
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.nn.loss import dice_loss
@@ -2747,15 +2960,18 @@ def dice(y_true: TensorLike, y_pred: TensorLike, axis: TensorLike = -1) -> Tenso
 
 
 def tversky(
-    y_true: TensorLike, y_pred: TensorLike, alpha: TensorLike = 0.5, beta: TensorLike = 0.5
+    y_true: TensorLike, y_pred: TensorLike, alpha: float = 0.5, beta: float = 0.5
 ) -> TensorLike:
-    """Function docstring.
+    """Compute functional Tversky loss between ``y_true`` and ``y_pred``.
 
     Args:
-        y_true: Description.
-        y_pred: Description.
-        alpha: Description.
-        beta: Description.
+        y_true: Ground-truth segmentation mask or binary targets.
+        y_pred: Predicted probabilities or segmentation mask.
+        alpha: False negative penalty weight.
+        beta: False positive penalty weight.
+
+    Returns:
+        TensorLike: Tversky loss tensor.
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.nn.loss import tversky_loss
@@ -2764,32 +2980,42 @@ def tversky(
 
 
 def ctc(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-    """Function docstring.
+    """Compute functional Connectionist Temporal Classification (CTC) loss.
 
     Args:
-        y_true: Description.
-        y_pred: Description.
+        y_true: Ground-truth sequence labels.
+        y_pred: Predicted sequence log-probabilities or logits.
+
+    Returns:
+        TensorLike: CTC loss tensor.
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.creation import ones
     from ml_switcheroo_compiler.ops.loss import ctc_loss
+    from zero_keras.types import ShapeCarrierProtocol
 
-    # Keras backend signature fallback for CTC
-    y_true_len = ones((y_true.shape[0], 1)) if hasattr(y_true, "shape") else ones((1,))
-    y_pred_len = ones((y_pred.shape[0], 1)) if hasattr(y_pred, "shape") else ones((1,))
+    y_true_len = (
+        ones((y_true.shape[0], 1)) if isinstance(y_true, ShapeCarrierProtocol) else ones((1,))
+    )
+    y_pred_len = (
+        ones((y_pred.shape[0], 1)) if isinstance(y_pred, ShapeCarrierProtocol) else ones((1,))
+    )
     return ctc_loss(y_true, y_pred, y_true_len, y_pred_len)
 
 
 def circle(
-    y_true: TensorLike, y_pred: TensorLike, margin: TensorLike = 0.25, gamma: TensorLike = 256
+    y_true: TensorLike, y_pred: TensorLike, margin: float = 0.25, gamma: float = 256.0
 ) -> TensorLike:
-    """Function docstring.
+    """Compute functional Circle loss for metric learning embeddings.
 
     Args:
-        y_true: Description.
-        y_pred: Description.
-        margin: Description.
-        gamma: Description.
+        y_true: Ground-truth integer class labels.
+        y_pred: L2-normalized embedding predictions.
+        margin: Relaxation margin around decision boundary.
+        gamma: Scale factor for similarity scores.
+
+    Returns:
+        TensorLike: Circle loss tensor.
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.loss import circle_loss
@@ -2798,11 +3024,14 @@ def circle(
 
 
 def categorical_generalized_cross_entropy(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-    """Function docstring.
+    """Compute functional Generalized Cross Entropy (GCE) loss.
 
     Args:
-        y_true: Description.
-        y_pred: Description.
+        y_true: One-hot ground-truth targets.
+        y_pred: Predicted class probabilities.
+
+    Returns:
+        TensorLike: Generalized Cross Entropy loss tensor.
     """
     y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
     from ml_switcheroo_compiler.ops.loss import (

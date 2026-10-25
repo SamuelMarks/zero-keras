@@ -29,7 +29,7 @@ def load_data(
         origin=origin_folder + "boston_housing.npz",
         file_hash="f553887a1f8d56fa1e12b623d081491e",
     )
-    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
+    with ops.load(resolved_path, allow_pickle=True) as f:
         x = ops.convert_to_tensor(f["x"])
         y = ops.convert_to_tensor(f["y"])
 
@@ -37,18 +37,18 @@ def load_data(
 
     x_len = int(x.shape[0] or 0)
     indices: list[int] = list(range(x_len))
-    rng.shuffle(indices)  # type: ignore[arg-type]
+    rng.shuffle(indices)
 
     indices_tensor = ops.convert_to_tensor(indices)
-    x = ops.take(x, indices_tensor, axis=0)
-    y = ops.take(y, indices_tensor, axis=0)
+    x = ops.convert_to_tensor(ops.take(x, indices_tensor, axis=0))
+    y = ops.convert_to_tensor(ops.take(y, indices_tensor, axis=0))
 
     split_idx = int(x_len * (1.0 - test_split))
 
-    x_train = x[:split_idx]  # type: ignore[index]
-    y_train = y[:split_idx]  # type: ignore[index]
+    x_train = x[:split_idx]
+    y_train = y[:split_idx]
 
-    x_test = x[split_idx:]  # type: ignore[index]
-    y_test = y[split_idx:]  # type: ignore[index]
+    x_test = x[split_idx:]
+    y_test = y[split_idx:]
 
     return (x_train, y_train), (x_test, y_test)

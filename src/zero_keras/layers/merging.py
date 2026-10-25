@@ -1,10 +1,12 @@
 """Merging layers (`Add`, `Subtract`, `Multiply`, `Average`, `Maximum`, `Minimum`, `Concatenate`, `Dot`) for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
+from collections.abc import Sequence
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import TensorLike
 
 
 class Add(Layer):
@@ -32,16 +34,15 @@ class Add(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the elementwise sum of a sequence of input tensors.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise sum tensor.
         """
         res = _to_tensor(inputs[0])
         for t in inputs[1:]:
@@ -75,16 +76,15 @@ class Subtract(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute ``inputs[0] - inputs[1]`` elementwise.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Pair of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise difference tensor.
         """
         return _wrap(ops.subtract(_to_tensor(inputs[0]), _to_tensor(inputs[1])))
 
@@ -114,16 +114,15 @@ class Multiply(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the elementwise product of a sequence of input tensors.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise product tensor.
         """
         res = _to_tensor(inputs[0])
         for t in inputs[1:]:
@@ -156,16 +155,15 @@ class Average(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the elementwise mean of a sequence of input tensors.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise average tensor.
         """
         res = _to_tensor(inputs[0])
         for t in inputs[1:]:
@@ -200,16 +198,15 @@ class Maximum(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the elementwise maximum across a sequence of input tensors.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise maximum tensor.
         """
         res = _to_tensor(inputs[0])
         for t in inputs[1:]:
@@ -242,16 +239,15 @@ class Minimum(Layer):
 
     """
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the elementwise minimum across a sequence of input tensors.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors with matching shapes.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Elementwise minimum tensor.
         """
         res = _to_tensor(inputs[0])
         for t in inputs[1:]:
@@ -286,26 +282,25 @@ class Concatenate(Layer):
 
     """
 
-    def __init__(self, axis: TensorLike = -1, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(self, axis: int = -1, **kwargs: TensorLike) -> None:
+        """Initialize the Concatenate layer.
 
         Args:
-            axis: Description.
-            kwargs: Description.
+            axis: Axis along which to concatenate input tensors. Defaults to ``-1``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.axis = axis
+        self.axis = int(axis)
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Concatenate ``inputs`` along ``self.axis``.
 
         Args:
-        inputs: Parameter inputs.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of tensors to concatenate.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Concatenated tensor.
         """
         tensors = tuple(_to_tensor(t) for t in inputs)
         return _wrap(ops.concatenate(list(tensors), self.axis))
@@ -354,25 +349,28 @@ class Dot(Layer):
     """
 
     def __init__(
-        self, axes: TensorLike, normalize: TensorLike = False, **kwargs: TensorLike
+        self, axes: int | Sequence[int], normalize: bool = False, **kwargs: TensorLike
     ) -> None:
-        """Function docstring.
+        """Initialize the Dot product layer.
 
         Args:
-            axes: Description.
-            normalize: Description.
-            kwargs: Description.
+            axes: Axis or pair of axes along which to compute the dot product.
+            normalize: Whether to L2-normalize inputs before taking the dot product.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.axes = axes
-        self.normalize = normalize
+        self.normalize = bool(normalize)
 
-    def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+    def call(self, inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+        """Compute the dot product (or cosine similarity) of ``inputs[0]`` and ``inputs[1]``.
 
         Args:
-            inputs: Description.
-            kwargs: Description.
+            inputs: Pair of tensors ``[a, b]``.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Dot product tensor.
         """
         a, b = _to_tensor(inputs[0]), _to_tensor(inputs[1])
         axes = self.axes
@@ -439,86 +437,113 @@ class Dot(Layer):
         return _wrap(out)
 
 
-def add(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def add(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Add`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to add elementwise.
+        **kwargs: Keyword arguments forwarded to ``Add``.
+
+    Returns:
+        TensorLike: Elementwise sum tensor.
     """
     return Add(**kwargs)(inputs)
 
 
-def subtract(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def subtract(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Subtract`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Pair of tensors ``[x1, x2]`` to subtract elementwise.
+        **kwargs: Keyword arguments forwarded to ``Subtract``.
+
+    Returns:
+        TensorLike: Elementwise difference tensor ``x1 - x2``.
     """
     return Subtract(**kwargs)(inputs)
 
 
-def multiply(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def multiply(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Multiply`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to multiply elementwise.
+        **kwargs: Keyword arguments forwarded to ``Multiply``.
+
+    Returns:
+        TensorLike: Elementwise product tensor.
     """
     return Multiply(**kwargs)(inputs)
 
 
-def average(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def average(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Average`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to average elementwise.
+        **kwargs: Keyword arguments forwarded to ``Average``.
+
+    Returns:
+        TensorLike: Elementwise average tensor.
     """
     return Average(**kwargs)(inputs)
 
 
-def maximum(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def maximum(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Maximum`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to take the elementwise maximum over.
+        **kwargs: Keyword arguments forwarded to ``Maximum``.
+
+    Returns:
+        TensorLike: Elementwise maximum tensor.
     """
     return Maximum(**kwargs)(inputs)
 
 
-def minimum(inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def minimum(inputs: Sequence[TensorLike], **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Minimum`` layer.
 
     Args:
-        inputs: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to take the elementwise minimum over.
+        **kwargs: Keyword arguments forwarded to ``Minimum``.
+
+    Returns:
+        TensorLike: Elementwise minimum tensor.
     """
     return Minimum(**kwargs)(inputs)
 
 
-def concatenate(inputs: TensorLike, axis: TensorLike = -1, **kwargs: TensorLike) -> TensorLike:
-    """Function docstring.
+def concatenate(inputs: Sequence[TensorLike], axis: int = -1, **kwargs: TensorLike) -> TensorLike:
+    """Functional interface to the ``Concatenate`` layer.
 
     Args:
-        inputs: Description.
-        axis: Description.
-        kwargs: Description.
+        inputs: Sequence of tensors to concatenate.
+        axis: Concatenation axis. Defaults to ``-1``.
+        **kwargs: Keyword arguments forwarded to ``Concatenate``.
+
+    Returns:
+        TensorLike: Concatenated tensor.
     """
     return Concatenate(axis=axis, **kwargs)(inputs)
 
 
 def dot(
-    inputs: TensorLike, axes: TensorLike, normalize: TensorLike = False, **kwargs: TensorLike
+    inputs: Sequence[TensorLike],
+    axes: int | Sequence[int],
+    normalize: bool = False,
+    **kwargs: TensorLike,
 ) -> TensorLike:
-    """Function docstring.
+    """Functional interface to the ``Dot`` layer.
 
     Args:
-        inputs: Description.
-        axes: Description.
-        normalize: Description.
-        kwargs: Description.
+        inputs: Pair of tensors ``[x1, x2]``.
+        axes: Axis or pair of axes along which to compute the dot product.
+        normalize: Whether to L2-normalize inputs before taking the dot product.
+        **kwargs: Keyword arguments forwarded to ``Dot``.
+
+    Returns:
+        TensorLike: Dot product tensor.
     """
     return Dot(axes=axes, normalize=normalize, **kwargs)(inputs)

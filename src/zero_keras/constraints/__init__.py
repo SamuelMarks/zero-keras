@@ -374,9 +374,9 @@ def serialize(
 
 
 def deserialize(
-    config: Constraint | str | ConfigDict | None,
+    config: Constraint | str | ConfigDict | ConfigValue | None,
     custom_objects: dict[str, ConfigValue] | None = None,
-) -> Constraint | str | ConfigDict | None:
+) -> Constraint | str | ConfigDict | ConfigValue | None:
     """Deserialize a constraint configuration.
 
     Args:
@@ -384,7 +384,7 @@ def deserialize(
         custom_objects: Optional custom object mapping.
 
     Returns:
-        Constraint | str | ConfigDict | None: Deserialized constraint.
+        Constraint | str | ConfigDict | ConfigValue | None: Deserialized constraint.
     """
     if config is None or isinstance(config, Constraint):
         return config
@@ -417,15 +417,15 @@ def deserialize(
 
 
 def get(
-    identifier: Constraint | str | ConfigDict | None,
-) -> Constraint | str | ConfigDict | None:
+    identifier: Constraint | str | ConfigDict | ConfigValue | None,
+) -> Constraint | str | ConfigDict | ConfigValue | None:
     """Retrieve a constraint instance by identifier.
 
     Args:
         identifier: Constraint instance, name, or config dict.
 
     Returns:
-        Constraint | str | ConfigDict | None: Resolved constraint.
+        Constraint | str | ConfigDict | ConfigValue | None: Resolved constraint.
     """
     if identifier is None or isinstance(identifier, Constraint):
         return identifier

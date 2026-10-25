@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""ResNet50 application alias module for zero_keras."""
 
 from __future__ import annotations
 

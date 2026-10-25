@@ -1,263 +1,222 @@
-"""Module docstring."""
+"""Pytest configuration and backend fixtures for zero_keras tests."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
+import math
 import os
+
+from ml_switcheroo_compiler.backends.numpy.eager import numpy_eager_registry
+import ml_switcheroo_compiler.ops as msc_ops
+import pytest
+
+from zero_keras import ops
+from zero_keras.types import TensorLike
 
 os.environ["KERAS_BACKEND"] = "numpy"
 
-import pytest
 
-
-def _pytest_collection_modifyitems(items: TensorLike) -> TensorLike:
-    """Function docstring.
+def to_flat_floats(x: TensorLike) -> list[float]:
+    """Flatten any tensor, array, scalar, or nested sequence into a list of Python floats.
 
     Args:
-        items: Description.
+        x: Input tensor, scalar, or nested sequence.
+
+    Returns:
+        list[float]: Flattened list of float values.
     """
-    skip = pytest.mark.skip(reason="Pending backend implementation")
-    for item in items:
-        item.add_marker(skip)
+    if isinstance(x, (int, float, bool)):
+        return [float(x)]
+    if isinstance(x, (list, tuple)):
+        out: list[float] = []
+        for item in x:
+            out.extend(to_flat_floats(item))
+        return out
+    if hasattr(x, "tolist"):
+        return to_flat_floats(x.tolist())
+    if hasattr(x, "numpy") and callable(x.numpy):
+        return to_flat_floats(x.numpy())
+    if hasattr(x, "data") and x.data is not x:
+        return to_flat_floats(x.data)
+    t = ops.convert_to_numpy(ops.convert_to_tensor(x))
+    if hasattr(t, "tolist"):
+        return to_flat_floats(t.tolist())
+    return [float(t)]
 
 
-import sys
-from unittest.mock import MagicMock
+def is_close_zero(
+    actual: TensorLike,
+    expected: TensorLike,
+    rtol: float = 1e-5,
+    atol: float = 1e-5,
+) -> bool:
+    """Return whether ``actual`` and ``expected`` are element-wise close within tolerances.
 
-sys.modules["ml_switcheroo.nn.metrics"] = MagicMock()
-sys.modules["ml_switcheroo.nn.regularizers"] = MagicMock()
-sys.modules["ml_switcheroo.nn.optimizers"] = MagicMock()
-sys.modules["ml_switcheroo.nn.schedules"] = MagicMock()
-sys.modules["ml_switcheroo.nn.layers"] = MagicMock()
+    Args:
+        actual: Actual tensor, scalar, or sequence.
+        expected: Expected tensor, scalar, or sequence.
+        rtol: Relative tolerance.
+        atol: Absolute tolerance.
 
-try:
-    import tensorflow as tf
+    Returns:
+        bool: True if all elements are within tolerance.
+    """
+    flat_a = to_flat_floats(actual)
+    flat_b = to_flat_floats(expected)
+    if len(flat_a) != len(flat_b):
+        if len(flat_a) == 1:
+            flat_a = flat_a * len(flat_b)
+        elif len(flat_b) == 1:
+            flat_b = flat_b * len(flat_a)
+        else:
+            return False
+    for a_val, b_val in zip(flat_a, flat_b):
+        if math.isnan(a_val) and math.isnan(b_val):
+            continue
+        if not math.isclose(a_val, b_val, rel_tol=rtol, abs_tol=atol):
+            return False
+    return True
 
-    _ = tf
-except ImportError:
 
-    class MockTF(MagicMock):
-        """Keras ``MockTF`` class."""
+def assert_allclose_zero(
+    actual: TensorLike,
+    expected: TensorLike,
+    rtol: float = 1e-5,
+    atol: float = 1e-5,
+) -> None:
+    """Assert that ``actual`` and ``expected`` are element-wise close within tolerances.
 
-        pass
+    Args:
+        actual: Actual tensor, scalar, or sequence.
+        expected: Expected tensor, scalar, or sequence.
+        rtol: Relative tolerance.
+        atol: Absolute tolerance.
+    """
+    assert is_close_zero(actual, expected, rtol=rtol, atol=atol), (
+        f"Arrays not close: actual={to_flat_floats(actual)} vs expected={to_flat_floats(expected)}"
+    )
 
-    tf_mock = MockTF()
-    sys.modules["tensorflow"] = tf_mock
-    sys.modules["tensorflow.errors"] = MagicMock()
 
-    # We must patch keras.backend.backend to return something other than "tensorflow"
-    # to avoid the deep traceback import issue during tests without actually importing keras here.
-    import os
+def assert_array_equal_zero(actual: TensorLike, expected: TensorLike) -> None:
+    """Assert that ``actual`` and ``expected`` have identical element values.
 
-    os.environ["KERAS_BACKEND"] = "numpy"
+    Args:
+        actual: Actual tensor, scalar, or sequence.
+        expected: Expected tensor, scalar, or sequence.
+    """
+    flat_a = to_flat_floats(actual)
+    flat_b = to_flat_floats(expected)
+    assert flat_a == flat_b, f"Arrays not equal: actual={flat_a} vs expected={flat_b}"
 
 
 @pytest.fixture(autouse=True)
-def mock_conv_transpose_ops(monkeypatch: TensorLike) -> TensorLike:
-    """Mock conv transpose ops since backend currently returns args[0] which crashes bias addition.
-
-    Args:
-        monkeypatch: Input parameter ``monkeypatch``.
-    """
-    from zero_keras import ops
-
-    def mock_conv1d(
-        x: TensorLike,
-        kernel: TensorLike,
-        strides: TensorLike,
-        padding: TensorLike,
-        **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Execute ``mock_conv1d``.
-
-        Args:
-            x: Input parameter ``x``.
-            kernel: Input parameter ``kernel``.
-            strides: Input parameter ``strides``.
-            padding: Input parameter ``padding``.
-            kwargs: Input parameter ``kwargs``.
-        """
-        N = x.shape[0]
-        C_out = kernel.shape[1]
-        spatial = x.shape[2:]
-        out_shape = (N, C_out) + spatial
-        return ops.zeros(out_shape, dtype=x.dtype)
-
-    def mock_conv2d(
-        x: TensorLike,
-        kernel: TensorLike,
-        strides: TensorLike,
-        padding: TensorLike,
-        **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Execute ``mock_conv2d``.
-
-        Args:
-            x: Input parameter ``x``.
-            kernel: Input parameter ``kernel``.
-            strides: Input parameter ``strides``.
-            padding: Input parameter ``padding``.
-            kwargs: Input parameter ``kwargs``.
-        """
-        N = x.shape[0]
-        C_out = kernel.shape[1]
-        spatial = x.shape[2:]
-        out_shape = (N, C_out) + spatial
-        return ops.zeros(out_shape, dtype=x.dtype)
-
-    def mock_conv3d(
-        x: TensorLike,
-        kernel: TensorLike,
-        strides: TensorLike,
-        padding: TensorLike,
-        **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Execute ``mock_conv3d``.
-
-        Args:
-            x: Input parameter ``x``.
-            kernel: Input parameter ``kernel``.
-            strides: Input parameter ``strides``.
-            padding: Input parameter ``padding``.
-            kwargs: Input parameter ``kwargs``.
-        """
-        N = x.shape[0]
-        C_out = kernel.shape[1]
-        spatial = x.shape[2:]
-        out_shape = (N, C_out) + spatial
-        return ops.zeros(out_shape, dtype=x.dtype)
-
-    monkeypatch.setattr(ops, "conv1d_transpose", mock_conv1d, raising=False)
-    monkeypatch.setattr(ops, "conv2d_transpose", mock_conv2d, raising=False)
-    monkeypatch.setattr(ops, "conv3d_transpose", mock_conv3d, raising=False)
-
-
-import sys
-from unittest.mock import MagicMock
-
-
-@pytest.fixture(autouse=True)
-def fallback_registry_more() -> TensorLike:
-    """Execute ``fallback_registry_more``."""
-    import numpy as np
-    from ml_switcheroo_compiler.backends.numpy.eager import numpy_eager_registry
-
+def fallback_registry_more() -> None:
+    """Ensure ``RandomNormal`` and ``StopGradient`` are registered in the eager registry."""
     if "RandomNormal" not in numpy_eager_registry._registry:
         numpy_eager_registry.register("RandomNormal")(
-            lambda np_mod, *args, **kwargs: np.random.normal(
+            lambda np_mod, *args, **kwargs: np_mod.random.normal(
                 size=kwargs.get("shape", args[0] if args else (1,))
             )
         )
-
-
-@pytest.fixture(autouse=True)
-def fallback_registry_even_more() -> TensorLike:
-    """Execute ``fallback_registry_even_more``."""
-    from ml_switcheroo_compiler.backends.numpy.eager import numpy_eager_registry
-
     if "StopGradient" not in numpy_eager_registry._registry:
         numpy_eager_registry.register("StopGradient")(lambda np_mod, x, *args, **kwargs: x)
 
 
 @pytest.fixture(autouse=True)
-def fix_concat_registry() -> TensorLike:
-    """Execute ``fix_concat_registry``."""
-    import numpy as np
-    from ml_switcheroo_compiler.backends.numpy.eager import numpy_eager_registry
+def fallback_registry_concat2(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Bridge ``dim`` and ``axis`` keyword arguments in ``ml_switcheroo_compiler.ops.concatenate``.
 
-    def mock_concat(
+    Args:
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+
+    def mock_concat_eager(
         np_mod: TensorLike,
         x: TensorLike,
-        dim: TensorLike = 0,
+        dim: int | None = None,
+        axis: int | None = None,
         *args: TensorLike,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        # np.concatenate takes axis, not dim, so we need to bridge it
-        """Execute ``mock_concat``.
+        """Concatenate ``x`` along ``dim`` or ``axis`` in the eager registry.
 
         Args:
-            np_mod: Input parameter ``np_mod``.
-            x: Input parameter ``x``.
-            dim: Input parameter ``dim``.
-            args: Input parameter ``args``.
-            kwargs: Input parameter ``kwargs``.
+            np_mod: Backend module reference.
+            x: Sequence of arrays to concatenate.
+            dim: Concatenation dimension.
+            axis: Concatenation axis.
+            *args: Extra positional arguments.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            TensorLike: Concatenated array.
         """
-        return np.concatenate(x, axis=dim)
+        _ = args, kwargs
+        ax = dim if dim is not None else (axis if axis is not None else 0)
+        return np_mod.concatenate(x, axis=ax)
 
-    numpy_eager_registry.register("Concatenate")(mock_concat)
+    numpy_eager_registry.register("Concatenate")(mock_concat_eager)
 
-
-@pytest.fixture(autouse=True)
-def fallback_registry_concat2(monkeypatch: TensorLike) -> TensorLike:
-    """Execute ``fallback_registry_concat2``.
-
-    Args:
-        monkeypatch: Input parameter ``monkeypatch``.
-    """
-    import ml_switcheroo_compiler.ops as msc_ops
-    import numpy as np
+    orig_concat = msc_ops.concatenate
 
     def mock_concat(
-        arrays: TensorLike, dim: TensorLike = 0, axis: TensorLike = 0, **kwargs: TensorLike
+        arrays: TensorLike,
+        dim: int | None = None,
+        axis: int | None = None,
+        **kwargs: TensorLike,
     ) -> TensorLike:
-        """Execute ``mock_concat``.
+        """Concatenate ``arrays`` along ``dim`` or ``axis``.
 
         Args:
-            arrays: Input parameter ``arrays``.
-            dim: Input parameter ``dim``.
-            axis: Input parameter ``axis``.
-            kwargs: Input parameter ``kwargs``.
+            arrays: Sequence of tensors or arrays.
+            dim: Optional dimension argument.
+            axis: Optional axis argument.
+            **kwargs: Extra keyword arguments.
+
+        Returns:
+            TensorLike: Concatenated tensor.
         """
-        ax = dim if dim != 0 else axis
-        arrays_np = [
-            (a.val if hasattr(a, "val") else a.data if hasattr(a, "data") else a) for a in arrays
-        ]
-        return np.concatenate(arrays_np, axis=ax)
+        _ = kwargs
+        ax = dim if dim is not None else (axis if axis is not None else 0)
+        tensors = [ops.convert_to_tensor(a) for a in arrays]
+        return orig_concat(tensors, axis=ax)
 
     monkeypatch.setattr(msc_ops, "concatenate", mock_concat, raising=False)
 
 
 @pytest.fixture(autouse=True)
-def mock_one_hot_explicit(monkeypatch: TensorLike) -> TensorLike:
-    """Execute ``mock_one_hot_explicit``.
+def mock_one_hot_explicit(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ensure ``ml_switcheroo_compiler.ops.one_hot`` supports ``axis`` and ``dtype``.
 
     Args:
-        monkeypatch: Input parameter ``monkeypatch``.
+        monkeypatch: Pytest monkeypatch fixture.
     """
-    import ml_switcheroo_compiler.ops as msc_ops
-    import numpy as np
 
     def mock_one_hot(
         indices: TensorLike,
-        num_classes: TensorLike,
-        axis: TensorLike = -1,
-        dtype: TensorLike = "float32",
+        num_classes: int,
+        axis: int = -1,
+        dtype: str | None = "float32",
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Execute ``mock_one_hot``.
+        """Compute one-hot encoding for ``indices`` with ``num_classes`` depth.
 
         Args:
-            indices: Input parameter ``indices``.
-            num_classes: Input parameter ``num_classes``.
-            axis: Input parameter ``axis``.
-            dtype: Input parameter ``dtype``.
-            kwargs: Input parameter ``kwargs``.
+            indices: Integer index tensor or array.
+            num_classes: Number of classes (one-hot depth).
+            axis: Axis along which one-hot representation is placed.
+            dtype: Output data type string.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: One-hot encoded tensor.
         """
-        indices = np.asarray(
-            (
-                indices.data
-                if hasattr(indices, "data")
-                else indices.val
-                if hasattr(indices, "val")
-                else indices
-            ),
-            dtype=int,
-        )
-        res = np.eye(num_classes)[indices]
+        _ = kwargs
+        target_dtype = dtype if dtype is not None else "float32"
+        idx_t = ops.cast(ops.convert_to_tensor(indices), "int32")
+        eye_t = ops.eye(num_classes, dtype=target_dtype)
+        res = ops.take(eye_t, idx_t, axis=0)
         if axis != -1:
-            res = np.swapaxes(res, axis, -1)
-        if dtype is not None:
-            res = res.astype(dtype)
+            res = ops.swapaxes(res, axis, -1)
         return res
 
     monkeypatch.setattr(msc_ops, "one_hot", mock_one_hot, raising=False)

@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""ResNet architectures (ResNet50, ResNet101, ResNet152) and residual blocks for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 from zero_keras import backend
 
@@ -51,20 +51,20 @@ def ResNet(
     stack_fn: TensorLike,
     preact: TensorLike,
     use_bias: TensorLike,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "resnet",
-    weights_name: TensorLike = None,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = "resnet",
+    weights_name: str | None = None,
 ) -> TensorLike:
     """Instantiates the ResNet, ResNetV2, and ResNeXt architecture.
 
     Args:
-        weights_name: Input parameter ``weights_name``.
+        weights_name: Pretrained weights key identifier.
         stack_fn: A function that returns output tensor for the
             stacked residual blocks.
         preact: Whether to use pre-activation or not. `True` for ResNetV2,
@@ -213,8 +213,8 @@ def residual_block_v1(
     filters: TensorLike,
     kernel_size: TensorLike = 3,
     stride: TensorLike = 1,
-    conv_shortcut: TensorLike = True,
-    name: TensorLike = None,
+    conv_shortcut: bool = True,
+    name: str | None = None,
 ) -> TensorLike:
     """A residual block for ResNet*_v1.
 
@@ -264,7 +264,7 @@ def stack_residual_blocks_v1(
     filters: TensorLike,
     blocks: TensorLike,
     stride1: TensorLike = 2,
-    name: TensorLike = None,
+    name: str | None = None,
 ) -> TensorLike:
     """A set of stacked residual blocks.
 
@@ -289,8 +289,8 @@ def residual_block_v2(
     filters: TensorLike,
     kernel_size: TensorLike = 3,
     stride: TensorLike = 1,
-    conv_shortcut: TensorLike = False,
-    name: TensorLike = None,
+    conv_shortcut: bool = False,
+    name: str | None = None,
 ) -> TensorLike:
     """A residual block for ResNet*_v2.
 
@@ -344,7 +344,7 @@ def stack_residual_blocks_v2(
     filters: TensorLike,
     blocks: TensorLike,
     stride1: TensorLike = 2,
-    name: TensorLike = None,
+    name: str | None = None,
 ) -> TensorLike:
     """A set of stacked residual blocks.
 
@@ -366,33 +366,39 @@ def stack_residual_blocks_v2(
 
 
 def ResNet50(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "resnet50",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "resnet50",
 ) -> TensorLike:
     """Instantiates the ResNet50 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ResNet50 Functional model.
     """
 
     def stack_fn(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the 4-stage ResNet50 residual block stack.
 
         Args:
-            x: Description.
+            x: Input stem feature tensor.
+
+        Returns:
+            TensorLike: Output feature tensor after stage 5.
         """
         x = stack_residual_blocks_v1(x, 64, 3, stride1=1, name="conv2")
         x = stack_residual_blocks_v1(x, 128, 4, name="conv3")
@@ -416,33 +422,39 @@ def ResNet50(
 
 
 def ResNet101(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "resnet101",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "resnet101",
 ) -> TensorLike:
     """Instantiates the ResNet101 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ResNet101 Functional model.
     """
 
     def stack_fn(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the 4-stage ResNet101 residual block stack.
 
         Args:
-            x: Description.
+            x: Input stem feature tensor.
+
+        Returns:
+            TensorLike: Output feature tensor after stage 5.
         """
         x = stack_residual_blocks_v1(x, 64, 3, stride1=1, name="conv2")
         x = stack_residual_blocks_v1(x, 128, 4, name="conv3")
@@ -466,33 +478,39 @@ def ResNet101(
 
 
 def ResNet152(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = "resnet152",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str = "resnet152",
 ) -> TensorLike:
     """Instantiates the ResNet152 architecture.
 
     Args:
-        include_top: Input parameter ``include_top``.
-        weights: Input parameter ``weights``.
-        input_tensor: Input parameter ``input_tensor``.
-        input_shape: Input parameter ``input_shape``.
-        pooling: Input parameter ``pooling``.
-        classes: Input parameter ``classes``.
-        classifier_activation: Input parameter ``classifier_activation``.
-        name: Input parameter ``name``.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated ResNet152 Functional model.
     """
 
     def stack_fn(x: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the 4-stage ResNet152 residual block stack.
 
         Args:
-            x: Description.
+            x: Input stem feature tensor.
+
+        Returns:
+            TensorLike: Output feature tensor after stage 5.
         """
         x = stack_residual_blocks_v1(x, 64, 3, stride1=1, name="conv2")
         x = stack_residual_blocks_v1(x, 128, 8, name="conv3")
@@ -515,88 +533,27 @@ def ResNet152(
     )
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for ResNet using Caffe BGR zero-centering.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="caffe")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for ResNet.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_CAFFE,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__
-
-DOC = """
-
-Reference:
-- [Deep Residual Learning for Image Recognition](
-    https://arxiv.org/abs/1512.03385) (CVPR 2015)
-
-For image classification use cases, see [this page for detailed examples](
-    https://keras.io/api/applications/#usage-examples-for-image-classification-models).
-
-For transfer learning use cases, make sure to read the
-[guide to transfer learning & fine-tuning](
-    https://keras.io/guides/transfer_learning/).
-
-Note: each Keras Application expects a specific kind of input preprocessing.
-For ResNet, call `keras.applications.resnet.preprocess_input` on your
-inputs before passing them to the model. `resnet.preprocess_input` will convert
-the input images from RGB to BGR, then will zero-center each color channel with
-respect to the ImageNet dataset, without scaling.
-
-Args:
-    include_top: whether to include the fully-connected
-        layer at the top of the network.
-    weights: one of `None` (random initialization),
-        `"imagenet"` (pre-training on ImageNet), or the path to the weights
-        file to be loaded.
-    input_tensor: optional Keras tensor (i.e. output of `layers.Input()`)
-        to use as image input for the model.
-    input_shape: optional shape tuple, only to be specified if `include_top`
-        is `False` (otherwise the input shape has to be `(224, 224, 3)`
-        (with `"channels_last"` data format) or `(3, 224, 224)`
-        (with `"channels_first"` data format). It should have exactly 3
-        inputs channels, and width and height should be no smaller than 32.
-        E.g. `(200, 200, 3)` would be one valid value.
-    pooling: Optional pooling mode for feature extraction when `include_top`
-        is `False`.
-        - `None` means that the output of the model will be the 4D tensor
-                output of the last convolutional block.
-        - `avg` means that global average pooling will be applied to the output
-                of the last convolutional block, and thus the output of the
-                model will be a 2D tensor.
-        - `max` means that global max pooling will be applied.
-    classes: optional number of classes to classify images into, only to be
-        specified if `include_top` is `True`, and if no `weights` argument is
-        specified. Defaults to `1000`.
-    classifier_activation: A `str` or callable. The activation function to
-        use on the "top" layer. Ignored unless `include_top=True`. Set
-        `classifier_activation=None` to return the logits of the "top" layer.
-        When loading pretrained weights, `classifier_activation` can only
-        be `None` or `"softmax"`.
-    name: The name of the model (string).
-
-Returns:
-    A Model instance.
-"""
-
-ResNet50.__doc__ = (ResNet50.__doc__ or "") + DOC
-ResNet101.__doc__ = (ResNet101.__doc__ or "") + DOC
-ResNet152.__doc__ = (ResNet152.__doc__ or "") + DOC

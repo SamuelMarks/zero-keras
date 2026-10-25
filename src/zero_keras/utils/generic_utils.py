@@ -264,7 +264,7 @@ def get_file(
         archive_config=ArchiveConfig(untar=untar, extract=extract, archive_format=archive_format),
         cache_config=CacheConfig(cache_subdir=cache_subdir, cache_dir=cache_dir),
     )
-    return msc_get_file(resolved_fname, origin, config=config)
+    return str(msc_get_file(resolved_fname, origin, config=config))
 
 
 def Progbar(

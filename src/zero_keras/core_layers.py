@@ -1,4 +1,4 @@
-"""Module docstring."""
+"""Core Keras symbolic tensors, variables, base Layer, and Model abstractions."""
 
 from __future__ import annotations
 
@@ -11,10 +11,13 @@ class TensorShape(tuple):
     """TensorShape class."""
 
     def __new__(cls, dims: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Implement the `__new__` special method on `TensorShape`.
 
         Args:
-            dims: Description.
+            dims: Configuration or input value for `dims` (dims).
+
+        Returns:
+            TensorLike: Computed result for `__new__`.
         """
         if dims is None:
             return super().__new__(cls, ())
@@ -24,20 +27,36 @@ class TensorShape(tuple):
 
     @property
     def dims(self) -> TensorLike:
-        """Function docstring."""
+        """Compute or retrieve `dims` for `TensorShape`.
+
+        Returns:
+            TensorLike: Computed result for `dims`.
+        """
         return list(self)
 
     @property
     def rank(self) -> TensorLike:
-        """Function docstring."""
+        """Compute or retrieve `rank` for `TensorShape`.
+
+        Returns:
+            TensorLike: Computed result for `rank`.
+        """
         return len(self)
 
     def as_list(self) -> TensorLike:
-        """Function docstring."""
+        """Compute or retrieve `as list` for `TensorShape`.
+
+        Returns:
+            TensorLike: Computed result for `as_list`.
+        """
         return list(self)
 
     def is_fully_defined(self) -> TensorLike:
-        """Function docstring."""
+        """Compute or retrieve `is fully defined` for `TensorShape`.
+
+        Returns:
+            TensorLike: Computed result for `is_fully_defined`.
+        """
         return all(d is not None for d in self)
 
 
@@ -46,46 +65,72 @@ from zero_keras.activations import _to_tensor
 """Core layers module."""
 
 
-class _GraphNode:
-    """Class docstring."""
+class Node:
+    """Symbolic graph node connecting a layer or operation with its inputs and outputs."""
 
-    def __init__(self, layer: TensorLike, inputs: TensorLike, outputs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self,
+        operation: TensorLike | None = None,
+        call_args: TensorLike | None = None,
+        call_kwargs: TensorLike | None = None,
+        outputs: TensorLike | None = None,
+    ) -> None:
+        """Initialize a symbolic graph node.
 
         Args:
-            layer: Description.
-            inputs: Description.
-            outputs: Description.
+            operation: The layer or operation executed by this node.
+            call_args: Positional arguments or input tensors passed to the operation.
+            call_kwargs: Keyword arguments passed to the operation.
+            outputs: Output tensor(s) produced by the operation.
         """
-        self.layer = layer
-        self.inputs = inputs
+        self.operation = operation
+        self.layer = operation
+        self.call_args = call_args
+        self.inputs = call_args
+        self.call_kwargs = call_kwargs
         self.outputs = outputs
+        self.input_tensors = call_args if call_args is not None else []
+        self.output_tensors = outputs if outputs is not None else []
+        if not hasattr(operation, "_inbound_nodes"):
+            operation._inbound_nodes = []
+        operation._inbound_nodes.append(self)
+        if isinstance(outputs, list):
+            for t in outputs:
+                t._keras_history = self
+        elif hasattr(outputs, "_keras_history"):
+            outputs._keras_history = self
 
 
 class KerasTensor:
-    """docstring."""
+    """Symbolic tensor representation carrying shape, dtype, and graph history."""
 
     def __init__(
         self,
         shape: TensorLike,
         dtype: str = "float32",
-        name: TensorLike = None,
-        data: TensorLike = None,
+        name: TensorLike | None = None,
+        data: TensorLike | None = None,
+        sparse: bool = False,
+        ragged: bool = False,
     ) -> None:
-        """Function docstring.
+        """Initialize a symbolic KerasTensor.
 
         Args:
-            shape: Description.
-            dtype: Description.
-            name: Description.
-            data: Description.
+            shape: Shape tuple of the symbolic tensor.
+            dtype: Data type string. Defaults to ``"float32"``.
+            name: Optional symbolic tensor name.
+            data: Optional backing eager tensor or array.
+            sparse: Whether the symbolic tensor is sparse.
+            ragged: Whether the symbolic tensor is ragged.
         """
         self.shape = shape
         self.dtype = dtype
         self.name = name
-        self._keras_history = None
+        self._sparse: bool = bool(sparse)
+        self._ragged: bool = bool(ragged)
+        self._keras_history: Node | None = None
         if data is not None:
-            self.data = data
+            self.data: TensorLike = data
         else:
             try:
                 import ml_switcheroo_compiler.ops as backend_ops
@@ -95,37 +140,55 @@ class KerasTensor:
                 self.data = None
 
     def __iter__(self) -> TensorLike:
-        """__iter__ docstring."""
+        """Disallow iteration over a symbolic ``KerasTensor``."""
         raise TypeError("KerasTensor is not iterable")
 
     @property
-    def ndim(self) -> TensorLike:
-        """Ndim docstring."""
+    def ndim(self) -> int | None:
+        """Compute or retrieve `ndim` for `KerasTensor`.
+
+        Returns:
+            int | None: Computed result for `ndim`.
+        """
         return len(self.shape) if self.shape is not None else None
 
     @property
-    def ragged(self) -> TensorLike:
-        """Ragged docstring."""
-        return False
+    def ragged(self) -> bool:
+        """Compute or retrieve `ragged` for `KerasTensor`.
 
-    def reshape(self, shape: TensorLike) -> TensorLike:
-        """Reshape docstring.
+        Returns:
+            bool: Computed result for `ragged`.
+        """
+        return self._ragged
+
+    def reshape(self, shape: TensorLike) -> KerasTensor:
+        """Return a reshaped symbolic ``KerasTensor``.
 
         Args:
-            shape: Shape.
+            shape: Target shape tuple.
+
+        Returns:
+            KerasTensor: Reshaped symbolic tensor.
         """
         return KerasTensor(shape=shape, dtype=self.dtype, name=self.name)
 
     @property
-    def sparse(self) -> TensorLike:
-        """Sparse docstring."""
-        return False
+    def sparse(self) -> bool:
+        """Compute or retrieve `sparse` for `KerasTensor`.
 
-    def squeeze(self, axis: TensorLike = None) -> TensorLike:
-        """Squeeze docstring.
+        Returns:
+            bool: Computed result for `sparse`.
+        """
+        return self._sparse
+
+    def squeeze(self, axis: TensorLike | None = None) -> KerasTensor:
+        """Remove dimensions of size 1 from the tensor shape.
 
         Args:
-            axis: Axis.
+            axis: Optional axis or sequence of axes to squeeze.
+
+        Returns:
+            KerasTensor: Squeezed symbolic tensor.
         """
         if self.shape is None:
             return KerasTensor(shape=None, dtype=self.dtype, name=self.name)
@@ -143,26 +206,28 @@ class KerasTensor:
         return KerasTensor(shape=new_shape, dtype=self.dtype, name=self.name)
 
     def __call__(self, x: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Return ``x`` unchanged when called as a callable.
 
         Args:
-            x: Description.
-            args: Description.
-            kwargs: Description.
+            x: Input value.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: The input ``x``.
         """
         return x
 
     def __add__(self, other: TensorLike) -> TensorLike:
-        """__add__ function.
+        """Add ``other`` to this tensor.
 
         Args:
-        other: Parameter other.
+            other: Right-hand operand.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Sum tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             import ml_switcheroo_compiler.ops as msc_ops
 
             from zero_keras.activations import _to_tensor
@@ -171,16 +236,15 @@ class KerasTensor:
         return KerasTensor(self.shape, self.dtype)
 
     def __sub__(self, other: TensorLike) -> TensorLike:
-        """__sub__ function.
+        """Subtract ``other`` from this tensor.
 
         Args:
-        other: Parameter other.
+            other: Right-hand operand.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Difference tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             import ml_switcheroo_compiler.ops as msc_ops
 
             from zero_keras.activations import _to_tensor
@@ -189,12 +253,15 @@ class KerasTensor:
         return KerasTensor(self.shape, self.dtype)
 
     def __mul__(self, other: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Multiply this tensor by ``other``.
 
         Args:
-            other: Description.
+            other: Right-hand operand.
+
+        Returns:
+            TensorLike: Product tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             from zero_keras import ops
             from zero_keras.activations import _to_tensor
 
@@ -202,12 +269,15 @@ class KerasTensor:
         return KerasTensor(self.shape, self.dtype)
 
     def __rmul__(self, other: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Multiply ``other`` by this tensor.
 
         Args:
-            other: Description.
+            other: Left-hand operand.
+
+        Returns:
+            TensorLike: Product tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             from zero_keras import ops
             from zero_keras.activations import _to_tensor
 
@@ -215,58 +285,66 @@ class KerasTensor:
         return KerasTensor(self.shape, self.dtype)
 
     def __rtruediv__(self, other: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Divide ``other`` by this tensor.
 
         Args:
-            other: Description.
+            other: Left-hand numerator operand.
+
+        Returns:
+            TensorLike: Quotient tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             from zero_keras import ops
             from zero_keras.activations import _to_tensor
 
             return ops.true_divide(_to_tensor(self), _to_tensor(other))
         return KerasTensor(self.shape, self.dtype)
 
-    def __neg__(self) -> TensorLike:
-        """Function docstring."""
+    def __neg__(self) -> KerasTensor:
+        """Negate this symbolic tensor.
+
+        Returns:
+            KerasTensor: Negated symbolic tensor.
+        """
         return KerasTensor(self.shape, self.dtype)
 
     def __radd__(self, other: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Add this tensor to ``other``.
 
         Args:
-            other: Description.
+            other: Left-hand operand.
+
+        Returns:
+            TensorLike: Sum tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             from zero_keras import ops
             from zero_keras.activations import _to_tensor
 
             return ops.add(_to_tensor(self), _to_tensor(other))
         return KerasTensor(self.shape, self.dtype)
 
-    def __rsub__(self, other: TensorLike) -> TensorLike:
-        """__mul__ function.
+    def __rsub__(self, other: TensorLike) -> KerasTensor:
+        """Subtract this tensor from ``other``.
 
         Args:
-        other: Parameter other.
+            other: Left-hand operand.
 
         Returns:
-        TensorLike: Return value.
-
+            KerasTensor: Difference symbolic tensor.
         """
         return KerasTensor(self.shape, self.dtype)
 
     def __truediv__(self, other: TensorLike) -> TensorLike:
-        """__truediv__ function.
+        """Divide this tensor by ``other``.
 
         Args:
-        other: Parameter other.
+            other: Right-hand denominator operand.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Quotient tensor or symbolic ``KerasTensor``.
         """
-        if (self.data if hasattr(self, "data") else None) is not None:
+        if self.data is not None:
             import ml_switcheroo_compiler.ops as msc_ops
 
             from zero_keras.activations import _to_tensor
@@ -274,27 +352,25 @@ class KerasTensor:
             return msc_ops.true_divide(_to_tensor(self.data), _to_tensor(other))
         return KerasTensor(self.shape, self.dtype)
 
-    def __pow__(self, other: TensorLike) -> TensorLike:
-        """__pow__ function.
+    def __pow__(self, other: TensorLike) -> KerasTensor:
+        """Raise this tensor to the power ``other``.
 
         Args:
-        other: Parameter other.
+            other: Exponent operand.
 
         Returns:
-        TensorLike: Return value.
-
+            KerasTensor: Symbolic tensor result.
         """
         return KerasTensor(self.shape, self.dtype)
 
     def __eq__(self, other: TensorLike) -> TensorLike:
-        """__eq__ function.
+        """Compare this tensor elementwise with ``other``.
 
         Args:
-        other: Parameter other.
+            other: Right-hand operand.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Equality comparison result.
         """
         if self.data is not None:
             return self.data == other
@@ -305,12 +381,11 @@ class KerasTensor:
 
         return backend_ops.ones(safe_shape)
 
-    def __bool__(self) -> TensorLike:
-        """__bool__ function.
+    def __bool__(self) -> bool:
+        """Convert this tensor to a boolean in eager mode or raise ``TypeError``.
 
         Returns:
-        TensorLike: Return value.
-
+            bool: Boolean truth value in eager mode.
         """
         from ml_switcheroo_compiler.core import config
 
@@ -326,24 +401,24 @@ class KerasTensor:
         )
 
     def numpy(self) -> TensorLike:
-        """Numpy function.
+        """Return the backing tensor data.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Backing data array or ``None``.
         """
         return self.data
 
-    def __array__(self, dtype: TensorLike = None, copy: TensorLike = None) -> TensorLike:
-        """__array__ function.
+    def __array__(
+        self, dtype: TensorLike | None = None, copy: TensorLike | None = None
+    ) -> TensorLike:
+        """Convert this symbolic tensor to a NumPy array.
 
         Args:
-        dtype: Parameter dtype.
-        copy: Parameter copy.
+            dtype: Optional target NumPy dtype.
+            copy: Optional boolean controlling copy behavior.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: NumPy array representation.
         """
         from zero_keras import ops
 
@@ -363,106 +438,31 @@ class KerasTensor:
         return arr
 
     def __getitem__(self, key: TensorLike) -> TensorLike:
-        """__getitem__ function.
+        """Index into the backing tensor data.
 
         Args:
-        key: Parameter key.
+            key: Slice or index key.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Indexed element or ``0.0`` when unbacked.
         """
         if self.data is not None:
             return self.data[key]
         return 0.0
 
 
-class Node:
-    """docstring."""
-
-    def __init__(
-        self,
-        operation: TensorLike = None,
-        call_args: TensorLike = None,
-        call_kwargs: TensorLike = None,
-        outputs: TensorLike = None,
-    ) -> None:
-        """Function docstring.
-
-        Args:
-            operation: Description.
-            call_args: Description.
-            call_kwargs: Description.
-            outputs: Description.
-        """
-        self.operation = operation
-        self.call_args = call_args
-        self.call_kwargs = call_kwargs
-        self.outputs = outputs
-        self.input_tensors = []
-        if not hasattr(operation, "_inbound_nodes"):
-            operation._inbound_nodes = []
-        operation._inbound_nodes.append(self)
-        if isinstance(outputs, list):
-            for t in outputs:
-                t._keras_history = self
-        elif hasattr(outputs, "_keras_history"):
-            outputs._keras_history = self
-
-
-def Input(shape: TensorLike = None, name: TensorLike = None, **kwargs: TensorLike) -> TensorLike:
-    """Used to instantiate a Keras tensor.
-
-    A Keras tensor is a symbolic tensor-like object, which we augment with
-    certain attributes that allow us to build a Keras model just by knowing the
-    inputs and outputs of the model.
-
-    For instance, if `a`, `b` and `c` are Keras tensors,
-    it becomes possible to do:
-    `model = Model(input=[a, b], output=c)`
+def Input(
+    shape: TensorLike | None = None, name: TensorLike | None = None, **kwargs: TensorLike
+) -> TensorLike:
+    """Compute or retrieve `Input` for `Input`.
 
     Args:
-        kwargs: Input parameter ``kwargs``.
-        shape: A shape tuple (tuple of integers or `None` objects),
-            not including the batch size.
-            For instance, `shape=(32,)` indicates that the expected input
-            will be batches of 32-dimensional vectors. Elements of this tuple
-            can be `None`; `None` elements represent dimensions where the shape
-            is not known and may vary (e.g. sequence length).
-        batch_size: Optional static batch size (integer).
-        dtype: The data type expected by the input, as a string
-            (e.g. `"float32"`, `"int32"`...)
-        sparse: A boolean specifying whether the expected input will be sparse
-            tensors. Note that, if `sparse` is `False`, sparse tensors can still
-            be passed into the input - they will be densified with a default
-            value of 0. This feature is only supported with the TensorFlow and
-            the JAX backends. Defaults to `False`.
-        ragged: A boolean specifying whether the expected input will be ragged
-            tensors. Note that, if `ragged` is `False`, ragged tensors can still
-            be passed into the input - they will be densified with a default
-            value of 0. This feature is only supported with the TensorFlow
-            backend. Defaults to `False`.
-        batch_shape: Optional shape tuple (tuple of integers or `None` objects),
-            including the batch size.
-        name: Optional name string for the layer.
-            Should be unique in a model (do not reuse the same name twice).
-            It will be autogenerated if it isn't provided.
-        tensor: Optional existing tensor to wrap into the `Input` layer.
-            If set, the layer will use this tensor rather
-            than creating a new placeholder tensor.
-        optional: Boolean, whether the input is optional or not.
-            An optional input can accept `None` values.
+        shape: Shape tuple specifying tensor dimensions.
+        name: Optional string identifier for the object.
+        **kwargs: Additional keyword configuration arguments.
 
     Returns:
-      A Keras tensor.
-
-    Example:
-    ```python
-    # This is a logistic regression in Keras
-    x = Input(shape=(32,))
-    y = Dense(16, activation='softmax')(x)
-    model = Model(x, y)
-    ```
+        TensorLike: Computed result for `Input`.
     """
     batch_shape = kwargs.get("batch_shape")
     if batch_shape is None:
@@ -635,8 +635,8 @@ class Layer:
     """
 
     def add_metric(
-        self, value: TensorLike, name: TensorLike = None, **kwargs: TensorLike
-    ) -> TensorLike:
+        self, value: TensorLike, name: TensorLike | None = None, **kwargs: TensorLike
+    ) -> None:
         """add_metric docstring.
 
         Args:
@@ -644,8 +644,6 @@ class Layer:
             name: Name.
             **kwargs: Kwargs.
         """
-        if not hasattr(self, "_metrics"):
-            self._metrics = []
         if name is not None:
             self._metrics.append({name: value})
         else:
@@ -655,22 +653,25 @@ class Layer:
         self,
         shape: TensorLike,
         initializer: TensorLike,
-        dtype: TensorLike = None,
-        trainable: TensorLike = True,
-        name: TensorLike = None,
+        dtype: TensorLike | None = None,
+        trainable: bool = True,
+        name: TensorLike | None = None,
     ) -> TensorLike:
-        """add_variable docstring.
+        """Compute or retrieve `add variable` for `Layer`.
 
         Args:
-            shape: Shape.
-            initializer: Initializer.
-            dtype: Dtype.
-            trainable: Trainable.
-            name: Name.
+            shape: Shape tuple specifying tensor dimensions.
+            initializer: Configuration or input value for `initializer` (initializer).
+            dtype: Data type string or DTypePolicy.
+            trainable: Whether the variable or layer weights may be updated by backpropagation.
+            name: Optional string identifier for the object.
+
+        Returns:
+            TensorLike: Computed result for `add_variable`.
         """
         return Variable(initializer, shape=shape, dtype=dtype, trainable=trainable, name=name)
 
-    def build_from_config(self, config: TensorLike) -> TensorLike:
+    def build_from_config(self, config: TensorLike) -> None:
         """build_from_config docstring.
 
         Args:
@@ -680,76 +681,108 @@ class Layer:
 
     @property
     def compute_dtype(self) -> TensorLike:
-        """compute_dtype docstring."""
-        return self._compute_dtype if hasattr(self, "_compute_dtype") else None
+        """Compute or retrieve `compute dtype` for `Layer`.
 
-    def compute_mask(self, inputs: TensorLike, mask: TensorLike = None) -> TensorLike:
-        """compute_mask docstring.
+        Returns:
+            TensorLike: Computed result for `compute_dtype`.
+        """
+        return self._compute_dtype
+
+    def compute_mask(self, inputs: TensorLike, mask: TensorLike | None = None) -> TensorLike:
+        """Compute the output boolean mask tensor given `inputs` and `mask`.
 
         Args:
-            inputs: Inputs.
-            mask: Mask.
+            inputs: Input tensor or nested structure of tensors.
+            mask: Optional boolean mask tensor indicating valid timesteps or elements.
+
+        Returns:
+            TensorLike: Computed result for `compute_mask`.
         """
         return mask
 
     def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """compute_output_spec docstring.
+        """Compute the symbolic `KerasTensor` specification for the given inputs.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `compute_output_spec`.
         """
         if hasattr(self, "compute_output_shape"):
             return self.compute_output_shape(*args, **kwargs)
         from zero_keras.core_layers import KerasTensor
 
-        return KerasTensor(shape=None, dtype=(self.dtype if hasattr(self, "dtype") else "float32"))
+        return KerasTensor(shape=None, dtype=self.dtype or "float32")
 
     def count_params(self) -> TensorLike:
-        """count_params docstring."""
+        """Compute or retrieve `count params` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `count_params`.
+        """
         return 0
 
     @property
     def dtype(self) -> TensorLike:
-        """Dtype docstring."""
-        return self._dtype if hasattr(self, "_dtype") else None
+        """Compute or retrieve `dtype` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `dtype`.
+        """
+        return self._dtype
 
     @property
     def dtype_policy(self) -> TensorLike:
-        """dtype_policy docstring."""
-        return self._dtype_policy if hasattr(self, "_dtype_policy") else None
+        """Compute or retrieve `dtype policy` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `dtype_policy`.
+        """
+        return self._dtype_policy
 
     def get_build_config(self) -> TensorLike:
-        """get_build_config docstring."""
-        if hasattr(self, "_build_config"):
-            return self._build_config
-        return {"input_shape": None}
+        """Return the input shape configuration used to build this layer.
+
+        Returns:
+            TensorLike: Computed result for `get_build_config`.
+        """
+        return self._build_config
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
+        """Return the serializable configuration dictionary for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `get_config`.
+        """
         return {"name": self.name}
 
     @property
     def input(self) -> TensorLike:
-        """Input docstring."""
-        return (
-            self._inbound_nodes[0].input_tensors
-            if hasattr(self, "_inbound_nodes") and self._inbound_nodes
-            else None
-        )
+        """Compute or retrieve `input` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `input`.
+        """
+        return self._inbound_nodes[0].input_tensors if self._inbound_nodes else None
 
     @property
     def input_dtype(self) -> TensorLike:
-        """input_dtype docstring."""
-        return self.dtype if hasattr(self, "dtype") else None
+        """Compute or retrieve `input dtype` for `Layer`.
 
-    def load_own_variables(self, store: TensorLike) -> TensorLike:
+        Returns:
+            TensorLike: Computed result for `input_dtype`.
+        """
+        return self.dtype
+
+    def load_own_variables(self, store: TensorLike) -> None:
         """load_own_variables docstring.
 
         Args:
             store: Store.
         """
-        if not hasattr(self, "variables") or not self.variables:
+        if not self.variables:
             return
         for i, var in enumerate(self.variables):
             if str(i) in store:
@@ -757,54 +790,71 @@ class Layer:
 
     @property
     def metrics(self) -> TensorLike:
-        """Metrics docstring."""
-        return self._metrics if hasattr(self, "_metrics") else []
+        """Compute or retrieve `metrics` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `metrics`.
+        """
+        return self._metrics
 
     @property
     def metrics_variables(self) -> TensorLike:
-        """metrics_variables docstring."""
+        """Compute or retrieve `metrics variables` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `metrics_variables`.
+        """
         return []
 
     @property
     def non_trainable_variables(self) -> TensorLike:
-        """non_trainable_variables docstring."""
-        return (
-            self.non_trainable_weights
-            if hasattr(self, "non_trainable_weights")
-            else self._non_trainable_weights
-            if hasattr(self, "_non_trainable_weights")
-            else []
-        )
+        """Compute or retrieve `non trainable variables` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `non_trainable_variables`.
+        """
+        return self.non_trainable_weights
 
     @property
     def output(self) -> TensorLike:
-        """Output docstring."""
-        return (
-            self._inbound_nodes[0].output_tensors
-            if hasattr(self, "_inbound_nodes") and self._inbound_nodes
-            else None
-        )
+        """Compute or retrieve `output` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `output`.
+        """
+        return self._inbound_nodes[0].output_tensors if self._inbound_nodes else None
 
     @property
     def path(self) -> TensorLike:
-        """Path docstring."""
-        return self.name if hasattr(self, "name") else None
+        """Compute or retrieve `path` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `path`.
+        """
+        return self.name
 
     @property
     def quantization_mode(self) -> TensorLike:
-        """quantization_mode docstring."""
-        return self._quantization_mode if hasattr(self, "_quantization_mode") else None
+        """Compute or retrieve `quantization mode` for `Layer`.
 
-    def quantize(self, mode: TensorLike) -> TensorLike:
-        """Quantize docstring.
+        Returns:
+            TensorLike: Computed result for `quantization_mode`.
+        """
+        return self._quantization_mode
+
+    def quantize(self, mode: str | TensorLike) -> TensorLike:
+        """Apply post-training quantization to the layer or model weights in `mode`.
 
         Args:
-            mode: Mode.
+            mode: Configuration or input value for `mode` (mode).
+
+        Returns:
+            TensorLike: Computed result for `quantize`.
         """
         self._quantization_mode = mode
         return self
 
-    def quantized_build(self, input_shape: TensorLike) -> TensorLike:
+    def quantized_build(self, input_shape: TensorLike) -> None:
         """quantized_build docstring.
 
         Args:
@@ -813,30 +863,36 @@ class Layer:
         self.build(input_shape)
 
     def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """quantized_call docstring.
+        """Execute the quantized forward pass on `inputs`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `quantized_call`.
         """
         return self.call(*args, **kwargs)
 
     def rematerialized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """rematerialized_call docstring.
+        """Compute or retrieve `rematerialized call` for `Layer`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `rematerialized_call`.
         """
         return self.call(*args, **kwargs)
 
-    def save_own_variables(self, store: TensorLike) -> TensorLike:
+    def save_own_variables(self, store: TensorLike) -> None:
         """save_own_variables docstring.
 
         Args:
             store: Store.
         """
-        if not hasattr(self, "variables") or not self.variables:
+        if not self.variables:
             return
         for i, var in enumerate(self.variables):
             store[str(i)] = var.numpy()
@@ -848,118 +904,171 @@ class Layer:
         *args: TensorLike,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """stateless_call docstring.
+        """Run a stateless forward pass using explicitly provided variable values.
 
         Args:
-            trainable_variables: Trainable variables.
-            non_trainable_variables: Non trainable variables.
-            *args: Args.
-            **kwargs: Kwargs.
+            trainable_variables: Configuration or input value for `trainable_variables` (trainable variables).
+            non_trainable_variables: Configuration or input value for `non_trainable_variables` (non trainable variables).
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `stateless_call`.
         """
         return self.call(*args, **kwargs)
 
     def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """symbolic_call docstring.
+        """Compute or retrieve `symbolic call` for `Layer`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `symbolic_call`.
         """
         return self.call(*args, **kwargs)
 
     @property
     def trainable_variables(self) -> TensorLike:
-        """trainable_variables docstring."""
-        return (
-            self.trainable_weights
-            if hasattr(self, "trainable_weights")
-            else self._trainable_weights
-            if hasattr(self, "_trainable_weights")
-            else []
-        )
+        """Compute or retrieve `trainable variables` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `trainable_variables`.
+        """
+        return self.trainable_weights
 
     @property
     def variable_dtype(self) -> TensorLike:
-        """variable_dtype docstring."""
-        return self.dtype if hasattr(self, "dtype") else None
+        """Compute or retrieve `variable dtype` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `variable_dtype`.
+        """
+        return self.dtype
 
     @property
     def variables(self) -> TensorLike:
-        """Variables docstring."""
-        return self.weights if hasattr(self, "weights") else []
+        """Compute or retrieve `variables` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `variables`.
+        """
+        return self.weights
 
     @property
     def input_spec(self) -> TensorLike:
-        """input_spec docstring."""
-        return self._input_spec if hasattr(self, "_input_spec") else None
+        """Compute or retrieve `input spec` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `input_spec`.
+        """
+        return self._input_spec
 
     @input_spec.setter
-    def input_spec(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def input_spec(self, value: TensorLike) -> None:
+        """Compute or retrieve `input spec` for `Layer`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._input_spec = value
 
     @property
     def supports_masking(self) -> TensorLike:
-        """supports_masking docstring."""
-        return self._supports_masking if hasattr(self, "_supports_masking") else False
+        """Compute or retrieve `supports masking` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `supports_masking`.
+        """
+        return self._supports_masking
 
     @supports_masking.setter
-    def supports_masking(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def supports_masking(self, value: TensorLike) -> None:
+        """Compute or retrieve `supports masking` for `Layer`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._supports_masking = value
 
     @property
     def trainable(self) -> TensorLike:
-        """Trainable docstring."""
-        return self._trainable if hasattr(self, "_trainable") else True
+        """Compute or retrieve `trainable` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `trainable`.
+        """
+        return self._trainable
 
     @trainable.setter
-    def trainable(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def trainable(self, value: TensorLike) -> None:
+        """Compute or retrieve `trainable` for `Layer`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._trainable = value
 
     def __init__(self, **kwargs: TensorLike) -> None:
-        """Function docstring.
+        """Initialize the Layer base instance.
 
         Args:
-            kwargs: Description.
+            **kwargs: Base layer configuration keyword arguments.
         """
+        self._tracked_attrs: dict[str, TensorLike] = {}
         self.built = False
         self._name = kwargs.get("name")
         self._kwargs = kwargs
+        self._metrics: list[TensorLike] = []
+        self._losses: list[TensorLike] = []
+        self._weights: list[TensorLike] = []
+        self._inbound_nodes: list[Node] = []
+        self._outbound_nodes: list[Node] = []
+        self._compute_dtype: TensorLike | None = None
+        self._dtype: TensorLike = kwargs.get("dtype")
+        self._dtype_policy: TensorLike | None = None
+        self._build_config: TensorLike = {"input_shape": None}
+        self._input_spec: TensorLike | None = None
+        self._supports_masking: bool = False
+        self._trainable: TensorLike = kwargs.get("trainable", True)
+        self._quantization_mode: TensorLike | None = None
+
+    def __setattr__(self, name: str, value: TensorLike) -> None:
+        """Set attribute ``name`` to ``value`` and register potential sublayers.
+
+        Args:
+            name: Attribute name.
+            value: Attribute value.
+        """
+        super().__setattr__(name, value)
+        if name != "_tracked_attrs" and not name.startswith("_"):
+            if not hasattr(self, "_tracked_attrs"):
+                super().__setattr__("_tracked_attrs", {})
+            self._tracked_attrs[name] = value
 
     @property
     def name(self) -> str:
-        """Name function.
+        """Return the name of the layer.
 
         Returns:
-        TensorLike: Return value.
-
+            str: Layer name string.
         """
         return self._name or "layer"
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Instantiate a layer from its configuration dictionary.
 
         Args:
-            config: Description.
+            config: Configuration dictionary.
+
+        Returns:
+            TensorLike: Reconstructed layer instance.
         """
         return cls(**config)
 
-    def add_loss(self, loss: TensorLike) -> TensorLike:
+    def add_loss(self, loss: TensorLike) -> None:
         """Can be called inside of the `call()` method to add a scalar loss.
 
         Example:
@@ -972,38 +1081,40 @@ class Layer:
         ```
 
         Args:
-            loss: Input parameter ``loss``.
+            loss: Scalar loss tensor to record.
         """
-        if not hasattr(self, "_losses"):
-            self._losses = []
         self._losses.append(loss)
 
     @property
     def losses(self) -> TensorLike:
-        """List of scalar losses from `add_loss`, regularizers and sublayers."""
-        losses_list = list((self._losses if hasattr(self, "_losses") else []))
-        for v in self.__dict__.values():
+        """Compute or retrieve `losses` for `Layer`.
+
+        Returns:
+            TensorLike: Computed result for `losses`.
+        """
+        losses_list = list(self._losses)
+        for v in self._tracked_attrs.values():
             if isinstance(v, Layer):
                 losses_list.extend(v.losses)
-            elif isinstance(v, list):
-                for item in v:
-                    if hasattr(item, "losses"):
-                        losses_list.extend(item.losses)
-            elif isinstance(v, tuple):
-                for item in v:
-                    if hasattr(item, "losses"):
-                        losses_list.extend(item.losses)
-            elif isinstance(v, dict):
-                for item in v.values():
+            else:
+                seq = (
+                    v.values()
+                    if isinstance(v, dict)
+                    else (v if isinstance(v, (list, tuple)) else ())
+                )
+                for item in seq:
                     if hasattr(item, "losses"):
                         losses_list.extend(item.losses)
         return losses_list
 
     def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
-        """compute_output_shape docstring.
+        """Compute the output tensor shape produced for `input_shape`.
 
         Args:
-            input_shape: Input shape.
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
+
+        Returns:
+            TensorLike: Computed result for `compute_output_shape`.
         """
         from zero_keras.core_layers import KerasTensor
 
@@ -1025,79 +1136,53 @@ class Layer:
             return input_shape
 
     def build(self, input_shape: TensorLike) -> None:
-        """Build function.
+        """Create and initialize the layer state variables for `input_shape`.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
         """
         self.built = True
 
     def add_weight(
         self,
         shape: TensorLike,
-        initializer: TensorLike = "zeros",
-        trainable: TensorLike = True,
-        name: TensorLike = None,
-        regularizer: TensorLike = None,
-        constraint: TensorLike = None,
+        initializer: str | TensorLike = "zeros",
+        trainable: bool = True,
+        name: TensorLike | None = None,
+        regularizer: TensorLike | None = None,
+        constraint: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Add a weight variable to the layer.
+        """Create and register a weight variable on this layer.
 
         Args:
-            kwargs: Input parameter ``kwargs``.
-            shape: Shape tuple for the variable. Must be fully-defined
-                (no `None` entries). Defaults to `()` (scalar) if unspecified.
-            initializer: Initializer object to use to populate the initial
-                variable value, or string name of a built-in initializer
-                (e.g. `"random_normal"`). If unspecified, defaults to
-                `"glorot_uniform"` for floating-point variables and to `"zeros"`
-                for all other types (e.g. int, bool).
-            dtype: Dtype of the variable to create, e.g. `"float32"`. If
-                unspecified, defaults to the layer's variable dtype
-                (which itself defaults to `"float32"` if unspecified).
-            trainable: Boolean, whether the variable should be trainable via
-                backprop or whether its updates are managed manually. Defaults
-                to `True`.
-            autocast: Boolean, whether to autocast layers variables when
-                accessing them. Defaults to `True`.
-            regularizer: Regularizer object to call to apply penalty on the
-                weight. These penalties are summed into the loss function
-                during optimization. Defaults to `None`.
-            constraint: Contrainst object to call on the variable after any
-                optimizer update, or string name of a built-in constraint.
-                Defaults to `None`.
-            aggregation: Optional string, one of `None`, `"none"`, `"mean"`,
-                `"sum"` or `"only_first_replica"`. Annotates the variable with
-                the type of multi-replica aggregation to be used for this
-                variable when writing custom data parallel training loops.
-                Defaults to `"none"`.
-            overwrite_with_gradient: Boolean, whether to overwrite the variable
-                with the computed gradient. This is useful for float8 training.
-                Defaults to `False`.
-            name: String name of the variable. Useful for debugging purposes.
+            shape: Shape tuple specifying tensor dimensions.
+            initializer: Configuration or input value for `initializer` (initializer).
+            trainable: Whether the variable or layer weights may be updated by backpropagation.
+            name: Optional string identifier for the object.
+            regularizer: Configuration or input value for `regularizer` (regularizer).
+            constraint: Configuration or input value for `constraint` (constraint).
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `add_weight`.
         """
         from zero_keras.initializers import get as get_initializer
 
         init_fn = get_initializer(initializer)
         weight = init_fn(shape=shape)
-        if not hasattr(self, "_weights"):
-            self._weights = []
         self._weights.append(weight)
         return weight
 
     @property
     def weights(self) -> TensorLike:
-        """List of all weight variables of the layer.
+        """Compute or retrieve `weights` for `Layer`.
 
-        Unlike, `layer.variables` this excludes metric state and random seeds.
+        Returns:
+            TensorLike: Computed result for `weights`.
         """
-        w = list((self._weights if hasattr(self, "_weights") else []))
-        for v in self.__dict__.values():
+        w = list(self._weights)
+        for v in self._tracked_attrs.values():
             if isinstance(v, Layer):
                 w.extend(v.weights)
             elif isinstance(v, list):
@@ -1116,33 +1201,37 @@ class Layer:
 
     @property
     def trainable_weights(self) -> TensorLike:
-        """List of all trainable weight variables of the layer.
+        """Compute or retrieve `trainable weights` for `Layer`.
 
-        These are the weights that get updated by the optimizer during training.
+        Returns:
+            TensorLike: Computed result for `trainable_weights`.
         """
         return self.weights
 
     @property
     def non_trainable_weights(self) -> TensorLike:
-        """List of all non-trainable weight variables of the layer.
+        """Compute or retrieve `non trainable weights` for `Layer`.
 
-        These are the weights that should not be updated by the optimizer during
-        training. Unlike, `layer.non_trainable_variables` this excludes metric
-        state and random seeds.
+        Returns:
+            TensorLike: Computed result for `non_trainable_weights`.
         """
         return []
 
     def get_weights(self) -> TensorLike:
-        """Return the values of `layer.weights` as a list of NumPy arrays."""
+        """Return a list of NumPy arrays representing all layer weight values.
+
+        Returns:
+            TensorLike: Computed result for `get_weights`.
+        """
         from ml_switcheroo_compiler.serialization import to_numpy
 
         return [to_numpy(w) for w in self.weights]
 
     def set_weights(self, weights: TensorLike) -> TensorLike:
-        """Sets the values of `layer.weights` from a list of NumPy arrays.
+        """Set the values of all layer weights from a list of NumPy arrays.
 
         Args:
-            weights: Input parameter ``weights``.
+            weights: Configuration or input value for `weights` (weights).
         """
         if len(weights) != len(self.weights):
             raise ValueError(f"Expected {len(self.weights)} weights, got {len(weights)}")
@@ -1157,26 +1246,28 @@ class Layer:
                 w[:] = new_w
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
+        """Execute the forward computation of `Layer` on `inputs`.
 
         Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `call`.
         """
         return inputs
 
     def __call__(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call self as a function.
+        """Implement the `__call__` special method on `Layer`.
 
         Args:
-            inputs: Input parameter ``inputs``.
-            args: Input parameter ``args``.
-            kwargs: Input parameter ``kwargs``.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `__call__`.
         """
         if not self.built:
             self.build((inputs.shape if hasattr(inputs, "shape") else None))
@@ -1184,11 +1275,11 @@ class Layer:
         # Simple tracing
         is_tracing = False
 
-        def check_tracing(x: TensorLike) -> TensorLike:
-            """Function docstring.
+        def check_tracing(x: TensorLike) -> None:
+            """Compute or retrieve `check tracing` for `check_tracing`.
 
             Args:
-                x: Description.
+                x: Input tensor or array.
             """
             nonlocal is_tracing
             if is_tracing:
@@ -1210,13 +1301,16 @@ class Layer:
         outputs = self.call(inputs, *args, **kwargs)
 
         if is_tracing:
-            node = _GraphNode(self, inputs, outputs)
+            node = Node(operation=self, call_args=inputs, call_kwargs=kwargs)
 
             def wrap_output(x: TensorLike) -> TensorLike:
-                """Function docstring.
+                """Compute or retrieve `wrap output` for `wrap_output`.
 
                 Args:
-                    x: Description.
+                    x: Input tensor or array.
+
+                Returns:
+                    TensorLike: Computed result for `wrap_output`.
                 """
                 if hasattr(x, "shape") and hasattr(x, "dtype") and not isinstance(x, KerasTensor):
                     res = KerasTensor(x.shape, x.dtype, data=x)
@@ -1246,11 +1340,14 @@ class Model(Layer):
     """docstring."""
 
     def __new__(cls, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Implement the `__new__` special method on `Model`.
 
         Args:
-            args: Description.
-            kwargs: Description.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `__new__`.
         """
         if cls is Model and ("inputs" in kwargs and "outputs" in kwargs):
             return Functional(*args, **kwargs)
@@ -1258,64 +1355,63 @@ class Model(Layer):
 
     def compute_loss(
         self,
-        x: TensorLike = None,
-        y: TensorLike = None,
-        y_pred: TensorLike = None,
-        sample_weight: TensorLike = None,
+        x: TensorLike | None = None,
+        y: TensorLike | None = None,
+        y_pred: TensorLike | None = None,
+        sample_weight: TensorLike | None = None,
     ) -> TensorLike:
-        """compute_loss function.
+        """Compute or retrieve `compute loss` for `Model`.
 
         Args:
-        x: Parameter x.
-        y: Parameter y.
-        y_pred: Parameter y_pred.
-        sample_weight: Parameter sample_weight.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            y_pred: Configuration or input value for `y_pred` (y pred).
+            sample_weight: Optional array of per-sample weights for loss and metric scaling.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `compute_loss`.
         """
-        if (self.loss_fn if hasattr(self, "loss_fn") else None) is not None and callable(
-            self.loss_fn
-        ):
+        if self.loss_fn is not None and callable(self.loss_fn):
             loss = self.loss_fn(y, y_pred)
         else:
             loss = ops.mean(ops.square(y - y_pred))
-        for reg_loss in self.losses if hasattr(self, "losses") else []:
+        for reg_loss in self.losses:
             loss = loss + reg_loss
         return loss
 
     def compute_metrics(
-        self, x: TensorLike, y: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self,
+        x: TensorLike,
+        y: TensorLike,
+        y_pred: TensorLike,
+        sample_weight: TensorLike | None = None,
     ) -> TensorLike:
-        """compute_metrics function.
+        """Compute or retrieve `compute metrics` for `Model`.
 
         Args:
-        x: Parameter x.
-        y: Parameter y.
-        y_pred: Parameter y_pred.
-        sample_weight: Parameter sample_weight.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            y_pred: Configuration or input value for `y_pred` (y pred).
+            sample_weight: Optional array of per-sample weights for loss and metric scaling.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `compute_metrics`.
         """
         metrics_dict = {}
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             for m in self.compiled_metrics:
                 m.update_state(y, y_pred)
                 metrics_dict[m.name] = m.result()
         return metrics_dict
 
     def train_step(self, data: TensorLike) -> TensorLike:
-        """train_step function.
+        """Compute or retrieve `train step` for `Model`.
 
         Args:
-        data: Parameter data.
+            data: Dataset or batch of sample tensors used to adapt state statistics.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `train_step`.
         """
         from ml_switcheroo_compiler.grad import (
             value_and_grad_wrt_vars,
@@ -1327,11 +1423,10 @@ class Model(Layer):
             x, y = data, None
 
         def loss_fn() -> TensorLike:
-            """loss_fn function.
+            """Compute or retrieve `loss fn` for `loss_fn`.
 
             Returns:
-            TensorLike: Return value.
-
+                TensorLike: Computed result for `loss_fn`.
             """
             try:
                 y_pred = self(x, training=True)
@@ -1343,10 +1438,7 @@ class Model(Layer):
         loss, grads_dict = value_and_grad_wrt_vars(loss_fn)()
 
         trainable_vars = self.trainable_weights
-        if (
-            hasattr((self.optimizer if hasattr(self, "optimizer") else None), "apply_gradients")
-            and trainable_vars
-        ):
+        if hasattr(self.optimizer, "apply_gradients") and trainable_vars:
             grads_list = [
                 grads_dict.get((v.id if hasattr(v, "id") else id(v)), None) for v in trainable_vars
             ]
@@ -1361,14 +1453,13 @@ class Model(Layer):
         return metrics
 
     def test_step(self, data: TensorLike) -> TensorLike:
-        """test_step function.
+        """Compute or retrieve `test step` for `Model`.
 
         Args:
-        data: Parameter data.
+            data: Dataset or batch of sample tensors used to adapt state statistics.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `test_step`.
         """
         if isinstance(data, tuple) and len(data) == 2:
             x, y = data
@@ -1384,14 +1475,13 @@ class Model(Layer):
         return metrics
 
     def predict_step(self, data: TensorLike) -> TensorLike:
-        """predict_step function.
+        """Compute or retrieve `predict step` for `Model`.
 
         Args:
-        data: Parameter data.
+            data: Dataset or batch of sample tensors used to adapt state statistics.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `predict_step`.
         """
         x = data[0] if isinstance(data, (tuple, list)) else data
         try:
@@ -1399,7 +1489,7 @@ class Model(Layer):
         except TypeError:
             return self(x)
 
-    def compile_from_config(self, config: TensorLike) -> TensorLike:
+    def compile_from_config(self, config: TensorLike) -> None:
         """compile_from_config docstring.
 
         Args:
@@ -1412,20 +1502,32 @@ class Model(Layer):
 
     @property
     def compiled_loss(self) -> TensorLike:
-        """compiled_loss docstring."""
-        return self.loss if hasattr(self, "loss") else None
+        """Compute or retrieve `compiled loss` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `compiled_loss`.
+        """
+        return self.loss
 
     @property
     def distribute_reduction_method(self) -> TensorLike:
-        """distribute_reduction_method docstring."""
+        """Compute or retrieve `distribute reduction method` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `distribute_reduction_method`.
+        """
         return "auto"
 
     @property
     def distribute_strategy(self) -> TensorLike:
-        """distribute_strategy docstring."""
+        """Compute or retrieve `distribute strategy` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `distribute_strategy`.
+        """
         return "auto"
 
-    def export(self, filepath: TensorLike) -> TensorLike:
+    def export(self, filepath: str | TensorLike) -> None:
         """Export docstring.
 
         Args:
@@ -1438,136 +1540,178 @@ class Model(Layer):
         archive.write_out(filepath)
 
     def get_compile_config(self) -> TensorLike:
-        """get_compile_config docstring."""
+        """Return the serialized compilation arguments for the model.
+
+        Returns:
+            TensorLike: Computed result for `get_compile_config`.
+        """
         from zero_keras.losses import serialize as serialize_loss
         from zero_keras.optimizers import serialize as serialize_opt
 
         config = {}
-        if self.optimizer if hasattr(self, "optimizer") else None:
+        if self.optimizer:
             config["optimizer"] = serialize_opt(self.optimizer)
-        if self.loss if hasattr(self, "loss") else None:
+        if self.loss:
             config["loss"] = serialize_loss(self.loss)
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             # A simplified metrics serialization
             config["metrics"] = [m.name for m in self.compiled_metrics]
         return config
 
-    def get_layer(self, name: TensorLike = None, index: TensorLike = None) -> TensorLike:
-        """get_layer docstring.
+    def get_layer(
+        self, name: TensorLike | None = None, index: TensorLike | None = None
+    ) -> TensorLike:
+        """Return the layer associated with `Model`.
 
         Args:
-            name: Name.
-            index: Index.
+            name: Optional string identifier for the object.
+            index: Configuration or input value for `index` (index).
+
+        Returns:
+            TensorLike: Computed result for `get_layer`.
         """
         if index is not None:
-            return (self.layers if hasattr(self, "layers") else [])[index]
+            return self.layers[index]
         if name is not None:
-            for layer in self.layers if hasattr(self, "layers") else []:
+            for layer in self.layers:
                 if layer.name == name:
                     return layer
         raise ValueError(f"No such layer: {name}.")
 
     def get_metrics_result(self) -> TensorLike:
-        """get_metrics_result docstring."""
+        """Return the metrics result associated with `Model`.
+
+        Returns:
+            TensorLike: Computed result for `get_metrics_result`.
+        """
         results = {}
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             for m in self.compiled_metrics:
                 results[m.name] = m.result()
         return results
 
     def get_state_tree(self) -> TensorLike:
-        """get_state_tree docstring."""
-        return {"variables": (self.variables if hasattr(self, "variables") else [])}
+        """Return the state tree associated with `Model`.
+
+        Returns:
+            TensorLike: Computed result for `get_state_tree`.
+        """
+        return {"variables": self.variables}
 
     @property
     def jit_compile(self) -> TensorLike:
-        """jit_compile docstring."""
-        return self._jit_compile if hasattr(self, "_jit_compile") else False
+        """Compute or retrieve `jit compile` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `jit_compile`.
+        """
+        return self._jit_compile
 
     @jit_compile.setter
-    def jit_compile(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def jit_compile(self, value: TensorLike) -> None:
+        """Compute or retrieve `jit compile` for `Model`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._jit_compile = value
 
-    def make_predict_function(self, force: TensorLike = False) -> TensorLike:
-        """make_predict_function docstring.
+    def make_predict_function(self, force: bool = False) -> TensorLike:
+        """Compute or retrieve `make predict function` for `Model`.
 
         Args:
-            force: Force.
+            force: Configuration or input value for `force` (force).
+
+        Returns:
+            TensorLike: Computed result for `make_predict_function`.
         """
-        if (self.predict_function if hasattr(self, "predict_function") else None) is None or force:
+        if self.predict_function is None or force:
             self.predict_function = self.predict_step
         return self.predict_function
 
-    def make_test_function(self, force: TensorLike = False) -> TensorLike:
-        """make_test_function docstring.
+    def make_test_function(self, force: bool = False) -> TensorLike:
+        """Compute or retrieve `make test function` for `Model`.
 
         Args:
-            force: Force.
+            force: Configuration or input value for `force` (force).
+
+        Returns:
+            TensorLike: Computed result for `make_test_function`.
         """
-        if (self.test_function if hasattr(self, "test_function") else None) is None or force:
+        if self.test_function is None or force:
             self.test_function = self.test_step
         return self.test_function
 
-    def make_train_function(self, force: TensorLike = False) -> TensorLike:
-        """make_train_function docstring.
+    def make_train_function(self, force: bool = False) -> TensorLike:
+        """Compute or retrieve `make train function` for `Model`.
 
         Args:
-            force: Force.
+            force: Configuration or input value for `force` (force).
+
+        Returns:
+            TensorLike: Computed result for `make_train_function`.
         """
-        if (self.train_function if hasattr(self, "train_function") else None) is None or force:
+        if self.train_function is None or force:
             self.train_function = self.train_step
         return self.train_function
 
     @property
     def metrics_names(self) -> TensorLike:
-        """metrics_names docstring."""
+        """Compute or retrieve `metrics names` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `metrics_names`.
+        """
         return []
 
     def predict_on_batch(self, x: TensorLike) -> TensorLike:
-        """predict_on_batch docstring.
+        """Compute predictions for a single batch of input samples.
 
         Args:
-            x: Input.
+            x: Input tensor or array.
+
+        Returns:
+            TensorLike: Computed result for `predict_on_batch`.
         """
         return self.predict_step(x)
 
-    def reset_metrics(self) -> TensorLike:
+    def reset_metrics(self) -> None:
         """reset_metrics docstring."""
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             for m in self.compiled_metrics:
                 m.reset_state()
 
-    def set_state_tree(self, state_tree: TensorLike) -> TensorLike:
+    def set_state_tree(self, state_tree: TensorLike) -> None:
         """set_state_tree docstring.
 
         Args:
             state_tree: State tree.
         """
-        if "variables" in state_tree and hasattr(self, "variables"):
+        if "variables" in state_tree:
             for v_self, v_tree in zip(self.variables, state_tree["variables"]):
                 v_self.assign(v_tree)
 
     def stateless_compute_loss(
-        self, x: TensorLike, y: TensorLike, y_pred: TensorLike, sample_weight: TensorLike = None
+        self,
+        x: TensorLike,
+        y: TensorLike,
+        y_pred: TensorLike,
+        sample_weight: TensorLike | None = None,
     ) -> TensorLike:
-        """stateless_compute_loss docstring.
+        """Compute or retrieve `stateless compute loss` for `Model`.
 
         Args:
-            x: Input parameter ``x``.
-            y: Input parameter ``y``.
-            y_pred: Input parameter ``y_pred``.
-            sample_weight: Input parameter ``sample_weight``.
-            *args: Args.
-            **kwargs: Kwargs.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            y_pred: Configuration or input value for `y_pred` (y pred).
+            sample_weight: Optional array of per-sample weights for loss and metric scaling.
+
+        Returns:
+            TensorLike: Computed result for `stateless_compute_loss`.
         """
         return self.compute_loss(x, y, y_pred, sample_weight=sample_weight)
 
-    def summary(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+    def summary(self, *args: TensorLike, **kwargs: TensorLike) -> None:
         """Summary docstring.
 
         Args:
@@ -1583,19 +1727,20 @@ class Model(Layer):
     def test_on_batch(
         self,
         x: TensorLike,
-        y: TensorLike = None,
-        sample_weight: TensorLike = None,
-        return_dict: TensorLike = False,
+        y: TensorLike | None = None,
+        sample_weight: TensorLike | None = None,
+        return_dict: bool = False,
     ) -> TensorLike:
-        """test_on_batch docstring.
+        """Evaluate the model on a single batch of samples.
 
         Args:
-            x: Input parameter ``x``.
-            y: Input parameter ``y``.
-            sample_weight: Input parameter ``sample_weight``.
-            return_dict: Input parameter ``return_dict``.
-            *args: Args.
-            **kwargs: Kwargs.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            sample_weight: Optional array of per-sample weights for loss and metric scaling.
+            return_dict: Whether to return metric results as a keyed dictionary instead of a list.
+
+        Returns:
+            TensorLike: Computed result for `test_on_batch`.
         """
         from zero_keras.utils import pack_x_y_sample_weight
 
@@ -1603,7 +1748,11 @@ class Model(Layer):
         return self.test_step(batch)
 
     def to_json(self) -> TensorLike:
-        """to_json docstring."""
+        """Compute or retrieve `to json` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `to_json`.
+        """
         import json
 
         return json.dumps(self.get_config())
@@ -1611,21 +1760,22 @@ class Model(Layer):
     def train_on_batch(
         self,
         x: TensorLike,
-        y: TensorLike = None,
-        sample_weight: TensorLike = None,
-        class_weight: TensorLike = None,
-        return_dict: TensorLike = False,
+        y: TensorLike | None = None,
+        sample_weight: TensorLike | None = None,
+        class_weight: TensorLike | None = None,
+        return_dict: bool = False,
     ) -> TensorLike:
-        """train_on_batch docstring.
+        """Run a single gradient update step on one batch of data.
 
         Args:
-            x: Input parameter ``x``.
-            y: Input parameter ``y``.
-            sample_weight: Input parameter ``sample_weight``.
-            class_weight: Input parameter ``class_weight``.
-            return_dict: Input parameter ``return_dict``.
-            *args: Args.
-            **kwargs: Kwargs.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            sample_weight: Optional array of per-sample weights for loss and metric scaling.
+            class_weight: Optional dictionary mapping class indices to scalar loss weights.
+            return_dict: Whether to return metric results as a keyed dictionary instead of a list.
+
+        Returns:
+            TensorLike: Computed result for `train_on_batch`.
         """
         from zero_keras.utils import pack_x_y_sample_weight
 
@@ -1634,93 +1784,119 @@ class Model(Layer):
 
     @property
     def compiled_metrics(self) -> TensorLike:
-        """compiled_metrics docstring."""
-        return self._compiled_metrics if hasattr(self, "_compiled_metrics") else None
+        """Compute or retrieve `compiled metrics` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `compiled_metrics`.
+        """
+        return self._compiled_metrics
 
     @compiled_metrics.setter
-    def compiled_metrics(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def compiled_metrics(self, value: TensorLike) -> None:
+        """Compute or retrieve `compiled metrics` for `Model`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._compiled_metrics = value
 
     @property
     def layers(self) -> TensorLike:
-        """Layers docstring."""
-        return self._layers if hasattr(self, "_layers") else []
+        """Compute or retrieve `layers` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `layers`.
+        """
+        return self._layers
 
     @layers.setter
-    def layers(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def layers(self, value: TensorLike) -> None:
+        """Compute or retrieve `layers` for `Model`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._layers = value
 
     @property
     def loss(self) -> TensorLike:
-        """Loss docstring."""
-        return self._loss if hasattr(self, "_loss") else None
+        """Compute or retrieve `loss` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `loss`.
+        """
+        return self._loss
 
     @loss.setter
-    def loss(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def loss(self, value: TensorLike) -> None:
+        """Compute or retrieve `loss` for `Model`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._loss = value
 
     @property
     def run_eagerly(self) -> TensorLike:
-        """run_eagerly docstring."""
-        return self._run_eagerly if hasattr(self, "_run_eagerly") else False
+        """Compute or retrieve `run eagerly` for `Model`.
+
+        Returns:
+            TensorLike: Computed result for `run_eagerly`.
+        """
+        return self._run_eagerly
 
     @run_eagerly.setter
-    def run_eagerly(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def run_eagerly(self, value: TensorLike) -> None:
+        """Compute or retrieve `run eagerly` for `Model`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._run_eagerly = value
 
     def __init__(
-        self, inputs: TensorLike = None, outputs: TensorLike = None, **kwargs: TensorLike
+        self,
+        inputs: TensorLike | None = None,
+        outputs: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `Model` instance.
 
         Args:
-            inputs: Description.
-            outputs: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            outputs: Configuration or input value for `outputs` (outputs).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.inputs = inputs
         self.outputs = outputs
         self._compiled = False
+        self._compiled_metrics: TensorLike | None = None
+        self._layers: list[Layer] = []
+        self._loss: TensorLike | None = None
+        self._run_eagerly: bool = False
+        self._jit_compile: bool = False
+        self.optimizer: TensorLike | None = None
+        self.loss_fn: TensorLike | None = None
+        self.predict_function: TensorLike | None = None
+        self.test_function: TensorLike | None = None
+        self.train_function: TensorLike | None = None
+        self.stop_training: bool = False
 
     def compile(
         self,
-        optimizer: TensorLike = "adam",
-        loss: TensorLike = "mse",
-        metrics: TensorLike = None,
+        optimizer: str | TensorLike = "adam",
+        loss: str | TensorLike = "mse",
+        metrics: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Compile function.
+        """Configure the model with optimizer, loss, and evaluation metrics.
 
         Args:
-        optimizer: Parameter optimizer.
-        loss: Parameter loss.
-        metrics: Parameter metrics.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        TensorLike: Return value.
-
+            optimizer: Optimizer instance or string identifier used to update trainable weights.
+            loss: Loss function, Loss instance, or dictionary of losses to minimize.
+            metrics: List of metrics evaluated during training and testing.
+            **kwargs: Additional keyword configuration arguments.
         """
         self._compiled = True
 
@@ -1755,14 +1931,13 @@ class Model(Layer):
                     self.compiled_metrics.append(m)
 
     def _is_iterator(self, data: TensorLike) -> TensorLike:
-        """_is_iterator function.
+        """Compute or retrieve `is iterator` for `Model`.
 
         Args:
-        data: Parameter data.
+            data: Dataset or batch of sample tensors used to adapt state statistics.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `_is_iterator`.
         """
         if (
             hasattr(data, "__iter__")
@@ -1775,16 +1950,12 @@ class Model(Layer):
             or type(data).__module__.startswith("torch.utils.data")
         )
 
-    def _unpack_iterator(self, data: TensorLike, is_train: TensorLike = True) -> TensorLike:
-        """_unpack_iterator function.
+    def _unpack_iterator(self, data: TensorLike, is_train: bool = True) -> TensorLike:
+        """Compute or retrieve `unpack iterator` for `Model`.
 
         Args:
-        data: Parameter data.
-        is_train: Parameter is_train.
-
-        Returns:
-        TensorLike: Return value.
-
+            data: Dataset or batch of sample tensors used to adapt state statistics.
+            is_train: Configuration or input value for `is_train` (is train).
         """
         import inspect
 
@@ -1814,23 +1985,22 @@ class Model(Layer):
     def fit(
         self,
         x: TensorLike,
-        y: TensorLike = None,
+        y: TensorLike | None = None,
         epochs: int = 1,
-        batch_size: int = 32,
+        batch_size: int | None = 32,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Fit function.
+        """Train the model on `x` and `y` for a fixed number of epochs.
 
         Args:
-        x: Parameter x.
-        y: Parameter y.
-        epochs: Parameter epochs.
-        batch_size: Parameter batch_size.
-        **kwargs: Arbitrary keyword arguments.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            epochs: Number of complete passes through the training dataset.
+            batch_size: Fixed batch size or number of samples per batch.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `fit`.
         """
         import math
 
@@ -1852,7 +2022,7 @@ class Model(Layer):
 
         for epoch in range(epochs):
             callbacks.on_epoch_begin(epoch)
-            if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+            if self.compiled_metrics:
                 for m in self.compiled_metrics:
                     m.reset_state()
 
@@ -1913,7 +2083,7 @@ class Model(Layer):
                     batches_seen += 1
 
             epoch_logs = {"loss": epoch_loss_sum / max(1, batches_seen)}
-            if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+            if self.compiled_metrics:
                 for m in self.compiled_metrics:
                     epoch_logs[m.name] = m.result()
 
@@ -1921,7 +2091,7 @@ class Model(Layer):
             for k, v in epoch_logs.items():
                 history.setdefault(k, []).append(v)
 
-            if self.stop_training if hasattr(self, "stop_training") else False:
+            if self.stop_training:
                 break
 
         callbacks.on_train_end()
@@ -1934,22 +2104,18 @@ class Model(Layer):
 
     def save(
         self,
-        filepath: TensorLike,
-        overwrite: TensorLike = True,
-        save_format: TensorLike = None,
+        filepath: str | TensorLike,
+        overwrite: bool = True,
+        save_format: TensorLike | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Save function.
+    ) -> None:
+        """Save the complete model architecture, weights, and optimizer state to `filepath`.
 
         Args:
-        filepath: Parameter filepath.
-        overwrite: Parameter overwrite.
-        save_format: Parameter save_format.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        TensorLike: Return value.
-
+            filepath: Destination or source file path on disk.
+            overwrite: Whether to overwrite an existing file without prompting.
+            save_format: Serialization format identifier (`keras` or `h5`).
+            **kwargs: Additional keyword configuration arguments.
         """
         import json
         import struct
@@ -1961,19 +2127,18 @@ class Model(Layer):
         }
 
         config = {
-            "class_name": self.__class__.__name__,
-            "config": (self.get_config if hasattr(self, "get_config") else dict)(),
+            "class_name": type(self).__name__,
+            "config": self.get_config(),
         }
 
         def _to_bytes_and_dtype(tensor: TensorLike) -> TensorLike:
-            """_to_bytes_and_dtype function.
+            """Compute or retrieve `to bytes and dtype` for `_to_bytes_and_dtype`.
 
             Args:
-            tensor: Parameter tensor.
+                tensor: Configuration or input value for `tensor` (tensor).
 
             Returns:
-            TensorLike: Return value.
-
+                TensorLike: Computed result for `_to_bytes_and_dtype`.
             """
             import array
 
@@ -1993,15 +2158,11 @@ class Model(Layer):
                 # fallback
                 flat = []
 
-                def flatten(x: TensorLike) -> TensorLike:
-                    """Flatten function.
+                def flatten(x: TensorLike) -> None:
+                    """Compute or retrieve `flatten` for `flatten`.
 
                     Args:
-                    x: Parameter x.
-
-                    Returns:
-                    TensorLike: Return value.
-
+                        x: Input tensor or array.
                     """
                     if isinstance(x, (list, tuple)):
                         for item in x:
@@ -2017,16 +2178,17 @@ class Model(Layer):
             dtype_map = {"float32": "F32", "int32": "I32", "float64": "F64"}
             return b, list(shape), dtype_map.get(dt, "F32")
 
-        def _get_safetensors(w_list: TensorLike, prefix: TensorLike = "weight_") -> TensorLike:
-            """_get_safetensors function.
+        def _get_safetensors(
+            w_list: TensorLike, prefix: str | TensorLike = "weight_"
+        ) -> TensorLike:
+            """Compute or retrieve `get safetensors` for `_get_safetensors`.
 
             Args:
-            w_list: Parameter w_list.
-            prefix: Parameter prefix.
+                w_list: Configuration or input value for `w_list` (w list).
+                prefix: Configuration or input value for `prefix` (prefix).
 
             Returns:
-            TensorLike: Return value.
-
+                TensorLike: Computed result for `_get_safetensors`.
             """
             header = {}
             offset = 0
@@ -2059,32 +2221,27 @@ class Model(Layer):
                 zinfo_weights = zipfile.ZipInfo("model.safetensors")
                 zf.writestr(zinfo_weights, _get_safetensors(self.weights, "weight_"))
 
-            if (
-                hasattr(self, "optimizer")
-                and hasattr(self.optimizer, "variables")
-                and self.optimizer.variables
-            ):
+            if hasattr(self.optimizer, "variables") and self.optimizer.variables:
                 zinfo_opt = zipfile.ZipInfo("optimizer.safetensors")
                 zf.writestr(zinfo_opt, _get_safetensors(self.optimizer.variables, "opt_weight_"))
 
     def evaluate(
         self,
         x: TensorLike,
-        y: TensorLike = None,
+        y: TensorLike | None = None,
         batch_size: int | None = None,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Evaluate function.
+        """Evaluate the model loss and metrics on test data `x` and `y`.
 
         Args:
-        x: Parameter x.
-        y: Parameter y.
-        batch_size: Parameter batch_size.
-        **kwargs: Arbitrary keyword arguments.
+            x: Input tensor or array.
+            y: Target label tensor or second operand.
+            batch_size: Fixed batch size or number of samples per batch.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `evaluate`.
         """
         import math
 
@@ -2094,7 +2251,7 @@ class Model(Layer):
         num_samples = len(x) if hasattr(x, "__len__") else 0
         num_batches = math.ceil(num_samples / batch_size) if num_samples > 0 else 1
 
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             for m in self.compiled_metrics:
                 m.reset_state()
 
@@ -2156,7 +2313,7 @@ class Model(Layer):
                 batches_seen += 1
 
         metrics_results = {"loss": epoch_loss_sum / max(1, batches_seen)}
-        if self.compiled_metrics if hasattr(self, "compiled_metrics") else None:
+        if self.compiled_metrics:
             for m in self.compiled_metrics:
                 metrics_results[m.name] = m.result()
         callbacks.on_test_end(metrics_results)
@@ -2165,16 +2322,15 @@ class Model(Layer):
     def predict(
         self, x: TensorLike, batch_size: int | None = None, **kwargs: TensorLike
     ) -> TensorLike:
-        """Predict function.
+        """Generate output predictions for input samples `x`.
 
         Args:
-        x: Parameter x.
-        batch_size: Parameter batch_size.
-        **kwargs: Arbitrary keyword arguments.
+            x: Input tensor or array.
+            batch_size: Fixed batch size or number of samples per batch.
+            **kwargs: Additional keyword configuration arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Computed result for `predict`.
         """
         import math
 
@@ -2250,18 +2406,18 @@ class Model(Layer):
 
     def save_weights(
         self,
-        filepath: TensorLike,
-        overwrite: TensorLike = True,
-        save_format: TensorLike = None,
-        options: TensorLike = None,
-    ) -> TensorLike:
-        """Saves all layer weights.
+        filepath: str | TensorLike,
+        overwrite: bool = True,
+        save_format: TensorLike | None = None,
+        options: TensorLike | None = None,
+    ) -> None:
+        """Save all layer weight values to `filepath`.
 
         Args:
-            filepath: Input parameter ``filepath``.
-            overwrite: Input parameter ``overwrite``.
-            save_format: Input parameter ``save_format``.
-            options: Input parameter ``options``.
+            filepath: Destination or source file path on disk.
+            overwrite: Whether to overwrite an existing file without prompting.
+            save_format: Serialization format identifier (`keras` or `h5`).
+            options: Configuration or input value for `options` (options).
         """
         import ml_switcheroo_compiler.serialization as msc_serialization
 
@@ -2275,25 +2431,25 @@ class Model(Layer):
 
     def load_weights(
         self,
-        filepath: TensorLike,
-        skip_mismatch: TensorLike = False,
-        by_name: TensorLike = False,
-        options: TensorLike = None,
-    ) -> TensorLike:
-        """Loads all layer weights.
+        filepath: str | TensorLike,
+        skip_mismatch: bool = False,
+        by_name: bool = False,
+        options: TensorLike | None = None,
+    ) -> None:
+        """Load layer weight values from `filepath`.
 
         Args:
-            filepath: Input parameter ``filepath``.
-            skip_mismatch: Input parameter ``skip_mismatch``.
-            by_name: Input parameter ``by_name``.
-            options: Input parameter ``options``.
+            filepath: Destination or source file path on disk.
+            skip_mismatch: Whether to skip loading weights whose shapes or names do not match.
+            by_name: Whether to load weights by layer name rather than topological order.
+            options: Configuration or input value for `options` (options).
         """
         import ml_switcheroo_compiler.serialization as msc_serialization
 
         weights = msc_serialization.load_weights(filepath, target_model=self)
 
         # apply weights
-        if not hasattr(self, "weights") or not self.weights:
+        if not self.weights:
             return
 
         for i, w in enumerate(self.weights):
@@ -2306,14 +2462,17 @@ class Functional(Model):
     """Functional class."""
 
     def __init__(
-        self, inputs: TensorLike = None, outputs: TensorLike = None, **kwargs: TensorLike
+        self,
+        inputs: TensorLike | None = None,
+        outputs: TensorLike | None = None,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the `Functional` instance.
 
         Args:
-            inputs: Description.
-            outputs: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            outputs: Configuration or input value for `outputs` (outputs).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.inputs = inputs
@@ -2329,58 +2488,61 @@ class Functional(Model):
         self.layers = layers
 
     def _map_graph_network(self, inputs: TensorLike, outputs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Map the DAG of symbolic ``Node`` instances between ``inputs`` and ``outputs``.
 
         Args:
-            inputs: Description.
-            outputs: Description.
+            inputs: Symbolic input tensor(s).
+            outputs: Symbolic output tensor(s).
+
+        Returns:
+            dict[int, list[Node]]: Mapping from topological depth to graph nodes.
         """
-        nodes_by_depth = {}
+        _ = inputs
+        nodes_by_depth: dict[int, list[Node]] = {}
+        visited_node_ids: set[int] = set()
+        queue: list[tuple[TensorLike, int]] = []
 
-        # Simple DFS to map depths
-        def _get_depth(tensor: TensorLike, current_depth: TensorLike) -> TensorLike:
-            """Function docstring.
+        if isinstance(outputs, (list, tuple)):
+            for x in outputs:
+                queue.append((x, 0))
+        elif isinstance(outputs, dict):
+            for x in outputs.values():
+                queue.append((x, 0))
+        else:
+            queue.append((outputs, 0))
 
-            Args:
-                tensor: Description.
-                current_depth: Description.
-            """
+        while queue:
+            tensor, current_depth = queue.pop(0)
             if not isinstance(tensor, KerasTensor):
-                return
+                continue
             node = tensor._keras_history if hasattr(tensor, "_keras_history") else None
             if node is None:
-                return
+                continue
+            node_id = id(node)
+            if node_id in visited_node_ids:
+                continue
+            visited_node_ids.add(node_id)
 
-            if current_depth not in nodes_by_depth:
-                nodes_by_depth[current_depth] = []
-            if node not in nodes_by_depth[current_depth]:
-                nodes_by_depth[current_depth].append(node)
-            else:
-                return
+            nodes_by_depth.setdefault(current_depth, []).append(node)
 
             node_inputs = node.inputs
             if isinstance(node_inputs, (list, tuple)):
                 for x in node_inputs:
-                    _get_depth(x, current_depth + 1)
+                    queue.append((x, current_depth + 1))
             elif isinstance(node_inputs, dict):
                 for x in node_inputs.values():
-                    _get_depth(x, current_depth + 1)
+                    queue.append((x, current_depth + 1))
             else:
-                _get_depth(node_inputs, current_depth + 1)
-
-        if isinstance(outputs, (list, tuple)):
-            for x in outputs:
-                _get_depth(x, 0)
-        elif isinstance(outputs, dict):
-            for x in outputs.values():
-                _get_depth(x, 0)
-        else:
-            _get_depth(outputs, 0)
+                queue.append((node_inputs, current_depth + 1))
 
         return nodes_by_depth
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
+        """Return the serializable configuration dictionary for `Functional`.
+
+        Returns:
+            TensorLike: Computed result for `get_config`.
+        """
         layer_configs = []
 
         # Inject InputLayers for all inputs
@@ -2409,7 +2571,7 @@ class Functional(Model):
             layer_configs.append(
                 {
                     "name": layer.name,
-                    "class_name": layer.__class__.__name__,
+                    "class_name": type(layer).__name__,
                     "config": (
                         layer.get_config
                         if hasattr(layer, "get_config")
@@ -2467,21 +2629,24 @@ class Functional(Model):
         }
 
     def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Execute the forward computation of `Functional` on `inputs`.
 
         Args:
-            inputs: Description.
-            args: Description.
-            kwargs: Description.
+            inputs: Input tensor or nested structure of tensors.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         tensor_dict = {}
 
-        def _add_input(key: TensorLike, val: TensorLike) -> TensorLike:
-            """Function docstring.
+        def _add_input(key: TensorLike, val: TensorLike) -> None:
+            """Compute or retrieve `add input` for `_add_input`.
 
             Args:
-                key: Description.
-                val: Description.
+                key: Configuration or input value for `key` (key).
+                val: Configuration or input value for `val` (val).
             """
             if isinstance(key, KerasTensor):
                 tensor_dict[id(key)] = val
@@ -2499,10 +2664,13 @@ class Functional(Model):
             for node in self._nodes_by_depth[depth]:
                 # Prepare inputs
                 def _get_input(x: TensorLike) -> TensorLike:
-                    """Function docstring.
+                    """Compute or retrieve `get input` for `_get_input`.
 
                     Args:
-                        x: Description.
+                        x: Input tensor or array.
+
+                    Returns:
+                        TensorLike: Computed result for `_get_input`.
                     """
                     if isinstance(x, KerasTensor) and id(x) in tensor_dict:
                         return tensor_dict[id(x)]
@@ -2530,10 +2698,13 @@ class Functional(Model):
                         tensor_dict[id(node.outputs)] = out
 
         def _get_output(x: TensorLike) -> TensorLike:
-            """Function docstring.
+            """Compute or retrieve `get output` for `_get_output`.
 
             Args:
-                x: Description.
+                x: Input tensor or array.
+
+            Returns:
+                TensorLike: Computed result for `_get_output`.
             """
             if isinstance(x, KerasTensor) and id(x) in tensor_dict:
                 return tensor_dict[id(x)]
@@ -2547,51 +2718,8 @@ class Functional(Model):
             return _get_output(self.outputs)
 
 
-class Sequential(Model):
-    """Sequential class."""
-
-    def __init__(self, layers: TensorLike = None, **kwargs: TensorLike) -> None:
-        """Function docstring.
-
-        Args:
-            layers: Description.
-            kwargs: Description.
-        """
-        super().__init__(**kwargs)
-        self.layers = layers or []
-
-    def add(self, layer: TensorLike) -> TensorLike:
-        """Add function.
-
-        Args:
-        layer: Parameter layer.
-
-        Returns:
-        TensorLike: Return value.
-
-        """
-        self.layers.append(layer)
-
-    def call(self, inputs: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call function.
-
-        Args:
-        inputs: Parameter inputs.
-        *args: Variable length argument list.
-        **kwargs: Arbitrary keyword arguments.
-
-        Returns:
-        TensorLike: Return value.
-
-        """
-        x = inputs
-        for layer in self.layers:
-            x = layer(x)
-        return x
-
-
 def deserialize(
-    config: TensorLike, custom_objects: TensorLike = None, safe_mode: TensorLike = True
+    config: TensorLike, custom_objects: TensorLike | None = None, safe_mode: bool = True
 ) -> TensorLike:
     """Returns a Keras layer object via its configuration.
 
@@ -2620,16 +2748,19 @@ def deserialize(
         cls = custom_objects[class_name]
 
     if cls is None:
-        import builtins
+        from zero_keras.layers import LAYER_REGISTRY
+        from zero_keras.models import (
+            Functional as _Functional,
+            Model as _Model,
+            Sequential as _Sequential,
+        )
 
-        import zero_keras.layers
-        import zero_keras.models
-
-        cls = zero_keras.layers.__dict__.get(class_name, None)
-        if cls is None:
-            cls = zero_keras.models.__dict__.get(class_name, None)
-        if cls is None:
-            cls = builtins.__dict__.get(class_name, None)
+        model_registry = {
+            "Functional": _Functional,
+            "Model": _Model,
+            "Sequential": _Sequential,
+        }
+        cls = LAYER_REGISTRY.get(str(class_name)) or model_registry.get(str(class_name))
 
     if cls and hasattr(cls, "from_config"):
         if "config" in config:
@@ -2644,46 +2775,59 @@ def deserialize(
     raise ValueError(f"Unknown class {class_name}")
 
 
-def get(identifier: TensorLike, custom_objects: TensorLike = None) -> TensorLike:
-    """Get function.
+def get(identifier: TensorLike, custom_objects: TensorLike | None = None) -> TensorLike:
+    """Retrieve a Keras layer, model, metric, loss, initializer, regularizer, or optimizer by name.
 
     Args:
-    identifier: Parameter identifier.
-    custom_objects: Parameter custom_objects.
+        identifier: String identifier, configuration dictionary, or object instance.
+        custom_objects: Optional custom object mapping.
 
     Returns:
-    TensorLike: Return value.
+        TensorLike: Resolved class or instance.
 
+    Raises:
+        ValueError: If ``identifier`` is an unknown string name.
     """
     if identifier is None:
         return None
     if isinstance(identifier, dict):
         return deserialize(identifier, custom_objects=custom_objects)
     if isinstance(identifier, str):
-        if custom_objects and identifier in custom_objects:
+        if isinstance(custom_objects, dict) and identifier in custom_objects:
             return custom_objects[identifier]
-        import zero_keras.initializers
-        import zero_keras.layers
-        import zero_keras.losses
-        import zero_keras.metrics
-        import zero_keras.models
-        import zero_keras.optimizers
-        import zero_keras.regularizers
+        from zero_keras.initializers import _INITIALIZER_CLASSES
+        from zero_keras.layers import LAYER_REGISTRY
+        from zero_keras.losses import _LOSS_REGISTRY
+        from zero_keras.metrics import _METRIC_REGISTRY
+        from zero_keras.models import (
+            Functional as _Functional,
+            Model as _Model,
+            Sequential as _Sequential,
+        )
+        from zero_keras.optimizers import _OPTIMIZER_REGISTRY
+        from zero_keras.regularizers import L1, L1L2, L2, OrthogonalRegularizer, Regularizer
 
-        modules_to_check = [
-            zero_keras.layers,
-            zero_keras.models,
-            zero_keras.metrics,
-            zero_keras.losses,
-            zero_keras.initializers,
-            zero_keras.regularizers,
-            zero_keras.optimizers,
-        ]
+        combined_registry: dict[str, TensorLike] = {}
+        combined_registry.update(LAYER_REGISTRY)
+        combined_registry.update(
+            {
+                "Functional": _Functional,
+                "Model": _Model,
+                "Sequential": _Sequential,
+                "L1": L1,
+                "L2": L2,
+                "L1L2": L1L2,
+                "OrthogonalRegularizer": OrthogonalRegularizer,
+                "Regularizer": Regularizer,
+            }
+        )
+        combined_registry.update(_METRIC_REGISTRY)
+        combined_registry.update(_LOSS_REGISTRY)
+        combined_registry.update(_INITIALIZER_CLASSES)
+        combined_registry.update(_OPTIMIZER_REGISTRY)
 
-        for mod in modules_to_check:
-            cls = mod.__dict__.get(identifier, None)
-            if cls:
-                return cls
+        if identifier in combined_registry:
+            return combined_registry[identifier]
 
         raise ValueError(f"Unknown identifier {identifier}")
     return identifier
@@ -2693,32 +2837,41 @@ class Function:
     """Function docstring."""
 
     def call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call docstring.
+        """Execute the forward computation of `Function` on `inputs`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         if (self._fn if hasattr(self, "_fn") else None) is not None:
             return self._fn(*args, **kwargs)
         return args[0] if args else None
 
     def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
-        """compute_output_shape docstring.
+        """Compute the output tensor shape produced for `input_shape`.
 
         Args:
-            input_shape: Input shape.
+            input_shape: Input tensor shape tuple or nested structure of shape tuples.
+
+        Returns:
+            TensorLike: Computed result for `compute_output_shape`.
         """
         if (self._shape_fn if hasattr(self, "_shape_fn") else None) is not None:
             return self._shape_fn(input_shape)
         return input_shape
 
     def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """compute_output_spec docstring.
+        """Compute the symbolic `KerasTensor` specification for the given inputs.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `compute_output_spec`.
         """
         if hasattr(self, "compute_output_shape"):
             return self.compute_output_shape(*args, **kwargs)
@@ -2728,20 +2881,31 @@ class Function:
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """from_config docstring.
+        """Instantiate `Function` from its serialized configuration dictionary.
 
         Args:
-            config: Config.
+            config: Configuration dictionary describing object hyperparameters.
+
+        Returns:
+            TensorLike: Computed result for `from_config`.
         """
         return cls(**config)
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
+        """Return the serializable configuration dictionary for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `get_config`.
+        """
         return {}
 
     @property
     def input(self) -> TensorLike:
-        """Input docstring."""
+        """Compute or retrieve `input` for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `input`.
+        """
         return (
             self._inbound_nodes[0].input_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -2750,17 +2914,29 @@ class Function:
 
     @property
     def inputs(self) -> TensorLike:
-        """Inputs docstring."""
+        """Compute or retrieve `inputs` for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `inputs`.
+        """
         return []
 
     @property
     def operations(self) -> TensorLike:
-        """Operations docstring."""
+        """Compute or retrieve `operations` for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `operations`.
+        """
         return []
 
     @property
     def output(self) -> TensorLike:
-        """Output docstring."""
+        """Compute or retrieve `output` for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `output`.
+        """
         return (
             self._inbound_nodes[0].output_tensors
             if hasattr(self, "_inbound_nodes") and self._inbound_nodes
@@ -2769,10 +2945,14 @@ class Function:
 
     @property
     def outputs(self) -> TensorLike:
-        """Outputs docstring."""
+        """Compute or retrieve `outputs` for `Function`.
+
+        Returns:
+            TensorLike: Computed result for `outputs`.
+        """
         return []
 
-    def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+    def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> None:
         """quantized_call docstring.
 
         Args:
@@ -2781,7 +2961,7 @@ class Function:
         """
         return
 
-    def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
+    def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> None:
         """symbolic_call docstring.
 
         Args:
@@ -2796,15 +2976,22 @@ class InputSpec:
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """from_config docstring.
+        """Instantiate `InputSpec` from its serialized configuration dictionary.
 
         Args:
-            config: Config.
+            config: Configuration dictionary describing object hyperparameters.
+
+        Returns:
+            TensorLike: Computed result for `from_config`.
         """
         return cls(**config)
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
+        """Return the serializable configuration dictionary for `InputSpec`.
+
+        Returns:
+            TensorLike: Computed result for `get_config`.
+        """
         return {
             "dtype": (self.dtype if hasattr(self, "dtype") else None),
             "shape": (self.shape if hasattr(self, "shape") else None),
@@ -2820,26 +3007,26 @@ class InputSpec:
 
     def __init__(
         self,
-        dtype: TensorLike = None,
-        shape: TensorLike = None,
-        ndim: TensorLike = None,
-        max_ndim: TensorLike = None,
-        min_ndim: TensorLike = None,
-        axes: TensorLike = None,
-        allow_last_axis_squeeze: TensorLike = False,
-        name: TensorLike = None,
+        dtype: TensorLike | None = None,
+        shape: TensorLike | None = None,
+        ndim: TensorLike | None = None,
+        max_ndim: TensorLike | None = None,
+        min_ndim: TensorLike | None = None,
+        axes: TensorLike | None = None,
+        allow_last_axis_squeeze: bool = False,
+        name: TensorLike | None = None,
     ) -> None:
-        """Docstring.
+        """Initialize the `InputSpec` instance.
 
         Args:
-            dtype: Input parameter ``dtype``.
-            shape: Input parameter ``shape``.
-            ndim: Input parameter ``ndim``.
-            max_ndim: Input parameter ``max_ndim``.
-            min_ndim: Input parameter ``min_ndim``.
-            axes: Input parameter ``axes``.
-            allow_last_axis_squeeze: Input parameter ``allow_last_axis_squeeze``.
-            name: Input parameter ``name``.
+            dtype: Data type string or DTypePolicy.
+            shape: Shape tuple specifying tensor dimensions.
+            ndim: Configuration or input value for `ndim` (ndim).
+            max_ndim: Configuration or input value for `max_ndim` (max ndim).
+            min_ndim: Configuration or input value for `min_ndim` (min ndim).
+            axes: Configuration or input value for `axes` (axes).
+            allow_last_axis_squeeze: Configuration or input value for `allow_last_axis_squeeze` (allow last axis squeeze).
+            name: Optional string identifier for the object.
         """
         self.dtype = dtype
         self.shape = shape
@@ -2855,22 +3042,28 @@ class Operation:
     """Operation docstring."""
 
     def call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Call docstring.
+        """Execute the forward computation of `Operation` on `inputs`.
 
         Args:
-            args: Input parameter ``args``.
-            kwargs: Input parameter ``kwargs``.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `call`.
         """
         if (self._fn if hasattr(self, "_fn") else None) is not None:
             return self._fn(*args, **kwargs)
         return args[0] if args else None
 
     def compute_output_spec(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """compute_output_spec docstring.
+        """Compute the symbolic `KerasTensor` specification for the given inputs.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `compute_output_spec`.
         """
         if hasattr(self, "compute_output_shape"):
             return self.compute_output_shape(*args, **kwargs)
@@ -2880,42 +3073,63 @@ class Operation:
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """from_config docstring.
+        """Instantiate `Operation` from its serialized configuration dictionary.
 
         Args:
-            config: Config.
+            config: Configuration dictionary describing object hyperparameters.
+
+        Returns:
+            TensorLike: Computed result for `from_config`.
         """
         return cls(**config)
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
+        """Return the serializable configuration dictionary for `Operation`.
+
+        Returns:
+            TensorLike: Computed result for `get_config`.
+        """
         return self._config if hasattr(self, "_config") else {}
 
     @property
     def input(self) -> TensorLike:
-        """Input docstring."""
+        """Compute or retrieve `input` for `Operation`.
+
+        Returns:
+            TensorLike: Computed result for `input`.
+        """
         return self._input if hasattr(self, "_input") else None
 
     @property
     def output(self) -> TensorLike:
-        """Output docstring."""
+        """Compute or retrieve `output` for `Operation`.
+
+        Returns:
+            TensorLike: Computed result for `output`.
+        """
         return self._output if hasattr(self, "_output") else None
 
     def quantized_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """quantized_call docstring.
+        """Execute the quantized forward pass on `inputs`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `quantized_call`.
         """
         return self.call(*args, **kwargs)
 
     def symbolic_call(self, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """symbolic_call docstring.
+        """Compute or retrieve `symbolic call` for `Operation`.
 
         Args:
-            *args: Args.
-            **kwargs: Kwargs.
+            *args: Positional arguments forwarded to the operation or base class.
+            **kwargs: Additional keyword configuration arguments.
+
+        Returns:
+            TensorLike: Computed result for `symbolic_call`.
         """
         return self.call(*args, **kwargs)
 
@@ -2924,10 +3138,13 @@ class Variable:
     """Variable docstring."""
 
     def __getitem__(self, key: TensorLike) -> TensorLike:
-        """__getitem__ docstring.
+        """Implement the `__getitem__` special method on `Variable`.
 
         Args:
-            key: Key.
+            key: Configuration or input value for `key` (key).
+
+        Returns:
+            TensorLike: Computed result for `__getitem__`.
         """
         return (
             self.value[key]
@@ -2937,19 +3154,23 @@ class Variable:
 
     @property
     def aggregation(self) -> TensorLike:
-        """Aggregation docstring."""
+        """Compute or retrieve `aggregation` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `aggregation`.
+        """
         return self._aggregation if hasattr(self, "_aggregation") else None
 
     @aggregation.setter
-    def aggregation(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def aggregation(self, value: TensorLike) -> None:
+        """Compute or retrieve `aggregation` for `Variable`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._aggregation = value
 
-    def assign(self, value: TensorLike) -> TensorLike:
+    def assign(self, value: TensorLike) -> None:
         """Assign docstring.
 
         Args:
@@ -2957,7 +3178,7 @@ class Variable:
         """
         self.value = value
 
-    def assign_add(self, value: TensorLike) -> TensorLike:
+    def assign_add(self, value: TensorLike) -> None:
         """assign_add docstring.
 
         Args:
@@ -2971,7 +3192,7 @@ class Variable:
             else value
         )
 
-    def assign_sub(self, value: TensorLike) -> TensorLike:
+    def assign_sub(self, value: TensorLike) -> None:
         """assign_sub docstring.
 
         Args:
@@ -2987,48 +3208,67 @@ class Variable:
 
     @property
     def constraint(self) -> TensorLike:
-        """Constraint docstring."""
+        """Compute or retrieve `constraint` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `constraint`.
+        """
         return self._constraint if hasattr(self, "_constraint") else None
 
     @constraint.setter
-    def constraint(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def constraint(self, value: TensorLike) -> None:
+        """Compute or retrieve `constraint` for `Variable`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._constraint = value
 
     @property
     def handle(self) -> TensorLike:
-        """Handle docstring."""
+        """Compute or retrieve `handle` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `handle`.
+        """
         return self._handle if hasattr(self, "_handle") else None
 
     @handle.setter
-    def handle(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def handle(self, value: TensorLike) -> None:
+        """Compute or retrieve `handle` for `Variable`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._handle = value
 
     @property
     def ndim(self) -> TensorLike:
-        """Ndim docstring."""
+        """Compute or retrieve `ndim` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `ndim`.
+        """
         return len(self.shape) if self.shape is not None else 0
 
     def numpy(self) -> TensorLike:
-        """Numpy docstring."""
+        """Compute or retrieve `numpy` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `numpy`.
+        """
         from ml_switcheroo_compiler.serialization import to_numpy
 
         return to_numpy(self.value)
 
-    def __array__(self, dtype: TensorLike = None) -> TensorLike:
-        """Allow casting to numpy array.
+    def __array__(self, dtype: TensorLike | None = None) -> TensorLike:
+        """Implement the `__array__` special method on `Variable`.
 
         Args:
-            dtype: Input parameter ``dtype``.
+            dtype: Data type string or DTypePolicy.
+
+        Returns:
+            TensorLike: Computed result for `__array__`.
         """
         from zero_keras import ops
 
@@ -3044,7 +3284,7 @@ class Variable:
             return res.astype(dtype)
         return res
 
-    def overwrite_with_gradient(self, gradient: TensorLike) -> TensorLike:
+    def overwrite_with_gradient(self, gradient: TensorLike) -> None:
         """overwrite_with_gradient docstring.
 
         Args:
@@ -3055,126 +3295,166 @@ class Variable:
 
     @property
     def path(self) -> TensorLike:
-        """Path docstring."""
+        """Compute or retrieve `path` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `path`.
+        """
         return self.name
 
     @property
     def regularizer(self) -> TensorLike:
-        """Regularizer docstring."""
+        """Compute or retrieve `regularizer` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `regularizer`.
+        """
         return self._regularizer if hasattr(self, "_regularizer") else None
 
     @regularizer.setter
-    def regularizer(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def regularizer(self, value: TensorLike) -> None:
+        """Compute or retrieve `regularizer` for `Variable`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._regularizer = value
 
     @property
     def synchronization(self) -> TensorLike:
-        """Synchronization docstring."""
+        """Compute or retrieve `synchronization` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `synchronization`.
+        """
         return self._synchronization if hasattr(self, "_synchronization") else None
 
     @synchronization.setter
-    def synchronization(self, value: TensorLike) -> TensorLike:
-        """Docstring.
+    def synchronization(self, value: TensorLike) -> None:
+        """Compute or retrieve `synchronization` for `Variable`.
 
         Args:
-            value: Input parameter ``value``.
+            value: Configuration or input value for `value` (value).
         """
         self._synchronization = value
 
     @property
     def value(self) -> TensorLike:
-        """Value docstring."""
+        """Compute or retrieve `value` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `value`.
+        """
         return self._value if hasattr(self, "_value") else None
 
     @value.setter
-    def value(self, val: TensorLike) -> TensorLike:
-        """Docstring.
+    def value(self, val: TensorLike) -> None:
+        """Compute or retrieve `value` for `Variable`.
 
         Args:
-            val: Input parameter ``val``.
+            val: Configuration or input value for `val` (val).
         """
         self._value = val
 
     def __add__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__add__``.
+        """Implement the `__add__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__add__`.
         """
         from zero_keras import ops
 
         return ops.add(self.value, other)
 
     def __radd__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__radd__``.
+        """Implement the `__radd__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__radd__`.
         """
         from zero_keras import ops
 
         return ops.add(other, self.value)
 
     def __sub__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__sub__``.
+        """Implement the `__sub__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__sub__`.
         """
         from zero_keras import ops
 
         return ops.subtract(self.value, other)
 
     def __rsub__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__rsub__``.
+        """Implement the `__rsub__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__rsub__`.
         """
         from zero_keras import ops
 
         return ops.subtract(other, self.value)
 
     def __mul__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__mul__``.
+        """Implement the `__mul__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__mul__`.
         """
         from zero_keras import ops
 
         return ops.multiply(self.value, other)
 
     def __rmul__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__rmul__``.
+        """Implement the `__rmul__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__rmul__`.
         """
         from zero_keras import ops
 
         return ops.multiply(other, self.value)
 
     def __truediv__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__truediv__``.
+        """Implement the `__truediv__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__truediv__`.
         """
         from zero_keras import ops
 
         return ops.divide(self.value, other)
 
     def __rtruediv__(self, other: TensorLike) -> TensorLike:
-        """Execute ``__rtruediv__``.
+        """Implement the `__rtruediv__` special method on `Variable`.
 
         Args:
-            other: Input parameter ``other``.
+            other: Configuration or input value for `other` (other).
+
+        Returns:
+            TensorLike: Computed result for `__rtruediv__`.
         """
         from zero_keras import ops
 
@@ -3183,25 +3463,46 @@ class Variable:
     def __init__(
         self,
         initializer: TensorLike,
-        shape: TensorLike = None,
-        dtype: TensorLike = None,
-        trainable: TensorLike = True,
-        name: TensorLike = None,
+        shape: TensorLike | None = None,
+        dtype: TensorLike | None = None,
+        trainable: bool = True,
+        name: TensorLike | None = None,
     ) -> None:
-        """Docstring.
+        """Initialize a Keras Variable.
 
         Args:
-            initializer: Input parameter ``initializer``.
-            shape: Input parameter ``shape``.
-            dtype: Input parameter ``dtype``.
-            trainable: Input parameter ``trainable``.
-            name: Input parameter ``name``.
+            initializer: Initializer name, callable, or initial tensor value.
+            shape: Shape tuple of the variable.
+            dtype: Data type of the variable.
+            trainable: Whether the variable is trainable.
+            name: Optional variable name.
         """
         self.initializer = initializer
         self.shape = shape
         self.dtype = dtype
         self.trainable = trainable
         self.name = name
+        self._value: TensorLike | None = None
+
+    @property
+    def _tensor(self) -> TensorLike:
+        """Compute or retrieve `tensor` for `Variable`.
+
+        Returns:
+            TensorLike: Computed result for `_tensor`.
+        """
+        from zero_keras.activations import _to_tensor
+
+        if self._value is None and self.shape is not None:
+            from zero_keras.initializers import get as get_initializer
+
+            init_fn = get_initializer(self.initializer)
+            self._value = init_fn(shape=self.shape, dtype=self.dtype or "float32")
+        if self._value is not None:
+            return _to_tensor(self._value)
+        from zero_keras import ops
+
+        return _to_tensor(ops.zeros((), dtype=self.dtype or "float32"))
 
 
 from zero_keras.dtype_policies import (
@@ -3215,31 +3516,42 @@ class Quantizer:
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """from_config docstring.
+        """Instantiate `Quantizer` from its serialized configuration dictionary.
 
         Args:
-            config: Config.
+            config: Configuration dictionary describing object hyperparameters.
+
+        Returns:
+            TensorLike: Computed result for `from_config`.
         """
         return cls(**config)
 
     def get_config(self) -> TensorLike:
-        """get_config docstring."""
-        return {"name": self.__class__.__name__}
+        """Return the quantizer configuration dictionary.
+
+        Returns:
+            dict[str, str]: Configuration dictionary containing ``name``.
+        """
+        return {"name": type(self).__name__}
 
 
 class RematScope:
     """RematScope docstring."""
 
     def __enter__(self) -> TensorLike:
-        """Docstring."""
+        """Implement the `__enter__` special method on `RematScope`.
+
+        Returns:
+            TensorLike: Computed result for `__enter__`.
+        """
         self._active = True
         return self
 
-    def __exit__(self, *args: TensorLike) -> TensorLike:
-        """Docstring.
+    def __exit__(self, *args: TensorLike) -> None:
+        """Implement the `__exit__` special method on `RematScope`.
 
         Args:
-            args: Input parameter ``args``.
+            *args: Positional arguments forwarded to the operation or base class.
         """
         self._active = False
 
@@ -3248,11 +3560,11 @@ class StatelessScope:
     """StatelessScope docstring."""
 
     def __init__(self) -> None:
-        """Execute ``__init__``."""
+        """Initialize the `StatelessScope` instance."""
         self.losses = []
         self.updates = []
 
-    def add_loss(self, loss: TensorLike) -> TensorLike:
+    def add_loss(self, loss: TensorLike) -> None:
         """add_loss docstring.
 
         Args:
@@ -3260,7 +3572,7 @@ class StatelessScope:
         """
         self.losses.append(loss)
 
-    def add_update(self, update: TensorLike) -> TensorLike:
+    def add_update(self, update: TensorLike) -> None:
         """add_update docstring.
 
         Args:
@@ -3269,22 +3581,29 @@ class StatelessScope:
         self.updates.append(update)
 
     def get_current_value(self, variable: TensorLike) -> TensorLike:
-        """get_current_value docstring.
+        """Return the current value associated with `StatelessScope`.
 
         Args:
-            variable: Variable.
+            variable: Configuration or input value for `variable` (variable).
+
+        Returns:
+            TensorLike: Computed result for `get_current_value`.
         """
         return variable.value if hasattr(variable, "value") else None
 
     def __enter__(self) -> TensorLike:
-        """Docstring."""
+        """Implement the `__enter__` special method on `StatelessScope`.
+
+        Returns:
+            TensorLike: Computed result for `__enter__`.
+        """
         return self
 
     def __exit__(self, *args: TensorLike) -> TensorLike:
-        """Docstring.
+        """Implement the `__exit__` special method on `StatelessScope`.
 
         Args:
-            args: Input parameter ``args``.
+            *args: Positional arguments forwarded to the operation or base class.
         """
 
 
@@ -3292,46 +3611,57 @@ class SymbolicScope:
     """SymbolicScope docstring."""
 
     def __enter__(self) -> TensorLike:
-        """Docstring."""
+        """Implement the `__enter__` special method on `SymbolicScope`.
+
+        Returns:
+            TensorLike: Computed result for `__enter__`.
+        """
         self._is_symbolic = True
         return self
 
-    def __exit__(self, *args: TensorLike) -> TensorLike:
-        """Docstring.
+    def __exit__(self, *args: TensorLike) -> None:
+        """Implement the `__exit__` special method on `SymbolicScope`.
 
         Args:
-            args: Input parameter ``args``.
+            *args: Positional arguments forwarded to the operation or base class.
         """
         self._is_symbolic = False
 
 
 def device(device_name: TensorLike) -> TensorLike:
-    """Device docstring.
+    """Return a context manager placing operations on `device_name`.
 
     Args:
-        device_name: Input parameter ``device_name``.
+        device_name: Configuration or input value for `device_name` (device name).
+
+    Returns:
+        TensorLike: Computed result for `device`.
     """
 
     class DeviceScope:
         """docstring."""
 
         def __init__(self, name: TensorLike) -> None:
-            """Execute ``__init__``.
+            """Initialize the `DeviceScope` instance.
 
             Args:
-                name: Input parameter ``name``.
+                name: Optional string identifier for the object.
             """
             self.name = name
 
         def __enter__(self) -> TensorLike:
-            """Docstring."""
+            """Implement the `__enter__` special method on `DeviceScope`.
+
+            Returns:
+                TensorLike: Computed result for `__enter__`.
+            """
             return self
 
         def __exit__(self, *args: TensorLike) -> TensorLike:
-            """Docstring.
+            """Implement the `__exit__` special method on `DeviceScope`.
 
             Args:
-                args: Input parameter ``args``.
+                *args: Positional arguments forwarded to the operation or base class.
             """
 
     return DeviceScope(device_name)
@@ -3341,44 +3671,58 @@ class name_scope:
     """name_scope docstring."""
 
     def __init__(self, name: TensorLike) -> None:
-        """Docstring.
+        """Initialize the `name_scope` instance.
 
         Args:
-            name: Input parameter ``name``.
+            name: Optional string identifier for the object.
         """
         self.name = name
 
     def __enter__(self) -> TensorLike:
-        """Docstring."""
+        """Implement the `__enter__` special method on `name_scope`.
+
+        Returns:
+            TensorLike: Computed result for `__enter__`.
+        """
         return self
 
     def __exit__(self, *args: TensorLike) -> TensorLike:
-        """Docstring.
+        """Implement the `__exit__` special method on `name_scope`.
 
         Args:
-            args: Input parameter ``args``.
+            *args: Positional arguments forwarded to the operation or base class.
         """
 
 
 def remat(f: TensorLike) -> TensorLike:
-    """Remat docstring.
+    """Wrap function `f` with gradient checkpointing (rematerialization).
 
     Args:
-        f: Input parameter ``f``.
+        f: Configuration or input value for `f` (f).
+
+    Returns:
+        TensorLike: Computed result for `remat`.
     """
     return f
 
 
 def version() -> TensorLike:
-    """Version docstring."""
+    """Return the current `zero_keras` package version string.
+
+    Returns:
+        TensorLike: Computed result for `version`.
+    """
     return "3.0.0"
 
 
 def is_keras_tensor(x: TensorLike) -> TensorLike:
-    """is_keras_tensor docstring.
+    """Return whether `x` is a symbolic `KerasTensor`.
 
     Args:
-        x: Input parameter ``x``.
+        x: Input tensor or array.
+
+    Returns:
+        TensorLike: Computed result for `is_keras_tensor`.
     """
     return isinstance(x, KerasTensor)
 
@@ -3387,11 +3731,14 @@ class Wrapper(Layer):
     """Base class for layer wrappers."""
 
     def __init__(self, layer: TensorLike, **kwargs: TensorLike) -> None:
-        """Execute ``__init__``.
+        """Initialize the `Wrapper` instance.
 
         Args:
-            layer: Input parameter ``layer``.
-            kwargs: Input parameter ``kwargs``.
+            layer: Configuration or input value for `layer` (layer).
+            **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
         self.layer = layer
+
+
+from zero_keras.models import Sequential as Sequential

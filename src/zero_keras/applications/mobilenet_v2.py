@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""MobileNetV2 architecture for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 import warnings
 
@@ -16,15 +16,15 @@ BASE_WEIGHT_PATH = "https://storage.googleapis.com/tensorflow/keras-applications
 
 
 def MobileNetV2(
-    input_shape: TensorLike = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
     alpha: TensorLike = 1.0,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    pooling: TensorLike = None,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    pooling: str | None = None,
     classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    name: TensorLike = None,
+    classifier_activation: str | TensorLike | None = "softmax",
+    name: str | None = None,
 ) -> TensorLike:
     """Instantiates the MobileNetV2 architecture.
 
@@ -321,21 +321,24 @@ def MobileNetV2(
 
 def _inverted_res_block(
     inputs: TensorLike,
-    expansion: TensorLike,
-    stride: TensorLike,
-    alpha: TensorLike,
-    filters: TensorLike,
-    block_id: TensorLike,
+    expansion: int,
+    stride: int,
+    alpha: float,
+    filters: int,
+    block_id: int,
 ) -> TensorLike:
     """Inverted ResNet block.
 
     Args:
-        inputs: Input parameter ``inputs``.
-        expansion: Input parameter ``expansion``.
-        stride: Input parameter ``stride``.
-        alpha: Input parameter ``alpha``.
-        filters: Input parameter ``filters``.
-        block_id: Input parameter ``block_id``.
+        inputs: Input feature tensor.
+        expansion: Expansion factor for the pointwise expansion convolution.
+        stride: Spatial stride for the depthwise 3x3 convolution.
+        alpha: Width multiplier scaling output channel count.
+        filters: Base number of output filters.
+        block_id: Sequential block index identifier.
+
+    Returns:
+        TensorLike: Output feature tensor of the inverted residual block.
     """
     channel_axis = 1 if backend.image_data_format() == "channels_first" else -1
 
@@ -408,13 +411,16 @@ def _inverted_res_block(
     return x
 
 
-def _make_divisible(v: TensorLike, divisor: TensorLike, min_value: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def _make_divisible(v: float, divisor: int, min_value: int | None = None) -> int:
+    """Round channel count ``v`` to the nearest multiple of ``divisor``.
 
     Args:
-        v: Description.
-        divisor: Description.
-        min_value: Description.
+        v: Raw channel count before rounding.
+        divisor: Alignment divisor.
+        min_value: Minimum allowed channel count.
+
+    Returns:
+        int: Divisible channel count.
     """
     if min_value is None:
         min_value = divisor
@@ -425,29 +431,27 @@ def _make_divisible(v: TensorLike, divisor: TensorLike, min_value: TensorLike = 
     return new_v
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Preprocess an image batch for MobileNetV2 by scaling pixels between -1 and 1.
 
     Args:
-        x: Description.
-        data_format: Description.
+        x: Input image tensor or array.
+        data_format: Optional image data format (``"channels_first"`` or ``"channels_last"``).
+
+    Returns:
+        TensorLike: Preprocessed image tensor.
     """
     return imagenet_utils.preprocess_input(x, data_format=data_format, mode="tf")
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for MobileNetV2.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-preprocess_input.__doc__ = imagenet_utils.PREPROCESS_INPUT_DOC.format(
-    mode="",
-    ret=imagenet_utils.PREPROCESS_INPUT_RET_DOC_TF,
-    error=imagenet_utils.PREPROCESS_INPUT_ERROR_DOC,
-)
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

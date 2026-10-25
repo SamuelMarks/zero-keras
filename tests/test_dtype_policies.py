@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import numpy as np
-
 from zero_keras import dtype_policies, ops
+
+from .conftest import assert_allclose_zero
 
 
 def test_dtype_policies() -> None:
@@ -40,7 +40,6 @@ def test_dtype_policies() -> None:
     p_qshort.name = "int4"
     assert p_qshort.quantization_mode == "int4"
 
-    # Serialization / Deserialization / Get
     assert dtype_policies.deserialize("test") == "test"
     assert dtype_policies.get("test") == "test"
     assert dtype_policies.serialize("test") == "test"
@@ -123,8 +122,8 @@ def test_dtype_policies_methods() -> None:
     assert len(d) == 0
 
     assert d.compute_dtype == "float32"
-    np.testing.assert_allclose(ops.convert_to_numpy(d.convert_input(1.0)), 1.0)
-    np.testing.assert_allclose(ops.convert_to_numpy(d.convert_input(1.0, dtype="float32")), 1.0)
+    assert_allclose_zero(ops.convert_to_numpy(d.convert_input(1.0)), 1.0)
+    assert_allclose_zero(ops.convert_to_numpy(d.convert_input(1.0, dtype="float32")), 1.0)
 
     assert d.get("missing") == "default"
     d_no_def = DTypePolicyMap()
@@ -156,8 +155,8 @@ def test_dtype_policies_methods() -> None:
 
     q = QuantizedDTypePolicy()
     assert q.compute_dtype == "float32"
-    np.testing.assert_allclose(ops.convert_to_numpy(q.convert_input(1.0)), 1.0)
-    np.testing.assert_allclose(ops.convert_to_numpy(q.convert_input(1.0, dtype="float32")), 1.0)
+    assert_allclose_zero(ops.convert_to_numpy(q.convert_input(1.0)), 1.0)
+    assert_allclose_zero(ops.convert_to_numpy(q.convert_input(1.0, dtype="float32")), 1.0)
     assert q.get_config() == {"name": None}
     q2 = QuantizedDTypePolicy.from_config({})
     assert q2.name is None

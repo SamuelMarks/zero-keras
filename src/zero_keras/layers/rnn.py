@@ -1,10 +1,18 @@
 """Recurrent neural network layers (`RNN`, `SimpleRNN`, `LSTM`, `GRU`, `ConvLSTM1D/2D/3D`, `Bidirectional`, `TimeDistributed`) for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
+from collections.abc import Sequence
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import (
+    ActivationSpec,
+    DataFormatSpec,
+    InitializerSpec,
+    ShapeTuple,
+    TensorLike,
+)
 
 
 class RNN(Layer):
@@ -168,47 +176,51 @@ class RNN(Layer):
 
     """
 
+    get_initial_state: TensorLike | None = None
+    inner_loop: TensorLike | None = None
+    reset_state: TensorLike | None = None
+
     def __init__(
         self,
-        cell: TensorLike,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        unroll: TensorLike = False,
-        time_major: TensorLike = False,
+        cell: Layer,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        unroll: bool = False,
+        zero_output_for_mask: bool = False,
+        time_major: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the base RNN layer.
 
         Args:
-            cell: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            unroll: Description.
-            time_major: Description.
-            kwargs: Description.
+            cell: Recurrent cell instance processing a single timestep.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final cell state(s) alongside the output.
+            go_backwards: Whether to process the input sequence in reverse order.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            zero_output_for_mask: Whether masked timesteps output zeros.
+            time_major: Whether the time dimension is the first dimension (``(time, batch, ...)``).
+            **kwargs: Base layer keyword arguments.
         """
+        _ = zero_output_for_mask
         super().__init__(**kwargs)
         self.cell = cell
-        self.return_sequences = return_sequences
-        self.return_state = return_state
-        self.go_backwards = go_backwards
-        self.stateful = stateful
-        self.unroll = unroll
-        self.time_major = time_major
+        self.return_sequences = bool(return_sequences)
+        self.return_state = bool(return_state)
+        self.go_backwards = bool(go_backwards)
+        self.stateful = bool(stateful)
+        self.unroll = bool(unroll)
+        self.time_major = bool(time_major)
+        self.states: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Build the underlying RNN cell for ``input_shape``.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple of the input sequence tensor.
         """
         if self.built:
             return
@@ -216,17 +228,13 @@ class RNN(Layer):
         self.cell.build(step_input_shape)
         self.built = True
 
-    def reset_states(self, states: TensorLike = None) -> TensorLike:
-        """reset_states function.
+    def reset_states(self, states: TensorLike | None = None) -> None:
+        """Reset the stateful hidden state(s) of the RNN layer.
 
         Args:
-        states: Parameter states.
-
-        Returns:
-        TensorLike: Return value.
-
+            states: Optional replacement state tensor or tuple of state tensors.
         """
-        if hasattr(self, "states") and self.states is not None:
+        if self.states is not None:
             if states is None:
                 from ml_switcheroo_compiler.ops import zeros
 
@@ -239,28 +247,27 @@ class RNN(Layer):
     def call(
         self,
         inputs: TensorLike,
-        initial_state: TensorLike = None,
-        mask: TensorLike = None,
-        training: TensorLike = None,
+        initial_state: TensorLike | None = None,
+        mask: TensorLike | None = None,
+        training: bool | None = None,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Call function.
+        """Execute the recurrent cell across all timesteps of ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        initial_state: Parameter initial_state.
-        mask: Parameter mask.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence tensor of shape ``(batch, timesteps, ...)`` or ``(timesteps, batch, ...)``.
+            initial_state: Optional initial state tensor(s).
+            mask: Optional boolean timestep mask.
+            training: Whether the layer is executing in training mode.
+            **kwargs: Additional keyword arguments forwarded to the cell.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Final output or full sequence, optionally accompanied by final state(s).
         """
         inputs = _to_tensor(inputs)
 
         if initial_state is None:
-            if self.stateful and (self.states if hasattr(self, "states") else None) is not None:
+            if self.stateful and self.states is not None:
                 initial_state = self.states
             else:
                 batch_size = inputs.shape[1] if self.time_major else inputs.shape[0]
@@ -270,15 +277,14 @@ class RNN(Layer):
                         initial_state = (ops.zeros((batch_size, state_size), dtype=inputs.dtype),)
                     else:
 
-                        def _get_shape(s: TensorLike) -> TensorLike:
-                            """_get_shape function.
+                        def _get_shape(s: TensorLike) -> ShapeTuple:
+                            """Compute the state shape for a state size descriptor.
 
                             Args:
-                            s: Parameter s.
+                                s: Integer state size or spatial shape tuple.
 
                             Returns:
-                            TensorLike: Return value.
-
+                                ShapeTuple: Full batch + state shape tuple.
                             """
                             return (
                                 (batch_size,) + tuple(s)
@@ -298,15 +304,14 @@ class RNN(Layer):
             initial_state = (initial_state,)
 
         def cell_fn(inputs: TensorLike, state: TensorLike) -> TensorLike:
-            """cell_fn function.
+            """Invoke ``self.cell`` on a single timestep slice.
 
             Args:
-            inputs: Parameter inputs.
-            state: Parameter state.
+                inputs: Single-timestep input tensor.
+                state: Current cell state tensor(s).
 
             Returns:
-            TensorLike: Return value.
-
+                TensorLike: Tuple of ``(step_output, next_state)``.
             """
             out, new_state = self.cell(inputs, state, training=training, **kwargs)
             if not isinstance(new_state, (tuple, list)):
@@ -396,91 +401,120 @@ class SimpleRNNCell(Layer):
 
     """
 
+    get_dropout_mask: TensorLike | None = None
+    get_initial_state: TensorLike | None = None
+    get_recurrent_dropout_mask: TensorLike | None = None
+    reset_dropout_mask: TensorLike | None = None
+    reset_recurrent_dropout_mask: TensorLike | None = None
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        use_bias: TensorLike = True,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        recurrent_initializer: TensorLike = "orthogonal",
-        bias_initializer: TensorLike = "zeros",
+        units: int,
+        activation: ActivationSpec = "tanh",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SimpleRNNCell.
 
         Args:
-            units: Description.
-            activation: Description.
-            use_bias: Description.
-            kernel_initializer: Description.
-            recurrent_initializer: Description.
-            bias_initializer: Description.
-            kwargs: Description.
+            units: Dimensionality of the hidden state space.
+            activation: Activation function applied to the recurrent update.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+        )
         super().__init__(**kwargs)
-        self.units = units
+        self.units = int(units)
         from zero_keras import activations
 
         self.activation = activations.get(activation)
-        self.use_bias = use_bias
+        self.use_bias = bool(use_bias)
         self.state_size = self.units
         self.kernel_initializer = kernel_initializer
         self.recurrent_initializer = recurrent_initializer
         self.bias_initializer = bias_initializer
+        self.kernel: TensorLike | None = None
+        self.recurrent_kernel: TensorLike | None = None
+        self.bias: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create ``kernel``, ``recurrent_kernel``, and optional ``bias`` weights.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple ``(batch, features)`` of a single timestep input.
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if (self.kernel if hasattr(self, "kernel") else None) is None:
+        if self.kernel is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units),
                 initializer=self.kernel_initializer,
                 name="kernel",
             )
-        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
+        if self.recurrent_kernel is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units),
                 initializer=self.recurrent_initializer,
                 name="recurrent_kernel",
             )
-        if self.use_bias:
-            if (self.bias if hasattr(self, "bias") else None) is None:
-                self.bias = self.add_weight(
-                    shape=(self.units,), initializer=self.bias_initializer, name="bias"
-                )
-        else:
-            if (self.bias if hasattr(self, "bias") else None) is None:
-                self.bias = None
+        if self.use_bias and self.bias is None:
+            self.bias = self.add_weight(
+                shape=(self.units,), initializer=self.bias_initializer, name="bias"
+            )
         self.built = True
 
     def call(
         self,
         inputs: TensorLike,
         states: TensorLike,
-        training: TensorLike = None,
+        training: bool | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Call function.
+    ) -> tuple[TensorLike, TensorLike]:
+        """Compute one timestep of SimpleRNN: ``h_t = activation(x_t W + h_{t-1} U + b)``.
 
         Args:
-        inputs: Parameter inputs.
-        states: Parameter states.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Single-timestep input tensor of shape ``(batch, features)``.
+            states: Previous hidden state tensor or sequence ``[h_{t-1}]``.
+            training: Whether the cell is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[TensorLike, TensorLike]: Output tensor and new hidden state tensor.
         """
         if not self.built:
             self.build(inputs.shape)
@@ -584,31 +618,87 @@ class SimpleRNN(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    dropout: float = 0.0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    units: int = 0
+    use_bias: bool = True
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        use_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        unroll: TensorLike = False,
+        units: int,
+        activation: ActivationSpec = "tanh",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        unroll: bool = False,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the SimpleRNN layer.
 
         Args:
-            units: Description.
-            activation: Description.
-            use_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            unroll: Description.
-            kwargs: Description.
+            units: Dimensionality of the output space.
+            activation: Activation function to use. Defaults to ``"tanh"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden state alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_initializer,
+            recurrent_initializer,
+            bias_initializer,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+        )
         cell = SimpleRNNCell(units, activation=activation, use_bias=use_bias)
         super().__init__(
             cell,
@@ -619,6 +709,7 @@ class SimpleRNN(RNN):
             unroll=unroll,
             **kwargs,
         )
+        self.units = int(units)
 
 
 class GRUCell(Layer):
@@ -691,94 +782,131 @@ class GRUCell(Layer):
 
     """
 
+    get_dropout_mask: TensorLike | None = None
+    get_initial_state: TensorLike | None = None
+    get_recurrent_dropout_mask: TensorLike | None = None
+    reset_dropout_mask: TensorLike | None = None
+    reset_recurrent_dropout_mask: TensorLike | None = None
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "sigmoid",
-        use_bias: TensorLike = True,
-        reset_after: TensorLike = True,
+        units: int,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        reset_after: bool = True,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the GRUCell.
 
         Args:
-            units: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            reset_after: Description.
-            kwargs: Description.
+            units: Dimensionality of the hidden state space.
+            activation: Candidate state activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Update/reset gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias tensor.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            reset_after: Whether to apply the reset gate after matrix multiplication.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_initializer,
+            recurrent_initializer,
+            bias_initializer,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+        )
         super().__init__(**kwargs)
-        self.units = units
+        self.units = int(units)
         from zero_keras import activations
 
         self.activation = activations.get(activation)
         self.recurrent_activation = activations.get(recurrent_activation)
-        self.use_bias = use_bias
-        self.reset_after = reset_after
+        self.use_bias = bool(use_bias)
+        self.reset_after = bool(reset_after)
         self.state_size = self.units
+        self.kernel: TensorLike | None = None
+        self.recurrent_kernel: TensorLike | None = None
+        self.bias: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create ``kernel``, ``recurrent_kernel``, and optional ``bias`` weights for GRUCell.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple ``(batch, features)`` of a single timestep input.
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if (self.kernel if hasattr(self, "kernel") else None) is None:
+        if self.kernel is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units * 3),
                 initializer="glorot_uniform",
                 name="kernel",
             )
-        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
+        if self.recurrent_kernel is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units * 3),
                 initializer="orthogonal",
                 name="recurrent_kernel",
             )
-        if self.use_bias:
+        if self.use_bias and self.bias is None:
             if self.reset_after:
-                if (self.bias if hasattr(self, "bias") else None) is None:
-                    self.bias = self.add_weight(
-                        shape=(2, self.units * 3), initializer="zeros", name="bias"
-                    )
+                self.bias = self.add_weight(
+                    shape=(2, self.units * 3), initializer="zeros", name="bias"
+                )
             else:
-                if (self.bias if hasattr(self, "bias") else None) is None:
-                    self.bias = self.add_weight(
-                        shape=(self.units * 3,), initializer="zeros", name="bias"
-                    )
-        else:
-            if (self.bias if hasattr(self, "bias") else None) is None:
-                self.bias = None
+                self.bias = self.add_weight(
+                    shape=(self.units * 3,), initializer="zeros", name="bias"
+                )
         self.built = True
 
     def call(
         self,
         inputs: TensorLike,
         states: TensorLike,
-        training: TensorLike = None,
+        training: bool | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Call function.
+    ) -> tuple[TensorLike, TensorLike]:
+        """Compute one timestep of Gated Recurrent Unit (GRU).
 
         Args:
-        inputs: Parameter inputs.
-        states: Parameter states.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Single-timestep input tensor of shape ``(batch, features)``.
+            states: Previous hidden state tensor or sequence ``[h_{t-1}]``.
+            training: Whether the cell is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[TensorLike, TensorLike]: Output tensor and new hidden state tensor.
         """
         if not self.built:
             self.build(inputs.shape)
@@ -794,9 +922,7 @@ class GRUCell(Layer):
             state,
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias)
-            if (self.bias if hasattr(self, "bias") else None) is not None
-            else None,
+            _to_tensor(self.bias) if self.bias is not None else None,
         )
         return _wrap(out), _wrap(new_state)
 
@@ -925,35 +1051,96 @@ class GRU(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    dropout: float = 0.0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    recurrent_activation: ActivationSpec = "sigmoid"
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    reset_after: bool = True
+    units: int = 0
+    use_bias: bool = True
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "sigmoid",
-        use_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        unroll: TensorLike = False,
-        reset_after: TensorLike = True,
+        units: int,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        unroll: bool = False,
+        reset_after: bool = True,
+        use_cudnn: str | bool = "auto",
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the GRU layer.
 
         Args:
-            units: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            unroll: Description.
-            reset_after: Description.
-            kwargs: Description.
+            units: Dimensionality of the output space.
+            activation: Candidate state activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Update/reset gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias tensor.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden state alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            reset_after: Whether to apply the reset gate after matrix multiplication.
+            use_cudnn: Whether to use cuDNN kernel when available.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_initializer,
+            recurrent_initializer,
+            bias_initializer,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+            use_cudnn,
+        )
         cell = GRUCell(
             units,
             activation=activation,
@@ -970,6 +1157,7 @@ class GRU(RNN):
             unroll=unroll,
             **kwargs,
         )
+        self.units = int(units)
 
 
 class LSTMCell(Layer):
@@ -1044,72 +1232,114 @@ class LSTMCell(Layer):
 
     """
 
+    get_dropout_mask: TensorLike | None = None
+    get_initial_state: TensorLike | None = None
+    get_recurrent_dropout_mask: TensorLike | None = None
+    reset_dropout_mask: TensorLike | None = None
+    reset_recurrent_dropout_mask: TensorLike | None = None
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "sigmoid",
-        use_bias: TensorLike = True,
-        unit_forget_bias: TensorLike = True,
+        units: int,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        unit_forget_bias: bool = True,
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the LSTMCell.
 
         Args:
-            units: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            unit_forget_bias: Description.
-            kwargs: Description.
+            units: Dimensionality of the hidden and carry state spaces.
+            activation: Candidate/output state activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Input/forget/output gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            unit_forget_bias: Whether to initialize the forget-gate bias slice to ones.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_initializer,
+            recurrent_initializer,
+            bias_initializer,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+        )
         super().__init__(**kwargs)
-        self.units = units
+        self.units = int(units)
         from zero_keras import activations
 
         self.activation = activations.get(activation)
         self.recurrent_activation = activations.get(recurrent_activation)
-        self.use_bias = use_bias
-        self.unit_forget_bias = unit_forget_bias
+        self.use_bias = bool(use_bias)
+        self.unit_forget_bias = bool(unit_forget_bias)
         self.state_size = (self.units, self.units)
+        self.kernel: TensorLike | None = None
+        self.recurrent_kernel: TensorLike | None = None
+        self.bias: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create ``kernel``, ``recurrent_kernel``, and optional ``bias`` weights for LSTMCell.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple ``(batch, features)`` of a single timestep input.
         """
         if self.built:
             return
         input_dim = input_shape[-1]
-        if (self.kernel if hasattr(self, "kernel") else None) is None:
+        if self.kernel is None:
             self.kernel = self.add_weight(
                 shape=(input_dim, self.units * 4),
                 initializer="glorot_uniform",
                 name="kernel",
             )
-        if (self.recurrent_kernel if hasattr(self, "recurrent_kernel") else None) is None:
+        if self.recurrent_kernel is None:
             self.recurrent_kernel = self.add_weight(
                 shape=(self.units, self.units * 4),
                 initializer="orthogonal",
                 name="recurrent_kernel",
             )
-        if self.use_bias:
+        if self.use_bias and self.bias is None:
 
-            def bias_init(shape: TensorLike, dtype: TensorLike = None) -> TensorLike:
-                """bias_init function.
+            def bias_init(shape: ShapeTuple, dtype: str | None = None) -> TensorLike:
+                """Initialize the LSTM bias with ones on the forget-gate slice when ``unit_forget_bias=True``.
 
                 Args:
-                shape: Parameter shape.
-                dtype: Parameter dtype.
+                    shape: Shape tuple of the bias vector.
+                    dtype: Optional data type string.
 
                 Returns:
-                TensorLike: Return value.
-
+                    TensorLike: Initialized bias tensor.
                 """
                 b = ops.zeros(shape, dtype=dtype)
                 if self.unit_forget_bias:
@@ -1118,33 +1348,26 @@ class LSTMCell(Layer):
                     )
                 return b
 
-            if (self.bias if hasattr(self, "bias") else None) is None:
-                self.bias = self.add_weight(
-                    shape=(self.units * 4,), initializer=bias_init, name="bias"
-                )
-        else:
-            if (self.bias if hasattr(self, "bias") else None) is None:
-                self.bias = None
+            self.bias = self.add_weight(shape=(self.units * 4,), initializer=bias_init, name="bias")
         self.built = True
 
     def call(
         self,
         inputs: TensorLike,
-        states: TensorLike,
-        training: TensorLike = None,
+        states: Sequence[TensorLike],
+        training: bool | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Call function.
+    ) -> tuple[TensorLike, list[TensorLike]]:
+        """Compute one timestep of Long Short-Term Memory (LSTM).
 
         Args:
-        inputs: Parameter inputs.
-        states: Parameter states.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Single-timestep input tensor of shape ``(batch, features)``.
+            states: Pair of previous hidden and carry state tensors ``[h_{t-1}, c_{t-1}]``.
+            training: Whether the cell is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[TensorLike, list[TensorLike]]: Output tensor and new ``[h_t, c_t]`` state list.
         """
         if not self.built:
             self.build(inputs.shape)
@@ -1156,9 +1379,7 @@ class LSTMCell(Layer):
             (h, c),
             _to_tensor(self.kernel),
             _to_tensor(self.recurrent_kernel),
-            _to_tensor(self.bias)
-            if (self.bias if hasattr(self, "bias") else None) is not None
-            else None,
+            _to_tensor(self.bias) if self.bias is not None else None,
         )
         return _wrap(out), [_wrap(s) for s in new_state]
 
@@ -1280,35 +1501,96 @@ class LSTM(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    dropout: float = 0.0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    recurrent_activation: ActivationSpec = "sigmoid"
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    unit_forget_bias: bool = True
+    units: int = 0
+    use_bias: bool = True
+
     def __init__(
         self,
-        units: TensorLike,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "sigmoid",
-        use_bias: TensorLike = True,
-        unit_forget_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        unroll: TensorLike = False,
+        units: int,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        unit_forget_bias: bool = True,
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        unroll: bool = False,
+        use_cudnn: str | bool = "auto",
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the LSTM layer.
 
         Args:
-            units: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            unit_forget_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            unroll: Description.
-            kwargs: Description.
+            units: Dimensionality of the output space.
+            activation: Candidate/output state activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Input/forget/output gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` matrix.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` matrix.
+            bias_initializer: Initializer for the ``bias`` vector.
+            unit_forget_bias: Whether to initialize the forget-gate bias slice to ones.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden and carry states alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            use_cudnn: Whether to use cuDNN kernel when available.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            kernel_initializer,
+            recurrent_initializer,
+            bias_initializer,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            dropout,
+            recurrent_dropout,
+            seed,
+            use_cudnn,
+        )
         cell = LSTMCell(
             units,
             activation=activation,
@@ -1325,6 +1607,7 @@ class LSTM(RNN):
             unroll=unroll,
             **kwargs,
         )
+        self.units = int(units)
 
 
 class Bidirectional(Layer):
@@ -1399,32 +1682,47 @@ class Bidirectional(Layer):
 
     """
 
+    reset_state: TensorLike | None = None
+    reset_states: TensorLike | None = None
+    states: TensorLike | None = None
+
     def __init__(
         self,
-        layer: TensorLike,
-        merge_mode: TensorLike = "concat",
-        weights: TensorLike = None,
-        backward_layer: TensorLike = None,
+        layer: RNN,
+        merge_mode: str | None = "concat",
+        weights: Sequence[TensorLike] | TensorLike | None = None,
+        backward_layer: RNN | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Bidirectional RNN wrapper.
 
         Args:
-            layer: Description.
-            merge_mode: Description.
-            weights: Description.
-            backward_layer: Description.
-            kwargs: Description.
+            layer: Forward ``RNN`` layer instance.
+            merge_mode: Mode for combining forward and backward outputs (``"concat"``, ``"sum"``, ``"mul"``, ``"ave"``, or ``None``).
+            weights: Optional initial weights.
+            backward_layer: Optional explicit backward ``RNN`` layer instance.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.forward_layer = layer
         if backward_layer is None:
-            config = layer._kwargs.copy() if hasattr(layer, "_kwargs") else {}
+            config = dict(layer._kwargs) if hasattr(layer, "_kwargs") else {}
+            if isinstance(layer, RNN):
+                config.setdefault("return_sequences", layer.return_sequences)
+                config.setdefault("return_state", layer.return_state)
+                config.setdefault("stateful", layer.stateful)
+                config.setdefault("unroll", layer.unroll)
+                config.setdefault("time_major", layer.time_major)
             args = layer.args if hasattr(layer, "args") else ()
             if hasattr(layer, "units"):
                 args = (layer.units,)
             elif hasattr(layer, "cell") and hasattr(layer.cell, "units"):
-                args = (layer.cell.units,)
+                if type(layer) is RNN:
+                    cell_cfg = layer.cell._kwargs.copy() if hasattr(layer.cell, "_kwargs") else {}
+                    cloned_cell = type(layer.cell)(layer.cell.units, **cell_cfg)
+                    args = (cloned_cell,)
+                else:
+                    args = (layer.cell.units,)
             self.backward_layer = type(layer)(*args, **config)
         else:
             self.backward_layer = backward_layer
@@ -1433,15 +1731,11 @@ class Bidirectional(Layer):
         self.return_sequences = layer.return_sequences
         self.return_state = layer.return_state
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Build both forward and backward RNN layers.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple of the input sequence tensor.
         """
         if self.built:
             return
@@ -1452,23 +1746,22 @@ class Bidirectional(Layer):
     def call(
         self,
         inputs: TensorLike,
-        initial_state: TensorLike = None,
-        training: TensorLike = None,
-        mask: TensorLike = None,
+        initial_state: TensorLike | None = None,
+        training: bool | None = None,
+        mask: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Call function.
+        """Run forward and backward RNN layers on ``inputs`` and merge their outputs.
 
         Args:
-        inputs: Parameter inputs.
-        initial_state: Parameter initial_state.
-        training: Parameter training.
-        mask: Parameter mask.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence tensor of shape ``(batch, timesteps, ...)``.
+            initial_state: Optional combined list of forward and backward initial state tensors.
+            training: Whether the layer is executing in training mode.
+            mask: Optional boolean timestep mask.
+            **kwargs: Additional keyword arguments forwarded to the RNN layers.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Merged bidirectional output tensor, optionally with final forward and backward states.
         """
         if initial_state is not None:
             half = len(initial_state) // 2
@@ -1540,23 +1833,25 @@ class StackedRNNCells(Layer):
 
     """
 
-    def __init__(self, cells: TensorLike, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    get_initial_state: TensorLike | None = None
+    output_size: int = 0
+
+    def __init__(self, cells: Sequence[Layer], **kwargs: TensorLike) -> None:
+        """Initialize the StackedRNNCells wrapper.
 
         Args:
-            cells: Description.
-            kwargs: Description.
+            cells: Sequence of RNN cell instances to stack sequentially.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.cells = cells
+        self.cells = list(cells)
 
     @property
-    def state_size(self) -> TensorLike:
-        """state_size function.
+    def state_size(self) -> tuple[int, ...]:
+        """Return the flattened tuple of state sizes across all stacked cells.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[int, ...]: Flattened state size tuple.
         """
         sizes = []
         for c in self.cells:
@@ -1569,21 +1864,20 @@ class StackedRNNCells(Layer):
     def call(
         self,
         inputs: TensorLike,
-        states: TensorLike,
-        training: TensorLike = None,
+        states: Sequence[TensorLike],
+        training: bool | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Call function.
+    ) -> tuple[TensorLike, tuple[TensorLike, ...]]:
+        """Execute each stacked cell in sequence for a single timestep.
 
         Args:
-        inputs: Parameter inputs.
-        states: Parameter states.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Single-timestep input tensor.
+            states: Flattened sequence of previous cell states.
+            training: Whether the cells are executing in training mode.
+            **kwargs: Additional keyword arguments forwarded to each cell.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[TensorLike, tuple[TensorLike, ...]]: Final cell output and flattened next-state tuple.
         """
         new_states = []
         state_idx = 0
@@ -1719,51 +2013,106 @@ class ConvLSTM1D(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    data_format: DataFormatSpec = None
+    dilation_rate: int | Sequence[int] = 1
+    dropout: float = 0.0
+    filters: int = 0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    kernel_size: int | Sequence[int] = 1
+    padding: str = "valid"
+    recurrent_activation: ActivationSpec = "sigmoid"
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    strides: int | Sequence[int] = 1
+    unit_forget_bias: bool = True
+    use_bias: bool = True
+
     def __init__(
         self,
-        filters: TensorLike,
-        kernel_size: TensorLike,
-        strides: TensorLike = 1,
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
-        dilation_rate: TensorLike = 1,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "hard_sigmoid",
-        use_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        dropout: TensorLike = 0.0,
-        recurrent_dropout: TensorLike = 0.0,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        recurrent_initializer: TensorLike = "orthogonal",
-        bias_initializer: TensorLike = "zeros",
+        filters: int,
+        kernel_size: int | Sequence[int],
+        strides: int | Sequence[int] = 1,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        dilation_rate: int | Sequence[int] = 1,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        unit_forget_bias: bool = True,
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        *,
+        unroll: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the ConvLSTM1D layer.
 
         Args:
-            filters: Description.
-            kernel_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            dilation_rate: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            dropout: Description.
-            recurrent_dropout: Description.
-            kernel_initializer: Description.
-            recurrent_initializer: Description.
-            bias_initializer: Description.
-            kwargs: Description.
+            filters: Number of output convolutional filters.
+            kernel_size: Size of the 1D convolutional kernel.
+            strides: Stride length of the 1D convolution.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            dilation_rate: Dilation rate for dilated 1D convolution.
+            activation: Candidate/output activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` tensor.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` tensor.
+            bias_initializer: Initializer for the ``bias`` vector.
+            unit_forget_bias: Whether to initialize forget gate bias to 1.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden and carry states alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            unit_forget_bias,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            seed,
+            unroll,
+        )
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -1907,51 +2256,106 @@ class ConvLSTM2D(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    data_format: DataFormatSpec = None
+    dilation_rate: int | Sequence[int] = 1
+    dropout: float = 0.0
+    filters: int = 0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    kernel_size: int | Sequence[int] = 1
+    padding: str = "valid"
+    recurrent_activation: ActivationSpec = "sigmoid"
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    strides: int | Sequence[int] = 1
+    unit_forget_bias: bool = True
+    use_bias: bool = True
+
     def __init__(
         self,
-        filters: TensorLike,
-        kernel_size: TensorLike,
-        strides: TensorLike = (1, 1),
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
-        dilation_rate: TensorLike = (1, 1),
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "hard_sigmoid",
-        use_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        dropout: TensorLike = 0.0,
-        recurrent_dropout: TensorLike = 0.0,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        recurrent_initializer: TensorLike = "orthogonal",
-        bias_initializer: TensorLike = "zeros",
+        filters: int,
+        kernel_size: int | Sequence[int],
+        strides: int | Sequence[int] = 1,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        dilation_rate: int | Sequence[int] = 1,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        unit_forget_bias: bool = True,
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        *,
+        unroll: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the ConvLSTM2D layer.
 
         Args:
-            filters: Description.
-            kernel_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            dilation_rate: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            dropout: Description.
-            recurrent_dropout: Description.
-            kernel_initializer: Description.
-            recurrent_initializer: Description.
-            bias_initializer: Description.
-            kwargs: Description.
+            filters: Number of output convolutional filters.
+            kernel_size: Size of the 2D convolutional kernel.
+            strides: Stride length of the 2D convolution.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            dilation_rate: Dilation rate for dilated 2D convolution.
+            activation: Candidate/output activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` tensor.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` tensor.
+            bias_initializer: Initializer for the ``bias`` vector.
+            unit_forget_bias: Whether to initialize forget gate bias to 1.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden and carry states alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            unit_forget_bias,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            seed,
+            unroll,
+        )
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -2094,51 +2498,106 @@ class ConvLSTM3D(RNN):
 
     """
 
+    activation: ActivationSpec = "tanh"
+    bias_constraint: TensorLike | None = None
+    bias_initializer: InitializerSpec = "zeros"
+    bias_regularizer: TensorLike | None = None
+    data_format: DataFormatSpec = None
+    dilation_rate: int | Sequence[int] = 1
+    dropout: float = 0.0
+    filters: int = 0
+    kernel_constraint: TensorLike | None = None
+    kernel_initializer: InitializerSpec = "glorot_uniform"
+    kernel_regularizer: TensorLike | None = None
+    kernel_size: int | Sequence[int] = 1
+    padding: str = "valid"
+    recurrent_activation: ActivationSpec = "sigmoid"
+    recurrent_constraint: TensorLike | None = None
+    recurrent_dropout: float = 0.0
+    recurrent_initializer: InitializerSpec = "orthogonal"
+    recurrent_regularizer: TensorLike | None = None
+    strides: int | Sequence[int] = 1
+    unit_forget_bias: bool = True
+    use_bias: bool = True
+
     def __init__(
         self,
-        filters: TensorLike,
-        kernel_size: TensorLike,
-        strides: TensorLike = (1, 1, 1),
-        padding: TensorLike = "valid",
-        data_format: TensorLike = None,
-        dilation_rate: TensorLike = (1, 1, 1),
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "hard_sigmoid",
-        use_bias: TensorLike = True,
-        return_sequences: TensorLike = False,
-        return_state: TensorLike = False,
-        go_backwards: TensorLike = False,
-        stateful: TensorLike = False,
-        dropout: TensorLike = 0.0,
-        recurrent_dropout: TensorLike = 0.0,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        recurrent_initializer: TensorLike = "orthogonal",
-        bias_initializer: TensorLike = "zeros",
+        filters: int,
+        kernel_size: int | Sequence[int],
+        strides: int | Sequence[int] = 1,
+        padding: str = "valid",
+        data_format: DataFormatSpec = None,
+        dilation_rate: int | Sequence[int] = 1,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        unit_forget_bias: bool = True,
+        kernel_regularizer: TensorLike | None = None,
+        recurrent_regularizer: TensorLike | None = None,
+        bias_regularizer: TensorLike | None = None,
+        activity_regularizer: TensorLike | None = None,
+        kernel_constraint: TensorLike | None = None,
+        recurrent_constraint: TensorLike | None = None,
+        bias_constraint: TensorLike | None = None,
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
+        seed: int | None = None,
+        return_sequences: bool = False,
+        return_state: bool = False,
+        go_backwards: bool = False,
+        stateful: bool = False,
+        *,
+        unroll: bool = False,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the ConvLSTM3D layer.
 
         Args:
-            filters: Description.
-            kernel_size: Description.
-            strides: Description.
-            padding: Description.
-            data_format: Description.
-            dilation_rate: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            return_sequences: Description.
-            return_state: Description.
-            go_backwards: Description.
-            stateful: Description.
-            dropout: Description.
-            recurrent_dropout: Description.
-            kernel_initializer: Description.
-            recurrent_initializer: Description.
-            bias_initializer: Description.
-            kwargs: Description.
+            filters: Number of output convolutional filters.
+            kernel_size: Size of the 3D convolutional kernel.
+            strides: Stride length of the 3D convolution.
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            data_format: Channel ordering (``"channels_last"`` or ``"channels_first"``).
+            dilation_rate: Dilation rate for dilated 3D convolution.
+            activation: Candidate/output activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Gate activation function. Defaults to ``"sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` tensor.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` tensor.
+            bias_initializer: Initializer for the ``bias`` vector.
+            unit_forget_bias: Whether to initialize forget gate bias to 1.
+            kernel_regularizer: Optional regularizer for ``kernel``.
+            recurrent_regularizer: Optional regularizer for ``recurrent_kernel``.
+            bias_regularizer: Optional regularizer for ``bias``.
+            activity_regularizer: Optional regularizer for layer output activity.
+            kernel_constraint: Optional constraint for ``kernel``.
+            recurrent_constraint: Optional constraint for ``recurrent_kernel``.
+            bias_constraint: Optional constraint for ``bias``.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            seed: Optional random seed.
+            return_sequences: Whether to return the full output sequence or only the last step.
+            return_state: Whether to return the final hidden and carry states alongside the output.
+            go_backwards: Whether to process the input sequence backwards.
+            stateful: Whether the final state of each batch is reused as the next initial state.
+            unroll: Whether to unroll the recurrent loop symbolically.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = (
+            unit_forget_bias,
+            kernel_regularizer,
+            recurrent_regularizer,
+            bias_regularizer,
+            activity_regularizer,
+            kernel_constraint,
+            recurrent_constraint,
+            bias_constraint,
+            seed,
+            unroll,
+        )
         cell = ConvLSTMCell(
             filters=filters,
             kernel_size=kernel_size,
@@ -2166,80 +2625,82 @@ class ConvLSTM3D(RNN):
 
 
 class ConvLSTMCell(Layer):
-    """ConvLSTMCell class."""
+    """Convolutional LSTM recurrent cell for 1D, 2D, and 3D spatial inputs."""
 
     def __init__(
         self,
-        filters: TensorLike,
-        kernel_size: TensorLike,
-        rank: TensorLike = 2,
-        strides: TensorLike = 1,
-        padding: TensorLike = "valid",
-        dilation_rate: TensorLike = 1,
-        activation: TensorLike = "tanh",
-        recurrent_activation: TensorLike = "hard_sigmoid",
-        use_bias: TensorLike = True,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        recurrent_initializer: TensorLike = "orthogonal",
-        bias_initializer: TensorLike = "zeros",
-        dropout: TensorLike = 0.0,
-        recurrent_dropout: TensorLike = 0.0,
+        filters: int,
+        kernel_size: int | Sequence[int],
+        rank: int = 2,
+        strides: int | Sequence[int] = 1,
+        padding: str = "valid",
+        dilation_rate: int | Sequence[int] = 1,
+        activation: ActivationSpec = "tanh",
+        recurrent_activation: ActivationSpec = "hard_sigmoid",
+        use_bias: bool = True,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        recurrent_initializer: InitializerSpec = "orthogonal",
+        bias_initializer: InitializerSpec = "zeros",
+        dropout: float = 0.0,
+        recurrent_dropout: float = 0.0,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the ConvLSTMCell.
 
         Args:
-            filters: Description.
-            kernel_size: Description.
-            rank: Description.
-            strides: Description.
-            padding: Description.
-            dilation_rate: Description.
-            activation: Description.
-            recurrent_activation: Description.
-            use_bias: Description.
-            kernel_initializer: Description.
-            recurrent_initializer: Description.
-            bias_initializer: Description.
-            dropout: Description.
-            recurrent_dropout: Description.
-            kwargs: Description.
+            filters: Number of output convolutional filters.
+            kernel_size: Size of the spatial convolutional kernel.
+            rank: Spatial rank (1, 2, or 3). Defaults to ``2``.
+            strides: Spatial convolution stride(s).
+            padding: Padding mode (``"valid"`` or ``"same"``).
+            dilation_rate: Spatial convolution dilation rate(s).
+            activation: Candidate/output activation function. Defaults to ``"tanh"``.
+            recurrent_activation: Gate activation function. Defaults to ``"hard_sigmoid"``.
+            use_bias: Whether the cell uses an additive bias vector.
+            kernel_initializer: Initializer for the input ``kernel`` tensor.
+            recurrent_initializer: Initializer for the ``recurrent_kernel`` tensor.
+            bias_initializer: Initializer for the ``bias`` vector.
+            dropout: Input dropout rate in ``[0, 1]``.
+            recurrent_dropout: Recurrent state dropout rate in ``[0, 1]``.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
-        self.filters = filters
+        self.filters = int(filters)
         self.kernel_initializer = kernel_initializer
         self.recurrent_initializer = recurrent_initializer
         self.bias_initializer = bias_initializer
-        self.dropout = dropout
-        self.recurrent_dropout = recurrent_dropout
+        self.dropout = float(dropout)
+        self.recurrent_dropout = float(recurrent_dropout)
         if isinstance(kernel_size, int):
-            kernel_size = (kernel_size,) * rank
-        self.kernel_size = kernel_size
-        self.rank = rank
+            self.kernel_size: tuple[int, ...] = (kernel_size,) * rank
+        else:
+            self.kernel_size = tuple(int(k) for k in kernel_size)
+        self.rank = int(rank)
         if isinstance(strides, int):
-            strides = (strides,) * rank
-        self.strides = strides
+            self.strides: tuple[int, ...] = (strides,) * rank
+        else:
+            self.strides = tuple(int(s) for s in strides)
         self.padding = padding
         if isinstance(dilation_rate, int):
-            dilation_rate = (dilation_rate,) * rank
-        self.dilation_rate = dilation_rate
-        self.use_bias = use_bias
+            self.dilation_rate: tuple[int, ...] = (dilation_rate,) * rank
+        else:
+            self.dilation_rate = tuple(int(d) for d in dilation_rate)
+        self.use_bias = bool(use_bias)
 
         from zero_keras import activations
 
         self.activation = activations.get(activation)
         self.recurrent_activation = activations.get(recurrent_activation)
-        self.state_size = None
+        self.state_size: TensorLike | None = None
+        self.kernel: TensorLike | None = None
+        self.recurrent_kernel: TensorLike | None = None
+        self.bias: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create ``kernel``, ``recurrent_kernel``, and optional ``bias`` weights for ConvLSTMCell.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple ``(batch, *spatial_dims, channels)`` of a single timestep input.
         """
         if self.built:
             return
@@ -2290,21 +2751,20 @@ class ConvLSTMCell(Layer):
     def call(
         self,
         inputs: TensorLike,
-        states: TensorLike,
-        training: TensorLike = None,
+        states: Sequence[TensorLike],
+        training: bool | None = None,
         **kwargs: TensorLike,
-    ) -> TensorLike:
-        """Call function.
+    ) -> tuple[TensorLike, tuple[TensorLike, TensorLike]]:
+        """Compute one timestep of Convolutional LSTM.
 
         Args:
-        inputs: Parameter inputs.
-        states: Parameter states.
-        training: Parameter training.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Single-timestep spatial input tensor.
+            states: Pair of previous hidden and carry spatial state tensors ``[h_{t-1}, c_{t-1}]``.
+            training: Whether the cell is executing in training mode.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            tuple[TensorLike, tuple[TensorLike, TensorLike]]: Output tensor and ``(h_t, c_t)`` state tuple.
         """
         h_tm1, c_tm1 = states
 

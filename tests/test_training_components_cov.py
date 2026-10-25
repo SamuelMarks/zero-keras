@@ -65,6 +65,23 @@ def test_metrics_remaining_coverage() -> None:
     cce_m.update_state(yt, yp, sample_weight=[1.0, 0.5])
     assert cce_m.result() is not None
 
+    for m_cls in [
+        metrics.CosineSimilarity,
+        metrics.MeanAbsoluteError,
+        metrics.MeanAbsolutePercentageError,
+        metrics.MeanSquaredError,
+        metrics.MeanSquaredLogarithmicError,
+        metrics.Hinge,
+        metrics.SquaredHinge,
+        metrics.CategoricalHinge,
+        metrics.RootMeanSquaredError,
+        metrics.KLDivergence,
+        metrics.Poisson,
+    ]:
+        inst = m_cls()
+        inst.update_state(yt, yp, sample_weight=[1.0, 0.5])
+        assert inst.result() is not None
+
 
 def test_optimizers_remaining_coverage() -> None:
     """Cover remaining Optimizer methods and new optimizer classes in ``optimizers/__init__.py``."""
@@ -153,10 +170,10 @@ def test_models_and_callbacks_remaining_coverage(tmp_path: Path) -> None:
     class NoConfigLayer:
         """Layer without get_config."""
 
-    no_cfg = NoConfigLayer()
-    s_nc = models.Sequential([no_cfg])  # type: ignore[list-item]
+    no_cfg: TensorLike = NoConfigLayer()
+    s_nc = models.Sequential([no_cfg])
     assert s_nc.get_config() is not None
-    assert models._default_clone_function(no_cfg) is no_cfg  # type: ignore[arg-type]
+    assert models._default_clone_function(no_cfg) is no_cfg
 
     # clone_model with unmatched layer name
     inp = layers.Input(shape=(2,), name="in1")
@@ -175,8 +192,9 @@ def test_models_and_callbacks_remaining_coverage(tmp_path: Path) -> None:
 
     from unittest import mock
 
+    no_save: TensorLike = NoSaveModel()
     with mock.patch.object(models.Model, "save"):
-        models.save_model(NoSaveModel(), tmp_path / "nosave.keras")  # type: ignore[arg-type]
+        models.save_model(no_save, tmp_path / "nosave.keras")
 
     # model_from_json with multi-input layer connection group and non-list layer_configs
     models.model_from_json(

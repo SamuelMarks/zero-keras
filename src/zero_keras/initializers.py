@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Sequence
 import math
 from typing import Protocol, Union, runtime_checkable
 
@@ -17,6 +17,7 @@ from zero_keras.types import (
     DTypeLike,
     SeedLike,
     ShapeLike,
+    SupportsCall,
     TensorLike,
 )
 
@@ -103,9 +104,9 @@ def _wrap(x: TensorLike) -> TensorLike:
     """
     from zero_keras.core_layers import KerasTensor
 
-    if isinstance(x, _HasSymbolicDataProtocol) and hasattr(x.data, "id"):
-        return KerasTensor(x.shape, x.dtype, data=x)
     if isinstance(x, _HasSymbolicDataProtocol):
+        if hasattr(x.data, "id"):
+            return KerasTensor(x.shape, x.dtype, data=x)
         return x.data
     return x
 
@@ -162,7 +163,7 @@ class Initializer:
         Returns:
             Initializer: Cloned initializer instance.
         """
-        return self.__class__.from_config(self.get_config())
+        return type(self).from_config(self.get_config())
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Initializer:
@@ -246,7 +247,7 @@ class Zeros(Initializer):
         Returns:
             Zeros: Cloned Zeros instance.
         """
-        return self.__class__.from_config(self.get_config())
+        return type(self).from_config(self.get_config())
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Zeros:
@@ -382,7 +383,8 @@ class Orthogonal(Initializer):
         key = str(self.seed if self.seed is not None else 0)
         a = msc_random.normal(key, flat_shape, dtype=dt)
         qr_res = ops.qr(a)
-        q, r = qr_res[0], qr_res[1]  # type: ignore[index]
+        qr_parts = list(qr_res) if isinstance(qr_res, (list, tuple)) else [a, a]
+        q, r = qr_parts[0], qr_parts[1]
 
         d_diag = ops.diag(r)
         q = ops.multiply(q, ops.sign(d_diag))
@@ -538,6 +540,8 @@ class VarianceScaling(Initializer):
         mode: str = "fan_in",
         distribution: str = "truncated_normal",
         seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
     ) -> None:
         """Initialize VarianceScaling initializer.
 
@@ -546,11 +550,15 @@ class VarianceScaling(Initializer):
             mode: One of ``"fan_in"``, ``"fan_out"``, ``"fan_avg"``.
             distribution: One of ``"truncated_normal"``, ``"untruncated_normal"``, or ``"uniform"``.
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
         self.scale = scale
         self.mode = mode
         self.distribution = distribution
         self.seed = seed
+        self.input_axes = input_axes
+        self.output_axes = output_axes
 
     def __call__(
         self,
@@ -617,78 +625,162 @@ class VarianceScaling(Initializer):
 class GlorotNormal(VarianceScaling):
     """The Glorot normal initializer, also called Xavier normal initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize GlorotNormal initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=1.0, mode="fan_avg", distribution="truncated_normal", seed=seed)
+        super().__init__(
+            scale=1.0,
+            mode="fan_avg",
+            distribution="truncated_normal",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
 class GlorotUniform(VarianceScaling):
     """The Glorot uniform initializer, also called Xavier uniform initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize GlorotUniform initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=1.0, mode="fan_avg", distribution="uniform", seed=seed)
+        super().__init__(
+            scale=1.0,
+            mode="fan_avg",
+            distribution="uniform",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
 class HeNormal(VarianceScaling):
     """He normal variance scaling initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize HeNormal initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=2.0, mode="fan_in", distribution="truncated_normal", seed=seed)
+        super().__init__(
+            scale=2.0,
+            mode="fan_in",
+            distribution="truncated_normal",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
 class HeUniform(VarianceScaling):
     """He uniform variance scaling initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize HeUniform initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=2.0, mode="fan_in", distribution="uniform", seed=seed)
+        super().__init__(
+            scale=2.0,
+            mode="fan_in",
+            distribution="uniform",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
 class LecunNormal(VarianceScaling):
     """LeCun normal variance scaling initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize LecunNormal initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=1.0, mode="fan_in", distribution="truncated_normal", seed=seed)
+        super().__init__(
+            scale=1.0,
+            mode="fan_in",
+            distribution="truncated_normal",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
 class LecunUniform(VarianceScaling):
     """LeCun uniform variance scaling initializer."""
 
-    def __init__(self, seed: SeedLike = None) -> None:
+    def __init__(
+        self,
+        seed: SeedLike = None,
+        input_axes: int | Sequence[int] | None = None,
+        output_axes: int | Sequence[int] | None = None,
+    ) -> None:
         """Initialize LecunUniform initializer.
 
         Args:
             seed: Optional random seed.
+            input_axes: Optional input axis or axes for fan-in calculation.
+            output_axes: Optional output axis or axes for fan-out calculation.
         """
-        super().__init__(scale=1.0, mode="fan_in", distribution="uniform", seed=seed)
+        super().__init__(
+            scale=1.0,
+            mode="fan_in",
+            distribution="uniform",
+            seed=seed,
+            input_axes=input_axes,
+            output_axes=output_axes,
+        )
         self.seed = seed
 
 
@@ -860,7 +952,7 @@ _INITIALIZER_NORMALIZED: dict[str, type[Initializer]] = {
 
 InitializerIdentifier = Union[
     Initializer,
-    Callable[..., TensorLike],
+    SupportsCall,
     str,
     ConfigDict,
     TensorLike,
@@ -909,7 +1001,7 @@ def serialize(initializer: InitializerIdentifier) -> ConfigDict | str | None:
         return initializer
     cfg = initializer.get_config() if isinstance(initializer, Initializer) else {}
     return {
-        "class_name": initializer.__class__.__name__,
+        "class_name": type(initializer).__name__,
         "config": cfg,
     }
 

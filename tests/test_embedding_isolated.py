@@ -1,22 +1,20 @@
 """Module `test_embedding_isolated` for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
-import numpy as np
 
-from zero_keras import layers
+from zero_keras import layers, random
 
 
-def test_embedding_isolated() -> TensorLike:
-    """Execute ``test_embedding_isolated``."""
+def test_embedding_isolated() -> None:
+    """Verify or execute `test embedding isolated`."""
     layer = layers.Embedding(input_dim=10, output_dim=4)
-    x = np.random.randint(0, 10, size=(2, 5))
+    x = random.randint((2, 5), 0, 10)
     out = layer(x)
     assert out.shape == (2, 5, 4)
 
 
-def test_embedding_built_twice() -> TensorLike:
-    """Execute ``test_embedding_built_twice``."""
+def test_embedding_built_twice() -> None:
+    """Verify or execute `test embedding built twice`."""
     layer = layers.Embedding(input_dim=10, output_dim=4)
     layer.build((2, 5))
     layer.build((2, 5))

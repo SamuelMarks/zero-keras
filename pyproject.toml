@@ -15,6 +15,7 @@ files = ["requirements.txt"]
 
 [tool.hatch.metadata.hooks.requirements_txt.optional-dependencies]
 test = ["requirements-test.txt"]
+parity = ["requirements-parity.txt"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -43,13 +44,13 @@ ignore-nested-classes = false
 ignore-setters = false
 ignore-overloaded-functions = false
 fail-under = 100
-exclude = ["build", "dist", ".venv", ".git"]
+exclude = ["build", "dist", ".venv", ".git", ".pytest_tmp"]
 verbose = 2
 quiet = false
 color = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=src/zero_keras --cov=scripts --cov-branch --cov-report=term-missing -v"
+addopts = "--basetemp=.pytest_tmp --cov=src/zero_keras --cov=scripts --cov-branch --cov-report=term-missing -v"
 testpaths = ["tests"]
 
 [tool.coverage.run]
@@ -69,6 +70,10 @@ exclude_also = [
 python_version = "3.9"
 explicit_package_bases = true
 ignore_missing_imports = true
+strict = true
+disallow_any_expr = false
+warn_unreachable = true
+disallow_untyped_calls = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = false

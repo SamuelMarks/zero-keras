@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from zero_keras.types import ConfigValue
 from zero_keras.utils.dataset_utils import (
     array_to_img,
     img_to_array,
@@ -38,11 +39,11 @@ class _ContainerModelProtocol(_NamedLayerProtocol, Protocol):
     """Protocol for models exposing a sequence of child layers."""
 
     @property
-    def layers(self) -> Sequence[_NamedLayerProtocol]:
+    def layers(self) -> Sequence[_NamedLayerProtocol | ConfigValue]:
         """Return the sequence of child layers.
 
         Returns:
-            Sequence[_NamedLayerProtocol]: Child layers.
+            Sequence[_NamedLayerProtocol | ConfigValue]: Child layers.
         """
 
 

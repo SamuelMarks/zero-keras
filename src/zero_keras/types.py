@@ -74,6 +74,18 @@ class SymbolicTensorProtocol(Protocol):
             str: Data type name.
         """
 
+    def __getitem__(
+        self, key: int | slice | tuple[int | slice, ...]
+    ) -> Tensor | SymbolicTensorProtocol:
+        """Return a sliced or indexed sub-tensor.
+
+        Args:
+            key: Integer index, slice, or tuple of indices/slices.
+
+        Returns:
+            Tensor | SymbolicTensorProtocol: Indexed tensor view or sub-tensor.
+        """
+
 
 @runtime_checkable
 class SupportsShapeAndDType(Protocol):
@@ -106,6 +118,160 @@ class SupportsToNumpy(Protocol):
         Returns:
             Tensor: Converted tensor.
         """
+
+
+SupportsNumpy = SupportsToNumpy
+
+
+@runtime_checkable
+class SupportsAssign(Protocol):
+    """Structural protocol for mutable variable objects exposing ``assign``."""
+
+    def assign(self, value: TensorLike) -> TensorLike | None:
+        """Assign a new tensor value in-place.
+
+        Args:
+            value: Replacement tensor or scalar value.
+
+        Returns:
+            TensorLike | None: Updated variable or None.
+        """
+
+
+@runtime_checkable
+class SupportsToBytes(Protocol):
+    """Structural protocol for buffer-like objects exposing ``tobytes()``."""
+
+    def tobytes(self) -> bytes:
+        """Serialize raw element buffer to bytes.
+
+        Returns:
+            bytes: Raw byte representation.
+        """
+
+
+@runtime_checkable
+class SupportsUnderlyingTensor(Protocol):
+    """Structural protocol for wrapper objects holding an underlying ``_tensor``."""
+
+    @property
+    def _tensor(self) -> Tensor:
+        """Return the underlying backend ``Tensor``.
+
+        Returns:
+            Tensor: Underlying tensor instance.
+        """
+
+
+@runtime_checkable
+class SupportsCall(Protocol):
+    """Structural protocol for callable objects accepting tensor inputs."""
+
+    def __call__(self, *args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Invoke the callable on tensor inputs.
+
+        Args:
+            *args: Positional tensor arguments.
+            **kwargs: Keyword configuration arguments.
+
+        Returns:
+            TensorLike: Evaluated tensor output.
+        """
+
+
+@runtime_checkable
+class ShapeCarrierProtocol(Protocol):
+    """Structural protocol for objects exposing a ``shape`` attribute."""
+
+    @property
+    def shape(self) -> tuple[int | None, ...]:
+        """Return the shape tuple.
+
+        Returns:
+            tuple[int | None, ...]: Shape dimensions.
+        """
+
+
+@runtime_checkable
+class DTypeCarrierProtocol(Protocol):
+    """Structural protocol for objects exposing a ``dtype`` attribute."""
+
+    @property
+    def dtype(self) -> str:
+        """Return the dtype string.
+
+        Returns:
+            str: Data type name.
+        """
+
+
+@runtime_checkable
+class BuildableLayerProtocol(Protocol):
+    """Structural protocol for layers supporting ``built`` and ``build()``."""
+
+    built: bool
+
+    def build(self, input_shape: ShapeLike | None = None) -> None:
+        """Build the layer state for ``input_shape``.
+
+        Args:
+            input_shape: Input shape specification.
+        """
+
+
+@runtime_checkable
+class MaskComputeProtocol(Protocol):
+    """Structural protocol for layers supporting ``compute_mask()``."""
+
+    def compute_mask(self, inputs: TensorLike, mask: TensorLike | None = None) -> TensorLike:
+        """Compute an output mask tensor.
+
+        Args:
+            inputs: Input tensor.
+            mask: Optional incoming mask tensor.
+
+        Returns:
+            TensorLike: Computed output mask.
+        """
+
+
+@runtime_checkable
+class EndpointCallableProtocol(Protocol):
+    """Structural protocol for export archive endpoint callables."""
+
+    def __call__(self, *args: TensorLike, **kwargs: ConfigValue) -> TensorLike | None:
+        """Invoke the exported endpoint callable.
+
+        Args:
+            *args: Positional tensor arguments.
+            **kwargs: Keyword configuration arguments.
+
+        Returns:
+            TensorLike | None: Endpoint output tensor.
+        """
+
+
+EpochLogCallbackProtocol = EndpointCallableProtocol
+
+
+@runtime_checkable
+class ScheduleFnProtocol(Protocol):
+    """Structural protocol for epoch learning rate schedule functions."""
+
+    def __call__(self, *args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Compute the scheduled learning rate for an epoch.
+
+        Args:
+            *args: Epoch index and optional current learning rate.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Updated learning rate value.
+        """
+
+
+PaddingSpec = Union[PaddingMode, int, Sequence[int], Sequence[tuple[int, int]]]
+DataFormatSpec = DataFormat
 
 
 NumericTensor = Union[Tensor, SymbolicTensorProtocol]
@@ -150,7 +316,7 @@ ConfigValue = Union[
     list["ConfigValue"],
     dict[str, "ConfigValue"],
     SymbolicTensorProtocol,
-    Callable[..., TensorLike],
+    SupportsCall,
 ]
 
 ConfigDict = dict[str, ConfigValue]
@@ -165,6 +331,29 @@ class SupportsGetConfig(Protocol):
 
         Returns:
             ConfigDict: Configuration dictionary.
+        """
+
+
+@runtime_checkable
+class KerasSerializable(Protocol):
+    """Structural protocol for Keras objects supporting ``get_config`` and ``from_config``."""
+
+    def get_config(self) -> ConfigDict:
+        """Return the serializable configuration dictionary.
+
+        Returns:
+            ConfigDict: Configuration dictionary.
+        """
+
+    @classmethod
+    def from_config(cls, config: ConfigDict) -> KerasSerializable:
+        """Instantiate the object from its configuration dictionary.
+
+        Args:
+            config: Configuration dictionary.
+
+        Returns:
+            KerasSerializable: Reconstructed instance.
         """
 
 
@@ -471,26 +660,38 @@ class CallbackProtocol(Protocol):
         """
 
 
+ConfigSerializableProtocol = SupportsGetConfig
+StatefulMetricProtocol = MetricProtocol
+
+
 __all__ = [
     "ActivationProtocol",
     "ActivationSpec",
     "ArrayLike",
     "AxisSpec",
+    "BuildableLayerProtocol",
     "CallbackProtocol",
     "ConfigDict",
+    "ConfigSerializableProtocol",
     "ConfigValue",
     "ConstraintProtocol",
     "ConstraintSpec",
+    "DTypeCarrierProtocol",
     "DTypeLike",
     "DTypePolicyProtocol",
     "DataFormat",
+    "DataFormatSpec",
     "DimensionValue",
+    "EndpointCallableProtocol",
+    "EpochLogCallbackProtocol",
     "InitializerProtocol",
     "InitializerSpec",
+    "KerasSerializable",
     "LayerProtocol",
     "LearningRateScheduleProtocol",
     "LossProtocol",
     "LossSpec",
+    "MaskComputeProtocol",
     "MetricProtocol",
     "MetricSpec",
     "NestedTensor",
@@ -498,18 +699,27 @@ __all__ = [
     "OptimizerProtocol",
     "OptimizerSpec",
     "PaddingMode",
+    "PaddingSpec",
     "RNNCellProtocol",
     "RegularizerProtocol",
     "RegularizerSpec",
     "ScalarValue",
+    "ScheduleFnProtocol",
     "SeedGeneratorProtocol",
     "SeedLike",
+    "ShapeCarrierProtocol",
     "ShapeLike",
     "ShapeSpec",
     "ShapeTuple",
+    "StatefulMetricProtocol",
+    "SupportsAssign",
+    "SupportsCall",
     "SupportsGetConfig",
+    "SupportsNumpy",
     "SupportsShapeAndDType",
+    "SupportsToBytes",
     "SupportsToNumpy",
+    "SupportsUnderlyingTensor",
     "SymbolicTensorProtocol",
     "TensorLike",
 ]

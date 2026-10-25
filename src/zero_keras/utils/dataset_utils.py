@@ -31,7 +31,12 @@ from ml_switcheroo_compiler.utils.dataset_utils import (
 )
 
 from zero_keras import ops
-from zero_keras.types import ConfigValue, DTypeLike, SeedLike, TensorLike
+from zero_keras.types import (
+    ConfigValue,
+    DTypeLike,
+    SeedLike,
+    TensorLike,
+)
 
 
 def audio_dataset_from_directory(
@@ -632,11 +637,15 @@ def smart_resize(
     if img_aspect > target_aspect:
         new_w = int(h * target_aspect)
         offset = (w - new_w) // 2
-        t = t[:, offset : offset + new_w, :]  # type: ignore[index]
+        t = ops.convert_to_tensor(
+            ops.get_item(t, (slice(None), slice(offset, offset + new_w), slice(None)))
+        )
     elif img_aspect < target_aspect:
         new_h = int(w / target_aspect)
         offset = (h - new_h) // 2
-        t = t[offset : offset + new_h, :, :]  # type: ignore[index]
+        t = ops.convert_to_tensor(
+            ops.get_item(t, (slice(offset, offset + new_h), slice(None), slice(None)))
+        )
 
     resized = ops.image.resize(t, (target_h, target_w))
 

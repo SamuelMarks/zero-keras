@@ -25,7 +25,7 @@ def load_data(
         origin=origin_folder + "mnist.npz",
         file_hash="731c5ac602752760c8e48fbffcf8c3b8",
     )
-    with ops.load(resolved_path, allow_pickle=True) as f:  # type: ignore[attr-defined]
+    with ops.load(resolved_path, allow_pickle=True) as f:
         x_train, y_train = f["x_train"], f["y_train"]
         x_test, y_test = f["x_test"], f["y_test"]
 

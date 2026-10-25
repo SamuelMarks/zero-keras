@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""EfficientNetV2 architectures (B0-B3, S, M, L) for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 import copy
 import math
@@ -590,63 +590,72 @@ Returns:
 
 
 def round_filters(
-    filters: TensorLike,
-    width_coefficient: TensorLike,
-    min_depth: TensorLike,
-    depth_divisor: TensorLike,
-) -> TensorLike:
+    filters: int,
+    width_coefficient: float,
+    min_depth: int,
+    depth_divisor: int,
+) -> int:
     """Round number of filters based on depth multiplier.
 
     Args:
-        filters: Input parameter ``filters``.
-        width_coefficient: Input parameter ``width_coefficient``.
-        min_depth: Input parameter ``min_depth``.
-        depth_divisor: Input parameter ``depth_divisor``.
+        filters: Base number of filters before scaling.
+        width_coefficient: Width scaling coefficient.
+        min_depth: Minimum allowed filter count.
+        depth_divisor: Divisor to align rounded filter count.
+
+    Returns:
+        int: Scaled and aligned filter count.
     """
-    filters *= width_coefficient
+    filters_scaled = filters * width_coefficient
     minimum_depth = min_depth or depth_divisor
     new_filters = max(
         minimum_depth,
-        int(filters + depth_divisor / 2) // depth_divisor * depth_divisor,
+        int(filters_scaled + depth_divisor / 2) // depth_divisor * depth_divisor,
     )
     return int(new_filters)
 
 
-def round_repeats(repeats: TensorLike, depth_coefficient: TensorLike) -> TensorLike:
+def round_repeats(repeats: int, depth_coefficient: float) -> int:
     """Round number of repeats based on depth multiplier.
 
     Args:
-        repeats: Input parameter ``repeats``.
-        depth_coefficient: Input parameter ``depth_coefficient``.
+        repeats: Base number of block repeats.
+        depth_coefficient: Depth scaling coefficient.
+
+    Returns:
+        int: Rounded block repeat count.
     """
     return math.ceil(depth_coefficient * repeats)
 
 
 def MBConvBlock(
-    input_filters: TensorLike,
-    output_filters: TensorLike,
-    expand_ratio: TensorLike = 1,
-    kernel_size: TensorLike = 3,
-    strides: TensorLike = 1,
-    se_ratio: TensorLike = 0.0,
-    bn_momentum: TensorLike = 0.9,
-    activation: TensorLike = "swish",
-    survival_probability: TensorLike = 0.8,
-    name: TensorLike = None,
+    input_filters: int,
+    output_filters: int,
+    expand_ratio: int = 1,
+    kernel_size: int = 3,
+    strides: int = 1,
+    se_ratio: float = 0.0,
+    bn_momentum: float = 0.9,
+    activation: str | TensorLike | None = "swish",
+    survival_probability: float = 0.8,
+    name: str | None = None,
 ) -> TensorLike:
     """MBConv block: Mobile Inverted Residual Bottleneck.
 
     Args:
-        input_filters: Input parameter ``input_filters``.
-        output_filters: Input parameter ``output_filters``.
-        expand_ratio: Input parameter ``expand_ratio``.
-        kernel_size: Input parameter ``kernel_size``.
-        strides: Input parameter ``strides``.
-        se_ratio: Input parameter ``se_ratio``.
-        bn_momentum: Input parameter ``bn_momentum``.
-        activation: Input parameter ``activation``.
-        survival_probability: Input parameter ``survival_probability``.
-        name: Input parameter ``name``.
+        input_filters: Number of input channels.
+        output_filters: Number of projected output channels.
+        expand_ratio: Expansion ratio for the inverted bottleneck.
+        kernel_size: Spatial kernel size for the depthwise convolution.
+        strides: Spatial stride for the depthwise convolution.
+        se_ratio: Squeeze-and-Excitation reduction ratio in ``[0, 1]``.
+        bn_momentum: Batch normalization momentum parameter.
+        activation: Activation function name or callable.
+        survival_probability: Drop-connect survival probability for residual path.
+        name: Optional block name prefix.
+
+    Returns:
+        TensorLike: Callable applying the MBConvBlock transformation.
     """
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
@@ -654,10 +663,13 @@ def MBConvBlock(
         name = backend.get_uid("block0")
 
     def apply(inputs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the MBConv inverted residual block to ``inputs``.
 
         Args:
-            inputs: Description.
+            inputs: Input feature tensor.
+
+        Returns:
+            TensorLike: Output feature tensor.
         """
         # Expansion phase
         filters = input_filters * expand_ratio
@@ -750,30 +762,33 @@ def MBConvBlock(
 
 
 def FusedMBConvBlock(
-    input_filters: TensorLike,
-    output_filters: TensorLike,
-    expand_ratio: TensorLike = 1,
-    kernel_size: TensorLike = 3,
-    strides: TensorLike = 1,
-    se_ratio: TensorLike = 0.0,
-    bn_momentum: TensorLike = 0.9,
-    activation: TensorLike = "swish",
-    survival_probability: TensorLike = 0.8,
-    name: TensorLike = None,
+    input_filters: int,
+    output_filters: int,
+    expand_ratio: int = 1,
+    kernel_size: int = 3,
+    strides: int = 1,
+    se_ratio: float = 0.0,
+    bn_momentum: float = 0.9,
+    activation: str | TensorLike | None = "swish",
+    survival_probability: float = 0.8,
+    name: str | None = None,
 ) -> TensorLike:
     """Fuses the proj conv1x1 and depthwise_conv into a conv2d.
 
     Args:
-        input_filters: Input parameter ``input_filters``.
-        output_filters: Input parameter ``output_filters``.
-        expand_ratio: Input parameter ``expand_ratio``.
-        kernel_size: Input parameter ``kernel_size``.
-        strides: Input parameter ``strides``.
-        se_ratio: Input parameter ``se_ratio``.
-        bn_momentum: Input parameter ``bn_momentum``.
-        activation: Input parameter ``activation``.
-        survival_probability: Input parameter ``survival_probability``.
-        name: Input parameter ``name``.
+        input_filters: Number of input channels.
+        output_filters: Number of projected output channels.
+        expand_ratio: Expansion ratio for the fused bottleneck.
+        kernel_size: Spatial kernel size for the fused convolution.
+        strides: Spatial stride for the fused convolution.
+        se_ratio: Squeeze-and-Excitation reduction ratio in ``[0, 1]``.
+        bn_momentum: Batch normalization momentum parameter.
+        activation: Activation function name or callable.
+        survival_probability: Drop-connect survival probability for residual path.
+        name: Optional block name prefix.
+
+    Returns:
+        TensorLike: Callable applying the FusedMBConvBlock transformation.
     """
     bn_axis = 3 if backend.image_data_format() == "channels_last" else 1
 
@@ -781,10 +796,13 @@ def FusedMBConvBlock(
         name = backend.get_uid("block0")
 
     def apply(inputs: TensorLike) -> TensorLike:
-        """Function docstring.
+        """Apply the FusedMBConv residual block to ``inputs``.
 
         Args:
-            inputs: Description.
+            inputs: Input feature tensor.
+
+        Returns:
+            TensorLike: Output feature tensor.
         """
         filters = input_filters * expand_ratio
         if expand_ratio != 1:
@@ -862,31 +880,31 @@ def FusedMBConvBlock(
 
 
 def EfficientNetV2(
-    width_coefficient: TensorLike,
-    depth_coefficient: TensorLike,
-    default_size: TensorLike,
-    dropout_rate: TensorLike = 0.2,
-    drop_connect_rate: TensorLike = 0.2,
-    depth_divisor: TensorLike = 8,
-    min_depth: TensorLike = 8,
-    bn_momentum: TensorLike = 0.9,
-    activation: TensorLike = "swish",
-    blocks_args: TensorLike = "default",
-    name: TensorLike = "efficientnetv2",
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    weights_name: TensorLike = None,
+    width_coefficient: float,
+    depth_coefficient: float,
+    default_size: int,
+    dropout_rate: float = 0.2,
+    drop_connect_rate: float = 0.2,
+    depth_divisor: int = 8,
+    min_depth: int = 8,
+    bn_momentum: float = 0.9,
+    activation: str | TensorLike | None = "swish",
+    blocks_args: str | TensorLike = "default",
+    name: str = "efficientnetv2",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    weights_name: str | None = None,
 ) -> TensorLike:
     """Instantiate the EfficientNetV2 architecture using given scaling coefficients.
 
     Args:
-        weights_name: Input parameter ``weights_name``.
+        weights_name: Pretrained weights key suffix.
         width_coefficient: float, scaling coefficient for network width.
         depth_coefficient: float, scaling coefficient for network depth.
         default_size: integer, default input image size.
@@ -1127,28 +1145,31 @@ def EfficientNetV2(
 
 
 def EfficientNetV2B0(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-b0",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-b0",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2B0 architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2B0 Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.0,
@@ -1168,28 +1189,31 @@ def EfficientNetV2B0(
 
 
 def EfficientNetV2B1(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-b1",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-b1",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2B1 architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2B1 Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.0,
@@ -1209,28 +1233,31 @@ def EfficientNetV2B1(
 
 
 def EfficientNetV2B2(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-b2",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-b2",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2B2 architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2B2 Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.1,
@@ -1250,28 +1277,31 @@ def EfficientNetV2B2(
 
 
 def EfficientNetV2B3(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-b3",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-b3",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2B3 architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2B3 Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.2,
@@ -1291,28 +1321,31 @@ def EfficientNetV2B3(
 
 
 def EfficientNetV2S(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-s",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-s",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2S architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2S Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.0,
@@ -1332,28 +1365,31 @@ def EfficientNetV2S(
 
 
 def EfficientNetV2M(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-m",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-m",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2M architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2M Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.0,
@@ -1373,28 +1409,31 @@ def EfficientNetV2M(
 
 
 def EfficientNetV2L(
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    input_shape: TensorLike = None,
-    pooling: TensorLike = None,
-    classes: TensorLike = 1000,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "efficientnetv2-l",
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    pooling: str | None = None,
+    classes: int = 1000,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "efficientnetv2-l",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the EfficientNetV2L architecture.
 
     Args:
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        input_shape: Description.
-        pooling: Description.
-        classes: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        include_top: Whether to include the fully-connected classification layer at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        input_shape: Optional input shape tuple when ``include_top=False``.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        classes: Number of classification output classes.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include the built-in rescaling/normalization layers.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated EfficientNetV2L Functional model.
     """
     return EfficientNetV2(
         width_coefficient=1.0,
@@ -1413,44 +1452,28 @@ def EfficientNetV2L(
     )
 
 
-EfficientNetV2B0.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2B0")
-EfficientNetV2B1.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2B1")
-EfficientNetV2B2.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2B2")
-EfficientNetV2B3.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2B3")
-EfficientNetV2S.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2S")
-EfficientNetV2M.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2M")
-EfficientNetV2L.__doc__ = BASE_DOCSTRING.format(name="EfficientNetV2L")
-
-
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
-    """A placeholder method for backward compatibility.
-
-    The preprocessing logic has been included in the EfficientNetV2 model
-    implementation. Users are no longer required to call this method to
-    normalize the input data. This method does nothing and only kept as a
-    placeholder to align the API surface between old and new version of model.
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
+    """Return ``x`` unchanged as EfficientNetV2 models include built-in preprocessing.
 
     Args:
-        x: A floating point `numpy.array` or a tensor.
-        data_format: Optional data format of the image tensor/array. Defaults to
-            None, in which case the global setting
-            `keras.backend.image_data_format()` is used
-            (unless you changed it, it defaults to "channels_last").{mode}
+        x: Input image tensor or array.
+        data_format: Optional image data format (unused).
 
     Returns:
-        Unchanged `numpy.array` or tensor.
+        TensorLike: Unchanged ``x``.
     """
+    _ = data_format
     return x
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for EfficientNetV2.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

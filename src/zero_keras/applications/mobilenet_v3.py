@@ -1,7 +1,7 @@
-"""Module docstring."""
+"""MobileNetV3 architectures (MobileNetV3Small, MobileNetV3Large) for Keras applications."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+from zero_keras.types import ShapeTuple, TensorLike
 
 import warnings
 
@@ -154,39 +154,42 @@ Returns:
 
 def MobileNetV3(
     stack_fn: TensorLike,
-    last_point_ch: TensorLike,
-    input_shape: TensorLike = None,
-    alpha: TensorLike = 1.0,
-    model_type: TensorLike = "large",
-    minimalistic: TensorLike = False,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    classes: TensorLike = 1000,
-    pooling: TensorLike = None,
-    dropout_rate: TensorLike = 0.2,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = None,
+    last_point_ch: int,
+    input_shape: ShapeTuple | TensorLike | None = None,
+    alpha: float = 1.0,
+    model_type: str = "large",
+    minimalistic: bool = False,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    classes: int = 1000,
+    pooling: str | None = None,
+    dropout_rate: float = 0.2,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str | None = None,
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the MobileNetV3 architecture.
 
     Args:
-        stack_fn: Description.
-        last_point_ch: Description.
-        input_shape: Description.
-        alpha: Description.
-        model_type: Description.
-        minimalistic: Description.
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        classes: Description.
-        pooling: Description.
-        dropout_rate: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        stack_fn: Callable constructing the inverted residual block stack.
+        last_point_ch: Number of channels in the penultimate pointwise layer.
+        input_shape: Optional input image shape tuple.
+        alpha: Width multiplier scaling channel dimensions.
+        model_type: Architecture size variant (``"small"`` or ``"large"``).
+        minimalistic: Whether to omit Squeeze-and-Excitation and hard-swish.
+        include_top: Whether to include the classification head at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        classes: Number of classification output classes.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        dropout_rate: Dropout probability before the final classification layer.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include built-in input rescaling.
+        name: Optional model instance name.
+
+    Returns:
+        TensorLike: Instantiated MobileNetV3 Functional model.
     """
     if not (weights in {"imagenet", None} or file_utils.exists(weights)):
         raise ValueError(
@@ -385,53 +388,62 @@ def MobileNetV3(
 
 
 def MobileNetV3Small(
-    input_shape: TensorLike = None,
-    alpha: TensorLike = 1.0,
-    minimalistic: TensorLike = False,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    classes: TensorLike = 1000,
-    pooling: TensorLike = None,
-    dropout_rate: TensorLike = 0.2,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "MobileNetV3Small",
+    input_shape: ShapeTuple | TensorLike | None = None,
+    alpha: float = 1.0,
+    minimalistic: bool = False,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    classes: int = 1000,
+    pooling: str | None = None,
+    dropout_rate: float = 0.2,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "MobileNetV3Small",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the MobileNetV3Small architecture.
 
     Args:
-        input_shape: Description.
-        alpha: Description.
-        minimalistic: Description.
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        classes: Description.
-        pooling: Description.
-        dropout_rate: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        input_shape: Optional input image shape tuple.
+        alpha: Width multiplier scaling channel dimensions.
+        minimalistic: Whether to omit Squeeze-and-Excitation and hard-swish.
+        include_top: Whether to include the classification head at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        classes: Number of classification output classes.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        dropout_rate: Dropout probability before the final classification layer.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include built-in input rescaling.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated MobileNetV3Small Functional model.
     """
 
     def stack_fn(
-        x: TensorLike, kernel: TensorLike, activation: TensorLike, se_ratio: TensorLike
+        x: TensorLike, kernel: int, activation: TensorLike, se_ratio: float | None
     ) -> TensorLike:
-        """Function docstring.
+        """Apply the 11-block MobileNetV3Small inverted residual stack.
 
         Args:
-            x: Description.
-            kernel: Description.
-            activation: Description.
-            se_ratio: Description.
+            x: Input stem feature tensor.
+            kernel: Depthwise kernel size for deep blocks.
+            activation: Activation function callable.
+            se_ratio: Squeeze-and-Excitation reduction ratio.
+
+        Returns:
+            TensorLike: Output feature tensor after block 10.
         """
 
-        def depth(d: TensorLike) -> TensorLike:
-            """Function docstring.
+        def depth(d: float) -> int:
+            """Compute width-scaled channel depth divisible by 8.
 
             Args:
-                d: Description.
+                d: Base channel count.
+
+            Returns:
+                int: Scaled channel count.
             """
             return _depth(d * alpha)
 
@@ -468,53 +480,62 @@ def MobileNetV3Small(
 
 
 def MobileNetV3Large(
-    input_shape: TensorLike = None,
-    alpha: TensorLike = 1.0,
-    minimalistic: TensorLike = False,
-    include_top: TensorLike = True,
-    weights: TensorLike = "imagenet",
-    input_tensor: TensorLike = None,
-    classes: TensorLike = 1000,
-    pooling: TensorLike = None,
-    dropout_rate: TensorLike = 0.2,
-    classifier_activation: TensorLike = "softmax",
-    include_preprocessing: TensorLike = True,
-    name: TensorLike = "MobileNetV3Large",
+    input_shape: ShapeTuple | TensorLike | None = None,
+    alpha: float = 1.0,
+    minimalistic: bool = False,
+    include_top: bool = True,
+    weights: str | None = "imagenet",
+    input_tensor: TensorLike | None = None,
+    classes: int = 1000,
+    pooling: str | None = None,
+    dropout_rate: float = 0.2,
+    classifier_activation: str | TensorLike | None = "softmax",
+    include_preprocessing: bool = True,
+    name: str = "MobileNetV3Large",
 ) -> TensorLike:
-    """Function docstring.
+    """Instantiates the MobileNetV3Large architecture.
 
     Args:
-        input_shape: Description.
-        alpha: Description.
-        minimalistic: Description.
-        include_top: Description.
-        weights: Description.
-        input_tensor: Description.
-        classes: Description.
-        pooling: Description.
-        dropout_rate: Description.
-        classifier_activation: Description.
-        include_preprocessing: Description.
-        name: Description.
+        input_shape: Optional input image shape tuple.
+        alpha: Width multiplier scaling channel dimensions.
+        minimalistic: Whether to omit Squeeze-and-Excitation and hard-swish.
+        include_top: Whether to include the classification head at the top.
+        weights: Pretrained weight specification (``"imagenet"``, ``None``, or file path).
+        input_tensor: Optional Keras tensor to use as image input.
+        classes: Number of classification output classes.
+        pooling: Optional feature pooling mode (``None``, ``"avg"``, or ``"max"``).
+        dropout_rate: Dropout probability before the final classification layer.
+        classifier_activation: Activation function applied on the top classification layer.
+        include_preprocessing: Whether to include built-in input rescaling.
+        name: Name of the model instance.
+
+    Returns:
+        TensorLike: Instantiated MobileNetV3Large Functional model.
     """
 
     def stack_fn(
-        x: TensorLike, kernel: TensorLike, activation: TensorLike, se_ratio: TensorLike
+        x: TensorLike, kernel: int, activation: TensorLike, se_ratio: float | None
     ) -> TensorLike:
-        """Function docstring.
+        """Apply the 15-block MobileNetV3Large inverted residual stack.
 
         Args:
-            x: Description.
-            kernel: Description.
-            activation: Description.
-            se_ratio: Description.
+            x: Input stem feature tensor.
+            kernel: Depthwise kernel size for deep blocks.
+            activation: Activation function callable.
+            se_ratio: Squeeze-and-Excitation reduction ratio.
+
+        Returns:
+            TensorLike: Output feature tensor after block 14.
         """
 
-        def depth(d: TensorLike) -> TensorLike:
-            """Function docstring.
+        def depth(d: float) -> int:
+            """Compute width-scaled channel depth divisible by 8.
 
             Args:
-                d: Description.
+                d: Base channel count.
+
+            Returns:
+                int: Scaled channel count.
             """
             return _depth(d * alpha)
 
@@ -554,51 +575,52 @@ def MobileNetV3Large(
     )
 
 
-MobileNetV3Small.__doc__ = BASE_DOCSTRING.format(name="MobileNetV3Small")
-MobileNetV3Large.__doc__ = BASE_DOCSTRING.format(name="MobileNetV3Large")
-
-
 def relu(x: TensorLike) -> TensorLike:
-    """Function docstring.
+    """Apply a ReLU activation layer to ``x``.
 
     Args:
-        x: Description.
+        x: Input tensor.
+
+    Returns:
+        TensorLike: ReLU-activated tensor.
     """
     return layers.ReLU()(x)
 
 
 def hard_sigmoid(x: TensorLike) -> TensorLike:
-    """Function docstring.
+    """Apply a piecewise-linear hard-sigmoid activation to ``x``.
 
     Args:
-        x: Description.
+        x: Input tensor.
+
+    Returns:
+        TensorLike: Hard-sigmoid activated tensor in ``[0, 1]``.
     """
     return layers.ReLU(6.0)(x + 3.0) * (1.0 / 6.0)
 
 
 def hard_swish(x: TensorLike) -> TensorLike:
-    """Function docstring.
+    """Apply a hard-swish activation layer to ``x``.
 
     Args:
-        x: Description.
+        x: Input tensor.
+
+    Returns:
+        TensorLike: Hard-swish activated tensor.
     """
     return layers.Activation("hard_swish")(x)
 
 
-# This function is taken from the original tf repo.
-# It ensures that all layers have a channel number that is divisible by 8
-# It can be seen here:
-# https://github.com/tensorflow/models/blob/master/research/
-# slim/nets/mobilenet/mobilenet.py
-
-
-def _depth(v: TensorLike, divisor: TensorLike = 8, min_value: TensorLike = None) -> TensorLike:
-    """Function docstring.
+def _depth(v: float, divisor: int = 8, min_value: int | None = None) -> int:
+    """Round channel count ``v`` to the nearest multiple of ``divisor``.
 
     Args:
-        v: Description.
-        divisor: Description.
-        min_value: Description.
+        v: Raw channel count before alignment.
+        divisor: Alignment divisor.
+        min_value: Minimum allowed channel count.
+
+    Returns:
+        int: Aligned channel count.
     """
     resolved_min = divisor if min_value is None else min_value
     new_v = max(resolved_min, int(v + divisor / 2) // divisor * divisor)
@@ -608,16 +630,17 @@ def _depth(v: TensorLike, divisor: TensorLike = 8, min_value: TensorLike = None)
     return new_v
 
 
-def _se_block(
-    inputs: TensorLike, filters: TensorLike, se_ratio: TensorLike, prefix: TensorLike
-) -> TensorLike:
-    """Function docstring.
+def _se_block(inputs: TensorLike, filters: int, se_ratio: float, prefix: str) -> TensorLike:
+    """Apply a Squeeze-and-Excitation channel attention block to ``inputs``.
 
     Args:
-        inputs: Description.
-        filters: Description.
-        se_ratio: Description.
-        prefix: Description.
+        inputs: Input feature tensor.
+        filters: Number of input and output channels.
+        se_ratio: Bottleneck squeeze ratio.
+        prefix: Layer name prefix.
+
+    Returns:
+        TensorLike: Channel-reweighted feature tensor.
     """
     df = backend.image_data_format()
     x = layers.GlobalAveragePooling2D(
@@ -645,25 +668,28 @@ def _se_block(
 
 def _inverted_res_block(
     x: TensorLike,
-    expansion: TensorLike,
-    filters: TensorLike,
-    kernel_size: TensorLike,
-    stride: TensorLike,
-    se_ratio: TensorLike,
+    expansion: float,
+    filters: int,
+    kernel_size: int,
+    stride: int,
+    se_ratio: float | None,
     activation: TensorLike,
-    block_id: TensorLike,
+    block_id: int,
 ) -> TensorLike:
-    """Function docstring.
+    """Apply a MobileNetV3 inverted residual block with optional Squeeze-and-Excitation.
 
     Args:
-        x: Description.
-        expansion: Description.
-        filters: Description.
-        kernel_size: Description.
-        stride: Description.
-        se_ratio: Description.
-        activation: Description.
-        block_id: Description.
+        x: Input feature tensor.
+        expansion: Channel expansion factor.
+        filters: Number of projected output channels.
+        kernel_size: Spatial kernel size of the depthwise convolution.
+        stride: Spatial stride of the depthwise convolution.
+        se_ratio: Optional Squeeze-and-Excitation reduction ratio.
+        activation: Activation callable applied after expansion and depthwise stages.
+        block_id: Sequential block index identifier.
+
+    Returns:
+        TensorLike: Output feature tensor of the inverted residual block.
     """
     df = backend.image_data_format()
     channel_axis = 1 if df == "channels_first" else -1
@@ -728,7 +754,7 @@ def _inverted_res_block(
     return x
 
 
-def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLike:
+def preprocess_input(x: TensorLike, data_format: str | None = None) -> TensorLike:
     """A placeholder method for backward compatibility.
 
     The preprocessing logic has been included in the mobilenet_v3 model
@@ -751,13 +777,13 @@ def preprocess_input(x: TensorLike, data_format: TensorLike = None) -> TensorLik
 
 
 def decode_predictions(preds: TensorLike, top: TensorLike = 5) -> TensorLike:
-    """Function docstring.
+    """Decode top-k ImageNet predictions for MobileNetV3.
 
     Args:
-        preds: Description.
-        top: Description.
+        preds: 2D probability tensor of shape ``(samples, 1000)``.
+        top: Number of top predictions to return per sample.
+
+    Returns:
+        TensorLike: List of lists of ``(class_id, class_name, score)`` tuples.
     """
     return imagenet_utils.decode_predictions(preds, top=top)
-
-
-decode_predictions.__doc__ = imagenet_utils.decode_predictions.__doc__

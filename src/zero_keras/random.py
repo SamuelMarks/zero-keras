@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random as py_random
-from typing import MutableSequence
+from typing import MutableSequence, TypeVar
 
 import ml_switcheroo_compiler.ops as msc_ops
 from ml_switcheroo_compiler.core.tensor import Tensor
@@ -11,13 +11,14 @@ from ml_switcheroo_compiler.ops.nn.dropout import dropout as _msc_dropout
 
 from zero_keras import ops
 from zero_keras.types import (
-    ConfigValue,
     DTypeLike,
     SeedGeneratorProtocol,
     SeedLike,
     ShapeLike,
     TensorLike,
 )
+
+_T = TypeVar("_T")
 
 
 class RandomState:
@@ -31,7 +32,7 @@ class RandomState:
         """
         self._rng = py_random.Random(seed)
 
-    def shuffle(self, x: MutableSequence[ConfigValue]) -> None:
+    def shuffle(self, x: MutableSequence[_T]) -> None:
         """Shuffle mutable sequence ``x`` in-place.
 
         Args:
@@ -273,7 +274,7 @@ def randint(
 def shuffle(
     x: TensorLike,
     axis: int = 0,
-    seed: SeedLike = None,
+    seed: SeedLike | str = None,
 ) -> TensorLike:
     """Shuffle the elements of tensor ``x`` along ``axis``.
 

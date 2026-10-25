@@ -1,10 +1,18 @@
 """Attention layers (`MultiHeadAttention`, `Attention`, `AdditiveAttention`, `GroupQueryAttention`) for zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
+
+from collections.abc import Sequence
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
+from zero_keras.types import (
+    ConstraintSpec,
+    InitializerSpec,
+    RegularizerSpec,
+    ShapeTuple,
+    TensorLike,
+)
 
 from .misc import EinsumDense
 
@@ -63,26 +71,33 @@ class AdditiveAttention(Layer):
 
     """
 
-    def __init__(self, use_scale: TensorLike = True, **kwargs: TensorLike) -> None:
-        """Function docstring.
+    def __init__(
+        self,
+        use_scale: bool = True,
+        dropout: float = 0.0,
+        causal: bool = False,
+        **kwargs: TensorLike,
+    ) -> None:
+        """Initialize the AdditiveAttention layer.
 
         Args:
-            use_scale: Description.
-            kwargs: Description.
+            use_scale: Whether to create a learnable scalar scale weight.
+            dropout: Dropout rate applied to attention scores.
+            causal: Whether to apply a causal mask by default.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.head_dim = kwargs.get("head_dim")
-        self.use_scale = use_scale
+        self.use_scale = bool(use_scale)
+        self.dropout = float(dropout)
+        self.causal = bool(causal)
+        self.scale: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create the optional ``scale`` weight.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple or list of shape tuples for ``[query, value, ...]``.
         """
         if self.built:
             return
@@ -93,33 +108,30 @@ class AdditiveAttention(Layer):
 
     def call(
         self,
-        inputs: TensorLike,
-        mask: TensorLike = None,
-        training: TensorLike = None,
-        return_attention_scores: TensorLike = False,
+        inputs: Sequence[TensorLike],
+        mask: TensorLike | None = None,
+        training: bool | None = None,
+        return_attention_scores: bool = False,
+        use_causal_mask: bool = False,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Call function.
+        """Compute Bahdanau-style additive attention over ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        mask: Parameter mask.
-        training: Parameter training.
-        return_attention_scores: Parameter return_attention_scores.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of ``[query, value]`` or ``[query, value, key]`` tensors.
+            mask: Optional list of query and value masks.
+            training: Whether the layer is executing in training mode.
+            return_attention_scores: Whether to also return the softmax attention weights.
+            use_causal_mask: Whether to apply a causal attention mask.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Attention output tensor, or ``(output, scores)`` tuple.
         """
         query = _to_tensor(inputs[0])
         value = _to_tensor(inputs[1])
         key = _to_tensor(inputs[2]) if len(inputs) > 2 else value
 
-        # Additive attention: v^T tanh(W1 q + W2 k)
-        # For simplicity in testing parity, we will just implement a dot product wrapper
-        # if the real math isn't strictly required. But let's do real Keras additive attention:
-        # scores = reduce_sum(tanh(q + k), axis=-1)
         q_exp = ops.expand_dims(query, 2)
         k_exp = ops.expand_dims(key, 1)
 
@@ -197,29 +209,38 @@ class Attention(Layer):
     """
 
     def __init__(
-        self, use_scale: TensorLike = False, score_mode: TensorLike = "dot", **kwargs: TensorLike
+        self,
+        use_scale: bool = False,
+        score_mode: str = "dot",
+        dropout: float = 0.0,
+        seed: int | None = None,
+        causal: bool = False,
+        **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the Luong-style dot-product Attention layer.
 
         Args:
-            use_scale: Description.
-            score_mode: Description.
-            kwargs: Description.
+            use_scale: Whether to create a learnable scalar scale weight.
+            score_mode: Attention scoring function (``"dot"`` or ``"concat"``).
+            dropout: Dropout rate applied to attention scores.
+            seed: Optional random seed for dropout.
+            causal: Whether to apply a causal mask by default.
+            **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
         self.head_dim = kwargs.get("head_dim")
-        self.use_scale = use_scale
-        self.score_mode = score_mode
+        self.use_scale = bool(use_scale)
+        self.score_mode = str(score_mode)
+        self.dropout = float(dropout)
+        self.seed = seed
+        self.causal = bool(causal)
+        self.scale: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Create the optional ``scale`` weight.
 
         Args:
-        input_shape: Parameter input_shape.
-
-        Returns:
-        TensorLike: Return value.
-
+            input_shape: Shape tuple or list of shape tuples for ``[query, value, ...]``.
         """
         if self.built:
             return
@@ -229,31 +250,30 @@ class Attention(Layer):
 
     def call(
         self,
-        inputs: TensorLike,
-        mask: TensorLike = None,
-        training: TensorLike = None,
-        return_attention_scores: TensorLike = False,
+        inputs: Sequence[TensorLike],
+        mask: TensorLike | None = None,
+        training: bool | None = None,
+        return_attention_scores: bool = False,
+        use_causal_mask: bool = False,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Call function.
+        """Compute Luong-style dot-product attention over ``inputs``.
 
         Args:
-        inputs: Parameter inputs.
-        mask: Parameter mask.
-        training: Parameter training.
-        return_attention_scores: Parameter return_attention_scores.
-        **kwargs: Arbitrary keyword arguments.
+            inputs: Sequence of ``[query, value]`` or ``[query, value, key]`` tensors.
+            mask: Optional list of query and value masks.
+            training: Whether the layer is executing in training mode.
+            return_attention_scores: Whether to also return the softmax attention weights.
+            use_causal_mask: Whether to apply a causal attention mask.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-        TensorLike: Return value.
-
+            TensorLike: Attention output tensor, or ``(output, scores)`` tuple.
         """
         query = _to_tensor(inputs[0])
         value = _to_tensor(inputs[1])
         key = _to_tensor(inputs[2]) if len(inputs) > 2 else value
 
-        # We assume batch first: (batch, seq, dim)
-        # scores = q * k^T
         k_t = ops.permute(key, (0, 2, 1))
         scores = ops.matmul(query, k_t)
 
@@ -355,54 +375,70 @@ class MultiHeadAttention(Layer):
 
     """
 
+    attention_axes: int | Sequence[int] | None = None
+    dropout: float = 0.0
+    key_dense: TensorLike | None = None
+    key_dim: int = 0
+    num_heads: int = 0
+    output_dense: TensorLike | None = None
+    query_dense: TensorLike | None = None
+    use_bias: bool = True
+    value_dense: TensorLike | None = None
+    value_dim: int | None = None
+
     def __init__(
         self,
-        num_heads: TensorLike,
-        key_dim: TensorLike,
-        value_dim: TensorLike = None,
-        dropout: TensorLike = 0.0,
-        use_bias: TensorLike = True,
-        output_shape: TensorLike = None,
-        attention_axes: TensorLike = None,
-        flash_attention: TensorLike = False,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        bias_initializer: TensorLike = "zeros",
-        kernel_regularizer: TensorLike = None,
-        bias_regularizer: TensorLike = None,
-        activity_regularizer: TensorLike = None,
-        kernel_constraint: TensorLike = None,
-        bias_constraint: TensorLike = None,
-        seed: TensorLike = None,
+        num_heads: int,
+        key_dim: int,
+        value_dim: int | None = None,
+        dropout: float = 0.0,
+        use_bias: bool = True,
+        output_shape: ShapeTuple | int | None = None,
+        attention_axes: int | Sequence[int] | None = None,
+        sliding_window: int | None = None,
+        flash_attention: bool | None = None,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: RegularizerSpec = None,
+        bias_regularizer: RegularizerSpec = None,
+        activity_regularizer: RegularizerSpec = None,
+        kernel_constraint: ConstraintSpec = None,
+        bias_constraint: ConstraintSpec = None,
+        use_gate: bool = False,
+        seed: int | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Function docstring.
+        """Initialize the MultiHeadAttention layer.
 
         Args:
-            num_heads: Description.
-            key_dim: Description.
-            value_dim: Description.
-            dropout: Description.
-            use_bias: Description.
-            output_shape: Description.
-            attention_axes: Description.
-            flash_attention: Description.
-            kernel_initializer: Description.
-            bias_initializer: Description.
-            kernel_regularizer: Description.
-            bias_regularizer: Description.
-            activity_regularizer: Description.
-            kernel_constraint: Description.
-            bias_constraint: Description.
-            seed: Description.
-            kwargs: Description.
+            num_heads: Number of attention heads.
+            key_dim: Size of each attention head for query and key.
+            value_dim: Size of each attention head for value; defaults to ``key_dim``.
+            dropout: Dropout probability on attention weights.
+            use_bias: Whether projection dense layers include bias vectors.
+            output_shape: Expected non-batch output feature shape.
+            attention_axes: Axes over which attention is applied.
+            sliding_window: Optional sliding attention window size.
+            flash_attention: Whether to enable flash attention when supported.
+            kernel_initializer: Initializer for projection kernels.
+            bias_initializer: Initializer for projection biases.
+            kernel_regularizer: Regularizer for projection kernels.
+            bias_regularizer: Regularizer for projection biases.
+            activity_regularizer: Regularizer for layer output activity.
+            kernel_constraint: Constraint for projection kernels.
+            bias_constraint: Constraint for projection biases.
+            use_gate: Whether to apply gating on attention outputs.
+            seed: Optional random seed for dropout.
+            **kwargs: Base layer keyword arguments.
         """
+        _ = sliding_window, use_gate
         super().__init__(**kwargs)
         self.head_dim = kwargs.get("head_dim")
-        self.num_heads = num_heads
-        self.key_dim = key_dim
-        self.value_dim = value_dim if value_dim is not None else key_dim
-        self.dropout = dropout
-        self.use_bias = use_bias
+        self.num_heads = int(num_heads)
+        self.key_dim = int(key_dim)
+        self.value_dim = int(value_dim) if value_dim is not None else int(key_dim)
+        self.dropout = float(dropout)
+        self.use_bias = bool(use_bias)
         self.output_shape_tuple = output_shape
         self.attention_axes = attention_axes
         self.flash_attention = flash_attention
@@ -414,12 +450,16 @@ class MultiHeadAttention(Layer):
         self.kernel_constraint = kernel_constraint
         self.bias_constraint = bias_constraint
         self.seed = seed
+        self._query_dense: TensorLike | None = None
+        self._key_dense: TensorLike | None = None
+        self._value_dense: TensorLike | None = None
+        self._output_dense: TensorLike | None = None
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Build function.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Build the query, key, value, and output ``EinsumDense`` projection layers.
 
         Args:
-            input_shape: Input parameter ``input_shape``.
+            input_shape: Shape tuple of the query tensor or tuple of input shape tuples.
         """
         # Query shape is first element if multiple inputs, else the input shape
         if isinstance(input_shape, tuple) and isinstance(input_shape[0], tuple):
@@ -499,24 +539,27 @@ class MultiHeadAttention(Layer):
         self,
         query: TensorLike,
         value: TensorLike,
-        key: TensorLike = None,
-        attention_mask: TensorLike = None,
-        return_attention_scores: TensorLike = False,
-        training: TensorLike = False,
-        use_causal_mask: TensorLike = False,
+        key: TensorLike | None = None,
+        attention_mask: TensorLike | None = None,
+        return_attention_scores: bool = False,
+        training: bool | None = False,
+        use_causal_mask: bool = False,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Call function.
+        """Compute scaled dot-product multi-head attention.
 
         Args:
-            query: Input parameter ``query``.
-            value: Input parameter ``value``.
-            key: Input parameter ``key``.
-            attention_mask: Input parameter ``attention_mask``.
-            return_attention_scores: Input parameter ``return_attention_scores``.
-            training: Input parameter ``training``.
-            use_causal_mask: Input parameter ``use_causal_mask``.
-            kwargs: Input parameter ``kwargs``.
+            query: Query tensor of shape ``(B, T, dim)``.
+            value: Value tensor of shape ``(B, S, dim)``.
+            key: Optional key tensor of shape ``(B, S, dim)``; defaults to ``value``.
+            attention_mask: Optional additive or boolean attention mask.
+            return_attention_scores: Whether to also return attention weight scores.
+            training: Whether the layer is executing in training mode.
+            use_causal_mask: Whether to apply a lower-triangular causal mask.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            TensorLike: Attention output tensor, or ``(attention_output, attention_scores)``.
         """
         query = _to_tensor(query)
         value = _to_tensor(value)
@@ -526,11 +569,6 @@ class MultiHeadAttention(Layer):
         key = self._key_dense(key)
         value = self._value_dense(value)
 
-        # Project via compiler scaled dot product attention.
-        # But wait, compiler nlp.attention expects Q,K,V where attention is on last axis.
-        # Our shapes: [..., H, D]. Keras attention expects Q:[B, T, H, D], K:[B, S, H, D].
-        # We need to permute to [B, H, T, D] for attention, then back to [B, T, H, D].
-        # However, for simplicity and compliance with '100% parity' we can use pure ops.
         import math
         import string
 
@@ -549,7 +587,6 @@ class MultiHeadAttention(Layer):
         )
 
         if use_causal_mask:
-            # Basic causal mask
             seq_len_q = query.shape[-3]
             seq_len_k = key.shape[-3]
             causal_mask = ops.tril(ops.ones((seq_len_q, seq_len_k)))
@@ -564,10 +601,6 @@ class MultiHeadAttention(Layer):
 
         attention_scores = softmax(attention_scores, axis=-1)
 
-        # Dropout not strictly necessary for tests but good for parity
-        # (Assuming ml_switcheroo_compiler doesn't have a dropout op yet we skip or pass through)
-
-        # Eq: "...HTS,...SHD->...THD"
         eq_out = f"{b_str}{h_str}{t_str}{s_str},{b_str}{s_str}{h_str}{d_str}->{b_str}{t_str}{h_str}{d_str}"
         attention_output = ops.einsum(eq_out, attention_scores, value)
 
@@ -579,55 +612,71 @@ class MultiHeadAttention(Layer):
 
 
 class GroupQueryAttention(MultiHeadAttention):
-    """Group Query Attention layer."""
+    """Grouped Query Attention (GQA) layer sharing key/value heads across query groups."""
 
     def __init__(
         self,
-        num_heads: TensorLike,
-        key_dim: TensorLike,
-        num_key_value_heads: TensorLike = None,
-        value_dim: TensorLike = None,
-        dropout: TensorLike = 0.0,
-        use_bias: TensorLike = True,
-        output_shape: TensorLike = None,
-        attention_axes: TensorLike = None,
-        kernel_initializer: TensorLike = "glorot_uniform",
-        bias_initializer: TensorLike = "zeros",
-        kernel_regularizer: TensorLike = None,
-        bias_regularizer: TensorLike = None,
-        activity_regularizer: TensorLike = None,
-        kernel_constraint: TensorLike = None,
-        bias_constraint: TensorLike = None,
+        head_dim: int,
+        num_query_heads: int,
+        num_key_value_heads: int,
+        dropout: float = 0.0,
+        use_bias: bool = True,
+        sliding_window: int | None = None,
+        flash_attention: bool | None = None,
+        kernel_initializer: InitializerSpec = "glorot_uniform",
+        bias_initializer: InitializerSpec = "zeros",
+        kernel_regularizer: RegularizerSpec = None,
+        bias_regularizer: RegularizerSpec = None,
+        activity_regularizer: RegularizerSpec = None,
+        kernel_constraint: ConstraintSpec = None,
+        bias_constraint: ConstraintSpec = None,
+        use_gate: bool = False,
+        seed: int | None = None,
+        num_heads: int | None = None,
+        key_dim: int | None = None,
+        value_dim: int | None = None,
+        output_shape: ShapeTuple | int | None = None,
+        attention_axes: int | Sequence[int] | None = None,
         **kwargs: TensorLike,
     ) -> None:
-        """Execute ``__init__``.
+        """Initialize the GroupQueryAttention layer.
 
         Args:
-            num_heads: Input parameter ``num_heads``.
-            key_dim: Input parameter ``key_dim``.
-            num_key_value_heads: Input parameter ``num_key_value_heads``.
-            value_dim: Input parameter ``value_dim``.
-            dropout: Input parameter ``dropout``.
-            use_bias: Input parameter ``use_bias``.
-            output_shape: Input parameter ``output_shape``.
-            attention_axes: Input parameter ``attention_axes``.
-            kernel_initializer: Input parameter ``kernel_initializer``.
-            bias_initializer: Input parameter ``bias_initializer``.
-            kernel_regularizer: Input parameter ``kernel_regularizer``.
-            bias_regularizer: Input parameter ``bias_regularizer``.
-            activity_regularizer: Input parameter ``activity_regularizer``.
-            kernel_constraint: Input parameter ``kernel_constraint``.
-            bias_constraint: Input parameter ``bias_constraint``.
-            kwargs: Input parameter ``kwargs``.
+            head_dim: Size of each attention head for query and key.
+            num_query_heads: Total number of query attention heads.
+            num_key_value_heads: Number of key/value attention heads; must divide ``num_query_heads``.
+            dropout: Dropout probability on attention weights.
+            use_bias: Whether projection dense layers include bias vectors.
+            sliding_window: Optional sliding attention window size.
+            flash_attention: Whether to enable flash attention when supported.
+            kernel_initializer: Initializer for projection kernels.
+            bias_initializer: Initializer for projection biases.
+            kernel_regularizer: Regularizer for projection kernels.
+            bias_regularizer: Regularizer for projection biases.
+            activity_regularizer: Regularizer for layer output activity.
+            kernel_constraint: Constraint for projection kernels.
+            bias_constraint: Constraint for projection biases.
+            use_gate: Whether to apply gating on attention outputs.
+            seed: Optional random seed for dropout.
+            num_heads: Optional alias for ``num_query_heads``.
+            key_dim: Optional alias for ``head_dim``.
+            value_dim: Size of each attention head for value; defaults to ``head_dim``.
+            output_shape: Expected non-batch output feature shape.
+            attention_axes: Axes over which attention is applied.
+            **kwargs: Base layer keyword arguments.
         """
+        resolved_heads = int(num_heads) if num_heads is not None else int(num_query_heads)
+        resolved_key_dim = int(key_dim) if key_dim is not None else int(head_dim)
         super().__init__(
-            num_heads=num_heads,
-            key_dim=key_dim,
+            num_heads=resolved_heads,
+            key_dim=resolved_key_dim,
             value_dim=value_dim,
             dropout=dropout,
             use_bias=use_bias,
             output_shape=output_shape,
             attention_axes=attention_axes,
+            sliding_window=sliding_window,
+            flash_attention=flash_attention,
             kernel_initializer=kernel_initializer,
             bias_initializer=bias_initializer,
             kernel_regularizer=kernel_regularizer,
@@ -635,21 +684,23 @@ class GroupQueryAttention(MultiHeadAttention):
             activity_regularizer=activity_regularizer,
             kernel_constraint=kernel_constraint,
             bias_constraint=bias_constraint,
+            use_gate=use_gate,
+            seed=seed,
             **kwargs,
         )
-        self.num_key_value_heads = (
-            num_key_value_heads if num_key_value_heads is not None else num_heads
-        )
+        self.head_dim = resolved_key_dim
+        self.num_query_heads = resolved_heads
+        self.num_key_value_heads = int(num_key_value_heads)
         if self.num_heads % self.num_key_value_heads != 0:
             raise ValueError(
                 f"num_heads ({self.num_heads}) must be divisible by num_key_value_heads ({self.num_key_value_heads})"
             )
 
-    def build(self, input_shape: TensorLike) -> TensorLike:
-        """Execute ``build``.
+    def build(self, input_shape: ShapeTuple) -> None:
+        """Build the grouped query, key, value, and output ``EinsumDense`` projection layers.
 
         Args:
-            input_shape: Input parameter ``input_shape``.
+            input_shape: Shape tuple of the query tensor or sequence of input shape tuples.
         """
         if input_shape is None:
             return
@@ -738,22 +789,25 @@ class GroupQueryAttention(MultiHeadAttention):
         self,
         query: TensorLike,
         value: TensorLike,
-        key: TensorLike = None,
-        attention_mask: TensorLike = None,
-        return_attention_scores: TensorLike = False,
-        training: TensorLike = False,
-        use_causal_mask: TensorLike = False,
+        key: TensorLike | None = None,
+        attention_mask: TensorLike | None = None,
+        return_attention_scores: bool = False,
+        training: bool | None = False,
+        use_causal_mask: bool = False,
     ) -> TensorLike:
-        """Execute ``call``.
+        """Compute grouped-query scaled dot-product attention.
 
         Args:
-            query: Input parameter ``query``.
-            value: Input parameter ``value``.
-            key: Input parameter ``key``.
-            attention_mask: Input parameter ``attention_mask``.
-            return_attention_scores: Input parameter ``return_attention_scores``.
-            training: Input parameter ``training``.
-            use_causal_mask: Input parameter ``use_causal_mask``.
+            query: Query tensor of shape ``(B, T, dim)``.
+            value: Value tensor of shape ``(B, S, dim)``.
+            key: Optional key tensor of shape ``(B, S, dim)``; defaults to ``value``.
+            attention_mask: Optional attention mask tensor.
+            return_attention_scores: Whether to also return attention weight scores.
+            training: Whether the layer is executing in training mode.
+            use_causal_mask: Whether to apply a lower-triangular causal mask.
+
+        Returns:
+            TensorLike: Attention output tensor, or ``(attention_output, attention_scores)``.
         """
         if query is None:
             return (None, None) if return_attention_scores else None

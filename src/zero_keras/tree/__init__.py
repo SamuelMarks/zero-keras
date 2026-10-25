@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
+from typing import Protocol
 from zero_keras.types import ConfigValue, NestedTensor
 
 
@@ -160,8 +161,22 @@ def _normalize_mapped_leaf(val: NestedTensor | _MapToNoneSentinel) -> NestedTens
     return val
 
 
+class _TreeMapFnProtocol(Protocol):
+    """Protocol for leaf mapping functions passed to tree traversal utilities."""
+
+    def __call__(self, *leaves: NestedTensor) -> NestedTensor | _MapToNoneSentinel:
+        """Transform corresponding leaf elements across one or more structures.
+
+        Args:
+            *leaves: Corresponding leaf values.
+
+        Returns:
+            NestedTensor | _MapToNoneSentinel: Mapped leaf value.
+        """
+
+
 def map_structure(
-    func: Callable[..., NestedTensor | _MapToNoneSentinel],
+    func: _TreeMapFnProtocol,
     *structures: NestedTensor,
     none_is_leaf: bool = False,
     **kwargs: ConfigValue,
@@ -225,7 +240,7 @@ def _is_shape_tuple(node: NestedTensor) -> bool:
 
 
 def map_shape_structure(
-    func: Callable[..., NestedTensor],
+    func: _TreeMapFnProtocol,
     *structures: NestedTensor,
 ) -> NestedTensor:
     """Apply ``func`` to shape tuples (or leaves) within ``structures``.
@@ -273,7 +288,7 @@ def map_shape_structure(
 
 def map_structure_up_to(
     shallow_structure: NestedTensor,
-    func: Callable[..., NestedTensor],
+    func: _TreeMapFnProtocol,
     *structures: NestedTensor,
     **kwargs: ConfigValue,
 ) -> NestedTensor:

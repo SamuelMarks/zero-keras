@@ -1,11 +1,10 @@
-"""Module docstring."""
+"""Unit and behavioral tests for initializers coverage in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
 
-def test_initializers_coverage() -> TensorLike:
-    """Function docstring."""
+def test_initializers_coverage() -> None:
+    """Verify or execute `test initializers coverage`."""
     from ml_switcheroo_compiler.core.dtype import DType
 
     from zero_keras.core_layers import KerasTensor
@@ -24,12 +23,12 @@ def test_initializers_coverage() -> TensorLike:
 
     # 69
     class DummyData:
-        """Class docstring."""
+        """Test helper class `DummyData` for initializers coverage."""
 
         id = 1
 
     class DummyTensorWithDataId:
-        """Class docstring."""
+        """Test helper class `DummyTensorWithDataId` for initializers coverage."""
 
         data = DummyData()
         shape = (1, 2)
@@ -60,12 +59,12 @@ def test_initializers_coverage() -> TensorLike:
     assert res.shape == (2, 2)
 
     # 477, 497
-    assert get(None).__class__.__name__ == "GlorotUniform"
+    assert type(get(None)).__name__ == "GlorotUniform"
 
     class DummyObj:
-        """Class docstring."""
+        """Test helper class `DummyObj` for initializers coverage."""
 
     obj = DummyObj()
     assert get(obj) is obj
-    assert get("zeros").__class__.__name__ == "Zeros"
-    assert get("unknown").__class__.__name__ == "GlorotUniform"
+    assert type(get("zeros")).__name__ == "Zeros"
+    assert type(get("unknown")).__name__ == "GlorotUniform"
