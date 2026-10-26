@@ -1357,6 +1357,8 @@ def test_model_iterator_exhaust() -> None:
 
     tf_mod = types.ModuleType("tensorflow")
     tf_data_mod = types.ModuleType("tensorflow.python.data")
+    orig_tf = sys.modules.get("tensorflow")
+    orig_tf_data = sys.modules.get("tensorflow.python.data")
     sys.modules["tensorflow"] = tf_mod
     sys.modules["tensorflow.python.data"] = tf_data_mod
 
@@ -1369,8 +1371,18 @@ def test_model_iterator_exhaust() -> None:
             """Yield successive batches or elements from ``TFDataset``."""
             yield 1
 
-    gen_tf = model._unpack_iterator(TFDataset())
-    list(gen_tf)
+    try:
+        gen_tf = model._unpack_iterator(TFDataset())
+        list(gen_tf)
+    finally:
+        if orig_tf is None:
+            sys.modules.pop("tensorflow", None)
+        else:
+            sys.modules["tensorflow"] = orig_tf
+        if orig_tf_data is None:
+            sys.modules.pop("tensorflow.python.data", None)
+        else:
+            sys.modules["tensorflow.python.data"] = orig_tf_data
 
     # also exhaust torch
     class TorchTensor:

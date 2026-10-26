@@ -1,2 +1,4 @@
 keras>=3.0.0
 numpy
+scipy
+jax>=0.4.30
