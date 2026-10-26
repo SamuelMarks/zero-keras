@@ -107,7 +107,7 @@ def test_all_top_level_and_image_ops_symbolic() -> None:
                 or name in skip_special
             ):
                 continue
-            if fn.__module__ != "zero_keras.ops":
+            if not fn.__module__.startswith("zero_keras.ops"):
                 continue
             out = fn(kt, (2, 4))
             assert isinstance(out, (KerasTensor, list))

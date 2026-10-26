@@ -8,7 +8,7 @@ from zero_keras import ops
 
 
 def test_merging_layers() -> None:
-    """Verify or execute `test merging layers`."""
+    """Test ``merging_layers`` behavior and edge cases in ``test_layers_merging_extra``."""
     from zero_keras.layers.merging import (
         Add,
         Average,
@@ -52,7 +52,7 @@ def test_merging_layers() -> None:
 
 
 def test_dot_merging() -> None:
-    """Verify or execute `test dot merging`."""
+    """Test ``dot_merging`` behavior and edge cases in ``test_layers_merging_extra``."""
     from zero_keras.layers.merging import Dot, dot
 
     a = ops.ones((2, 4))

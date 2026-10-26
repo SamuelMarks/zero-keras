@@ -28,6 +28,32 @@ def test_losses_remaining_coverage() -> None:
     assert isinstance(losses.serialize(losses.MeanSquaredError()), dict)
     assert losses.get("unknown_loss_xyz") == "unknown_loss_xyz"
     assert losses.get(123) == 123
+    assert isinstance(
+        losses.deserialize("custom_mse", custom_objects={"custom_mse": losses.MeanSquaredError}),
+        losses.MeanSquaredError,
+    )
+    assert losses.deserialize("custom_val", custom_objects={"custom_val": "val_obj"}) == "val_obj"
+    assert isinstance(
+        losses.deserialize(
+            {"class_name": "CustomLoss", "config": {}},
+            custom_objects={"CustomLoss": losses.MeanAbsoluteError},
+        ),
+        losses.MeanAbsoluteError,
+    )
+    assert losses.deserialize(
+        {"class_name": "CustomLossVal", "config": {}},
+        custom_objects={"CustomLossVal": "not_callable"},
+    ) == {"class_name": "CustomLossVal", "config": {}}
+
+    assert losses.deserialize({"class_name": "MeanSquaredError", "config": "not_a_dict"}) == {
+        "class_name": "MeanSquaredError",
+        "config": "not_a_dict",
+    }
+    yt_s = ops.convert_to_tensor([[1], [2]], dtype="int32")
+    yp_s = ops.convert_to_tensor([[0.1, 0.8, 0.1], [0.1, 0.2, 0.7]], dtype="float32")
+    assert losses.sparse_categorical_crossentropy(yt_s, yp_s, ignore_class=2).shape == (2,)
+    base_loss = losses.Loss()
+    assert base_loss(ops.ones((2,)), ops.ones((2,))) is not None
 
 
 def test_metrics_remaining_coverage() -> None:
@@ -57,6 +83,37 @@ def test_metrics_remaining_coverage() -> None:
     assert isinstance(metrics.serialize(metrics.Accuracy()), dict)
     assert metrics.get("unknown_metric_xyz") == "unknown_metric_xyz"
     assert metrics.get(123) == 123
+    assert isinstance(metrics.get("Accuracy"), metrics.Accuracy)
+    assert metrics.get("IoU") == "IoU"
+    assert isinstance(metrics.get("mae"), metrics.MeanAbsoluteError)
+    assert isinstance(
+        metrics.deserialize("custom_acc", custom_objects={"custom_acc": metrics.Accuracy}),
+        metrics.Accuracy,
+    )
+    assert metrics.deserialize("custom_val", custom_objects={"custom_val": "val_obj"}) == "val_obj"
+    assert isinstance(
+        metrics.deserialize(
+            {"class_name": "CustomMetric", "config": {}},
+            custom_objects={"CustomMetric": metrics.MeanSquaredError},
+        ),
+        metrics.MeanSquaredError,
+    )
+    assert metrics.deserialize(
+        {"class_name": "CustomMetricVal", "config": {}},
+        custom_objects={"CustomMetricVal": "not_callable"},
+    ) == {"class_name": "CustomMetricVal", "config": {}}
+
+    assert metrics.deserialize({"class_name": "Accuracy", "config": "not_a_dict"}) == {
+        "class_name": "Accuracy",
+        "config": "not_a_dict",
+    }
+    mean_m = metrics.Mean()
+    mean_m.update_state(ops.ones((2, 3)), sample_weight=ops.ones((2,)))
+    assert mean_m.result() is not None
+    cc_m = metrics.ConcordanceCorrelation()
+    cc_m.update_state([[1.0, 2.0]], [[1.0, 2.0]], sample_weight=[1.0])
+    pc_m = metrics.PearsonCorrelation()
+    pc_m.update_state([[1.0, 2.0]], [[1.0, 2.0]], sample_weight=[1.0])
 
     cce_m = metrics.CategoricalCrossentropy()
     yt = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
@@ -127,6 +184,61 @@ def test_optimizers_remaining_coverage() -> None:
         "class_name": "UnknownOpt",
         "config": {},
     }
+    assert isinstance(optimizers.get("Adam"), optimizers.Adam)
+    assert isinstance(optimizers.get("rmsprop"), optimizers.RMSprop)
+    assert optimizers.get("LossScaleOptimizer") == "LossScaleOptimizer"
+    assert isinstance(
+        optimizers.deserialize("custom_opt", custom_objects={"custom_opt": optimizers.SGD}),
+        optimizers.SGD,
+    )
+    assert (
+        optimizers.deserialize("custom_val", custom_objects={"custom_val": "val_obj"}) == "val_obj"
+    )
+    assert isinstance(
+        optimizers.deserialize(
+            {"class_name": "CustomOpt", "config": {}},
+            custom_objects={"CustomOpt": optimizers.AdamW},
+        ),
+        optimizers.AdamW,
+    )
+    assert optimizers.deserialize(
+        {"class_name": "CustomOptVal", "config": {}},
+        custom_objects={"CustomOptVal": "not_callable"},
+    ) == {"class_name": "CustomOptVal", "config": {}}
+
+    with pytest.raises(ValueError):
+        layers.Attention(score_mode="invalid_mode")
+    attn_concat = layers.Attention(use_scale=True, score_mode="concat", dropout=0.2, causal=True)
+    q_t = ops.ones((2, 3, 4), dtype="float32")
+    mask_t = [ops.ones((2, 3), dtype="float32"), ops.ones((2, 3), dtype="float32")]
+    assert attn_concat([q_t, q_t], mask=mask_t, training=True).shape == (2, 3, 4)
+
+    add_attn = layers.AdditiveAttention(use_scale=True, dropout=0.2, causal=True)
+    assert add_attn([q_t, q_t], mask=mask_t, training=True).shape == (2, 3, 4)
+
+    mha_d = layers.MultiHeadAttention(num_heads=2, key_dim=2, dropout=0.2)
+    mha_d.build([(2, 3, 4), (2, 3, 4), (2, 3, 4)])
+    assert mha_d(q_t, q_t, training=True).shape == (2, 3, 4)
+
+    gqa_d = layers.GroupQueryAttention(head_dim=2, num_query_heads=4, num_key_value_heads=2)
+    gqa_d.build([(2, 3, 4), (2, 3, 4), (2, 3, 4)])
+
+    assert optimizers.deserialize({"class_name": "Adam", "config": "not_a_dict"}) == {
+        "class_name": "Adam",
+        "config": "not_a_dict",
+    }
+    rh = layers.RandomHeight(factor=(0.1, 0.2), seed=1)
+    assert rh(ops.ones((2, 8, 8, 3)), training=True).shape[0] == 2
+    assert rh(ops.ones((2, 8)), training=True).shape == (2, 8)
+    rh_f = layers.RandomHeight(factor=0.2, seed=1)
+    assert rh_f(ops.ones((2, 8, 8, 3)), training=True).shape[0] == 2
+    rw = layers.RandomWidth(factor=(0.1, 0.2), seed=1)
+    assert rw(ops.ones((2, 8, 8, 3)), training=True).shape[0] == 2
+    assert rw(ops.ones((2, 8)), training=True).shape == (2, 8)
+    rw_f = layers.RandomWidth(factor=0.2, seed=1)
+    assert rw_f(ops.ones((2, 8, 8, 3)), training=True).shape[0] == 2
+    rz = layers.RandomZoom(height_factor=0.1)
+    assert rz(ops.ones((2, 8)), training=True).shape == (2, 8)
 
 
 def test_models_and_callbacks_remaining_coverage(tmp_path: Path) -> None:

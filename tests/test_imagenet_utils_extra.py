@@ -8,7 +8,7 @@ from zero_keras.applications import imagenet_utils
 
 def test_obtain_input_shape_extra() -> None:
     # require_flatten = False
-    """Verify or execute `test obtain input shape extra`."""
+    """Test ``obtain_input_shape_extra`` behavior and edge cases in ``test_imagenet_utils_extra``."""
     shape = imagenet_utils.obtain_input_shape(
         input_shape=(224, 224, 3),
         default_size=224,

@@ -3,8 +3,31 @@
 from __future__ import annotations
 
 from zero_keras import ops
-from zero_keras.core_layers import Quantizer
 from zero_keras.types import ConfigDict, ConfigValue, TensorLike
+
+
+class Quantizer:
+    """Base class for weight and activation quantizers."""
+
+    @classmethod
+    def from_config(cls, config: TensorLike) -> TensorLike:
+        """Instantiate `Quantizer` from its serialized configuration dictionary.
+
+        Args:
+            config: Configuration dictionary describing object hyperparameters.
+
+        Returns:
+            TensorLike: Computed result for `from_config`.
+        """
+        return cls(**config)
+
+    def get_config(self) -> TensorLike:
+        """Return the quantizer configuration dictionary.
+
+        Returns:
+            dict[str, str]: Configuration dictionary containing ``name``.
+        """
+        return {"name": type(self).__name__}
 
 
 class AbsMaxQuantizer(Quantizer):

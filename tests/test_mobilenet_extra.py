@@ -9,7 +9,7 @@ from zero_keras.applications.mobilenet_v3 import MobileNetV3Large
 
 
 def test_mobilenet_extra() -> None:
-    """Verify or execute `test mobilenet extra`."""
+    """Test ``mobilenet_extra`` behavior and edge cases in ``test_mobilenet_extra``."""
     model = MobileNet(
         input_shape=(224, 224, 3),
         alpha=1.0,

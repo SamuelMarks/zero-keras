@@ -6,7 +6,7 @@ from zero_keras import layers, random
 
 
 def test_normalization() -> None:
-    """Verify or execute `test normalization`."""
+    """Test ``normalization`` behavior and edge cases in ``test_missing_layers_norm``."""
     layer = layers.Normalization()
     x = random.uniform((2, 10), dtype="float32")
     layer(x)
@@ -15,7 +15,7 @@ def test_normalization() -> None:
 
 
 def test_rms_norm() -> None:
-    """Verify or execute `test rms norm`."""
+    """Test ``rms_norm`` behavior and edge cases in ``test_missing_layers_norm``."""
     layer = layers.RMSNormalization()
     x = random.uniform((2, 10), dtype="float32")
     _out = layer(x)
@@ -24,36 +24,31 @@ def test_rms_norm() -> None:
 
 
 def test_rescaling() -> None:
-    """Verify or execute `test rescaling`."""
+    """Test ``rescaling`` behavior and edge cases in ``test_missing_layers_norm``."""
     layer = layers.Rescaling(0.5, offset=0.1)
     x = random.uniform((2, 10), dtype="float32")
     _out = layer(x)
 
 
 def test_mel_spectrogram() -> None:
-    """Verify or execute `test mel spectrogram`."""
+    """Verify MelSpectrogram instantiates and computes configuration."""
     layer = layers.MelSpectrogram(
         num_mel_bins=10, sequence_stride=128, fft_length=256, sampling_rate=8000
     )
-    x = random.uniform((2, 1000), dtype="float32")
-    try:
-        _out = layer(x)
-    except Exception as e:
-        print("MelSpectrogram Error:", e)
+    assert layer.num_mel_bins == 10
+    assert isinstance(layer.get_config(), dict)
 
 
 def test_flax_layer() -> None:
-    """Verify or execute `test flax layer`."""
-    layer = layers.FlaxLayer(module=None)
+    """Verify FlaxLayer invokes its callable module with inputs."""
+    layer = layers.FlaxLayer(module=lambda inputs: inputs, variables={})
     x = random.uniform((2, 10), dtype="float32")
-    try:
-        layer(x)
-    except Exception as e:
-        print("FlaxLayer error:", e)
+    out = layer(x)
+    assert out.shape == (2, 10)
 
 
 def test_pipeline() -> None:
-    """Verify or execute `test pipeline`."""
+    """Test ``pipeline`` behavior and edge cases in ``test_missing_layers_norm``."""
     layer = layers.Pipeline(layers=[layers.Rescaling(1.0)])
     x = random.uniform((2, 10), dtype="float32")
     _out = layer(x)

@@ -20,7 +20,7 @@ from .conftest import assert_allclose_zero, assert_array_equal_zero
 
 
 def test_keras_tensor_eq_no_data() -> None:
-    """Verify or execute `test keras tensor eq no data`."""
+    """Test ``keras_tensor_eq_no_data`` behavior and edge cases in ``test_core_layers``."""
     tensor = KerasTensor(shape=(2, 2))
     other = KerasTensor(shape=(2, 2))
     result = tensor == other
@@ -28,7 +28,7 @@ def test_keras_tensor_eq_no_data() -> None:
 
 
 def test_keras_tensor_array_branches() -> None:
-    """Verify or execute `test keras tensor array branches`."""
+    """Test ``keras_tensor_array_branches`` behavior and edge cases in ``test_core_layers``."""
     tensor = KerasTensor(shape=(2,), data=ops.convert_to_tensor([1, 2]))
     assert_array_equal_zero(tensor.__array__(copy=False), [1, 2])
 
@@ -40,14 +40,14 @@ def test_keras_tensor_array_branches() -> None:
 
 
 def test_layer_set_weights_fallback() -> None:
-    """Verify or execute `test layer set weights fallback`."""
+    """Test ``layer_set_weights_fallback`` behavior and edge cases in ``test_core_layers``."""
 
     class CustomLayer(Layer):
         """Test helper class `CustomLayer` for core layers extra."""
 
         @property
         def weights(self) -> TensorLike:
-            """Verify or execute `weights` on `CustomLayer`.
+            """Return all tracked weight variables of ``CustomLayer``.
 
             Returns:
                 TensorLike: Result from `weights`.
@@ -57,11 +57,11 @@ def test_layer_set_weights_fallback() -> None:
                 """Test helper class `W` for core layers extra."""
 
                 def __setitem__(self, key: TensorLike, value: TensorLike) -> None:
-                    """Verify or execute `setitem` on `W`.
+                    """Update indexed elements of ``W`` in-place.
 
                     Args:
-                        key: Test fixture or input parameter `key` (key).
-                        value: Test fixture or input parameter `value` (value).
+                        key: Element index or slice key.
+                        value: Input tensor or scalar value to assign.
                     """
                     self.val = value
 
@@ -75,14 +75,14 @@ def test_layer_set_weights_fallback() -> None:
 
 
 def test_model_compute_loss_reg() -> None:
-    """Verify or execute `test model compute loss reg`."""
+    """Test ``model_compute_loss_reg`` behavior and edge cases in ``test_core_layers``."""
 
     class MyModel(Model):
         """Test helper class `MyModel` for core layers extra."""
 
         @property
         def losses(self) -> TensorLike:
-            """Verify or execute `losses` on `MyModel`.
+            """Return the activity and regularization losses of ``MyModel``.
 
             Returns:
                 TensorLike: Result from `losses`.
@@ -96,16 +96,16 @@ def test_model_compute_loss_reg() -> None:
 
 
 def test_model_steps_type_error_fallback() -> None:
-    """Verify or execute `test model steps type error fallback`."""
+    """Test ``model_steps_type_error_fallback`` behavior and edge cases in ``test_core_layers``."""
 
     class SimpleModel(Model):
         """Test helper class `SimpleModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `SimpleModel`.
+            """Execute the forward computation of ``SimpleModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -128,7 +128,7 @@ def test_model_steps_type_error_fallback() -> None:
 
 
 def test_model_is_iterator_torch() -> None:
-    """Verify or execute `test model is iterator torch`."""
+    """Test ``model_is_iterator_torch`` behavior and edge cases in ``test_core_layers``."""
     model = Model()
 
     class FakeDataloader:
@@ -139,7 +139,7 @@ def test_model_is_iterator_torch() -> None:
 
 
 def test_model_fit_batch_size_none() -> None:
-    """Verify or execute `test model fit batch size none`."""
+    """Test ``model_fit_batch_size_none`` behavior and edge cases in ``test_core_layers``."""
     model = Sequential([Layer()])
     model.compile("sgd", "mse")
     x = ops.ones((33, 1))
@@ -149,35 +149,35 @@ def test_model_fit_batch_size_none() -> None:
 
 
 def test_model_fit_eval_predict_unsliceable() -> None:
-    """Verify or execute `test model fit eval predict unsliceable`."""
+    """Test ``model_fit_eval_predict_unsliceable`` behavior and edge cases in ``test_core_layers``."""
     model = Sequential([Layer()])
     model.compile("sgd", "mse")
 
     def gen() -> TensorLike:
-        """Verify or execute `gen`."""
+        """Execute test helper ``gen`` in ``test_core_layers``."""
         yield ops.convert_to_tensor([[1.0]]), ops.convert_to_tensor([[1.0]])
 
     model.fit(gen(), epochs=1, verbose=0)
     model.evaluate(gen(), verbose=0)
 
     def gen_x() -> TensorLike:
-        """Verify or execute `gen x`."""
+        """Execute test helper ``gen_x`` in ``test_core_layers``."""
         yield ops.convert_to_tensor([[1.0]])
 
     model.predict(gen_x(), verbose=0)
 
 
 def test_model_predict_numpy_fallback() -> None:
-    """Verify or execute `test model predict numpy fallback`."""
+    """Test ``model_predict_numpy_fallback`` behavior and edge cases in ``test_core_layers``."""
 
     class SimpleModel(Model):
         """Test helper class `SimpleModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `SimpleModel`.
+            """Execute the forward computation of ``SimpleModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -187,7 +187,7 @@ def test_model_predict_numpy_fallback() -> None:
                 """Test helper class `Pred` for core layers extra."""
 
                 def numpy(self) -> TensorLike:
-                    """Verify or execute `numpy` on `Pred`.
+                    """Convert the ``Pred`` value to a NumPy array.
 
                     Returns:
                         TensorLike: Result from `numpy`.
@@ -203,14 +203,14 @@ def test_model_predict_numpy_fallback() -> None:
 
 
 def test_flatten_in_save() -> None:
-    """Verify or execute `test flatten in save`."""
+    """Test ``flatten_in_save`` behavior and edge cases in ``test_core_layers``."""
 
     class NestedLayer(Layer):
         """Test helper class `NestedLayer` for core layers extra."""
 
         @property
         def weights(self) -> TensorLike:
-            """Verify or execute `weights` on `NestedLayer`.
+            """Return all tracked weight variables of ``NestedLayer``.
 
             Returns:
                 TensorLike: Result from `weights`.
@@ -219,7 +219,7 @@ def test_flatten_in_save() -> None:
 
         @property
         def _trainable_weights(self) -> TensorLike:
-            """Verify or execute `trainable weights` on `NestedLayer`.
+            """Return the trainable weight variables of ``NestedLayer``.
 
             Returns:
                 TensorLike: Result from `_trainable_weights`.
@@ -228,7 +228,7 @@ def test_flatten_in_save() -> None:
 
         @property
         def _non_trainable_weights(self) -> TensorLike:
-            """Verify or execute `non trainable weights` on `NestedLayer`.
+            """Return the non-trainable weight variables of ``NestedLayer``.
 
             Returns:
                 TensorLike: Result from `_non_trainable_weights`.
@@ -242,13 +242,13 @@ def test_flatten_in_save() -> None:
 
 
 def test_predict_concatenate_arrays_fallback() -> None:
-    """Verify or execute `test predict concatenate arrays fallback`."""
+    """Test ``predict_concatenate_arrays_fallback`` behavior and edge cases in ``test_core_layers``."""
 
     class Pred:
         """Test helper class `Pred` for core layers extra."""
 
         def numpy(self) -> TensorLike:
-            """Verify or execute `numpy` on `Pred`.
+            """Convert the ``Pred`` value to a NumPy array.
 
             Returns:
                 TensorLike: Result from `numpy`.
@@ -259,10 +259,10 @@ def test_predict_concatenate_arrays_fallback() -> None:
         """Test helper class `SimpleModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `SimpleModel`.
+            """Execute the forward computation of ``SimpleModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -277,16 +277,16 @@ def test_predict_concatenate_arrays_fallback() -> None:
 
 
 def test_fit_exception_loss() -> None:
-    """Verify or execute `test fit exception loss`."""
+    """Test ``fit_exception_loss`` behavior and edge cases in ``test_core_layers``."""
 
     class BrokenLossModel(Model):
         """Test helper class `BrokenLossModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `BrokenLossModel`.
+            """Execute the forward computation of ``BrokenLossModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -294,10 +294,10 @@ def test_fit_exception_loss() -> None:
             return inputs
 
         def train_step(self, data: TensorLike) -> TensorLike:
-            """Verify or execute `train step` on `BrokenLossModel`.
+            """Execute a single custom training step on ``BrokenLossModel``.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
 
             Returns:
                 TensorLike: Result from `train_step`.
@@ -305,10 +305,10 @@ def test_fit_exception_loss() -> None:
             return {"loss": "not_a_float_or_array"}
 
         def test_step(self, data: TensorLike) -> TensorLike:
-            """Verify or execute `test step` on `BrokenLossModel`.
+            """Execute a single custom evaluation step on ``BrokenLossModel``.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
 
             Returns:
                 TensorLike: Result from `test_step`.
@@ -324,16 +324,16 @@ def test_fit_exception_loss() -> None:
 
 
 def test_predict_exception_data() -> None:
-    """Verify or execute `test predict exception data`."""
+    """Test ``predict_exception_data`` behavior and edge cases in ``test_core_layers``."""
 
     class BrokenPredModel(Model):
         """Test helper class `BrokenPredModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `BrokenPredModel`.
+            """Execute the forward computation of ``BrokenPredModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -344,7 +344,7 @@ def test_predict_exception_data() -> None:
 
                 @property
                 def data(self) -> TensorLike:
-                    """Verify or execute `data` on `Pred`."""
+                    """Return the underlying data payload of ``Pred``."""
                     raise ValueError("Fail data")
 
             return Pred()
@@ -358,14 +358,14 @@ def test_predict_exception_data() -> None:
 
 
 def test_sequential_add() -> None:
-    """Verify or execute `test sequential add`."""
+    """Test ``sequential_add`` behavior and edge cases in ``test_core_layers``."""
     model = Sequential()
     model.add(Layer())
     assert len(model.layers) == 1
 
 
 def test_ops_add() -> None:
-    """Verify or execute `test ops add`."""
+    """Test ``ops_add`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import ops as cl_ops
 
     tensor = KerasTensor(shape=(2, 2))
@@ -374,30 +374,30 @@ def test_ops_add() -> None:
 
 
 def test_deserialize() -> None:
-    """Verify or execute `test deserialize`."""
+    """Test ``deserialize`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import deserialize
 
     assert deserialize({"class_name": "Dense", "config": {"units": 10}}).units == 10
 
 
 def test_get() -> None:
-    """Verify or execute `test get`."""
+    """Test ``get`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import get as layer_get
 
     assert layer_get("Dense").__name__ == "Dense"
 
 
 def test_predict_concatenate_arrays_success() -> None:
-    """Verify or execute `test predict concatenate arrays success`."""
+    """Test ``predict_concatenate_arrays_success`` behavior and edge cases in ``test_core_layers``."""
 
     class SimpleModel(Model):
         """Test helper class `SimpleModel` for core layers extra."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `SimpleModel`.
+            """Execute the forward computation of ``SimpleModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -412,10 +412,10 @@ def test_predict_concatenate_arrays_success() -> None:
 
 @patch("ml_switcheroo_compiler.ops.ones")
 def test_keras_tensor_eq_no_data2(mock_ones: TensorLike) -> None:
-    """Verify or execute `test keras tensor eq no data2`.
+    """Test ``keras_tensor_eq_no_data2`` behavior and edge cases in ``test_core_layers``.
 
     Args:
-        mock_ones: Test fixture or input parameter `mock_ones` (mock ones).
+        mock_ones: Mocked ``ones`` tensor creation fixture.
     """
     mock_ones.return_value = "mock_ones"
     tensor = KerasTensor(shape=None)
@@ -426,17 +426,17 @@ def test_keras_tensor_eq_no_data2(mock_ones: TensorLike) -> None:
 
 @patch("ml_switcheroo_compiler.ops.asarray")
 def test_keras_tensor_array_numpy_attr(mock_asarray: TensorLike) -> None:
-    """Verify or execute `test keras tensor array numpy attr`.
+    """Test ``keras_tensor_array_numpy_attr`` behavior and edge cases in ``test_core_layers``.
 
     Args:
-        mock_asarray: Test fixture or input parameter `mock_asarray` (mock asarray).
+        mock_asarray: Mocked ``asarray`` function fixture.
     """
 
     class MockArr:
         """Test helper class `MockArr` for core layers extra."""
 
         def numpy(self) -> TensorLike:
-            """Verify or execute `numpy` on `MockArr`.
+            """Convert the ``MockArr`` value to a NumPy array.
 
             Returns:
                 TensorLike: Result from `numpy`.
@@ -450,7 +450,7 @@ def test_keras_tensor_array_numpy_attr(mock_asarray: TensorLike) -> None:
 
 
 def test_function_methods() -> None:
-    """Verify or execute `test function methods`."""
+    """Test ``function_methods`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Function
 
     fn = Function()
@@ -469,7 +469,7 @@ def test_function_methods() -> None:
 
 
 def test_input_spec_methods() -> None:
-    """Verify or execute `test input spec methods`."""
+    """Test ``input_spec_methods`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import InputSpec
 
     spec = InputSpec(name="test")
@@ -480,7 +480,7 @@ def test_input_spec_methods() -> None:
 
 
 def test_keras_tensor_methods() -> None:
-    """Verify or execute `test keras tensor methods`."""
+    """Test ``keras_tensor_methods`` behavior and edge cases in ``test_core_layers``."""
     import pytest
 
     from zero_keras.core_layers import KerasTensor
@@ -501,7 +501,7 @@ def test_keras_tensor_methods() -> None:
 
 
 def test_layer_methods_extra() -> None:
-    """Verify or execute `test layer methods extra`."""
+    """Test ``layer_methods_extra`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Layer
 
     layer = Layer(name="test_layer")
@@ -551,7 +551,7 @@ def test_layer_methods_extra() -> None:
 
 
 def test_model_methods_extra(tmp_path: TensorLike) -> None:
-    """Verify or execute `test model methods extra`.
+    """Test ``model_methods_extra`` behavior and edge cases in ``test_core_layers``.
 
     Args:
         tmp_path: Temporary directory fixture.
@@ -565,7 +565,7 @@ def test_model_methods_extra(tmp_path: TensorLike) -> None:
     assert model.distribute_reduction_method == "auto"
     assert model.distribute_strategy == "auto"
     model.export(str(tmp_path / "test"))
-    assert model.get_compile_config() == {"optimizer": "rmsprop"}
+    assert model.get_compile_config() == {"optimizer": {"class_name": "RMSprop", "config": {}}}
     # tested get_layer
     assert model.get_metrics_result() == {}
     assert model.get_state_tree() == {"variables": []}
@@ -588,7 +588,7 @@ def test_model_methods_extra(tmp_path: TensorLike) -> None:
 
 
 def test_operation_methods_extra() -> None:
-    """Verify or execute `test operation methods extra`."""
+    """Test ``operation_methods_extra`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Operation
 
     op = Operation()
@@ -603,7 +603,7 @@ def test_operation_methods_extra() -> None:
 
 
 def test_quantizer_regularizer_methods() -> None:
-    """Verify or execute `test quantizer regularizer methods`."""
+    """Test ``quantizer_regularizer_methods`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Quantizer
     from zero_keras.regularizers import Regularizer
 
@@ -619,7 +619,7 @@ def test_quantizer_regularizer_methods() -> None:
 
 
 def test_stateless_variable_methods() -> None:
-    """Verify or execute `test stateless variable methods`."""
+    """Test ``stateless_variable_methods`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import StatelessScope, Variable
 
     with StatelessScope() as scope:
@@ -651,7 +651,7 @@ def test_stateless_variable_methods() -> None:
 
 
 def test_sequential_methods_extra(tmp_path: TensorLike) -> None:
-    """Verify or execute `test sequential methods extra`.
+    """Test ``sequential_methods_extra`` behavior and edge cases in ``test_core_layers``.
 
     Args:
         tmp_path: Temporary directory fixture.
@@ -676,7 +676,7 @@ def test_sequential_methods_extra(tmp_path: TensorLike) -> None:
     assert seq.dtype_policy is None
     seq.export(str(tmp_path / "path"))
     assert seq.get_build_config() == {"input_shape": None}
-    assert seq.get_compile_config() == {"optimizer": "rmsprop"}
+    assert seq.get_compile_config() == {"optimizer": {"class_name": "RMSprop", "config": {}}}
     # tested get_layer
     assert seq.get_metrics_result() == {}
     assert seq.get_state_tree() == {"variables": []}
@@ -720,7 +720,7 @@ def test_sequential_methods_extra(tmp_path: TensorLike) -> None:
 
 
 def test_wrapper_layer() -> None:
-    """Verify or execute `test wrapper layer`."""
+    """Test ``wrapper_layer`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Layer, Wrapper
     from zero_keras.layers.core import Layer as LLayer
     from zero_keras.layers.core import Wrapper as LWrapper
@@ -822,7 +822,7 @@ def test_root_symbols() -> None:
 
 
 def test_tensorshape_more() -> None:
-    """Verify or execute `test tensorshape more`."""
+    """Test ``tensorshape_more`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import TensorShape
 
     # dims is required
@@ -838,7 +838,7 @@ def test_tensorshape_more() -> None:
 
 
 def test_kerastensor_call_pass_through() -> None:
-    """Verify or execute `test kerastensor call pass through`."""
+    """Test ``kerastensor_call_pass_through`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,))
@@ -846,7 +846,7 @@ def test_kerastensor_call_pass_through() -> None:
 
 
 def test_model_properties_coverage() -> None:
-    """Verify or execute `test model properties coverage`."""
+    """Test ``model_properties_coverage`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -862,7 +862,7 @@ def test_model_properties_coverage() -> None:
 
 
 def test_compile_metrics_coverage() -> None:
-    """Verify or execute `test compile metrics coverage`."""
+    """Test ``compile_metrics_coverage`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.metrics import MeanSquaredError
 
@@ -874,18 +874,18 @@ def test_compile_metrics_coverage() -> None:
 
 
 def test_model_loss_callable() -> None:
-    """Verify or execute `test model loss callable`."""
+    """Test ``model_loss_callable`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
     model = Model(inp, inp)
 
     def my_loss(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-        """Verify or execute `my loss`.
+        """Execute test helper ``my_loss`` in ``test_core_layers``.
 
         Args:
-            y_true: Test fixture or input parameter `y_true` (y true).
-            y_pred: Test fixture or input parameter `y_pred` (y pred).
+            y_true: Ground-truth target tensor.
+            y_pred: Predicted output tensor.
 
         Returns:
             TensorLike: Result from `my_loss`.
@@ -897,7 +897,7 @@ def test_model_loss_callable() -> None:
 
 
 def test_kerastensor_ops() -> None:
-    """Verify or execute `test kerastensor ops`."""
+    """Test ``kerastensor_ops`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,))
@@ -912,7 +912,7 @@ def test_kerastensor_ops() -> None:
 
 
 def test_kerastensor_more_ops() -> None:
-    """Verify or execute `test kerastensor more ops`."""
+    """Test ``kerastensor_more_ops`` behavior and edge cases in ``test_core_layers``."""
     from ml_switcheroo_compiler.core import config
 
     from zero_keras.core_layers import KerasTensor
@@ -937,7 +937,7 @@ def test_kerastensor_more_ops() -> None:
         """Keras ``Unboolable`` class."""
 
         def __bool__(self) -> TensorLike:
-            """Verify or execute `bool` on `Unboolable`."""
+            """Evaluate boolean truthiness of ``Unboolable``."""
             raise ValueError("no")
 
     kt_unbool = KerasTensor((3,), data=Unboolable())
@@ -946,7 +946,7 @@ def test_kerastensor_more_ops() -> None:
 
 
 def test_kerastensor_ops_no_data() -> None:
-    """Verify or execute `test kerastensor ops no data`."""
+    """Test ``kerastensor_ops_no_data`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,))
@@ -962,7 +962,7 @@ def test_kerastensor_ops_no_data() -> None:
 
 
 def test_kerastensor_numpy_array_getitem() -> None:
-    """Verify or execute `test kerastensor numpy array getitem`."""
+    """Test ``kerastensor_numpy_array_getitem`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor
 
     kt = KerasTensor((3,), data=ops.convert_to_tensor([1, 2, 3]))
@@ -976,7 +976,7 @@ def test_kerastensor_numpy_array_getitem() -> None:
 
 
 def test_node_coverage() -> None:
-    """Verify or execute `test node coverage`."""
+    """Test ``node_coverage`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor, Layer, Node
 
     layer = Layer()
@@ -1001,7 +1001,7 @@ def test_node_coverage() -> None:
 
 
 def test_input_batch_shape() -> None:
-    """Verify or execute `test input batch shape`."""
+    """Test ``input_batch_shape`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input
 
     # with batch_shape
@@ -1013,7 +1013,7 @@ def test_input_batch_shape() -> None:
 
 
 def test_layer_from_config_add_loss_dict() -> None:
-    """Verify or execute `test layer from config add loss dict`."""
+    """Test ``layer_from_config_add_loss_dict`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Layer
 
     class MyLayer(Layer):
@@ -1037,30 +1037,30 @@ def test_layer_from_config_add_loss_dict() -> None:
 
 
 def test_layer_weights_methods() -> None:
-    """Verify or execute `test layer weights methods`."""
+    """Test ``layer_weights_methods`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Layer
 
     class DummyWeight:
         """Keras ``DummyWeight`` class."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `DummyWeight`.
+            """Initialize the ``DummyWeight`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def assign(self, new_val: TensorLike) -> None:
-            """Verify or execute `assign` on `DummyWeight`.
+            """Update the stored value on ``DummyWeight`` in-place.
 
             Args:
-                new_val: Test fixture or input parameter `new_val` (new val).
+                new_val: New value assigned to the weight or variable.
             """
             self.val = new_val
 
         def __array__(self) -> TensorLike:
-            """Verify or execute `array` on `DummyWeight`.
+            """Return the NumPy array representation of ``DummyWeight``.
 
             Returns:
                 TensorLike: Result from `__array__`.
@@ -1071,24 +1071,24 @@ def test_layer_weights_methods() -> None:
         """Keras ``DummyWeightData`` class."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `DummyWeightData`.
+            """Initialize the ``DummyWeightData`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.data = val
 
         def __setitem__(self, key: TensorLike, value: TensorLike) -> None:
-            """Verify or execute `setitem` on `DummyWeightData`.
+            """Update indexed elements of ``DummyWeightData`` in-place.
 
             Args:
-                key: Test fixture or input parameter `key` (key).
-                value: Test fixture or input parameter `value` (value).
+                key: Element index or slice key.
+                value: Input tensor or scalar value to assign.
             """
             self.data = value
 
         def __array__(self) -> TensorLike:
-            """Verify or execute `array` on `DummyWeightData`.
+            """Return the NumPy array representation of ``DummyWeightData``.
 
             Returns:
                 TensorLike: Result from `__array__`.
@@ -1099,24 +1099,24 @@ def test_layer_weights_methods() -> None:
         """Keras ``DummyWeightArr`` class."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `DummyWeightArr`.
+            """Initialize the ``DummyWeightArr`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def __setitem__(self, key: TensorLike, value: TensorLike) -> None:
-            """Verify or execute `setitem` on `DummyWeightArr`.
+            """Update indexed elements of ``DummyWeightArr`` in-place.
 
             Args:
-                key: Test fixture or input parameter `key` (key).
-                value: Test fixture or input parameter `value` (value).
+                key: Element index or slice key.
+                value: Input tensor or scalar value to assign.
             """
             self.val = value
 
         def __array__(self) -> TensorLike:
-            """Verify or execute `array` on `DummyWeightArr`.
+            """Return the NumPy array representation of ``DummyWeightArr``.
 
             Returns:
                 TensorLike: Result from `__array__`.
@@ -1150,7 +1150,7 @@ def test_layer_weights_methods() -> None:
 
 
 def test_layer_call_tracing_list_dict() -> None:
-    """Verify or execute `test layer call tracing list dict`."""
+    """Test ``layer_call_tracing_list_dict`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor, Layer
 
     layer = Layer()
@@ -1166,7 +1166,7 @@ def test_layer_call_tracing_list_dict() -> None:
 
 
 def test_layer_call_tracing_tuple_out() -> None:
-    """Verify or execute `test layer call tracing tuple out`."""
+    """Test ``layer_call_tracing_tuple_out`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import KerasTensor, Layer
 
     layer = Layer()
@@ -1176,7 +1176,7 @@ def test_layer_call_tracing_tuple_out() -> None:
 
 
 def test_model_kwargs() -> None:
-    """Verify or execute `test model kwargs`."""
+    """Test ``model_kwargs`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -1184,7 +1184,7 @@ def test_model_kwargs() -> None:
 
 
 def test_model_compute_metrics() -> None:
-    """Verify or execute `test model compute metrics`."""
+    """Test ``model_compute_metrics`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.metrics import MeanSquaredError
 
@@ -1199,35 +1199,31 @@ def test_model_compute_metrics() -> None:
 
 
 def test_model_train_step_x_only() -> None:
-    """Verify or execute `test model train step x only`."""
+    """Verify Model.train_step with x-only input when y is None."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
     model = Model(inp, inp)
     model.compile(optimizer="sgd", loss="mse")
     x = ops.ones((1, 3))
-    try:
+    with pytest.raises(ValueError):
         model.train_step(x)
-    except Exception:
-        pass
 
 
 def test_model_test_step_x_only() -> None:
-    """Verify or execute `test model test step x only`."""
+    """Verify Model.test_step with x-only input when y is None."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
     model = Model(inp, inp)
     model.compile(optimizer="sgd", loss="mse")
     x = ops.ones((1, 3))
-    try:
+    with pytest.raises(ValueError):
         model.test_step(x)
-    except Exception:
-        pass
 
 
 def test_model_evaluate_predict_branches() -> None:
-    """Verify or execute `test model evaluate predict branches`."""
+    """Test ``model_evaluate_predict_branches`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -1242,14 +1238,14 @@ def test_model_evaluate_predict_branches() -> None:
 
     # test evaluate with iterator
     def x_iter() -> TensorLike:
-        """Verify or execute `x iter`."""
+        """Execute test helper ``x_iter`` in ``test_core_layers``."""
         yield (x, y)
 
     model.evaluate(x_iter())
 
     # test predict with iterator
     def x_iter_predict() -> TensorLike:
-        """Verify or execute `x iter predict`."""
+        """Execute test helper ``x_iter_predict`` in ``test_core_layers``."""
         yield x
 
     pred_iter = model.predict(x_iter_predict())
@@ -1257,7 +1253,7 @@ def test_model_evaluate_predict_branches() -> None:
 
 
 def test_model_iterator_branches_torch() -> None:
-    """Verify or execute `test model iterator branches torch`."""
+    """Test ``model_iterator_branches_torch`` behavior and edge cases in ``test_core_layers``."""
     import sys
     import types
 
@@ -1273,15 +1269,15 @@ def test_model_iterator_branches_torch() -> None:
         """Keras ``TorchTensor`` class."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `TorchTensor`.
+            """Initialize the ``TorchTensor`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def numpy(self) -> TensorLike:
-            """Verify or execute `numpy` on `TorchTensor`.
+            """Convert the ``TorchTensor`` value to a NumPy array.
 
             Returns:
                 TensorLike: Result from `numpy`.
@@ -1295,7 +1291,7 @@ def test_model_iterator_branches_torch() -> None:
 
         def __iter__(self) -> TensorLike:
             # yield tuple
-            """Verify or execute `iter` on `MockTorchDataLoader`."""
+            """Yield successive batches or elements from ``MockTorchDataLoader``."""
             yield (TorchTensor(1), TorchTensor(2))
             # yield dict
             yield {"a": TorchTensor(3)}
@@ -1319,7 +1315,7 @@ def test_model_iterator_branches_torch() -> None:
 
 
 def test_model_iterator_fallback() -> None:
-    """Verify or execute `test model iterator fallback`."""
+    """Test ``model_iterator_fallback`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -1329,7 +1325,7 @@ def test_model_iterator_fallback() -> None:
         """Keras ``FallbackIter`` class."""
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `FallbackIter`."""
+            """Yield successive batches or elements from ``FallbackIter``."""
             yield 1
 
     assert model._is_iterator(FallbackIter())
@@ -1339,7 +1335,7 @@ def test_model_iterator_fallback() -> None:
 
 
 def test_model_iterator_exhaust() -> None:
-    """Verify or execute `test model iterator exhaust`."""
+    """Test ``model_iterator_exhaust`` behavior and edge cases in ``test_core_layers``."""
     from zero_keras.core_layers import Input, Model
 
     inp = Input(shape=(3,))
@@ -1349,7 +1345,7 @@ def test_model_iterator_exhaust() -> None:
         """Keras ``FallbackIter`` class."""
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `FallbackIter`."""
+            """Yield successive batches or elements from ``FallbackIter``."""
             yield 1
 
     gen = model._unpack_iterator(FallbackIter())
@@ -1370,7 +1366,7 @@ def test_model_iterator_exhaust() -> None:
         __module__ = "tensorflow.python.data"
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `TFDataset`."""
+            """Yield successive batches or elements from ``TFDataset``."""
             yield 1
 
     gen_tf = model._unpack_iterator(TFDataset())
@@ -1381,15 +1377,15 @@ def test_model_iterator_exhaust() -> None:
         """Keras ``TorchTensor`` class."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `TorchTensor`.
+            """Initialize the ``TorchTensor`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def numpy(self) -> TensorLike:
-            """Verify or execute `numpy` on `TorchTensor`.
+            """Convert the ``TorchTensor`` value to a NumPy array.
 
             Returns:
                 TensorLike: Result from `numpy`.
@@ -1402,7 +1398,7 @@ def test_model_iterator_exhaust() -> None:
         __module__ = "torch.utils.data"
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `MockTorchDataLoader`."""
+            """Yield successive batches or elements from ``MockTorchDataLoader``."""
             yield TorchTensor(1)
 
     gen_torch = model._unpack_iterator(MockTorchDataLoader())
@@ -1410,7 +1406,7 @@ def test_model_iterator_exhaust() -> None:
 
 
 def test_kerastensor_bool_eager_no_data() -> None:
-    """Verify or execute `test kerastensor bool eager no data`."""
+    """Test ``kerastensor_bool_eager_no_data`` behavior and edge cases in ``test_core_layers``."""
     t = KerasTensor((2,))
     t.data = None
 
@@ -1424,7 +1420,7 @@ def test_kerastensor_bool_eager_no_data() -> None:
 
 
 def test_kerastensor_bool_exception() -> None:
-    """Verify or execute `test kerastensor bool exception`."""
+    """Test ``kerastensor_bool_exception`` behavior and edge cases in ``test_core_layers``."""
     t = KerasTensor((2,))
 
     # Mock data to raise exception on bool()
@@ -1432,7 +1428,7 @@ def test_kerastensor_bool_exception() -> None:
         """Test helper class `BadBool` for core layers extra part9."""
 
         def __bool__(self) -> TensorLike:
-            """Verify or execute `bool` on `BadBool`."""
+            """Evaluate boolean truthiness of ``BadBool``."""
             raise ValueError("bad bool")
 
     t.data = BadBool()
@@ -1448,7 +1444,7 @@ def test_kerastensor_bool_exception() -> None:
 
 
 def test_kerastensor_bool_success() -> None:
-    """Verify or execute `test kerastensor bool success`."""
+    """Test ``kerastensor_bool_success`` behavior and edge cases in ``test_core_layers``."""
     t = KerasTensor((2,))
     t.data = True
 
@@ -1463,7 +1459,7 @@ def test_kerastensor_bool_success() -> None:
 
 
 def test_kerastensor_array_fallback() -> None:
-    """Verify or execute `test kerastensor array fallback`."""
+    """Test ``kerastensor_array_fallback`` behavior and edge cases in ``test_core_layers``."""
     import sys
 
     t = KerasTensor((2,))
@@ -1485,10 +1481,10 @@ def test_kerastensor_array_fallback() -> None:
 
 
 def test_model_save_no_weights(tmp_path: TensorLike) -> None:
-    """Verify or execute `test model save no weights`.
+    """Test ``model_save_no_weights`` behavior and edge cases in ``test_core_layers``.
 
     Args:
-        tmp_path: Test fixture or input parameter `tmp_path` (tmp path).
+        tmp_path: Pytest temporary directory ``Path`` fixture.
     """
     m = Model()
     assert not m.weights
@@ -1496,7 +1492,7 @@ def test_model_save_no_weights(tmp_path: TensorLike) -> None:
 
 
 def test_model_evaluate_branches() -> None:
-    """Verify or execute `test model evaluate branches`."""
+    """Test ``model_evaluate_branches`` behavior and edge cases in ``test_core_layers``."""
     m = Model()
     x = asarray([[1.0]])
     y = asarray([[1.0]])
@@ -1508,16 +1504,16 @@ def test_model_evaluate_branches() -> None:
 
 
 def test_model_train_step_apply_gradients() -> None:
-    """Verify or execute `test model train step apply gradients`."""
+    """Test ``model_train_step_apply_gradients`` behavior and edge cases in ``test_core_layers``."""
 
     class SimpleModel(Model):
         """Test helper class `SimpleModel` for core layers extra remaining."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `SimpleModel`.
+            """Execute the forward computation of ``SimpleModel``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -1533,16 +1529,16 @@ def test_model_train_step_apply_gradients() -> None:
         """Test helper class `Opt` for core layers extra remaining."""
 
         def apply_gradients(self, grads: TensorLike) -> TensorLike:
-            """Verify or execute `apply gradients` on `Opt`.
+            """Apply gradients to variables in ``Opt``.
 
             Args:
-                grads: Test fixture or input parameter `grads` (grads).
+                grads: Sequence of gradient and variable pairs.
             """
 
     model.optimizer = Opt()
 
     def fake_get_grads(*args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Verify or execute `fake get grads`.
+        """Execute test helper ``fake_get_grads`` in ``test_core_layers``.
 
         Args:
             *args: Positional arguments forwarded to helper.
@@ -1569,20 +1565,20 @@ def test_model_train_step_apply_gradients() -> None:
 
 
 def test_tensorshape_iterable() -> None:
-    """Verify or execute `test tensorshape iterable`."""
+    """Test ``tensorshape_iterable`` behavior and edge cases in ``test_core_layers``."""
     ts = TensorShape((1, 2))
     assert ts.dims == [1, 2]
 
 
 def test_node_outputs_dict_or_no_keras_history() -> None:
-    """Verify or execute `test node outputs dict or no keras history`."""
+    """Test ``node_outputs_dict_or_no_keras_history`` behavior and edge cases in ``test_core_layers``."""
     layer = Dense(1)
     node = Node(layer, (), {}, outputs={"out": 1})
     assert len(layer._inbound_nodes) == 1
 
 
 def test_functional_reused_layer() -> None:
-    """Verify or execute `test functional reused layer`."""
+    """Test ``functional_reused_layer`` behavior and edge cases in ``test_core_layers``."""
     inp = Input(shape=(10,))
     d = Dense(10)
     x = d(inp)
@@ -1592,7 +1588,7 @@ def test_functional_reused_layer() -> None:
 
 
 def test_functional_empty_inputs() -> None:
-    """Verify or execute `test functional empty inputs`."""
+    """Test ``functional_empty_inputs`` behavior and edge cases in ``test_core_layers``."""
     model = Functional(inputs=["not_a_tensor"], outputs=[])
     model.call(["val"])
 
@@ -1601,10 +1597,10 @@ class DummyLayerListOutput(Layer):
     """Test helper class `DummyLayerListOutput` for core layers missing branches."""
 
     def call(self, inputs: TensorLike) -> TensorLike:
-        """Verify or execute `call` on `DummyLayerListOutput`.
+        """Execute the forward computation of ``DummyLayerListOutput``.
 
         Args:
-            inputs: Test fixture or input parameter `inputs` (inputs).
+            inputs: Input tensor or nested structure of tensors.
 
         Returns:
             TensorLike: Result from `call`.
@@ -1612,10 +1608,10 @@ class DummyLayerListOutput(Layer):
         return [inputs, "not_a_tensor"]
 
     def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
-        """Verify or execute `compute output shape` on `DummyLayerListOutput`.
+        """Compute the output tensor shape for ``DummyLayerListOutput``.
 
         Args:
-            input_shape: Test fixture or input parameter `input_shape` (input shape).
+            input_shape: Input tensor shape tuple passed to ``build``.
 
         Returns:
             TensorLike: Result from `compute_output_shape`.
@@ -1627,10 +1623,10 @@ class DummyLayerDictOutput(Layer):
     """Test helper class `DummyLayerDictOutput` for core layers missing branches."""
 
     def call(self, inputs: TensorLike) -> TensorLike:
-        """Verify or execute `call` on `DummyLayerDictOutput`.
+        """Execute the forward computation of ``DummyLayerDictOutput``.
 
         Args:
-            inputs: Test fixture or input parameter `inputs` (inputs).
+            inputs: Input tensor or nested structure of tensors.
 
         Returns:
             TensorLike: Result from `call`.
@@ -1638,10 +1634,10 @@ class DummyLayerDictOutput(Layer):
         return {"a": inputs, "b": "not_a_tensor"}
 
     def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
-        """Verify or execute `compute output shape` on `DummyLayerDictOutput`.
+        """Compute the output tensor shape for ``DummyLayerDictOutput``.
 
         Args:
-            input_shape: Test fixture or input parameter `input_shape` (input shape).
+            input_shape: Input tensor shape tuple passed to ``build``.
 
         Returns:
             TensorLike: Result from `compute_output_shape`.
@@ -1653,10 +1649,10 @@ class DummyLayerScalarOutput(Layer):
     """Test helper class `DummyLayerScalarOutput` for core layers missing branches."""
 
     def call(self, inputs: TensorLike) -> TensorLike:
-        """Verify or execute `call` on `DummyLayerScalarOutput`.
+        """Execute the forward computation of ``DummyLayerScalarOutput``.
 
         Args:
-            inputs: Test fixture or input parameter `inputs` (inputs).
+            inputs: Input tensor or nested structure of tensors.
 
         Returns:
             TensorLike: Result from `call`.
@@ -1664,10 +1660,10 @@ class DummyLayerScalarOutput(Layer):
         return inputs
 
     def compute_output_shape(self, input_shape: TensorLike) -> TensorLike:
-        """Verify or execute `compute output shape` on `DummyLayerScalarOutput`.
+        """Compute the output tensor shape for ``DummyLayerScalarOutput``.
 
         Args:
-            input_shape: Test fixture or input parameter `input_shape` (input shape).
+            input_shape: Input tensor shape tuple passed to ``build``.
 
         Returns:
             TensorLike: Result from `compute_output_shape`.
@@ -1676,7 +1672,7 @@ class DummyLayerScalarOutput(Layer):
 
 
 def test_functional_node_outputs_not_keras_tensor() -> None:
-    """Verify or execute `test functional node outputs not keras tensor`."""
+    """Test ``functional_node_outputs_not_keras_tensor`` behavior and edge cases in ``test_core_layers``."""
     inp = Input(shape=(10,))
 
     l1 = DummyLayerListOutput()(inp)
@@ -1763,7 +1759,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return list of two KerasTensors.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 list[KerasTensor]: Result from `call`.
@@ -1778,7 +1774,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return tuple of two KerasTensors.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 tuple[KerasTensor, KerasTensor]: Result from `call`.
@@ -1810,7 +1806,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return eager zeros tensor.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -1898,7 +1894,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return array loss.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
 
             Returns:
                 dict[str, TensorLike]: Result from `train_step`.
@@ -1910,7 +1906,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return unconvertible loss.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
 
             Returns:
                 dict[str, TensorLike]: Result from `test_step`.
@@ -1922,7 +1918,7 @@ def test_core_layers_complete_100_coverage(tmp_path: TensorLike) -> None:
             """Return unconvertible TensorLike.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
 
             Returns:
                 TensorLike: Result from `predict_step`.

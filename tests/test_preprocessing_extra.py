@@ -8,7 +8,7 @@ from zero_keras import layers, random
 
 
 def test_discretization() -> None:
-    """Verify or execute `test discretization`."""
+    """Test ``discretization`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.Discretization(bin_boundaries=[0.0, 0.5, 1.0])
     x = random.uniform((2, 5), dtype="float32")
     out = layer(x)
@@ -16,7 +16,7 @@ def test_discretization() -> None:
 
 
 def test_discretization_none() -> None:
-    """Verify or execute `test discretization none`."""
+    """Test ``discretization_none`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.Discretization()
     x = random.uniform((2, 5), dtype="float32")
     out = layer(x)
@@ -40,7 +40,7 @@ def test_max_num_bounding_boxes() -> None:
 
 
 def test_string_lookup_memoryview() -> None:
-    """Verify or execute `test string lookup memoryview`."""
+    """Test ``string_lookup_memoryview`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.StringLookup()
     layer.adapt(["a", "b", "c"])
     x = memoryview(b"a")
@@ -49,7 +49,7 @@ def test_string_lookup_memoryview() -> None:
 
 
 def test_string_lookup_2d_and_modes() -> None:
-    """Verify or execute `test string lookup 2d and modes`."""
+    """Test ``string_lookup_2d_and_modes`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer_one_hot = layers.StringLookup(vocabulary=["a", "b", "c"], output_mode="one_hot")
     x2d = [["a", "d"], ["b", "c"]]
     x1d = ["a", "d"]
@@ -60,7 +60,7 @@ def test_string_lookup_2d_and_modes() -> None:
 
 
 def test_random_flip() -> None:
-    """Verify or execute `test random flip`."""
+    """Test ``random_flip`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomFlip()
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -72,7 +72,7 @@ def test_random_flip() -> None:
 
 
 def test_random_rotation() -> None:
-    """Verify or execute `test random rotation`."""
+    """Test ``random_rotation`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomRotation(0.2)
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -84,7 +84,7 @@ def test_random_rotation() -> None:
 
 
 def test_gaussian_blur() -> None:
-    """Verify or execute `test gaussian blur`."""
+    """Test ``gaussian_blur`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomGaussianBlur(0.2, 3, 1.0)
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -96,7 +96,7 @@ def test_gaussian_blur() -> None:
 
 
 def test_random_grayscale() -> None:
-    """Verify or execute `test random grayscale`."""
+    """Test ``random_grayscale`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomGrayscale(0.2)
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -108,7 +108,7 @@ def test_random_grayscale() -> None:
 
 
 def test_random_saturation() -> None:
-    """Verify or execute `test random saturation`."""
+    """Test ``random_saturation`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomSaturation(0.2)
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:
@@ -120,7 +120,7 @@ def test_random_saturation() -> None:
 
 
 def test_random_shear() -> None:
-    """Verify or execute `test random shear`."""
+    """Test ``random_shear`` behavior and edge cases in ``test_preprocessing_extra``."""
     layer = layers.RandomShear(0.2)
     x = random.uniform((2, 5, 5, 3), dtype="float32")
     with mock.patch("zero_keras.ops.image") as mock_image:

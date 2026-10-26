@@ -12,7 +12,7 @@ def test_export_archive() -> None:
     assert archive.variables == []
 
     def dummy_fn() -> None:
-        """Verify or execute `dummy fn`."""
+        """Execute test helper ``dummy_fn`` in ``test_export_api``."""
         pass
 
     archive.track_and_add_endpoint("dummy", dummy_fn)

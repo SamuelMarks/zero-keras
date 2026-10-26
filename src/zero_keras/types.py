@@ -7,11 +7,13 @@ all modules in zero_keras without relying on ``typing.Any`` or ``object``.
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+import builtins
 from typing import Literal, Protocol, Union, runtime_checkable
 
 from ml_switcheroo_compiler.core.dtype import DType
 from ml_switcheroo_compiler.core.tensor import Tensor
 
+Scalar = Union[int, float, bool, complex, bytes]
 ScalarValue = Union[int, float, bool, str]
 DimensionValue = Union[int, None]
 ShapeTuple = tuple[DimensionValue, ...]
@@ -206,6 +208,185 @@ class DTypeCarrierProtocol(Protocol):
 
 
 @runtime_checkable
+class DataCarrierProtocol(Protocol):
+    """Structural protocol for tensor wrappers exposing a ``data`` attribute."""
+
+    @property
+    def data(self) -> TensorLike:
+        """Return the backing tensor data.
+
+        Returns:
+            TensorLike: Backing data.
+        """
+
+
+@runtime_checkable
+class ValueCarrierProtocol(Protocol):
+    """Structural protocol for variable wrappers exposing a ``value`` attribute."""
+
+    @property
+    def value(self) -> TensorLike:
+        """Return the variable value.
+
+        Returns:
+            TensorLike: Variable value.
+        """
+
+
+@runtime_checkable
+class InboundNodesCarrierProtocol(Protocol):
+    """Structural protocol for operations tracking ``_inbound_nodes``."""
+
+    _inbound_nodes: list[TensorLike]
+
+
+@runtime_checkable
+class KerasHistoryProtocol(Protocol):
+    """Structural protocol for symbolic tensors carrying ``_keras_history``."""
+
+    _keras_history: TensorLike
+
+
+@runtime_checkable
+class ComputeOutputShapeProtocol(Protocol):
+    """Structural protocol for layers/operations exposing ``compute_output_shape``."""
+
+    def compute_output_shape(self, *args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Compute the output shape for given inputs.
+
+        Args:
+            *args: Positional input shape arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Computed output shape.
+        """
+
+
+@runtime_checkable
+class LossesCarrierProtocol(Protocol):
+    """Structural protocol for layers or containers exposing a ``losses`` list."""
+
+    @property
+    def losses(self) -> list[TensorLike]:
+        """Return tracked regularization or activity losses.
+
+        Returns:
+            list[TensorLike]: List of loss tensors.
+        """
+
+
+@runtime_checkable
+class IdCarrierProtocol(Protocol):
+    """Structural protocol for tensors/variables exposing an ``id`` attribute."""
+
+    @property
+    def id(self) -> int:
+        """Return the unique identifier of the tensor/variable.
+
+        Returns:
+            int: Identifier integer.
+        """
+
+
+@runtime_checkable
+class CallMethodProtocol(Protocol):
+    """Structural protocol for objects exposing a ``call`` method."""
+
+    def call(self, *args: TensorLike, **kwargs: ConfigValue) -> TensorLike:
+        """Invoke the object's ``call`` method.
+
+        Args:
+            *args: Positional arguments.
+            **kwargs: Keyword arguments.
+
+        Returns:
+            TensorLike: Result of ``call``.
+        """
+
+
+@runtime_checkable
+class VariablesCarrierProtocol(Protocol):
+    """Structural protocol for optimizers/layers exposing a ``variables`` sequence."""
+
+    @property
+    def variables(self) -> Sequence[TensorLike]:
+        """Return tracked state variables.
+
+        Returns:
+            Sequence[TensorLike]: Sequence of variables.
+        """
+
+
+@runtime_checkable
+class BatchShapeCarrierProtocol(Protocol):
+    """Structural protocol for symbolic tensors exposing ``batch_shape``."""
+
+    @property
+    def batch_shape(self) -> ShapeTuple:
+        """Return the full batch shape tuple.
+
+        Returns:
+            ShapeTuple: Batch shape tuple.
+        """
+
+
+@runtime_checkable
+class NameCarrierProtocol(Protocol):
+    """Structural protocol for named Keras objects."""
+
+    @property
+    def name(self) -> str:
+        """Return the object's name.
+
+        Returns:
+            str: Name string.
+        """
+
+
+@runtime_checkable
+class KwargsCarrierProtocol(Protocol):
+    """Structural protocol for layers storing ``_kwargs``."""
+
+    _kwargs: dict[str, ConfigValue]
+
+
+@runtime_checkable
+class FromConfigProtocol(Protocol):
+    """Structural protocol for classes exposing ``from_config``."""
+
+    @classmethod
+    def from_config(cls, config: ConfigDict) -> TensorLike:
+        """Instantiate from a configuration dictionary.
+
+        Args:
+            config: Configuration dictionary.
+
+        Returns:
+            TensorLike: Reconstructed instance.
+        """
+
+
+@runtime_checkable
+class EagerModeConfigProtocol(Protocol):
+    """Structural protocol for backend config modules exposing ``eager_mode``."""
+
+    eager_mode: bool
+
+
+@runtime_checkable
+class OptimizerBuildProtocol(Protocol):
+    """Structural protocol for optimizers exposing ``build(var_list)``."""
+
+    def build(self, var_list: Sequence[TensorLike]) -> None:
+        """Build optimizer state for ``var_list``.
+
+        Args:
+            var_list: Sequence of variables.
+        """
+
+
+@runtime_checkable
 class BuildableLayerProtocol(Protocol):
     """Structural protocol for layers supporting ``built`` and ``build()``."""
 
@@ -273,6 +454,8 @@ class ScheduleFnProtocol(Protocol):
 PaddingSpec = Union[PaddingMode, int, Sequence[int], Sequence[tuple[int, int]]]
 DataFormatSpec = DataFormat
 
+KerasTensorProtocol = SymbolicTensorProtocol
+VariableProtocol = SupportsAssign
 
 NumericTensor = Union[Tensor, SymbolicTensorProtocol]
 
@@ -288,16 +471,28 @@ ArrayLike = Union[
     bool,
 ]
 
+TensorOrArray = ArrayLike
+
+SymbolicOrEagerTensor = Union[Tensor, KerasTensorProtocol, VariableProtocol]
+
 TensorLike = Union[
     Tensor,
+    KerasTensorProtocol,
+    VariableProtocol,
     SymbolicTensorProtocol,
-    int,
-    float,
-    bool,
-    complex,
-    bytes,
-    str,
+    SupportsShapeAndDType,
+    SupportsNumpy,
+    Scalar,
     Sequence["TensorLike"],
+]
+
+TensorIndex = Union[
+    int,
+    slice,
+    "builtins.ellipsis",
+    None,
+    TensorLike,
+    tuple[Union[int, slice, "builtins.ellipsis", None, TensorLike], ...],
 ]
 
 NestedTensor = Union[
@@ -320,6 +515,7 @@ ConfigValue = Union[
 ]
 
 ConfigDict = dict[str, ConfigValue]
+LayerConfigDict = dict[str, ConfigValue]
 
 
 @runtime_checkable
@@ -571,7 +767,7 @@ class LossProtocol(Protocol):
         """
 
 
-LossSpec = Union[str, LossProtocol, Callable[[TensorLike, TensorLike], Tensor], None]
+LossSpec = Union[str, LossProtocol, Callable[[TensorLike, TensorLike], TensorLike], None]
 
 
 @runtime_checkable
@@ -623,6 +819,10 @@ class OptimizerProtocol(Protocol):
 
 
 OptimizerSpec = Union[str, OptimizerProtocol, None]
+LearningRateSpec = Union[float, TensorLike, LearningRateScheduleProtocol]
+CustomObjectsDict = dict[
+    str, Union[type[SupportsGetConfig], Callable[..., Union[SupportsGetConfig, TensorLike]]]
+]
 
 
 @runtime_checkable
@@ -669,33 +869,50 @@ __all__ = [
     "ActivationSpec",
     "ArrayLike",
     "AxisSpec",
+    "BatchShapeCarrierProtocol",
     "BuildableLayerProtocol",
+    "CallMethodProtocol",
     "CallbackProtocol",
+    "ComputeOutputShapeProtocol",
     "ConfigDict",
     "ConfigSerializableProtocol",
     "ConfigValue",
     "ConstraintProtocol",
     "ConstraintSpec",
+    "CustomObjectsDict",
     "DTypeCarrierProtocol",
     "DTypeLike",
     "DTypePolicyProtocol",
+    "DataCarrierProtocol",
     "DataFormat",
     "DataFormatSpec",
     "DimensionValue",
+    "EagerModeConfigProtocol",
     "EndpointCallableProtocol",
     "EpochLogCallbackProtocol",
+    "FromConfigProtocol",
+    "IdCarrierProtocol",
+    "InboundNodesCarrierProtocol",
     "InitializerProtocol",
     "InitializerSpec",
+    "KerasHistoryProtocol",
     "KerasSerializable",
+    "KerasTensorProtocol",
+    "KwargsCarrierProtocol",
+    "LayerConfigDict",
     "LayerProtocol",
     "LearningRateScheduleProtocol",
+    "LearningRateSpec",
     "LossProtocol",
     "LossSpec",
+    "LossesCarrierProtocol",
     "MaskComputeProtocol",
     "MetricProtocol",
     "MetricSpec",
+    "NameCarrierProtocol",
     "NestedTensor",
     "NumericTensor",
+    "OptimizerBuildProtocol",
     "OptimizerProtocol",
     "OptimizerSpec",
     "PaddingMode",
@@ -703,6 +920,7 @@ __all__ = [
     "RNNCellProtocol",
     "RegularizerProtocol",
     "RegularizerSpec",
+    "Scalar",
     "ScalarValue",
     "ScheduleFnProtocol",
     "SeedGeneratorProtocol",
@@ -720,6 +938,12 @@ __all__ = [
     "SupportsToBytes",
     "SupportsToNumpy",
     "SupportsUnderlyingTensor",
+    "SymbolicOrEagerTensor",
     "SymbolicTensorProtocol",
+    "TensorIndex",
     "TensorLike",
+    "TensorOrArray",
+    "ValueCarrierProtocol",
+    "VariableProtocol",
+    "VariablesCarrierProtocol",
 ]

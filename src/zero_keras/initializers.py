@@ -65,6 +65,13 @@ __all__ = [
 
 
 @runtime_checkable
+class _HasNodeIdProtocol(Protocol):
+    """Protocol for symbolic IR nodes exposing an ``id`` attribute."""
+
+    id: str
+
+
+@runtime_checkable
 class _HasSymbolicDataProtocol(Protocol):
     """Protocol for tensors carrying a ``data`` attribute."""
 
@@ -105,7 +112,7 @@ def _wrap(x: TensorLike) -> TensorLike:
     from zero_keras.core_layers import KerasTensor
 
     if isinstance(x, _HasSymbolicDataProtocol):
-        if hasattr(x.data, "id"):
+        if isinstance(x.data, _HasNodeIdProtocol):
             return KerasTensor(x.shape, x.dtype, data=x)
         return x.data
     return x

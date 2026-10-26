@@ -76,11 +76,11 @@ class AugMix(_ImageAugmentationLayer):
 
         Args:
             value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
-            num_chains: Configuration or input value for `num_chains` (num chains).
-            chain_depth: Configuration or input value for `chain_depth` (chain depth).
+            num_chains: Number of parallel augmentation chains mixed per sample.
+            chain_depth: Number of sequential augmentation operations per chain.
             factor: Magnitude or range factor controlling transformation intensity.
-            alpha: Configuration or input value for `alpha` (alpha).
-            all_ops: Configuration or input value for `all_ops` (all ops).
+            alpha: Concentration parameter of the Beta/Dirichlet mixing distributions.
+            all_ops: Whether to include brightness, color, contrast, and sharpness operations.
             interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
             seed: Optional integer random seed or SeedGenerator instance.
             data_format: Optional image data format.
@@ -256,7 +256,7 @@ class CategoryEncoding(Layer):
         """Initialize the `CategoryEncoding` instance.
 
         Args:
-            num_tokens: Configuration or input value for `num_tokens` (num tokens).
+            num_tokens: Total number of distinct categorical tokens supported.
             output_mode: Encoding format for layer outputs (e.g., `int`, `one_hot`, `multi_hot`, `tf_idf`).
             sparse: Whether to return a sparse tensor representation.
             **kwargs: Additional keyword configuration arguments.
@@ -455,18 +455,60 @@ class CutMix(_ImageAugmentationLayer):
         """Execute the forward computation of `CutMix` on `inputs`.
 
         Args:
-            inputs: Input tensor or nested structure of tensors.
+            inputs: Input image tensor, `(images, labels)` tuple, or `{"images": ..., "labels": ...}` dict.
             training: Whether the layer should behave in training mode or inference mode.
             **kwargs: Additional keyword configuration arguments.
 
         Returns:
-            TensorLike: Computed result for `call`.
+            TensorLike: Mixed images or `(mixed_images, mixed_labels)` pair/dict.
         """
+        _ = kwargs
+        from ml_switcheroo_compiler.ops.vision import mixing
+
+        if isinstance(inputs, dict) and "images" in inputs:
+            images = _to_tensor(inputs["images"])
+            labels = _to_tensor(inputs.get("labels", images))
+            if not training:
+                out_dict = dict(inputs)
+                out_dict["images"] = _wrap(images)
+                if "labels" in inputs:
+                    out_dict["labels"] = _wrap(labels)
+                return out_dict
+            mixed_img = _wrap(
+                mixing.cutmix(images, images[::-1], alpha=self.factor, seed=self.seed)
+            )
+            out_dict = dict(inputs)
+            out_dict["images"] = mixed_img
+            if "labels" in inputs:
+                lam = (
+                    float(self.factor[0] if isinstance(self.factor, (tuple, list)) else self.factor)
+                    * 0.5
+                )
+                out_dict["labels"] = _wrap(
+                    ops.add(ops.multiply(labels, 1.0 - lam), ops.multiply(labels[::-1], lam))
+                )
+            return out_dict
+
+        if isinstance(inputs, tuple) and len(inputs) == 2:
+            images = _to_tensor(inputs[0])
+            labels = _to_tensor(inputs[1])
+            if not training:
+                return (_wrap(images), _wrap(labels))
+            mixed_img = _wrap(
+                mixing.cutmix(images, images[::-1], alpha=self.factor, seed=self.seed)
+            )
+            lam = (
+                float(self.factor[0] if isinstance(self.factor, (tuple, list)) else self.factor)
+                * 0.5
+            )
+            mixed_lbl = _wrap(
+                ops.add(ops.multiply(labels, 1.0 - lam), ops.multiply(labels[::-1], lam))
+            )
+            return (mixed_img, mixed_lbl)
+
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-
-        from ml_switcheroo_compiler.ops.vision import mixing
 
         out = mixing.cutmix(inputs, inputs[::-1], alpha=self.factor, seed=self.seed)
         return _wrap(out)
@@ -735,7 +777,7 @@ class MaxNumBoundingBoxes(_ImageAugmentationLayer):
         max_number: int = 10,
         fill_value: float = -1,
         *,
-        padding_value: float = -1.0,
+        padding_value: float | None = None,
         **kwargs: TensorLike,
     ) -> None:
         """Initialize the MaxNumBoundingBoxes layer.
@@ -743,13 +785,14 @@ class MaxNumBoundingBoxes(_ImageAugmentationLayer):
         Args:
             max_number: Target maximum number of bounding boxes along the box axis.
             fill_value: Fill value used when padding bounding boxes.
-            padding_value: Fill value used when padding fewer boxes up to ``max_number``.
+            padding_value: Optional alias for ``fill_value`` used when padding boxes.
             **kwargs: Base layer keyword arguments.
         """
-        _ = fill_value
         super().__init__(**kwargs)
         self.max_number = int(max_number)
-        self.padding_value = float(padding_value)
+        resolved_fill = float(padding_value if padding_value is not None else fill_value)
+        self.fill_value = resolved_fill
+        self.padding_value = resolved_fill
 
     def call(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
         """Pad or truncate bounding boxes along axis ``-2`` to ``self.max_number``.
@@ -873,19 +916,19 @@ class MelSpectrogram(Layer):
         """Initialize the `MelSpectrogram` instance.
 
         Args:
-            fft_length: Configuration or input value for `fft_length` (fft length).
-            sequence_stride: Configuration or input value for `sequence_stride` (sequence stride).
-            sequence_length: Configuration or input value for `sequence_length` (sequence length).
-            window: Configuration or input value for `window` (window).
-            sampling_rate: Configuration or input value for `sampling_rate` (sampling rate).
-            num_mel_bins: Configuration or input value for `num_mel_bins` (num mel bins).
-            min_freq: Configuration or input value for `min_freq` (min freq).
-            max_freq: Configuration or input value for `max_freq` (max freq).
-            power_to_db: Configuration or input value for `power_to_db` (power to db).
-            top_db: Configuration or input value for `top_db` (top db).
-            mag_exp: Configuration or input value for `mag_exp` (mag exp).
-            min_power: Configuration or input value for `min_power` (min power).
-            ref_power: Configuration or input value for `ref_power` (ref power).
+            fft_length: Size of the Fast Fourier Transform window in samples.
+            sequence_stride: Hop length in samples between successive STFT frames.
+            sequence_length: Length of each STFT analysis window in samples.
+            window: Windowing function name (`"hann"`, `"hamming"`) or window tensor.
+            sampling_rate: Audio sampling rate in Hz.
+            num_mel_bins: Number of Mel-frequency filterbank bins to compute.
+            min_freq: Minimum frequency in Hz for the Mel filterbank.
+            max_freq: Maximum frequency in Hz for the Mel filterbank.
+            power_to_db: Whether to convert the Mel power spectrogram to decibels.
+            top_db: Maximum dynamic range threshold in decibels when `power_to_db=True`.
+            mag_exp: Exponent applied to STFT magnitudes (`2.0` for power, `1.0` for magnitude).
+            min_power: Minimum power floor for numerical stability in log scaling.
+            ref_power: Reference power level used for decibel conversion.
             **kwargs: Additional keyword configuration arguments.
         """
         super().__init__(**kwargs)
@@ -1005,7 +1048,7 @@ class MixUp(_ImageAugmentationLayer):
         """Initialize the `MixUp` instance.
 
         Args:
-            alpha: Configuration or input value for `alpha` (alpha).
+            alpha: Concentration parameter of the Beta distribution used to sample mixing weights.
             data_format: Optional image data format.
             seed: Optional integer random seed or SeedGenerator instance.
             **kwargs: Additional keyword configuration arguments.
@@ -1019,18 +1062,50 @@ class MixUp(_ImageAugmentationLayer):
         """Execute the forward computation of `MixUp` on `inputs`.
 
         Args:
-            inputs: Input tensor or nested structure of tensors.
+            inputs: Input image tensor, `(images, labels)` tuple, or `{"images": ..., "labels": ...}` dict.
             training: Whether the layer should behave in training mode or inference mode.
             **kwargs: Additional keyword configuration arguments.
 
         Returns:
-            TensorLike: Computed result for `call`.
+            TensorLike: Mixed images or `(mixed_images, mixed_labels)` pair/dict.
         """
+        _ = kwargs
+        from ml_switcheroo_compiler.ops.vision import mixing
+
+        if isinstance(inputs, dict) and "images" in inputs:
+            images = _to_tensor(inputs["images"])
+            labels = _to_tensor(inputs.get("labels", images))
+            if not training:
+                out_dict = dict(inputs)
+                out_dict["images"] = _wrap(images)
+                if "labels" in inputs:
+                    out_dict["labels"] = _wrap(labels)
+                return out_dict
+            mixed_img = _wrap(mixing.mixup(images, images[::-1], alpha=self.alpha, seed=self.seed))
+            out_dict = dict(inputs)
+            out_dict["images"] = mixed_img
+            if "labels" in inputs:
+                lam = float(self.alpha[0] if isinstance(self.alpha, (tuple, list)) else self.alpha)
+                out_dict["labels"] = _wrap(
+                    ops.add(ops.multiply(labels, 1.0 - lam), ops.multiply(labels[::-1], lam))
+                )
+            return out_dict
+
+        if isinstance(inputs, tuple) and len(inputs) == 2:
+            images = _to_tensor(inputs[0])
+            labels = _to_tensor(inputs[1])
+            if not training:
+                return (_wrap(images), _wrap(labels))
+            mixed_img = _wrap(mixing.mixup(images, images[::-1], alpha=self.alpha, seed=self.seed))
+            lam = float(self.alpha[0] if isinstance(self.alpha, (tuple, list)) else self.alpha)
+            mixed_lbl = _wrap(
+                ops.add(ops.multiply(labels, 1.0 - lam), ops.multiply(labels[::-1], lam))
+            )
+            return (mixed_img, mixed_lbl)
+
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-
-        from ml_switcheroo_compiler.ops.vision import mixing
 
         out = mixing.mixup(inputs, inputs[::-1], alpha=self.alpha, seed=self.seed)
         return _wrap(out)
@@ -1078,7 +1153,7 @@ class RandomFlip(_ImageAugmentationLayer):
         """Initialize the `RandomFlip` instance.
 
         Args:
-            mode: Configuration or input value for `mode` (mode).
+            mode: Flip direction mode (`"horizontal"`, `"vertical"`, or `"horizontal_and_vertical"`).
             seed: Optional integer random seed or SeedGenerator instance.
             data_format: Optional image data format.
             **kwargs: Additional keyword configuration arguments.
@@ -1272,7 +1347,7 @@ class RandAugment(_ImageAugmentationLayer):
 
         Args:
             value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
-            num_ops: Configuration or input value for `num_ops` (num ops).
+            num_ops: Number of sequential augmentation operations applied per sample.
             factor: Magnitude or range factor controlling transformation intensity.
             interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
             seed: Optional integer random seed or SeedGenerator instance.
@@ -1547,8 +1622,8 @@ class Resizing(_ImageAugmentationLayer):
             height: Target spatial height in pixels.
             width: Target spatial width in pixels.
             interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
-            crop_to_aspect_ratio: Configuration or input value for `crop_to_aspect_ratio` (crop to aspect ratio).
-            pad_to_aspect_ratio: Configuration or input value for `pad_to_aspect_ratio` (pad to aspect ratio).
+            crop_to_aspect_ratio: Whether to center-crop inputs to match target aspect ratio before resizing.
+            pad_to_aspect_ratio: Whether to pad inputs to match target aspect ratio before resizing.
             fill_mode: Strategy for filling points outside input boundaries.
             fill_value: Constant value used when `fill_mode` is `constant`.
             antialias: Whether to use an anti-aliasing filter when downsampling.
@@ -1729,15 +1804,15 @@ class STFTSpectrogram(Layer):
         """Initialize the `STFTSpectrogram` instance.
 
         Args:
-            mode: Configuration or input value for `mode` (mode).
-            frame_length: Configuration or input value for `frame_length` (frame length).
-            frame_step: Configuration or input value for `frame_step` (frame step).
-            fft_length: Configuration or input value for `fft_length` (fft length).
-            window: Configuration or input value for `window` (window).
-            periodic: Configuration or input value for `periodic` (periodic).
-            scaling: Configuration or input value for `scaling` (scaling).
-            padding: Configuration or input value for `padding` (padding).
-            expand_dims: Configuration or input value for `expand_dims` (expand dims).
+            mode: Spectrogram output representation (`"log"`, `"magnitude"`, `"psd"`, `"real"`, `"imag"`, `"angle"`, `"stft"`).
+            frame_length: Length of each STFT analysis window in samples.
+            frame_step: Hop length in samples between successive STFT frames.
+            fft_length: Size of the Fast Fourier Transform window in samples.
+            window: Windowing function name (`"hann"`, `"hamming"`) or custom window array.
+            periodic: Whether the window function is treated as periodic rather than symmetric.
+            scaling: Window normalization mode (`"density"`, `"spectrum"`, or `None`).
+            padding: Frame boundary padding mode (`"valid"` or `"same"`).
+            expand_dims: Whether to expand the output spectrogram for 2D vision model compatibility.
             data_format: Channel dimension ordering (`channels_last` or `channels_first`).
             **kwargs: Additional keyword configuration arguments.
         """
@@ -1936,10 +2011,10 @@ class RandomColorJitter(_ImageAugmentationLayer):
 
         Args:
             value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
-            brightness_factor: Configuration or input value for `brightness_factor` (brightness factor).
-            contrast_factor: Configuration or input value for `contrast_factor` (contrast factor).
-            saturation_factor: Configuration or input value for `saturation_factor` (saturation factor).
-            hue_factor: Configuration or input value for `hue_factor` (hue factor).
+            brightness_factor: Brightness adjustment factor or `(min, max)` range.
+            contrast_factor: Contrast adjustment factor or `(min, max)` range.
+            saturation_factor: Saturation adjustment factor or `(min, max)` range.
+            hue_factor: Hue rotation factor or `(min, max)` range.
             seed: Optional integer random seed or SeedGenerator instance.
             data_format: Optional image data format.
             **kwargs: Additional keyword configuration arguments.
@@ -2322,8 +2397,8 @@ class RandomGaussianBlur(_ImageAugmentationLayer):
 
         Args:
             factor: Magnitude or range factor controlling transformation intensity.
-            kernel_size: Configuration or input value for `kernel_size` (kernel size).
-            sigma: Configuration or input value for `sigma` (sigma).
+            kernel_size: Odd integer spatial size of the Gaussian blur kernel.
+            sigma: Standard deviation or `(min, max)` range of the Gaussian blur kernel.
             value_range: Tuple `(min_val, max_val)` of input pixel intensity values.
             data_format: Optional image data format.
             seed: Optional integer random seed or SeedGenerator instance.
@@ -2958,8 +3033,8 @@ class RandomShear(_ImageAugmentationLayer):
         """Initialize the `RandomShear` instance.
 
         Args:
-            x_factor: Configuration or input value for `x_factor` (x factor).
-            y_factor: Configuration or input value for `y_factor` (y factor).
+            x_factor: Horizontal shear factor or `(min, max)` range along the x-axis.
+            y_factor: Vertical shear factor or `(min, max)` range along the y-axis.
             interpolation: Spatial interpolation method name (e.g., `bilinear`, `nearest`).
             fill_mode: Strategy for filling points outside input boundaries.
             fill_value: Constant value used when `fill_mode` is `constant`.
@@ -3132,8 +3207,8 @@ class Hashing(Layer):
 
         Args:
             num_bins: Number of discretization or hashing bins.
-            mask_value: Configuration or input value for `mask_value` (mask value).
-            salt: Configuration or input value for `salt` (salt).
+            mask_value: Optional input value mapped to bin index 0 as a mask token.
+            salt: Optional integer or two-integer tuple for SipHash salted hashing.
             output_mode: Output encoding mode (``"int"``, ``"one_hot"``, ``"multi_hot"``, ``"count"``).
             sparse: Whether to return a sparse tensor.
             **kwargs: Additional keyword configuration arguments.
@@ -3276,7 +3351,7 @@ class StringLookup(Layer):
         from zero_keras.core_layers import KerasTensor
 
         if isinstance(inputs, KerasTensor):
-            output_mode = self.output_mode if hasattr(self, "output_mode") else "int"
+            output_mode = self.output_mode
             if output_mode in (
                 "multi_hot",
                 "one_hot",
@@ -3301,7 +3376,7 @@ class StringLookup(Layer):
                 mask = ops.equal(inputs, _to_tensor(vocab_val))
                 res = ops.where(mask, ops.cast(_to_tensor(i), "int32"), res)
 
-            output_mode = self.output_mode if hasattr(self, "output_mode") else "int"
+            output_mode = self.output_mode
             if output_mode == "one_hot":
                 from zero_keras.ops import one_hot
 
@@ -3412,17 +3487,17 @@ class TextVectorization(Layer):
 
         Args:
             max_tokens: Maximum size of the vocabulary for this layer.
-            standardize: Configuration or input value for `standardize` (standardize).
-            split: Configuration or input value for `split` (split).
-            ngrams: Configuration or input value for `ngrams` (ngrams).
+            standardize: Text standardization mode (`"lower_and_strip_punctuation"`, `"lower"`, `"strip_punctuation"`, or callable).
+            split: Tokenization split strategy (`"whitespace"`, `"character"`, or callable).
+            ngrams: Optional n-gram size or tuple of sizes to construct after splitting.
             output_mode: Encoding format for layer outputs (e.g., `int`, `one_hot`, `multi_hot`, `tf_idf`).
-            output_sequence_length: Configuration or input value for `output_sequence_length` (output sequence length).
+            output_sequence_length: Optional fixed output sequence length when `output_mode="int"`.
             pad_to_max_tokens: Whether multi-hot or TF-IDF outputs are padded to `max_tokens`.
             vocabulary: Optional explicit vocabulary sequence or file path.
             idf_weights: Inverse document frequency weights associated with vocabulary terms.
             sparse: Whether to return a sparse tensor representation.
-            ragged: Configuration or input value for `ragged` (ragged).
-            encoding: Configuration or input value for `encoding` (encoding).
+            ragged: Whether to return ragged sequence outputs when `output_mode="int"`.
+            encoding: Text character encoding string (default `"utf-8"`).
             name: Optional layer name.
             **kwargs: Additional keyword configuration arguments.
         """
@@ -3455,10 +3530,10 @@ class TextVectorization(Layer):
         flat_data = []
 
         def flatten(item: TensorLike) -> None:
-            """Compute or retrieve `flatten` for `flatten`.
+            """Recursively split and flatten nested text items into words in ``flat_data``.
 
             Args:
-                item: Configuration or input value for `item` (item).
+                item: Text string or nested sequence of text strings.
             """
             if isinstance(item, (list, tuple)):
                 for i in item:
@@ -3613,7 +3688,23 @@ class RandomTranslation(_ImageAugmentationLayer):
         inputs = _to_tensor(inputs)
         if not training:
             return _wrap(inputs)
-        return _wrap(ops.add(inputs, _to_tensor(0.0)))
+        import random as py_random
+
+        rng = py_random.Random(self.seed if isinstance(self.seed, int) else 42)
+        hf = (
+            rng.uniform(float(self.height_factor[0]), float(self.height_factor[1]))
+            if isinstance(self.height_factor, (tuple, list))
+            else rng.uniform(-float(self.height_factor), float(self.height_factor))
+        )
+        wf = (
+            rng.uniform(float(self.width_factor[0]), float(self.width_factor[1]))
+            if isinstance(self.width_factor, (tuple, list))
+            else rng.uniform(-float(self.width_factor), float(self.width_factor))
+        )
+        shift = int(round(hf * float(inputs.shape[-3] or 1)))
+        w_shift = int(round(wf * float(inputs.shape[-2] or 1)))
+        out = ops.roll(inputs, shift=(shift, w_shift), axis=(-3, -2))
+        return _wrap(out)
 
 
 class RandomZoom(_ImageAugmentationLayer):
@@ -3677,9 +3768,11 @@ class RandomZoom(_ImageAugmentationLayer):
         """
         _ = kwargs
         inputs = _to_tensor(inputs)
-        if not training:
+        if not training or len(inputs.shape) < 3:
             return _wrap(inputs)
-        return _wrap(ops.add(inputs, _to_tensor(0.0)))
+        h = int(inputs.shape[-3] or 1)
+        w = int(inputs.shape[-2] or 1)
+        return Resizing(h, w, interpolation=self.interpolation)(inputs)
 
 
 class HashedCrossing(Layer):
@@ -4015,8 +4108,22 @@ class RandomHeight(Layer):
         Returns:
             TensorLike: Height-adjusted image tensor.
         """
-        _ = training
-        return _wrap(_to_tensor(inputs))
+        t = _to_tensor(inputs)
+        if not training or len(t.shape) < 3:
+            return _wrap(t)
+        import random as py_random
+
+        rng = py_random.Random(self.seed if isinstance(self.seed, int) else 42)
+        if isinstance(self.factor, (tuple, list)):
+            low, high = float(self.factor[0]), float(self.factor[1])
+        else:
+            f = float(self.factor)
+            low, high = -f, f
+        scale = 1.0 + rng.uniform(low, high)
+        h = int(t.shape[-3] or 1)
+        w = int(t.shape[-2] or 1)
+        new_h = max(1, int(round(h * scale)))
+        return Resizing(new_h, w, interpolation=self.interpolation)(t)
 
 
 class RandomWidth(Layer):
@@ -4055,5 +4162,19 @@ class RandomWidth(Layer):
         Returns:
             TensorLike: Width-adjusted image tensor.
         """
-        _ = training
-        return _wrap(_to_tensor(inputs))
+        t = _to_tensor(inputs)
+        if not training or len(t.shape) < 3:
+            return _wrap(t)
+        import random as py_random
+
+        rng = py_random.Random(self.seed if isinstance(self.seed, int) else 42)
+        if isinstance(self.factor, (tuple, list)):
+            low, high = float(self.factor[0]), float(self.factor[1])
+        else:
+            f = float(self.factor)
+            low, high = -f, f
+        scale = 1.0 + rng.uniform(low, high)
+        h = int(t.shape[-3] or 1)
+        w = int(t.shape[-2] or 1)
+        new_w = max(1, int(round(w * scale)))
+        return Resizing(h, new_w, interpolation=self.interpolation)(t)

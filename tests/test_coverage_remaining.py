@@ -13,13 +13,13 @@ from zero_keras.types import TensorLike
 
 
 def test_initializers_deserialize_invalid() -> None:
-    """Verify or execute `test initializers deserialize invalid`."""
+    """Test ``initializers_deserialize_invalid`` behavior and edge cases in ``test_coverage_remaining``."""
     res = deserialize_initializer({"class_name": "InvalidClassThatDoesNotExist"})
     assert res == {"class_name": "InvalidClassThatDoesNotExist"}
 
 
 def test_layers_conv_transpose_channels_first_no_bias() -> None:
-    """Verify or execute `test layers conv transpose channels first no bias`."""
+    """Test ``layers_conv_transpose_channels_first_no_bias`` behavior and edge cases in ``test_coverage_remaining``."""
     c1 = Conv1DTranspose(2, 2, data_format="channels_first", use_bias=False)
     c1.build((None, 3, 10))
     c1(ops.ones((1, 3, 10)))
@@ -34,13 +34,13 @@ def test_layers_conv_transpose_channels_first_no_bias() -> None:
 
 
 def test_layers_inputlayer_batch_shape_not_none() -> None:
-    """Verify or execute `test layers inputlayer batch shape not none`."""
+    """Test ``layers_inputlayer_batch_shape_not_none`` behavior and edge cases in ``test_coverage_remaining``."""
     layer = LayersInput(shape=(10,), batch_shape=(32, 10))
     assert layer.batch_shape == (32, 10)
 
 
 def test_layers_deserialize_invalid() -> None:
-    """Verify or execute `test layers deserialize invalid`."""
+    """Test ``layers_deserialize_invalid`` behavior and edge cases in ``test_coverage_remaining``."""
     from zero_keras.layers import deserialize
 
     res = deserialize({"class_name": "InvalidLayerClassThatDoesNotExist"})
@@ -48,13 +48,13 @@ def test_layers_deserialize_invalid() -> None:
 
 
 def test_models_clone_model_custom_function() -> None:
-    """Verify or execute `test models clone model custom function`."""
+    """Test ``models_clone_model_custom_function`` behavior and edge cases in ``test_coverage_remaining``."""
     model = Sequential()
     clone_model(model, clone_function=lambda x: x)
 
 
 def test_models_from_json_edges() -> None:
-    """Verify or execute `test models from json edges`."""
+    """Test ``models_from_json_edges`` behavior and edge cases in ``test_coverage_remaining``."""
     json_str = """{
         "class_name": "Functional",
         "config": {
@@ -85,27 +85,27 @@ class DummyOptWithoutMethods:
 
 
 def test_optimizers_lossscale_no_inner_methods() -> None:
-    """Verify or execute `test optimizers lossscale no inner methods`."""
+    """Test ``optimizers_lossscale_no_inner_methods`` behavior and edge cases in ``test_coverage_remaining``."""
     opt = LossScaleOptimizer(DummyOptWithoutMethods())
     opt.build([])
     opt.apply_gradients([])
 
 
 def test_regularizers_deserialize_invalid() -> None:
-    """Verify or execute `test regularizers deserialize invalid`."""
+    """Test ``regularizers_deserialize_invalid`` behavior and edge cases in ``test_coverage_remaining``."""
     res = deserialize_regularizer({"class_name": "InvalidRegularizerClassXYZ"})
     assert res == {"class_name": "InvalidRegularizerClassXYZ"}
 
 
 def test_initializers_deserialize_custom() -> None:
-    """Verify or execute `test initializers deserialize custom`."""
+    """Test ``initializers_deserialize_custom`` behavior and edge cases in ``test_coverage_remaining``."""
     from zero_keras.initializers import deserialize
 
     class MockInit:
         """Test helper class `MockInit` for coverage remaining."""
 
         def __init__(self, **kwargs: TensorLike) -> None:
-            """Verify or execute `init` on `MockInit`.
+            """Initialize the ``MockInit`` test helper instance.
 
             Args:
                 **kwargs: Keyword arguments forwarded to helper.
@@ -120,14 +120,14 @@ def test_initializers_deserialize_custom() -> None:
 
 
 def test_layers_deserialize_custom() -> None:
-    """Verify or execute `test layers deserialize custom`."""
+    """Test ``layers_deserialize_custom`` behavior and edge cases in ``test_coverage_remaining``."""
     from zero_keras.layers import deserialize
 
     class MockLayer:
         """Test helper class `MockLayer` for coverage remaining."""
 
         def __init__(self, **kwargs: TensorLike) -> None:
-            """Verify or execute `init` on `MockLayer`.
+            """Initialize the ``MockLayer`` test helper instance.
 
             Args:
                 **kwargs: Keyword arguments forwarded to helper.

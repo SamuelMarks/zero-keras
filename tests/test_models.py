@@ -14,7 +14,7 @@ class DummyLayer(Layer):
     """Test helper class `DummyLayer` for models."""
 
     def get_config(self) -> TensorLike:
-        """Verify or execute `get config` on `DummyLayer`.
+        """Return the serializable configuration dictionary for ``DummyLayer``.
 
         Returns:
             TensorLike: Result from `get_config`.
@@ -23,10 +23,10 @@ class DummyLayer(Layer):
 
     @classmethod
     def from_config(cls, config: TensorLike) -> TensorLike:
-        """Verify or execute `from config` on `DummyLayer`.
+        """Reconstruct a ``DummyLayer`` instance from its configuration dictionary.
 
         Args:
-            config: Test fixture or input parameter `config` (config).
+            config: Serialized configuration dictionary.
 
         Returns:
             TensorLike: Result from `from_config`.
@@ -36,7 +36,7 @@ class DummyLayer(Layer):
 
 
 def test_clone_model() -> None:
-    """Verify or execute `test clone model`."""
+    """Test ``clone_model`` behavior and edge cases in ``test_models``."""
     seq = models.Sequential()
     seq.add(DummyLayer())
 
@@ -52,10 +52,10 @@ def test_clone_model() -> None:
 
 
 def test_save_model(tmp_path: TensorLike) -> None:
-    """Verify or execute `test save model`.
+    """Test ``save_model`` behavior and edge cases in ``test_models``.
 
     Args:
-        tmp_path: Test fixture or input parameter `tmp_path` (tmp path).
+        tmp_path: Pytest temporary directory ``Path`` fixture.
     """
     seq = models.Sequential()
     seq.add(DummyLayer())
@@ -71,7 +71,7 @@ def test_save_model(tmp_path: TensorLike) -> None:
 
 
 def test_model_from_json() -> None:
-    """Verify or execute `test model from json`."""
+    """Test ``model_from_json`` behavior and edge cases in ``test_models``."""
     seq_config = {
         "class_name": "Sequential",
         "config": {
@@ -89,13 +89,13 @@ def test_model_from_json() -> None:
 
 
 def test_optimizers_deserialize_fallback() -> None:
-    """Verify or execute `test optimizers deserialize fallback`."""
+    """Test ``optimizers_deserialize_fallback`` behavior and edge cases in ``test_models``."""
     assert optimizers.deserialize(123) == 123
     assert optimizers.deserialize({"class_name": "UnknownOpt"}) == {"class_name": "UnknownOpt"}
 
 
 def test_models_clone_function_fallback() -> None:
-    """Verify or execute `test models clone function fallback`."""
+    """Test ``models_clone_function_fallback`` behavior and edge cases in ``test_models``."""
 
     class MockLayer:
         """Test helper class `MockLayer` for missing coverage 1."""
@@ -107,7 +107,7 @@ def test_models_clone_function_fallback() -> None:
 
 
 def test_models_save_model_fallback() -> None:
-    """Verify or execute `test models save model fallback`."""
+    """Test ``models_save_model_fallback`` behavior and edge cases in ``test_models``."""
 
     class MockModel:
         """Test helper class `MockModel` for missing coverage 1."""
@@ -118,7 +118,7 @@ def test_models_save_model_fallback() -> None:
 
 
 def test_models_model_from_json_builtins() -> None:
-    """Verify or execute `test models model from json builtins`."""
+    """Test ``models_model_from_json_builtins`` behavior and edge cases in ``test_models``."""
     config = {
         "class_name": "Functional",
         "config": {
@@ -141,7 +141,7 @@ def test_models_model_from_json_builtins() -> None:
 
 
 def test_models_model_from_json_multiple_connections() -> None:
-    """Verify or execute `test models model from json multiple connections`."""
+    """Test ``models_model_from_json_multiple_connections`` behavior and edge cases in ``test_models``."""
     config = {
         "class_name": "Functional",
         "config": {
@@ -177,24 +177,24 @@ def test_models_model_from_json_multiple_connections() -> None:
 
 
 def test_models_model_from_json_fallback() -> None:
-    """Verify or execute `test models model from json fallback`."""
+    """Test ``models_model_from_json_fallback`` behavior and edge cases in ``test_models``."""
     json_str = '{"class_name": "UnknownModel", "config": {}}'
     m = models.model_from_json(json_str)
     assert type(m).__name__ == "Model"
 
 
 def test_model_list_outputs() -> None:
-    """Verify or execute `test model list outputs`."""
+    """Test ``model_list_outputs`` behavior and edge cases in ``test_models``."""
     inp = core_layers.Input(shape=(2,))
 
     class ListOutputLayer(core_layers.Layer):
         """Test helper class `ListOutputLayer` for missing coverage 5."""
 
         def call(self, x: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `ListOutputLayer`.
+            """Execute the forward computation of ``ListOutputLayer``.
 
             Args:
-                x: Test fixture or input parameter `x` (x).
+                x: Input tensor or feature array.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -209,17 +209,17 @@ def test_model_list_outputs() -> None:
 
 
 def test_model_dict_outputs() -> None:
-    """Verify or execute `test model dict outputs`."""
+    """Test ``model_dict_outputs`` behavior and edge cases in ``test_models``."""
     inp = core_layers.Input(shape=(2,))
 
     class DictOutputLayer(core_layers.Layer):
         """Test helper class `DictOutputLayer` for missing coverage 5."""
 
         def call(self, x: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `DictOutputLayer`.
+            """Execute the forward computation of ``DictOutputLayer``.
 
             Args:
-                x: Test fixture or input parameter `x` (x).
+                x: Input tensor or feature array.
 
             Returns:
                 TensorLike: Result from `call`.

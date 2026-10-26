@@ -521,7 +521,10 @@ def test_lint_typing_script(tmp_path: Path) -> None:
                     "def f(x: int) -> int:",
                     '    """Doc.\n\n    Args:\n        x: X.\n    """',
                     "    _ = x.__dict__",
+                    "    _ = x.__class__",
                     "    _ = globals()",
+                    "    _ = vars(x)",
+                    "    _ = hasattr(x, 'a')",
                     "    return x",
                 ]
             ),
@@ -529,7 +532,10 @@ def test_lint_typing_script(tmp_path: Path) -> None:
         )
         v_src = lint_typing.check_file_typing(src_sim, strict_no_getattr=True)
         assert any("__dict__" in item for item in v_src)
+        assert any("__class__" in item for item in v_src)
         assert any("globals()" in item for item in v_src)
+        assert any("vars()" in item for item in v_src)
+        assert any("hasattr()" in item for item in v_src)
     finally:
         if src_sim.exists():
             src_sim.unlink()
@@ -634,8 +640,9 @@ def test_v005_todo_plan_additions() -> None:
         seq.pop()
     except TypeError:
         pass
-    assert seq.input_shape is None
-    assert seq.output_shape is None
+    unbuilt_in, unbuilt_out = seq.input_shape, seq.output_shape
+    assert unbuilt_in is None
+    assert unbuilt_out is None
     seq.add(layers.Dense(4))
     seq.add("non_layer_placeholder")
     seq.build((2, 3))

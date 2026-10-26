@@ -52,6 +52,36 @@ def _filter_top_k_and_class_id(
 
 from zero_keras.activations import _to_tensor, _wrap
 
+
+def _accumulate_weighted_values(
+    values: TensorLike,
+    sample_weight: TensorLike | None,
+    total_var: Variable,
+    count_var: Variable,
+) -> None:
+    """Accumulate weighted ``values`` into ``total_var`` and ``count_var``.
+
+    Args:
+        values: Per-example metric or loss values.
+        sample_weight: Optional weighting for each example.
+        total_var: State variable tracking the weighted sum.
+        count_var: State variable tracking the total weight count.
+    """
+    vals = ops.cast(_to_tensor(values), dtype="float32")
+    if sample_weight is not None:
+        sw = ops.cast(_to_tensor(sample_weight), dtype="float32")
+        while len(sw.shape) < len(vals.shape):
+            sw = ops.expand_dims(sw, axis=-1)
+        sw = ops.broadcast_to(sw, vals.shape)
+        vals = ops.multiply(vals, sw)
+        c_inc = ops.cast(ops.sum(sw), dtype="float32")
+    else:
+        c_inc = ops.cast(ops.sum(ops.ones_like(vals)), dtype="float32")
+    t_inc = ops.cast(ops.sum(vals), dtype="float32")
+    count_var.assign(ops.add(_to_tensor(count_var), c_inc))
+    total_var.assign(ops.add(_to_tensor(total_var), t_inc))
+
+
 """Keras metrics."""
 
 
@@ -365,16 +395,7 @@ class Mean(Metric):
             values: Per-example input values.
             sample_weight: Optional weighting for each value.
         """
-        values = _to_tensor(values)
-        if sample_weight is not None:
-            sample_weight = _to_tensor(sample_weight)
-            values = ops.multiply(values, sample_weight)
-            c_inc = ops.cast(ops.sum(sample_weight), dtype="float32")
-        else:
-            c_inc = ops.cast(ops.sum(ops.ones_like(values)), dtype="float32")
-        t_inc = ops.cast(ops.sum(values), dtype="float32")
-        self.count.assign(ops.add(_to_tensor(self.count), c_inc))
-        self.total.assign(ops.add(_to_tensor(self.total), t_inc))
+        _accumulate_weighted_values(values, sample_weight, self.total, self.count)
 
     def result(self) -> TensorLike:
         """Compute the current weighted mean value.
@@ -2451,11 +2472,12 @@ class CosineSimilarity(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = -ops.mean(losses.cosine_similarity(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            -losses.cosine_similarity(y_true, y_pred, axis=self.axis),
+            sample_weight,
+            self.total,
+            self.count,
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2464,11 +2486,9 @@ class CosineSimilarity(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2536,11 +2556,9 @@ class MeanAbsoluteError(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.mean_absolute_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.mean_absolute_error(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2549,11 +2567,9 @@ class MeanAbsoluteError(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2624,11 +2640,12 @@ class MeanAbsolutePercentageError(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.mean_absolute_percentage_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.mean_absolute_percentage_error(y_true, y_pred),
+            sample_weight,
+            self.total,
+            self.count,
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2637,11 +2654,9 @@ class MeanAbsolutePercentageError(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2694,11 +2709,9 @@ class MeanSquaredError(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.mean_squared_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.mean_squared_error(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2707,11 +2720,9 @@ class MeanSquaredError(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2782,11 +2793,12 @@ class MeanSquaredLogarithmicError(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.mean_squared_logarithmic_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.mean_squared_logarithmic_error(y_true, y_pred),
+            sample_weight,
+            self.total,
+            self.count,
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2795,11 +2807,9 @@ class MeanSquaredLogarithmicError(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2852,11 +2862,9 @@ class Hinge(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.hinge(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.hinge(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2865,11 +2873,9 @@ class Hinge(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2924,11 +2930,9 @@ class SquaredHinge(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.squared_hinge(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.squared_hinge(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -2937,11 +2941,9 @@ class SquaredHinge(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -2993,11 +2995,9 @@ class CategoricalHinge(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.categorical_hinge(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.categorical_hinge(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -3006,11 +3006,9 @@ class CategoricalHinge(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -3084,11 +3082,9 @@ class RootMeanSquaredError(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.mean_squared_error(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.mean_squared_error(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -3339,11 +3335,9 @@ class KLDivergence(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.kl_divergence(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.kl_divergence(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -3352,11 +3346,9 @@ class KLDivergence(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -3423,11 +3415,9 @@ class Poisson(Metric):
         y_true, y_pred = _to_tensor(y_true), _to_tensor(y_pred)
         from zero_keras import losses
 
-        val = ops.mean(losses.poisson(y_true, y_pred))
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
+        _accumulate_weighted_values(
+            losses.poisson(y_true, y_pred), sample_weight, self.total, self.count
+        )
 
     def result(self) -> TensorLike:
         """Compute the current metric value.
@@ -3436,11 +3426,9 @@ class Poisson(Metric):
             TensorLike: A scalar tensor, or a dictionary of scalar tensors.
         """
         return _wrap(
-            ops.sqrt(
-                ops.divide(
-                    _to_tensor(self.total),
-                    ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
-                )
+            ops.divide(
+                _to_tensor(self.total),
+                ops.maximum(_to_tensor(self.count), _to_tensor(1e-7)),
             )
         )
 
@@ -4184,27 +4172,21 @@ class ConcordanceCorrelation(Metric):
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
-        y_true = _to_tensor(y_true)
-        y_pred = _to_tensor(y_pred)
-        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
-
-        y_true = ops.cast(y_true, "float32")
-        y_pred = ops.cast(y_pred, "float32")
-        w = ops.cast(w, "float32")
-
-        sx = ops.sum(y_true * w, axis=0)
-        sy = ops.sum(y_pred * w, axis=0)
-        sx2 = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
-        sy2 = ops.sum((y_pred ** _to_tensor(2.0)) * w, axis=0)
-        sxy = ops.sum(y_true * y_pred * w, axis=0)
-        c = ops.sum(w, axis=0)
-
-        self.sum_x.assign(ops.add(_to_tensor(self.sum_x), sx))
-        self.sum_y.assign(ops.add(_to_tensor(self.sum_y), sy))
-        self.sum_x2.assign(ops.add(_to_tensor(self.sum_x2), sx2))
-        self.sum_y2.assign(ops.add(_to_tensor(self.sum_y2), sy2))
-        self.sum_xy.assign(ops.add(_to_tensor(self.sum_xy), sxy))
-        self.count.assign(ops.add(_to_tensor(self.count), c))
+        y_true = ops.cast(_to_tensor(y_true), "float32")
+        y_pred = ops.cast(_to_tensor(y_pred), "float32")
+        mean_x = ops.mean(y_true, axis=self.axis)
+        mean_y = ops.mean(y_pred, axis=self.axis)
+        var_x = ops.var(y_true, axis=self.axis)
+        var_y = ops.var(y_pred, axis=self.axis)
+        cov_xy = ops.mean(
+            (y_true - ops.expand_dims(mean_x, axis=self.axis))
+            * (y_pred - ops.expand_dims(mean_y, axis=self.axis)),
+            axis=self.axis,
+        )
+        ccc = (ops.array(2.0, dtype="float32") * cov_xy) / ops.maximum(
+            var_x + var_y + ((mean_x - mean_y) ** _to_tensor(2.0)), _to_tensor(1e-7)
+        )
+        _accumulate_weighted_values(ccc, sample_weight, self.sum_xy, self.count)
 
     def result(self) -> TensorLike:
         """Compute the concordance correlation coefficient.
@@ -4216,17 +4198,7 @@ class ConcordanceCorrelation(Metric):
         from zero_keras.activations import _to_tensor, _wrap
 
         n = ops.maximum(_to_tensor(self.count), _to_tensor(1e-7))
-        mean_x = _to_tensor(self.sum_x) / n
-        mean_y = _to_tensor(self.sum_y) / n
-
-        var_x = (_to_tensor(self.sum_x2) / n) - (mean_x ** _to_tensor(2.0))
-        var_y = (_to_tensor(self.sum_y2) / n) - (mean_y ** _to_tensor(2.0))
-        cov_xy = (_to_tensor(self.sum_xy) / n) - (mean_x * mean_y)
-
-        ccc = (ops.array(2.0, dtype="float32") * cov_xy) / ops.maximum(
-            var_x + var_y + ((mean_x - mean_y) ** _to_tensor(2.0)), _to_tensor(1e-7)
-        )
-        return _wrap(ops.mean(ccc))
+        return _wrap(_to_tensor(self.sum_xy) / n)
 
     def reset_state(self) -> None:
         """Reset all moment accumulator variables to zero."""
@@ -4280,27 +4252,16 @@ class PearsonCorrelation(Metric):
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
-        y_true = _to_tensor(y_true)
-        y_pred = _to_tensor(y_pred)
-        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
-
-        y_true = ops.cast(y_true, "float32")
-        y_pred = ops.cast(y_pred, "float32")
-        w = ops.cast(w, "float32")
-
-        sx = ops.sum(y_true * w, axis=0)
-        sy = ops.sum(y_pred * w, axis=0)
-        sx2 = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
-        sy2 = ops.sum((y_pred ** _to_tensor(2.0)) * w, axis=0)
-        sxy = ops.sum(y_true * y_pred * w, axis=0)
-        c = ops.sum(w, axis=0)
-
-        self.sum_x.assign(ops.add(_to_tensor(self.sum_x), sx))
-        self.sum_y.assign(ops.add(_to_tensor(self.sum_y), sy))
-        self.sum_x2.assign(ops.add(_to_tensor(self.sum_x2), sx2))
-        self.sum_y2.assign(ops.add(_to_tensor(self.sum_y2), sy2))
-        self.sum_xy.assign(ops.add(_to_tensor(self.sum_xy), sxy))
-        self.count.assign(ops.add(_to_tensor(self.count), c))
+        y_true = ops.cast(_to_tensor(y_true), "float32")
+        y_pred = ops.cast(_to_tensor(y_pred), "float32")
+        mean_x = ops.mean(y_true, axis=self.axis, keepdims=True)
+        mean_y = ops.mean(y_pred, axis=self.axis, keepdims=True)
+        dx = y_true - mean_x
+        dy = y_pred - mean_y
+        num = ops.sum(dx * dy, axis=self.axis)
+        den = ops.sqrt(ops.sum(dx * dx, axis=self.axis) * ops.sum(dy * dy, axis=self.axis))
+        pcc = num / ops.maximum(den, _to_tensor(1e-7))
+        _accumulate_weighted_values(pcc, sample_weight, self.sum_xy, self.count)
 
     def result(self) -> TensorLike:
         """Compute Pearson's correlation coefficient.
@@ -4312,15 +4273,7 @@ class PearsonCorrelation(Metric):
         from zero_keras.activations import _to_tensor, _wrap
 
         n = ops.maximum(_to_tensor(self.count), _to_tensor(1e-7))
-        mean_x = _to_tensor(self.sum_x) / n
-        mean_y = _to_tensor(self.sum_y) / n
-
-        var_x = (_to_tensor(self.sum_x2) / n) - (mean_x ** _to_tensor(2.0))
-        var_y = (_to_tensor(self.sum_y2) / n) - (mean_y ** _to_tensor(2.0))
-        cov_xy = (_to_tensor(self.sum_xy) / n) - (mean_x * mean_y)
-
-        pcc = cov_xy / ops.maximum(ops.sqrt(var_x * var_y), _to_tensor(1e-7))
-        return _wrap(ops.mean(pcc))
+        return _wrap(_to_tensor(self.sum_xy) / n)
 
     def reset_state(self) -> None:
         """Reset all moment accumulator variables to zero."""
@@ -4427,6 +4380,10 @@ class FBetaScore(Metric):
 
         if self.average == "macro":
             return _wrap(ops.mean(f_beta))
+        if self.average == "weighted":
+            support = tp_t + fn_t
+            weights = support / ops.maximum(ops.sum(support), _to_tensor(1e-7))
+            return _wrap(ops.sum(f_beta * weights))
         return _wrap(f_beta)
 
     def reset_state(self) -> None:
@@ -4509,9 +4466,15 @@ class R2Score(Metric):
         from zero_keras import ops
         from zero_keras.activations import _to_tensor
 
-        y_true = _to_tensor(y_true)
-        y_pred = _to_tensor(y_pred)
-        w = _to_tensor(sample_weight) if sample_weight is not None else _to_tensor(1.0)
+        y_true = ops.cast(_to_tensor(y_true), "float32")
+        y_pred = ops.cast(_to_tensor(y_pred), "float32")
+        if sample_weight is not None:
+            w = ops.cast(_to_tensor(sample_weight), "float32")
+            while len(w.shape) < len(y_true.shape):
+                w = ops.expand_dims(w, axis=-1)
+            w = ops.broadcast_to(w, y_true.shape)
+        else:
+            w = ops.ones_like(y_true)
 
         ss = ops.sum((y_true ** _to_tensor(2.0)) * w, axis=0)
         su = ops.sum(y_true * w, axis=0)
@@ -4536,12 +4499,18 @@ class R2Score(Metric):
         sm = _to_tensor(self.sum)
         rs = _to_tensor(self.res)
         total = sq_sum - (sm ** _to_tensor(2.0)) / cnt
-        r2 = _to_tensor(1.0) - rs / ops.maximum(total, _to_tensor(1e-7))
+        raw_r2 = _to_tensor(1.0) - rs / ops.maximum(total, _to_tensor(1e-7))
+        r2 = ops.where(total > _to_tensor(1e-7), raw_r2, ops.zeros_like(raw_r2))
         if self.class_aggregation == "uniform_average":
-            return _wrap(ops.mean(r2))
+            r2 = ops.mean(r2)
         elif self.class_aggregation == "variance_weighted_average":
             weight = total / ops.maximum(ops.sum(total), _to_tensor(1e-7))
-            return _wrap(ops.sum(r2 * weight))
+            r2 = ops.sum(r2 * weight)
+        if self.num_regressors > 0:
+            n_samples = ops.mean(cnt)
+            p_reg = _to_tensor(float(self.num_regressors))
+            denom = ops.maximum(n_samples - p_reg - _to_tensor(1.0), _to_tensor(1e-7))
+            r2 = _to_tensor(1.0) - (_to_tensor(1.0) - r2) * (n_samples - _to_tensor(1.0)) / denom
         return _wrap(r2)
 
     def reset_state(self) -> None:
@@ -4585,17 +4554,24 @@ def deserialize(
     Returns:
         TensorLike: Reconstructed metric instance or original config.
     """
-    _ = custom_objects
     if config is None:
         return None
     if isinstance(config, str):
+        if isinstance(custom_objects, dict) and config in custom_objects:
+            custom_cls = custom_objects[config]
+            return custom_cls() if callable(custom_cls) else custom_cls
         return get(config)
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
-        cls = _METRIC_REGISTRY.get(str(class_name)) if isinstance(class_name, str) else None
-        if cls is not None and isinstance(conf, dict):
-            return cls(**conf)
+        if isinstance(class_name, str) and isinstance(conf, dict):
+            if isinstance(custom_objects, dict) and class_name in custom_objects:
+                custom_cls = custom_objects[class_name]
+                if callable(custom_cls):
+                    return custom_cls(**conf)
+            cls = _METRIC_REGISTRY.get(class_name)
+            if cls is not None:
+                return cls(**conf)
     return config
 
 
@@ -4611,9 +4587,72 @@ def get(identifier: TensorLike) -> TensorLike:
     if identifier is None:
         return None
     if isinstance(identifier, str):
-        identifier = identifier.lower()
-        if identifier in ["mse", "mean_squared_error"]:
-            return MeanSquaredError()
+        if identifier in _METRIC_REGISTRY:
+            cls_exact = _METRIC_REGISTRY[identifier]
+            if cls_exact not in (
+                IoU,
+                MeanIoU,
+                OneHotIoU,
+                OneHotMeanIoU,
+                PrecisionAtRecall,
+                RecallAtPrecision,
+                SensitivityAtSpecificity,
+                SpecificityAtSensitivity,
+                MeanMetricWrapper,
+            ):
+                return cls_exact()
+        low = identifier.lower()
+        mapping: dict[str, type[Metric]] = {
+            "acc": Accuracy,
+            "accuracy": Accuracy,
+            "binary_accuracy": BinaryAccuracy,
+            "categorical_accuracy": CategoricalAccuracy,
+            "sparse_categorical_accuracy": SparseCategoricalAccuracy,
+            "top_k_categorical_accuracy": TopKCategoricalAccuracy,
+            "sparse_top_k_categorical_accuracy": SparseTopKCategoricalAccuracy,
+            "mse": MeanSquaredError,
+            "mean_squared_error": MeanSquaredError,
+            "mae": MeanAbsoluteError,
+            "mean_absolute_error": MeanAbsoluteError,
+            "mape": MeanAbsolutePercentageError,
+            "mean_absolute_percentage_error": MeanAbsolutePercentageError,
+            "msle": MeanSquaredLogarithmicError,
+            "mean_squared_logarithmic_error": MeanSquaredLogarithmicError,
+            "rmse": RootMeanSquaredError,
+            "root_mean_squared_error": RootMeanSquaredError,
+            "hinge": Hinge,
+            "squared_hinge": SquaredHinge,
+            "categorical_hinge": CategoricalHinge,
+            "kl_divergence": KLDivergence,
+            "kullback_leibler_divergence": KLDivergence,
+            "poisson": Poisson,
+            "logcosh": LogCoshError,
+            "log_cosh": LogCoshError,
+            "cosine_similarity": CosineSimilarity,
+            "bce": BinaryCrossentropy,
+            "binary_crossentropy": BinaryCrossentropy,
+            "cce": CategoricalCrossentropy,
+            "categorical_crossentropy": CategoricalCrossentropy,
+            "scce": SparseCategoricalCrossentropy,
+            "sparse_categorical_crossentropy": SparseCategoricalCrossentropy,
+            "auc": AUC,
+            "precision": Precision,
+            "recall": Recall,
+            "true_positives": TruePositives,
+            "true_negatives": TrueNegatives,
+            "false_positives": FalsePositives,
+            "false_negatives": FalseNegatives,
+            "f1_score": F1Score,
+            "fbeta_score": FBetaScore,
+            "r2_score": R2Score,
+            "binary_iou": BinaryIoU,
+            "concordance_correlation": ConcordanceCorrelation,
+            "pearson_correlation": PearsonCorrelation,
+            "mean": Mean,
+            "sum": Sum,
+        }
+        if low in mapping:
+            return mapping[low]()
         return identifier
     return identifier
 
@@ -4756,18 +4795,17 @@ class CategoricalCrossentropy(Metric):
         from zero_keras import losses
 
         yt, yp = _to_tensor(y_true), _to_tensor(y_pred)
-        val = ops.mean(
+        _accumulate_weighted_values(
             losses.categorical_crossentropy(
                 yt,
                 yp,
                 from_logits=self.from_logits,
                 label_smoothing=self.label_smoothing,
-            )
+            ),
+            sample_weight,
+            self.total,
+            self.count,
         )
-        if sample_weight is not None:
-            val = ops.multiply(val, ops.mean(_to_tensor(sample_weight)))
-        self.total.assign(ops.add(_to_tensor(self.total), val))
-        self.count.assign(ops.add(_to_tensor(self.count), _to_tensor(1.0)))
 
     def result(self) -> TensorLike:
         """Compute the current mean categorical crossentropy value.

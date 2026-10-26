@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 def test_initializers_coverage() -> None:
-    """Verify or execute `test initializers coverage`."""
+    """Test ``initializers_coverage`` behavior and edge cases in ``test_initializers_coverage``."""
     from ml_switcheroo_compiler.core.dtype import DType
 
     from zero_keras.core_layers import KerasTensor

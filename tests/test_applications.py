@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from zero_keras import applications, random
 
 
 def test_applications() -> None:
-    """Verify or execute `test applications`."""
+    """Test ``applications`` behavior and edge cases in ``test_applications``."""
     funcs = [
         applications.convnext.ConvNeXtTiny,
         applications.convnext.ConvNeXtSmall,
@@ -53,15 +57,27 @@ def test_applications() -> None:
         fn(weights=None)
 
 
-def test_resnet50_extra() -> None:
-    """Verify or execute `test resnet50 extra`."""
+def test_resnet50_extra(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify resnet50.ResNet50, preprocess_input, and decode_predictions.
+
+    Args:
+        tmp_path: Pytest temporary directory path fixture.
+        monkeypatch: Pytest monkeypatch fixture.
+    """
+    import json
+
+    from zero_keras import utils
     from zero_keras.applications import resnet50
 
+    idx_file = tmp_path / "imagenet_class_index.json"
+    idx_file.write_text(
+        json.dumps({str(i): [f"n{i:08d}", f"class_{i}"] for i in range(1000)}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(utils, "get_file", lambda *a, **kw: str(idx_file))
+
     assert resnet50.ResNet50(weights=None) is not None
-    try:
-        resnet50.decode_predictions(random.uniform((1, 1000)))
-    except Exception:
-        try:
-            resnet50.preprocess_input(random.uniform((1, 224, 224, 3)))
-        except Exception:
-            pass
+    decoded = resnet50.decode_predictions(random.uniform((1, 1000)), top=3)
+    assert len(decoded) == 1 and len(decoded[0]) == 3
+    pre = resnet50.preprocess_input(random.uniform((1, 224, 224, 3)))
+    assert pre.shape == (1, 224, 224, 3)

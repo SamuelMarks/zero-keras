@@ -7,7 +7,7 @@ from zero_keras.core_layers import Functional, Input
 
 
 def test_clone_model_functional() -> None:
-    """Verify or execute `test clone model functional`."""
+    """Test ``clone_model_functional`` behavior and edge cases in ``test_missing_models``."""
     inp1 = Input(shape=(10,), name="in1")
     inp2 = Input(shape=(10,), name="in2")
 
@@ -32,7 +32,7 @@ def test_clone_model_functional() -> None:
 
 
 def test_model_from_json_functional() -> None:
-    """Verify or execute `test model from json functional`."""
+    """Test ``model_from_json_functional`` behavior and edge cases in ``test_missing_models``."""
     json_str = """
     {
         "class_name": "Functional",

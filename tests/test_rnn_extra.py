@@ -9,7 +9,7 @@ from zero_keras.types import TensorLike
 
 
 def test_simplernn_isolated() -> None:
-    """Verify or execute `test simplernn isolated`."""
+    """Test ``simplernn_isolated`` behavior and edge cases in ``test_rnn_extra``."""
     cell = layers.SimpleRNNCell(4)
     layer = layers.SimpleRNN(4)
     x = random.uniform((2, 5, 3), dtype="float32")
@@ -21,7 +21,7 @@ def test_simplernn_isolated() -> None:
 
 
 def test_gru_isolated() -> None:
-    """Verify or execute `test gru isolated`."""
+    """Test ``gru_isolated`` behavior and edge cases in ``test_rnn_extra``."""
     _cell = layers.GRUCell(4)
     layer = layers.GRU(4)
     x = random.uniform((2, 5, 3), dtype="float32")
@@ -29,7 +29,7 @@ def test_gru_isolated() -> None:
 
 
 def test_lstm_isolated() -> None:
-    """Verify or execute `test lstm isolated`."""
+    """Test ``lstm_isolated`` behavior and edge cases in ``test_rnn_extra``."""
     _cell = layers.LSTMCell(4)
     layer = layers.LSTM(4)
     x = random.uniform((2, 5, 3), dtype="float32")
@@ -37,7 +37,7 @@ def test_lstm_isolated() -> None:
 
 
 def test_stacked_rnn_cells() -> None:
-    """Verify or execute `test stacked rnn cells`."""
+    """Test ``stacked_rnn_cells`` behavior and edge cases in ``test_rnn_extra``."""
     cells = [layers.LSTMCell(4), layers.LSTMCell(4)]
     layer = layers.RNN(layers.StackedRNNCells(cells))
     x = random.uniform((2, 5, 3), dtype="float32")
@@ -48,7 +48,7 @@ def test_stacked_rnn_cells() -> None:
 
 
 def test_rnn_stateful() -> None:
-    """Verify or execute `test rnn stateful`."""
+    """Test ``rnn_stateful`` behavior and edge cases in ``test_rnn_extra``."""
     layer = layers.SimpleRNN(4, stateful=True)
     layer.build((2, 5, 3))
     x = random.uniform((2, 5, 3), dtype="float32")
@@ -64,12 +64,12 @@ def test_rnn_stateful() -> None:
 def test_all_rnn_and_attention_coverage(
     mock_rnn: TensorLike, mock_lstm: TensorLike, mock_gru: TensorLike
 ) -> None:
-    """Verify or execute `test all rnn and attention coverage`.
+    """Test ``all_rnn_and_attention_coverage`` behavior and edge cases in ``test_rnn_extra``.
 
     Args:
-        mock_rnn: Test fixture or input parameter `mock_rnn` (mock rnn).
-        mock_lstm: Test fixture or input parameter `mock_lstm` (mock lstm).
-        mock_gru: Test fixture or input parameter `mock_gru` (mock gru).
+        mock_rnn: Mocked RNN backend operator fixture.
+        mock_lstm: Mocked LSTM backend operator fixture.
+        mock_gru: Mocked GRU backend operator fixture.
     """
     _ = mock_lstm, mock_gru
     mock_rnn.return_value = (ops.zeros((2, 5, 4)), [ops.zeros((2, 4)), ops.zeros((2, 4))])

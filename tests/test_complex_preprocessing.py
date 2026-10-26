@@ -16,7 +16,7 @@ from .conftest import assert_array_equal_zero, to_flat_floats
 
 
 def test_text_vectorization() -> None:
-    """Verify or execute `test text vectorization`."""
+    """Test ``text_vectorization`` behavior and edge cases in ``test_complex_preprocessing``."""
     tv = TextVectorization(vocabulary=["[UNK]", "hello", "world"])
     res = tv(["hello world", "hello missing", ""])
     assert_array_equal_zero(res.data, [[1, 2], [1, 0], [0, 0]])
@@ -27,7 +27,7 @@ def test_text_vectorization() -> None:
 
 
 def test_string_lookup() -> None:
-    """Verify or execute `test string lookup`."""
+    """Test ``string_lookup`` behavior and edge cases in ``test_complex_preprocessing``."""
     sl = StringLookup(vocabulary=["[UNK]", "a", "b"])
     res = sl(["a", "b", "c", "a"])
     assert [int(v) for v in to_flat_floats(res.data)] == [1, 2, 0, 1]
@@ -42,14 +42,14 @@ def test_string_lookup() -> None:
 
 
 def test_integer_lookup() -> None:
-    """Verify or execute `test integer lookup`."""
+    """Test ``integer_lookup`` behavior and edge cases in ``test_complex_preprocessing``."""
     il = IntegerLookup(vocabulary=[0, 1, 2])
     res = il(ops.convert_to_tensor([1, 2, 3, 1]))
     assert [int(v) for v in to_flat_floats(res.data)] == [1, 2, 0, 1]
 
 
 def test_hashing() -> None:
-    """Verify or execute `test hashing`."""
+    """Test ``hashing`` behavior and edge cases in ``test_complex_preprocessing``."""
     h = Hashing(num_bins=4)
     res = h(["a", "b", "c", "d"])
     assert res.data.shape == (4,)
@@ -59,7 +59,7 @@ def test_hashing() -> None:
 
 
 def test_hashed_crossing() -> None:
-    """Verify or execute `test hashed crossing`."""
+    """Test ``hashed_crossing`` behavior and edge cases in ``test_complex_preprocessing``."""
     hc = HashedCrossing(num_bins=10)
     res = hc([ops.convert_to_tensor([1, 2]), ops.convert_to_tensor([3, 4])])
     assert res.data.shape == (2,)
@@ -70,7 +70,7 @@ def test_hashed_crossing() -> None:
 
 
 def test_category_encoding() -> None:
-    """Verify or execute `test category encoding`."""
+    """Test ``category_encoding`` behavior and edge cases in ``test_complex_preprocessing``."""
     ce = CategoryEncoding(num_tokens=4, output_mode="one_hot")
     res = ce(ops.convert_to_tensor([1, 2]))
     assert_array_equal_zero(res.data, [[0, 1, 0, 0], [0, 0, 1, 0]])

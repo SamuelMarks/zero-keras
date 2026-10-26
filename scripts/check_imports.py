@@ -70,9 +70,6 @@ def is_stdlib(base_name: str) -> bool:
     Returns:
         bool: True if ``base_name`` belongs to the Python standard library.
     """
-    if hasattr(sys, "stdlib_module_names"):
-        if base_name in sys.stdlib_module_names:
-            return True
     if base_name in sys.builtin_module_names:
         return True
 

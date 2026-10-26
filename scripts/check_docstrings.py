@@ -22,11 +22,15 @@ _DISALLOWED_FUNC_PREFIXES: tuple[str, ...] = (
     "Call function.",
     "Build function.",
     "Execute ``",
+    "Compute or retrieve",
+    "Verify or execute",
 )
 
 _DISALLOWED_ARG_DESC_RE = re.compile(
     r"^\*{0,2}([A-Za-z_][A-Za-z0-9_]*)\s*(?:\([^)]*\))?\s*:\s*"
-    r"(?:Description\.|Parameter\s+[A-Za-z0-9_]+\.|Input parameter\s+``[A-Za-z0-9_]+``\.|"
+    r"(?:Description\.|Parameter\s+(?:``)?[A-Za-z0-9_]+(?:``)?\.|Input parameter\s+``[A-Za-z0-9_]+``\.|"
+    r"Configuration or input value for\s+`[A-Za-z0-9_]+`\s*\([^)]*\)\.|"
+    r"Test fixture or input parameter\s+`[A-Za-z0-9_]+`\s*\([^)]*\)\.|"
     r"Variable length argument list\.|Arbitrary keyword arguments\.)\s*$"
 )
 

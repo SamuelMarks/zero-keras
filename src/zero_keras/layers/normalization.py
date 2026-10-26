@@ -564,15 +564,15 @@ class GroupNormalization(Layer):
         )
         out = ops.reshape(out, shape)
 
-        if self.axis != -1 and self.axis != rank - 1:
-            inv_perm = list(range(rank))
-            inv_perm.insert(self.axis, inv_perm.pop(-1))
-            out = ops.permute(out, tuple(inv_perm))
-
         if self.scale:
             out = ops.multiply(out, _to_tensor(self.gamma))
         if self.center:
             out = ops.add(out, _to_tensor(self.beta))
+
+        if self.axis != -1 and self.axis != rank - 1:
+            inv_perm = list(range(rank))
+            inv_perm.insert(self.axis, inv_perm.pop(-1))
+            out = ops.permute(out, tuple(inv_perm))
 
         return _wrap(out)
 
@@ -731,6 +731,16 @@ class UnitNormalization(Layer):
         return _wrap(out)
 
 
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class _HasKernelProtocol(Protocol):
+    """Protocol for layers carrying a ``kernel`` weight attribute."""
+
+    kernel: TensorLike | None
+
+
 class SpectralNormalization(Wrapper):
     """Performs spectral normalization on the weights of a target layer.
 
@@ -789,7 +799,7 @@ class SpectralNormalization(Wrapper):
             return
         self.layer.build(input_shape)
 
-        if hasattr(self.layer, "kernel") and self.layer.kernel is not None:
+        if isinstance(self.layer, _HasKernelProtocol) and self.layer.kernel is not None:
             shape = (1, self.layer.kernel.shape[-1])
             self.u = self.add_weight(
                 shape=shape,
@@ -806,7 +816,11 @@ class SpectralNormalization(Wrapper):
 
     def normalize_weights(self) -> None:
         """Normalize the wrapped layer's ``kernel`` in-place using power iteration."""
-        if not hasattr(self.layer, "kernel") or self.layer.kernel is None or self.u is None:
+        if (
+            not isinstance(self.layer, _HasKernelProtocol)
+            or self.layer.kernel is None
+            or self.u is None
+        ):
             return
         w = _to_tensor(self.layer.kernel)
         w_shape = w.shape

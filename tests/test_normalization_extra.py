@@ -6,7 +6,7 @@ from zero_keras import layers, random
 
 
 def test_group_normalization_edge_cases() -> None:
-    """Verify or execute `test group normalization edge cases`."""
+    """Test ``group_normalization_edge_cases`` behavior and edge cases in ``test_normalization_extra``."""
     layer = layers.GroupNormalization(groups=2, axis=1, scale=False, center=False)
     x = random.uniform((2, 4, 3, 3), dtype="float32")
     out = layer(x)
@@ -14,7 +14,7 @@ def test_group_normalization_edge_cases() -> None:
 
 
 def test_rms_normalization_built_twice() -> None:
-    """Verify or execute `test rms normalization built twice`."""
+    """Test ``rms_normalization_built_twice`` behavior and edge cases in ``test_normalization_extra``."""
     layer = layers.RMSNormalization(axis=-1)
     layer.build((2, 5, 3))
     layer.build((2, 5, 3))
@@ -22,7 +22,7 @@ def test_rms_normalization_built_twice() -> None:
 
 
 def test_unit_normalization() -> None:
-    """Verify or execute `test unit normalization`."""
+    """Test ``unit_normalization`` behavior and edge cases in ``test_normalization_extra``."""
     layer = layers.UnitNormalization(axis=-1)
     x = random.uniform((2, 5, 3), dtype="float32")
     out = layer(x)
@@ -43,7 +43,7 @@ def test_spectral_normalization() -> None:
 
 
 def test_group_normalization_axis_last() -> None:
-    """Verify or execute `test group normalization axis last`."""
+    """Test ``group_normalization_axis_last`` behavior and edge cases in ``test_normalization_extra``."""
     layer = layers.GroupNormalization(groups=2, axis=3)
     x = random.uniform((2, 4, 3, 4), dtype="float32")
     out = layer(x)

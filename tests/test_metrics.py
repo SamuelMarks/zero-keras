@@ -19,10 +19,10 @@ class AssignableTensor(Tensor):
     """Test helper class `AssignableTensor` for metric assign branch coverage."""
 
     def assign(self, value: TensorLike) -> None:
-        """Verify or execute `assign` on `AssignableTensor`.
+        """Update the stored value on ``AssignableTensor`` in-place.
 
         Args:
-            value: Test fixture or input parameter `value` (value).
+            value: Input tensor or scalar value to assign.
         """
         _ = value
 
@@ -43,7 +43,7 @@ def make_dummy(*args: TensorLike, **kwargs: TensorLike) -> AssignableTensor:
 
 
 def test_metrics_edge_cases() -> None:
-    """Verify or execute `test metrics edge cases`."""
+    """Test ``metrics_edge_cases`` behavior and edge cases in ``test_metrics``."""
     from zero_keras.metrics import (
         SparseCategoricalAccuracy,
         SparseTopKCategoricalAccuracy,
@@ -229,7 +229,7 @@ def test_metrics_edge_cases() -> None:
 
 
 def test_all_metrics_coverage() -> None:
-    """Verify or execute `test all metrics coverage`."""
+    """Test ``all_metrics_coverage`` behavior and edge cases in ``test_metrics``."""
     y_true = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     y_pred = ops.convert_to_tensor([[0.9, 0.1], [0.1, 0.9]])
     y_true_cls = ops.convert_to_tensor([0, 1])
@@ -317,7 +317,7 @@ def test_all_metrics_coverage() -> None:
 
 
 def test_metrics_get_deserialize() -> None:
-    """Verify or execute `test metrics get deserialize`."""
+    """Test ``metrics_get_deserialize`` behavior and edge cases in ``test_metrics``."""
     assert isinstance(metrics.get("mse"), metrics.MeanSquaredError)
     assert metrics.get("unknown") == "unknown"
     assert metrics.get(None) is None
@@ -394,7 +394,7 @@ def test_iou_reset() -> None:
 
 
 def test_scc_and_bce_inner() -> None:
-    """Verify or execute `test scc and bce inner`."""
+    """Test ``scc_and_bce_inner`` behavior and edge cases in ``test_metrics``."""
     m1 = metrics.SparseCategoricalCrossentropy()
     m1.update_state(ops.convert_to_tensor([1, 0]), ops.convert_to_tensor([[0.1, 0.9], [0.9, 0.1]]))
 
@@ -403,32 +403,32 @@ def test_scc_and_bce_inner() -> None:
 
 
 def test_iou_edges() -> None:
-    """Verify or execute `test iou edges`."""
+    """Test ``iou_edges`` behavior and edge cases in ``test_metrics``."""
 
     class MockVariable:
         """Test helper class `MockVariable` for missing coverage 8."""
 
         def __init__(self, val: TensorLike = 0.0) -> None:
-            """Verify or execute `init` on `MockVariable`.
+            """Initialize the ``MockVariable`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def assign(self, new_val: TensorLike) -> None:
-            """Verify or execute `assign` on `MockVariable`.
+            """Update the stored value on ``MockVariable`` in-place.
 
             Args:
-                new_val: Test fixture or input parameter `new_val` (new val).
+                new_val: New value assigned to the weight or variable.
             """
             self.val = new_val
 
         def __add__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `add` on `MockVariable`.
+            """Return the elementwise sum for ``MockVariable``.
 
             Args:
-                other: Test fixture or input parameter `other` (other).
+                other: Right-hand operand for binary arithmetic.
 
             Returns:
                 TensorLike: Result from `__add__`.
@@ -454,14 +454,14 @@ def test_iou_edges() -> None:
 
 
 def test_binary_iou() -> None:
-    """Verify or execute `test binary iou`."""
+    """Test ``binary_iou`` behavior and edge cases in ``test_metrics``."""
     m = metrics.BinaryIoU()
     m.update_state(ops.convert_to_tensor([1, 0]), ops.convert_to_tensor([0.9, 0.1]))
     m.result()
 
 
 def test_assign_metrics_direct() -> None:
-    """Verify or execute `test assign metrics direct`."""
+    """Test ``assign_metrics_direct`` behavior and edge cases in ``test_metrics``."""
     from unittest import mock
 
     with (
@@ -469,6 +469,11 @@ def test_assign_metrics_direct() -> None:
         mock.patch.object(cops, "multiply", make_dummy),
         mock.patch.object(cops, "equal", make_dummy),
         mock.patch.object(cops, "sum", make_dummy),
+        mock.patch.object(cops, "mean", make_dummy),
+        mock.patch.object(cops, "sqrt", make_dummy),
+        mock.patch.object(cops, "maximum", make_dummy),
+        mock.patch.object(cops, "divide", make_dummy),
+        mock.patch.object(cops, "ones_like", make_dummy),
         mock.patch.object(cops, "any", make_dummy),
         mock.patch.object(cops, "cast", make_dummy),
         mock.patch.object(cops, "argmax", make_dummy),
@@ -534,7 +539,7 @@ def test_assign_metrics_direct() -> None:
 
 
 def test_pearson_correlation_assign() -> None:
-    """Verify or execute `test pearson correlation assign`."""
+    """Test ``pearson_correlation_assign`` behavior and edge cases in ``test_metrics``."""
     m = metrics.PearsonCorrelation()
     m.sum_x = make_dummy()
     m.sum_y = make_dummy()
@@ -550,15 +555,15 @@ def test_pearson_correlation_assign() -> None:
 
 
 def test_accuracy_metrics_assign() -> None:
-    """Verify or execute `test accuracy metrics assign`."""
+    """Test ``accuracy_metrics_assign`` behavior and edge cases in ``test_metrics``."""
 
     def test_acc(cls: TensorLike, y_t: TensorLike, y_p: TensorLike) -> None:
-        """Verify or execute `test acc`.
+        """Test ``acc`` behavior and edge cases in ``test_metrics``.
 
         Args:
             cls: Metric class to instantiate.
-            y_t: Test fixture or input parameter `y_t` (y t).
-            y_p: Test fixture or input parameter `y_p` (y p).
+            y_t: Ground-truth target tensor for loss or metric evaluation.
+            y_p: Predicted tensor for loss or metric evaluation.
         """
         m = cls()
         m.total = make_dummy()
@@ -690,7 +695,7 @@ def test_free_accuracy_functions() -> None:
 
 
 def test_get_metrics_config_fallback() -> None:
-    """Verify or execute `test get metrics config fallback`."""
+    """Test ``get_metrics_config_fallback`` behavior and edge cases in ``test_metrics``."""
     assert metrics.deserialize({"class_name": "UnknownMetricForDeserialize"}) == {
         "class_name": "UnknownMetricForDeserialize"
     }

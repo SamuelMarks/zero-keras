@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Protocol, runtime_checkable
 from zero_keras import ops
 from zero_keras.activations import _to_tensor, _wrap
 from zero_keras.core_layers import Layer
@@ -13,6 +14,34 @@ from zero_keras.types import (
     ShapeTuple,
     TensorLike,
 )
+
+
+@runtime_checkable
+class _HasStateSizeProtocol(Protocol):
+    """Protocol for RNN cells exposing a ``state_size`` attribute."""
+
+    state_size: int | Sequence[int | ShapeTuple] | TensorLike
+
+
+@runtime_checkable
+class _HasUnitsProtocol(Protocol):
+    """Protocol for RNN layers or cells exposing a ``units`` attribute."""
+
+    units: int
+
+
+@runtime_checkable
+class _HasCellProtocol(Protocol):
+    """Protocol for RNN layers exposing a ``cell`` attribute."""
+
+    cell: Layer
+
+
+@runtime_checkable
+class _HasArgsProtocol(Protocol):
+    """Protocol for layers storing constructor ``args``."""
+
+    args: tuple[TensorLike, ...]
 
 
 class RNN(Layer):
@@ -271,7 +300,7 @@ class RNN(Layer):
                 initial_state = self.states
             else:
                 batch_size = inputs.shape[1] if self.time_major else inputs.shape[0]
-                if hasattr(self.cell, "state_size"):
+                if isinstance(self.cell, _HasStateSizeProtocol):
                     state_size = self.cell.state_size
                     if isinstance(state_size, int):
                         initial_state = (ops.zeros((batch_size, state_size), dtype=inputs.dtype),)
@@ -296,7 +325,8 @@ class RNN(Layer):
                             ops.zeros(_get_shape(s), dtype=inputs.dtype) for s in state_size
                         )
                 else:
-                    initial_state = (ops.zeros((batch_size, self.cell.units), dtype=inputs.dtype),)
+                    cell_units = self.cell.units if isinstance(self.cell, _HasUnitsProtocol) else 1
+                    initial_state = (ops.zeros((batch_size, cell_units), dtype=inputs.dtype),)
                 if self.stateful:
                     self.states = initial_state
 
@@ -1706,23 +1736,23 @@ class Bidirectional(Layer):
         super().__init__(**kwargs)
         self.forward_layer = layer
         if backward_layer is None:
-            config = dict(layer._kwargs) if hasattr(layer, "_kwargs") else {}
+            config = dict(layer._kwargs)
             if isinstance(layer, RNN):
                 config.setdefault("return_sequences", layer.return_sequences)
                 config.setdefault("return_state", layer.return_state)
                 config.setdefault("stateful", layer.stateful)
                 config.setdefault("unroll", layer.unroll)
                 config.setdefault("time_major", layer.time_major)
-            args = layer.args if hasattr(layer, "args") else ()
-            if hasattr(layer, "units"):
-                args = (layer.units,)
-            elif hasattr(layer, "cell") and hasattr(layer.cell, "units"):
+            args: tuple[TensorLike, ...] = layer.args if isinstance(layer, _HasArgsProtocol) else ()
+            if isinstance(layer, _HasCellProtocol) and isinstance(layer.cell, _HasUnitsProtocol):
                 if type(layer) is RNN:
-                    cell_cfg = layer.cell._kwargs.copy() if hasattr(layer.cell, "_kwargs") else {}
+                    cell_cfg = dict(layer.cell._kwargs)
                     cloned_cell = type(layer.cell)(layer.cell.units, **cell_cfg)
                     args = (cloned_cell,)
                 else:
                     args = (layer.cell.units,)
+            if isinstance(layer, _HasUnitsProtocol):
+                args = (layer.units,)
             self.backward_layer = type(layer)(*args, **config)
         else:
             self.backward_layer = backward_layer
@@ -2774,16 +2804,26 @@ class ConvLSTMCell(Layer):
 
         from ml_switcheroo_compiler.ops.configs import ConvConfig
 
+        dim_nums = (
+            ((0, 3, 1, 2), (3, 2, 0, 1), (0, 3, 1, 2))
+            if self.rank == 2
+            else ((0, 4, 1, 2, 3), (4, 3, 0, 1, 2), (0, 4, 1, 2, 3))
+            if self.rank == 3
+            else ((0, 2, 1), (2, 1, 0), (0, 2, 1))
+        )
         config_obj = ConvConfig(
             window_strides=self.strides,
             padding=self.padding,
             lhs_dilation=None,
             rhs_dilation=self.dilation_rate,
-            dimension_numbers=((0, 3, 1, 2), (3, 2, 0, 1), (0, 3, 1, 2))
-            if self.rank == 2
-            else ((0, 4, 1, 2, 3), (4, 3, 0, 1, 2), (0, 4, 1, 2, 3))
-            if self.rank == 3
-            else ((0, 2, 1), (2, 1, 0), (0, 2, 1)),
+            dimension_numbers=dim_nums,
+        )
+        recurrent_config_obj = ConvConfig(
+            window_strides=(1,) * self.rank,
+            padding="SAME",
+            lhs_dilation=None,
+            rhs_dilation=self.dilation_rate,
+            dimension_numbers=dim_nums,
         )
 
         from zero_keras import ops
@@ -2798,7 +2838,7 @@ class ConvLSTMCell(Layer):
             h_tm1_dropped = ops.dropout(h_tm1, rate=self.recurrent_dropout)
         z = conv_general_dilated(inputs_dropped, _to_tensor(self.kernel), config_obj)
         z_recurrent = conv_general_dilated(
-            h_tm1_dropped, _to_tensor(self.recurrent_kernel), config_obj
+            h_tm1_dropped, _to_tensor(self.recurrent_kernel), recurrent_config_obj
         )
 
         z = ops.add(z, z_recurrent)

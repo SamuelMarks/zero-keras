@@ -12,7 +12,7 @@ def test_cond() -> None:
     """Test cond."""
 
     def true_fn() -> TensorLike:
-        """Verify or execute `true fn`.
+        """Execute test helper ``true_fn`` in ``test_ops_missing``.
 
         Returns:
             TensorLike: Result from `true_fn`.
@@ -20,7 +20,7 @@ def test_cond() -> None:
         return ops.array(1.0)
 
     def false_fn() -> TensorLike:
-        """Verify or execute `false fn`.
+        """Execute test helper ``false_fn`` in ``test_ops_missing``.
 
         Returns:
             TensorLike: Result from `false_fn`.
@@ -49,10 +49,10 @@ def test_while_loop() -> None:
     """Test while loop."""
 
     def cond(val: TensorLike) -> TensorLike:
-        """Verify or execute `cond`.
+        """Execute test helper ``cond`` in ``test_ops_missing``.
 
         Args:
-            val: Test fixture or input parameter `val` (val).
+            val: Input tensor or scalar value.
 
         Returns:
             TensorLike: Result from `cond`.
@@ -61,10 +61,10 @@ def test_while_loop() -> None:
         return i < 5
 
     def body(val: TensorLike) -> TensorLike:
-        """Verify or execute `body`.
+        """Execute test helper ``body`` in ``test_ops_missing``.
 
         Args:
-            val: Test fixture or input parameter `val` (val).
+            val: Input tensor or scalar value.
 
         Returns:
             TensorLike: Result from `body`.
@@ -81,11 +81,11 @@ def test_fori_loop() -> None:
     """Test fori loop."""
 
     def body(i: TensorLike, x: TensorLike) -> TensorLike:
-        """Verify or execute `body`.
+        """Execute test helper ``body`` in ``test_ops_missing``.
 
         Args:
-            i: Test fixture or input parameter `i` (i).
-            x: Test fixture or input parameter `x` (x).
+            i: Loop iteration or step index.
+            x: Input tensor or feature array.
 
         Returns:
             TensorLike: Result from `body`.
@@ -100,10 +100,10 @@ def test_map() -> None:
     """Test map."""
 
     def fn(x: TensorLike) -> TensorLike:
-        """Verify or execute `fn`.
+        """Execute test helper ``fn`` in ``test_ops_missing``.
 
         Args:
-            x: Test fixture or input parameter `x` (x).
+            x: Input tensor or feature array.
 
         Returns:
             TensorLike: Result from `fn`.
@@ -118,10 +118,10 @@ def test_vectorized_map() -> None:
     """Test vectorized map."""
 
     def fn(x: TensorLike) -> TensorLike:
-        """Verify or execute `fn`.
+        """Execute test helper ``fn`` in ``test_ops_missing``.
 
         Args:
-            x: Test fixture or input parameter `x` (x).
+            x: Input tensor or feature array.
 
         Returns:
             TensorLike: Result from `fn`.

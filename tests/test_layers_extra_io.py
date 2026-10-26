@@ -6,7 +6,7 @@ from zero_keras import layers
 
 
 def test_layers_io() -> None:
-    """Verify or execute `test layers io`."""
+    """Test ``layers_io`` behavior and edge cases in ``test_layers_extra_io``."""
     layer = layers.Dense(10)
     config = layers.serialize(layer)
     assert isinstance(config, dict)
@@ -21,7 +21,7 @@ def test_layers_io() -> None:
 
 
 def test_new_layers() -> None:
-    """Verify or execute `test new layers`."""
+    """Test ``new_layers`` behavior and edge cases in ``test_layers_extra_io``."""
     gqa = layers.GroupQueryAttention(head_dim=2, num_query_heads=2, num_key_value_heads=2)
     res = gqa(None, None)
     assert res is None

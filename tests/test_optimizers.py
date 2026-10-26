@@ -1,15 +1,15 @@
 """Unit and behavioral tests for optimizers in zero_keras."""
 
 from __future__ import annotations
-from zero_keras.types import TensorLike
 
 
 def test_optimizers() -> None:
-    """Verify or execute `test optimizers`."""
+    """Verify SGD and Adam optimizer steps update trainable Variable instances."""
     import ml_switcheroo_compiler.core.dtype as dtypes
     from ml_switcheroo_compiler.ops.creation.frontend import ones
 
     from zero_keras import optimizers
+    from zero_keras.core_layers import Variable
 
     # Coverage for optimizers
     opt = optimizers.Optimizer()
@@ -17,21 +17,8 @@ def test_optimizers() -> None:
     opt.apply_gradients([])
     opt.add_variable(shape=(1,), dtype=dtypes.DType.Float32, initializer="ones")
 
-    v = ones((1,))
+    v = Variable(initializer="ones", shape=(1,), dtype="float32")
     g = ones((1,))
-
-    from ml_switcheroo_compiler.core import tensor
-
-    # First, test where assign works
-    def fake_assign(self: TensorLike, val: TensorLike) -> None:
-        """Verify or execute `fake assign`.
-
-        Args:
-            self: Target tensor instance.
-            val: Test fixture or input parameter `val` (val).
-        """
-
-    tensor.Tensor.assign = fake_assign
 
     sgd1 = optimizers.SGD(learning_rate=0.1, momentum=0.9, nesterov=True)
     sgd1.apply_gradients([(g, v), (None, v)])
@@ -49,7 +36,7 @@ def test_optimizers() -> None:
 
 
 def test_new_optimizers() -> None:
-    """Verify or execute `test new optimizers`."""
+    """Test ``new_optimizers`` behavior and edge cases in ``test_optimizers``."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
 
@@ -77,7 +64,7 @@ def test_new_optimizers() -> None:
 
 
 def test_other_optimizers() -> None:
-    """Verify or execute `test other optimizers`."""
+    """Test ``other_optimizers`` behavior and edge cases in ``test_optimizers``."""
     import ml_switcheroo_compiler as msc
     from ml_switcheroo_compiler import ops
 
@@ -107,7 +94,7 @@ def test_other_optimizers() -> None:
 
 
 def test_all_opts_cov() -> None:
-    """Verify or execute `test all opts cov`."""
+    """Test ``all_opts_cov`` behavior and edge cases in ``test_optimizers``."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -139,7 +126,7 @@ def test_all_opts_cov() -> None:
 
 
 def test_opt_edge_cases() -> None:
-    """Verify or execute `test opt edge cases`."""
+    """Test ``opt_edge_cases`` behavior and edge cases in ``test_optimizers``."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -189,208 +176,65 @@ def test_opt_edge_cases() -> None:
 
 
 def test_opt_attribute_error_pass() -> None:
-    """Verify or execute `test opt attribute error pass`."""
-    import warnings
-
+    """Verify Optimizer shared step helpers: learning rate schedule, gradient clipping, weight decay, and EMA."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
+    from zero_keras.core_layers import Variable
 
-    # ignore warnings
-    warnings.simplefilter("ignore")
+    sched = optimizers.schedules.ExponentialDecay(0.1, 10, 0.9)
+    opt_sched = optimizers.Optimizer(
+        learning_rate=sched,
+        clipvalue=0.5,
+        clipnorm=1.0,
+        global_clipnorm=1.0,
+        weight_decay=0.01,
+        use_ema=True,
+        ema_momentum=0.9,
+        ema_overwrite_frequency=1,
+    )
+    lr_t = opt_sched._current_learning_rate()
+    assert lr_t is not None
 
-    var = ops.asarray([1.0])
-    grad = ops.asarray([0.1])
+    g1 = ops.asarray([2.0, -2.0])
+    clipped = opt_sched._clip_gradients([g1, None])
+    assert clipped[0] is not None and clipped[1] is None
 
-    for opt_cls in [
-        optimizers.Adadelta,
-        optimizers.Adagrad,
-        optimizers.Adamax,
-        optimizers.Nadam,
-        optimizers.Adafactor,
-        optimizers.Ftrl,
-        optimizers.Lamb,
-        optimizers.Lion,
-        optimizers.RMSprop,
-        optimizers.AdamW,
-        optimizers.Adam,
-        optimizers.LossScaleOptimizer,
-        optimizers.SGD,
-    ]:
-        if opt_cls == optimizers.LossScaleOptimizer:
-            opt = opt_cls(optimizers.Adam())
-        else:
-            opt = opt_cls(learning_rate=1.0)
+    v1 = Variable(initializer="ones", shape=(2,), dtype="float32", name="kernel")
+    v2 = Variable(initializer="ones", shape=(2,), dtype="float32", name="bias")
+    v3 = Variable(initializer="ones", shape=(2,), dtype="float32", name="other")
+    v1.assign(ops.asarray([1.0, 2.0]))
+    v2.assign(ops.asarray([1.0, 2.0]))
+    v3.assign(ops.asarray([1.0, 2.0]))
+    opt_sched.exclude_from_weight_decay(var_list=[v3], var_names=["bias"])
+    opt_sched._apply_weight_decay([v1, v2, v3])
+    opt_sched._update_ema([v1, v2], step=1)
+    opt_sched._update_ema([v1, v2], step=2)
+    opt_sched.finalize_variable_values([v1, v2])
 
-        opt.build([var])
-        try:
-            opt.apply_gradients(zip([grad], [var]))
-        except Exception:
-            pass
+    opt_plain = optimizers.Optimizer()
+    assert opt_plain._current_learning_rate() is not None
+    assert opt_plain._clip_gradients([g1]) == [g1]
+    opt_gcn_none = optimizers.Optimizer(global_clipnorm=1.0)
+    assert opt_gcn_none._clip_gradients([None]) == [None]
+    opt_plain._apply_weight_decay([v1])
+    opt_plain._update_ema([v1], step=1)
+    opt_plain.finalize_variable_values([v1])
+
+    raw_t = ops.asarray([1.0, 2.0])
+    opt_sched._apply_weight_decay([raw_t], learning_rate=0.01)
+    opt_sched._update_ema([raw_t, raw_t], step=2)
+    opt_sched.finalize_variable_values([raw_t, raw_t])
 
 
 def test_opt_assign_coverage() -> None:
-    """Verify or execute `test opt assign coverage`."""
+    """Verify every optimizer numerically updates Variable values in the direction of negative gradient."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
+    from zero_keras.core_layers import Variable
 
-    class MockVar:
-        """Test helper class `MockVar` for optimizers."""
-
-        def __init__(self, t: TensorLike) -> None:
-            """Verify or execute `init` on `MockVar`.
-
-            Args:
-                t: Test fixture or input parameter `t` (t).
-            """
-            self.t = t
-            self.shape = t.shape
-            self.dtype = t.dtype
-            self.data = (
-                t.data if hasattr(t, "data") else (t._tensor.data if hasattr(t, "_tensor") else t)
-            )
-
-        def assign(self, val: TensorLike) -> None:
-            """Assign value to MockVar.
-
-            Args:
-                val: New value.
-            """
-            _ = val
-
-        def assign_add(self, val: TensorLike) -> None:
-            """Add value to MockVar.
-
-            Args:
-                val: Value to add.
-            """
-            _ = val
-
-        def assign_sub(self, val: TensorLike) -> None:
-            """Subtract value from MockVar.
-
-            Args:
-                val: Value to subtract.
-            """
-            _ = val
-
-        def __add__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `add` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__add__`.
-            """
-            return self.t + (other.t if hasattr(other, "t") else other)
-
-        def __radd__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `radd` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__radd__`.
-            """
-            return (other.t if hasattr(other, "t") else other) + self.t
-
-        def __sub__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `sub` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__sub__`.
-            """
-            return self.t - (other.t if hasattr(other, "t") else other)
-
-        def __rsub__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `rsub` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__rsub__`.
-            """
-            return (other.t if hasattr(other, "t") else other) - self.t
-
-        def __mul__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `mul` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__mul__`.
-            """
-            return self.t * (other.t if hasattr(other, "t") else other)
-
-        def __rmul__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `rmul` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__rmul__`.
-            """
-            return (other.t if hasattr(other, "t") else other) * self.t
-
-        def __truediv__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `truediv` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__truediv__`.
-            """
-            return self.t / (other.t if hasattr(other, "t") else other)
-
-        def __rtruediv__(self, other: TensorLike) -> TensorLike:
-            """Verify or execute `rtruediv` on `MockVar`.
-
-            Args:
-                other: Test fixture or input parameter `other` (other).
-
-            Returns:
-                TensorLike: Result from `__rtruediv__`.
-            """
-            return (other.t if hasattr(other, "t") else other) / self.t
-
-    var = MockVar(ops.asarray([1.0]))
-    grad = ops.asarray([0.1])
-
-    original_add_var = optimizers.Optimizer.add_variable
-
-    def mock_add_variable(
-        self: TensorLike,
-        shape: TensorLike,
-        dtype: str | TensorLike = "float32",
-        initializer: str | TensorLike = "zeros",
-        name: TensorLike | None = None,
-    ) -> TensorLike:
-        """Verify or execute `mock add variable`.
-
-        Args:
-            self: Optimizer instance.
-            shape: Test fixture or input parameter `shape` (shape).
-            dtype: Test fixture or input parameter `dtype` (dtype).
-            initializer: Test fixture or input parameter `initializer` (initializer).
-            name: Test fixture or input parameter `name` (name).
-
-        Returns:
-            TensorLike: Result from `mock_add_variable`.
-        """
-        t = original_add_var(self, shape, dtype, initializer, name)
-        return MockVar(t)
-
-    optimizers.Optimizer.add_variable = mock_add_variable
+    grad = ops.asarray([0.1, 0.2])
 
     for opt_cls in [
         optimizers.Adadelta,
@@ -407,18 +251,17 @@ def test_opt_assign_coverage() -> None:
         optimizers.SGD,
         optimizers.Muon,
     ]:
-        opt = opt_cls()
+        var = Variable(initializer="ones", shape=(2,), dtype="float32")
+        var.assign(ops.asarray([1.0, 2.0]))
+        opt = opt_cls(learning_rate=0.1)
         opt.build([var])
-        try:
-            opt.apply_gradients(zip([grad], [var]))
-        except Exception as e:
-            pass
-
-    optimizers.Optimizer.add_variable = original_add_var
+        opt.apply_gradients(zip([grad], [var]))
+        updated = var.numpy()
+        assert float(updated[0]) < 1.0 or float(updated[1]) < 2.0
 
 
 def test_muon_edge_cases() -> None:
-    """Verify or execute `test muon edge cases`."""
+    """Test ``muon_edge_cases`` behavior and edge cases in ``test_optimizers``."""
     from ml_switcheroo_compiler import ops
 
     from zero_keras import optimizers
@@ -435,7 +278,7 @@ def test_muon_edge_cases() -> None:
 
 
 def test_schedules_config() -> None:
-    """Verify or execute `test schedules config`."""
+    """Test ``schedules_config`` behavior and edge cases in ``test_optimizers``."""
     import json
 
     from zero_keras.optimizers import schedules
@@ -457,7 +300,7 @@ def test_schedules_config() -> None:
 
 
 def test_schedules_call() -> None:
-    """Verify or execute `test schedules call`."""
+    """Test ``schedules_call`` behavior and edge cases in ``test_optimizers``."""
     from zero_keras.optimizers import schedules
 
     scheds = [
@@ -476,7 +319,7 @@ def test_schedules_call() -> None:
 
 
 def test_schedules_coverage() -> None:
-    """Verify or execute `test schedules coverage`."""
+    """Test ``schedules_coverage`` behavior and edge cases in ``test_optimizers``."""
     from zero_keras.optimizers import schedules
 
     # Base class coverage

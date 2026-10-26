@@ -7,7 +7,7 @@ from zero_keras.layers import Conv1D, Conv2D, Conv3D
 
 
 def test_layers_conv_channels_first_with_bias() -> None:
-    """Verify or execute `test layers conv channels first with bias`."""
+    """Test ``layers_conv_channels_first_with_bias`` behavior and edge cases in ``test_coverage_conv_bias``."""
     c1 = Conv1D(2, 2, data_format="channels_first", use_bias=True)
     c1.build((None, 3, 10))
     c1(ops.ones((1, 3, 10)))

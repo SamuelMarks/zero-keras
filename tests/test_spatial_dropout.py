@@ -6,7 +6,7 @@ from zero_keras import layers, ops
 
 
 def test_spatial_dropout1d() -> None:
-    """Verify or execute `test spatial dropout1d`."""
+    """Test ``spatial_dropout1d`` behavior and edge cases in ``test_spatial_dropout``."""
     layer = layers.SpatialDropout1D(0.5, data_format="channels_last")
     x = ops.ones((2, 10, 4))
     out = layer(x, training=True)
@@ -18,7 +18,7 @@ def test_spatial_dropout1d() -> None:
 
 
 def test_spatial_dropout2d() -> None:
-    """Verify or execute `test spatial dropout2d`."""
+    """Test ``spatial_dropout2d`` behavior and edge cases in ``test_spatial_dropout``."""
     layer = layers.SpatialDropout2D(0.5, data_format="channels_last")
     x = ops.ones((2, 10, 10, 4))
     out = layer(x, training=True)
@@ -30,7 +30,7 @@ def test_spatial_dropout2d() -> None:
 
 
 def test_spatial_dropout3d() -> None:
-    """Verify or execute `test spatial dropout3d`."""
+    """Test ``spatial_dropout3d`` behavior and edge cases in ``test_spatial_dropout``."""
     layer = layers.SpatialDropout3D(0.5, data_format="channels_last")
     x = ops.ones((2, 10, 10, 10, 4))
     out = layer(x, training=True)
@@ -42,7 +42,7 @@ def test_spatial_dropout3d() -> None:
 
 
 def test_alpha_dropout() -> None:
-    """Verify or execute `test alpha dropout`."""
+    """Test ``alpha_dropout`` behavior and edge cases in ``test_spatial_dropout``."""
     layer = layers.AlphaDropout(0.5, noise_shape=(2, 1, 4))
     x = ops.ones((2, 10, 4))
     out = layer(x, training=True)

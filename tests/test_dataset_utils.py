@@ -13,7 +13,7 @@ from zero_keras.utils import dataset_utils
 
 def test_array_to_img() -> None:
     # RGB
-    """Verify or execute `test array to img`."""
+    """Test ``array_to_img`` behavior and edge cases in ``test_dataset_utils``."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.array_to_img(arr, scale=True)
     assert isinstance(img, dataset_utils.GenericImage)
@@ -44,7 +44,7 @@ def test_array_to_img() -> None:
 
 
 def test_img_to_array() -> None:
-    """Verify or execute `test img to array`."""
+    """Test ``img_to_array`` behavior and edge cases in ``test_dataset_utils``."""
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
     res = dataset_utils.img_to_array(img)
@@ -61,10 +61,10 @@ def test_img_to_array() -> None:
 
 
 def test_load_img(tmpdir: TensorLike) -> None:
-    """Verify or execute `test load img`.
+    """Test ``load_img`` behavior and edge cases in ``test_dataset_utils``.
 
     Args:
-        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
+        tmpdir: Temporary directory path fixture.
     """
     path = str(tmpdir.join("test_img.jpg"))
 
@@ -89,10 +89,10 @@ def test_load_img(tmpdir: TensorLike) -> None:
 
 
 def test_generic_image(tmpdir: TensorLike) -> None:
-    """Verify or execute `test generic image`.
+    """Test ``generic_image`` behavior and edge cases in ``test_dataset_utils``.
 
     Args:
-        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
+        tmpdir: Temporary directory path fixture.
     """
     arr = ops.zeros((32, 32, 3))
     img = dataset_utils.GenericImage(arr, mode="RGB")
@@ -113,10 +113,10 @@ def test_generic_image(tmpdir: TensorLike) -> None:
 
 
 def test_save_img(tmpdir: TensorLike) -> None:
-    """Verify or execute `test save img`.
+    """Test ``save_img`` behavior and edge cases in ``test_dataset_utils``.
 
     Args:
-        tmpdir: Test fixture or input parameter `tmpdir` (tmpdir).
+        tmpdir: Temporary directory path fixture.
     """
     path = str(tmpdir.join("test_save2.jpg"))
     arr = ops.zeros((32, 32, 3))
@@ -126,7 +126,7 @@ def test_save_img(tmpdir: TensorLike) -> None:
 
 def test_smart_resize() -> None:
     # MOCK ops.slice to avoid ml_switcheroo_compiler bug and ops.image.resize
-    """Verify or execute `test smart resize`."""
+    """Test ``smart_resize`` behavior and edge cases in ``test_dataset_utils``."""
     with (
         mock.patch("zero_keras.ops.slice", return_value=ops.zeros((50, 50, 3))),
         mock.patch("zero_keras.ops.image.resize", return_value=ops.zeros((50, 50, 3))),

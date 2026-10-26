@@ -11,7 +11,7 @@ from zero_keras.saving import saving_api
 
 
 def test_saving_model() -> None:
-    """Verify or execute `test saving model`."""
+    """Test ``saving_model`` behavior and edge cases in ``test_saving_export``."""
     model = Model()
     with mock.patch("ml_switcheroo_compiler.serialization.save_model") as mock_save:
         saving_api.save_model(model, "test.keras", overwrite=False, zipped=True)
@@ -19,7 +19,7 @@ def test_saving_model() -> None:
 
 
 def test_loading_model() -> None:
-    """Verify or execute `test loading model`."""
+    """Test ``loading_model`` behavior and edge cases in ``test_saving_export``."""
     with mock.patch(
         "ml_switcheroo_compiler.serialization.load_model", return_value="model"
     ) as mock_load:
@@ -33,7 +33,7 @@ def test_loading_model() -> None:
 
 
 def test_decorators_and_scopes() -> None:
-    """Verify or execute `test decorators and scopes`."""
+    """Test ``decorators_and_scopes`` behavior and edge cases in ``test_saving_export``."""
 
     @saving_api.register_keras_serializable(package="P", name="N")
     class A:
@@ -46,7 +46,7 @@ def test_decorators_and_scopes() -> None:
 
 
 def test_export_archive(tmp_path: TensorLike) -> None:
-    """Verify or execute `test export archive`.
+    """Test ``export_archive`` behavior and edge cases in ``test_saving_export``.
 
     Args:
         tmp_path: Temporary directory fixture.
@@ -68,7 +68,7 @@ def test_export_archive(tmp_path: TensorLike) -> None:
 
 
 def test_layer_weights() -> None:
-    """Verify or execute `test layer weights`."""
+    """Test ``layer_weights`` behavior and edge cases in ``test_saving_export``."""
     from zero_keras.core_layers import Model
 
     model = Model()
@@ -77,10 +77,10 @@ def test_layer_weights() -> None:
         """Test helper class `FakeWeight` for saving export."""
 
         def assign(self, w: TensorLike) -> None:
-            """Verify or execute `assign` on `FakeWeight`.
+            """Update the stored value on ``FakeWeight`` in-place.
 
             Args:
-                w: Test fixture or input parameter `w` (w).
+                w: Weight tensor or sample weight array.
             """
             self.val = w
 
@@ -110,7 +110,7 @@ def test_layer_weights() -> None:
 
 
 def test_export_archive_methods() -> None:
-    """Verify or execute `test export archive methods`."""
+    """Test ``export_archive_methods`` behavior and edge cases in ``test_saving_export``."""
     from zero_keras.export.export_api import ExportArchive
 
     archive = ExportArchive()

@@ -13,11 +13,11 @@ from .utils import assert_allclose_keras_zero
 def check_schedule_parity(
     schedule_cls: TensorLike, keras_cls: TensorLike, **kwargs: TensorLike
 ) -> None:
-    """Verify or execute `check schedule parity`.
+    """Assert numerical and structural parity in ``check_schedule_parity``.
 
     Args:
-        schedule_cls: Test fixture or input parameter `schedule_cls` (schedule cls).
-        keras_cls: Test fixture or input parameter `keras_cls` (keras cls).
+        schedule_cls: Learning rate schedule class under test.
+        keras_cls: Reference Keras class used for parity comparison.
         **kwargs: Keyword arguments forwarded to helper.
     """
     keras_sched = keras_cls(**kwargs)
@@ -31,7 +31,7 @@ def check_schedule_parity(
 
 
 def test_schedule_CosineDecay() -> None:
-    """Verify or execute `test schedule CosineDecay`."""
+    """Test ``schedule_CosineDecay`` behavior and edge cases in ``test_schedule_parity``."""
     check_schedule_parity(
         schedules.CosineDecay,
         keras.optimizers.schedules.CosineDecay,
@@ -49,7 +49,7 @@ def test_schedule_CosineDecay() -> None:
 
 
 def test_schedule_ExponentialDecay() -> None:
-    """Verify or execute `test schedule ExponentialDecay`."""
+    """Test ``schedule_ExponentialDecay`` behavior and edge cases in ``test_schedule_parity``."""
     check_schedule_parity(
         schedules.ExponentialDecay,
         keras.optimizers.schedules.ExponentialDecay,
@@ -68,7 +68,7 @@ def test_schedule_ExponentialDecay() -> None:
 
 
 def test_schedule_CosineDecayRestarts() -> None:
-    """Verify or execute `test schedule CosineDecayRestarts`."""
+    """Test ``schedule_CosineDecayRestarts`` behavior and edge cases in ``test_schedule_parity``."""
     schedules.CosineDecayRestarts(0.1, 100, t_mul=1.0)(5)
     check_schedule_parity(
         schedules.CosineDecayRestarts,
@@ -79,7 +79,7 @@ def test_schedule_CosineDecayRestarts() -> None:
 
 
 def test_schedule_InverseTimeDecay() -> None:
-    """Verify or execute `test schedule InverseTimeDecay`."""
+    """Test ``schedule_InverseTimeDecay`` behavior and edge cases in ``test_schedule_parity``."""
     check_schedule_parity(
         schedules.InverseTimeDecay,
         keras.optimizers.schedules.InverseTimeDecay,
@@ -98,7 +98,7 @@ def test_schedule_InverseTimeDecay() -> None:
 
 
 def test_schedule_PiecewiseConstantDecay() -> None:
-    """Verify or execute `test schedule PiecewiseConstantDecay`."""
+    """Test ``schedule_PiecewiseConstantDecay`` behavior and edge cases in ``test_schedule_parity``."""
     check_schedule_parity(
         schedules.PiecewiseConstantDecay,
         keras.optimizers.schedules.PiecewiseConstantDecay,
@@ -108,7 +108,7 @@ def test_schedule_PiecewiseConstantDecay() -> None:
 
 
 def test_schedule_PolynomialDecay() -> None:
-    """Verify or execute `test schedule PolynomialDecay`."""
+    """Test ``schedule_PolynomialDecay`` behavior and edge cases in ``test_schedule_parity``."""
     check_schedule_parity(
         schedules.PolynomialDecay,
         keras.optimizers.schedules.PolynomialDecay,
@@ -129,6 +129,6 @@ def test_schedule_PolynomialDecay() -> None:
 
 
 def test_schedule_LearningRateSchedule() -> None:
-    """Verify or execute `test schedule LearningRateSchedule`."""
+    """Test ``schedule_LearningRateSchedule`` behavior and edge cases in ``test_schedule_parity``."""
     s = schedules.LearningRateSchedule()
     assert s(0) == 0.0

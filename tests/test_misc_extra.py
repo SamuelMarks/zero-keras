@@ -8,7 +8,7 @@ from zero_keras.types import TensorLike
 
 
 def test_timedistributed_built_twice() -> None:
-    """Verify or execute `test timedistributed built twice`."""
+    """Test ``timedistributed_built_twice`` behavior and edge cases in ``test_misc_extra``."""
     layer = layers.TimeDistributed(layers.Dense(4))
     layer.build((2, 5, 3))
     layer.build((2, 5, 3))
@@ -16,7 +16,7 @@ def test_timedistributed_built_twice() -> None:
 
 
 def test_sequential_call_with_layers() -> None:
-    """Verify or execute `test sequential call with layers`."""
+    """Test ``sequential_call_with_layers`` behavior and edge cases in ``test_misc_extra``."""
     layer = Sequential([layers.Dense(4)])
     x = random.uniform((2, 3), dtype="float32")
     out = layer(x)
@@ -24,13 +24,13 @@ def test_sequential_call_with_layers() -> None:
 
 
 def test_deserialize_custom_objects() -> None:
-    """Verify or execute `test deserialize custom objects`."""
+    """Test ``deserialize_custom_objects`` behavior and edge cases in ``test_misc_extra``."""
 
     class MyCustomLayer(layers.Layer):
         """Keras ``MyCustomLayer`` class."""
 
         def __init__(self, **kwargs: TensorLike) -> None:
-            """Verify or execute `init` on `MyCustomLayer`.
+            """Initialize the ``MyCustomLayer`` test helper instance.
 
             Args:
                 **kwargs: Keyword arguments forwarded to helper.
@@ -44,14 +44,14 @@ def test_deserialize_custom_objects() -> None:
 
 
 def test_deserialize_str() -> None:
-    """Verify or execute `test deserialize str`."""
+    """Test ``deserialize_str`` behavior and edge cases in ``test_misc_extra``."""
     from zero_keras.layers import misc
 
     class DummyMiscLayer(layers.Layer):
         """Keras ``DummyMiscLayer`` class."""
 
         def __init__(self, **kwargs: TensorLike) -> None:
-            """Verify or execute `init` on `DummyMiscLayer`.
+            """Initialize the ``DummyMiscLayer`` test helper instance.
 
             Args:
                 **kwargs: Keyword arguments forwarded to helper.
@@ -67,17 +67,17 @@ def test_deserialize_str() -> None:
 
 
 def test_deserialize_dict_fallback() -> None:
-    """Verify or execute `test deserialize dict fallback`."""
+    """Test ``deserialize_dict_fallback`` behavior and edge cases in ``test_misc_extra``."""
     from zero_keras.layers import misc
 
     class DummyMiscLayer2(layers.Layer):
         """Keras ``DummyMiscLayer2`` class."""
 
         def __init__(self, units: TensorLike = 10, **kwargs: TensorLike) -> None:
-            """Verify or execute `init` on `DummyMiscLayer2`.
+            """Initialize the ``DummyMiscLayer2`` test helper instance.
 
             Args:
-                units: Test fixture or input parameter `units` (units).
+                units: Number of output hidden units.
                 **kwargs: Keyword arguments forwarded to helper.
             """
             self.units = units
@@ -96,6 +96,6 @@ def test_deserialize_dict_fallback() -> None:
 
 
 def test_deserialize_other() -> None:
-    """Verify or execute `test deserialize other`."""
+    """Test ``deserialize_other`` behavior and edge cases in ``test_misc_extra``."""
     obj = layers.deserialize(123)
     assert obj == 123

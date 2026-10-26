@@ -195,22 +195,20 @@ class CountingCallback(Callback):
 
 
 def test_compile_resolution() -> None:
-    """Verify or execute `test compile resolution`."""
+    """Verify Model.compile resolves string identifiers for optimizer, loss, and metrics."""
     model = Sequential([Dense(2)])
     model.compile(optimizer="adam", loss="mse", metrics=["accuracy"])
     assert type(model.optimizer).__name__ == "Adam"
     assert model.loss_fn.name == "mean_squared_error"
-    assert type(model.compiled_metrics[0]).__name__ == "accuracy" or isinstance(
-        model.compiled_metrics[0], str
-    )
+    assert type(model.compiled_metrics[0]).__name__ == "Accuracy"
 
     # Test callables
     def my_loss(y: TensorLike, p: TensorLike) -> TensorLike:
-        """Verify or execute `my loss`.
+        """Execute test helper ``my_loss`` in ``test_core_workflows``.
 
         Args:
-            y: Test fixture or input parameter `y` (y).
-            p: Test fixture or input parameter `p` (p).
+            y: Ground-truth target tensor or second operand.
+            p: Predicted probability or parameter value.
 
         Returns:
             TensorLike: Result from `my_loss`.
@@ -223,15 +221,15 @@ def test_compile_resolution() -> None:
 
 
 def test_fit_evaluate_predict_callbacks() -> None:
-    """Verify or execute `test fit evaluate predict callbacks`."""
+    """Test ``fit_evaluate_predict_callbacks`` behavior and edge cases in ``test_core_workflows``."""
     model = Sequential([Dense(1)])
 
     def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
-        """Verify or execute `dummy loss`.
+        """Execute test helper ``dummy_loss`` in ``test_core_workflows``.
 
         Args:
-            y: Test fixture or input parameter `y` (y).
-            p: Test fixture or input parameter `p` (p).
+            y: Ground-truth target tensor or second operand.
+            p: Predicted probability or parameter value.
 
         Returns:
             TensorLike: Result from `dummy_loss`.
@@ -272,15 +270,15 @@ def test_fit_evaluate_predict_callbacks() -> None:
 
 
 def test_fit_evaluate_predict_iterator_callbacks() -> None:
-    """Verify or execute `test fit evaluate predict iterator callbacks`."""
+    """Test ``fit_evaluate_predict_iterator_callbacks`` behavior and edge cases in ``test_core_workflows``."""
     model = Sequential([Dense(1)])
 
     def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
-        """Verify or execute `dummy loss`.
+        """Execute test helper ``dummy_loss`` in ``test_core_workflows``.
 
         Args:
-            y: Test fixture or input parameter `y` (y).
-            p: Test fixture or input parameter `p` (p).
+            y: Ground-truth target tensor or second operand.
+            p: Predicted probability or parameter value.
 
         Returns:
             TensorLike: Result from `dummy_loss`.
@@ -291,7 +289,7 @@ def test_fit_evaluate_predict_iterator_callbacks() -> None:
 
     # Create simple generator
     def data_gen() -> TensorLike:
-        """Verify or execute `data gen`."""
+        """Execute test helper ``data_gen`` in ``test_core_workflows``."""
         for _ in range(2):
             yield random.uniform((5, 2)), random.uniform((5, 1))
 
@@ -300,11 +298,11 @@ def test_fit_evaluate_predict_iterator_callbacks() -> None:
         """Test helper class `MockIterator` for core workflows."""
 
         def __init__(self) -> None:
-            """Verify or execute `init` on `MockIterator`."""
+            """Initialize the ``MockIterator`` test helper instance."""
             self.gen = data_gen()
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `MockIterator`.
+            """Yield successive batches or elements from ``MockIterator``.
 
             Returns:
                 TensorLike: Result from `__iter__`.
@@ -312,7 +310,7 @@ def test_fit_evaluate_predict_iterator_callbacks() -> None:
             return self
 
         def __next__(self) -> TensorLike:
-            """Verify or execute `next` on `MockIterator`.
+            """Return the next batch from ``MockIterator``.
 
             Returns:
                 TensorLike: Result from `__next__`.
@@ -339,7 +337,7 @@ def test_fit_evaluate_predict_iterator_callbacks() -> None:
 
 
 def test_save_and_load_weights() -> None:
-    """Verify or execute `test save and load weights`."""
+    """Test ``save_and_load_weights`` behavior and edge cases in ``test_core_workflows``."""
     model = Sequential([Dense(1)])
     model.build((None, 2))
 
@@ -356,15 +354,15 @@ def test_save_and_load_weights() -> None:
 
 
 def test_stop_training() -> None:
-    """Verify or execute `test stop training`."""
+    """Test ``stop_training`` behavior and edge cases in ``test_core_workflows``."""
     model = Sequential([Dense(1)])
 
     def dummy_loss(y: TensorLike, p: TensorLike) -> TensorLike:
-        """Verify or execute `dummy loss`.
+        """Execute test helper ``dummy_loss`` in ``test_core_workflows``.
 
         Args:
-            y: Test fixture or input parameter `y` (y).
-            p: Test fixture or input parameter `p` (p).
+            y: Ground-truth target tensor or second operand.
+            p: Predicted probability or parameter value.
 
         Returns:
             TensorLike: Result from `dummy_loss`.
@@ -379,11 +377,11 @@ def test_stop_training() -> None:
         """Test helper class `StopCb` for core workflows."""
 
         def on_epoch_end(self, epoch: TensorLike, logs: TensorLike | None = None) -> None:
-            """Verify or execute `on epoch end` on `StopCb`.
+            """Handle the ``on_epoch_end`` lifecycle event on ``StopCb``.
 
             Args:
-                epoch: Test fixture or input parameter `epoch` (epoch).
-                logs: Test fixture or input parameter `logs` (logs).
+                epoch: Zero-based training epoch index.
+                logs: Dictionary of scalar metric and loss results.
             """
             self.model.stop_training = True
 

@@ -142,12 +142,136 @@ class Optimizer:
             self._exclude_from_weight_decay_names = set(var_names)
 
     def finalize_variable_values(self, var_list: Sequence[TensorLike]) -> None:
-        """Finalize variable values (e.g. overwriting with EMA averages) at the end of training.
+        """Finalize variable values (overwriting with EMA averages when ``use_ema=True``) at the end of training.
 
         Args:
             var_list: Sequence of model variables to finalize.
         """
-        _ = var_list
+        from zero_keras.types import SupportsAssign
+
+        if self.use_ema and self._ema_vars:
+            for var, ema_v in zip(var_list, self._ema_vars):
+                if isinstance(var, SupportsAssign):
+                    var.assign(ema_v.value)
+
+    def _current_learning_rate(self, dtype: DTypeLike = "float32") -> TensorLike:
+        """Evaluate ``self.learning_rate`` (supporting schedules) and cast to ``dtype``.
+
+        Args:
+            dtype: Target tensor data type.
+
+        Returns:
+            TensorLike: Effective learning rate scalar tensor.
+        """
+        from zero_keras import ops
+
+        lr = (
+            self.learning_rate(self.iterations)
+            if callable(self.learning_rate)
+            else self.learning_rate
+        )
+        return ops.cast(_to_tensor(lr), dtype)
+
+    def _clip_gradients(self, grads: Sequence[TensorLike | None]) -> list[TensorLike | None]:
+        """Clip ``grads`` according to ``clipvalue``, ``clipnorm``, and ``global_clipnorm``.
+
+        Args:
+            grads: Sequence of gradient tensors or ``None`` entries.
+
+        Returns:
+            list[TensorLike | None]: Clipped gradient list.
+        """
+        from zero_keras import ops
+
+        clipped: list[TensorLike | None] = list(grads)
+        if self.clipvalue is not None:
+            cv = float(self.clipvalue)
+            clipped = [ops.clip(_to_tensor(g), -cv, cv) if g is not None else None for g in clipped]
+        if self.clipnorm is not None:
+            cn = float(self.clipnorm)
+            new_clipped: list[TensorLike | None] = []
+            for g in clipped:
+                if g is None:
+                    new_clipped.append(None)
+                else:
+                    gt = _to_tensor(g)
+                    norm = ops.sqrt(ops.sum(ops.square(gt)))
+                    scale = ops.minimum(
+                        _to_tensor(1.0), ops.divide(_to_tensor(cn), ops.add(norm, _to_tensor(1e-7)))
+                    )
+                    new_clipped.append(ops.multiply(gt, scale))
+            clipped = new_clipped
+        if self.global_clipnorm is not None:
+            gcn = float(self.global_clipnorm)
+            valid_g = [_to_tensor(g) for g in clipped if g is not None]
+            if valid_g:
+                total_sq = _to_tensor(0.0)
+                for gt in valid_g:
+                    total_sq = ops.add(total_sq, ops.sum(ops.square(gt)))
+                g_norm = ops.sqrt(total_sq)
+                g_scale = ops.minimum(
+                    _to_tensor(1.0),
+                    ops.divide(_to_tensor(gcn), ops.add(g_norm, _to_tensor(1e-7))),
+                )
+                clipped = [
+                    ops.multiply(_to_tensor(g), g_scale) if g is not None else None for g in clipped
+                ]
+        return clipped
+
+    def _apply_weight_decay(
+        self, variables: Sequence[TensorLike], learning_rate: TensorLike | None = None
+    ) -> None:
+        """Apply decoupled weight decay to ``variables`` when ``self.weight_decay`` is set.
+
+        Args:
+            variables: Sequence of trainable variables.
+            learning_rate: Optional effective learning rate; if ``None``, evaluated from ``self._current_learning_rate()``.
+        """
+        if self.weight_decay is None:
+            return
+        from zero_keras.types import NameCarrierProtocol, SupportsAssign
+
+        lr = learning_rate if learning_rate is not None else self._current_learning_rate()
+        wd = _to_tensor(self.weight_decay)
+        for var in variables:
+            if var in self._exclude_from_weight_decay:
+                continue
+            v_name = var.name if isinstance(var, NameCarrierProtocol) and var.name else ""
+            if any(pat in v_name for pat in self._exclude_from_weight_decay_names):
+                continue
+            if isinstance(var, SupportsAssign):
+                var.assign(var - var * wd * lr)
+
+    def _update_ema(self, variables: Sequence[TensorLike], step: int = 1) -> None:
+        """Update exponential moving average variables and optionally overwrite ``variables``.
+
+        Args:
+            variables: Sequence of trainable variables.
+            step: Current 1-based step index used for ``ema_overwrite_frequency``.
+        """
+        if not self.use_ema:
+            return
+        from zero_keras.types import DTypeCarrierProtocol, ShapeCarrierProtocol, SupportsAssign
+
+        if not self._ema_vars:
+            for var in variables:
+                v_shape = var.shape if isinstance(var, ShapeCarrierProtocol) else ()
+                v_dtype = var.dtype if isinstance(var, DTypeCarrierProtocol) else "float32"
+                ema_v = self.add_variable(shape=v_shape, dtype=v_dtype, name="ema")
+                ema_v.assign(_to_tensor(var))
+                self._ema_vars.append(ema_v)
+        mom = _to_tensor(self.ema_momentum)
+        one_minus_mom = _to_tensor(1.0 - float(self.ema_momentum))
+        for var, ema_v in zip(variables, self._ema_vars):
+            new_ema = ema_v * mom + _to_tensor(var) * one_minus_mom
+            ema_v.assign(new_ema)
+            if (
+                self.ema_overwrite_frequency is not None
+                and int(self.ema_overwrite_frequency) > 0
+                and step % int(self.ema_overwrite_frequency) == 0
+                and isinstance(var, SupportsAssign)
+            ):
+                var.assign(new_ema)
 
     @classmethod
     def from_config(cls, config: ConfigDict) -> Optimizer:
@@ -293,6 +417,10 @@ class Optimizer:
         self.global_clipnorm: TensorLike = kwargs.get("global_clipnorm")
         self.use_ema: TensorLike = kwargs.get("use_ema", False)
         self.ema_momentum: TensorLike = kwargs.get("ema_momentum", 0.99)
+        self.ema_overwrite_frequency: TensorLike = kwargs.get("ema_overwrite_frequency")
+        self._exclude_from_weight_decay: set[TensorLike] = set()
+        self._exclude_from_weight_decay_names: set[str] = set()
+        self._ema_vars: list[Variable] = []
         self.variables: list[Variable] = []
         self.built: bool = False
 
@@ -1804,7 +1932,7 @@ class Ftrl(Optimizer):
             n_new = n + ops.square(g)
             sigma = (ops.sqrt(n_new) - ops.sqrt(n)) / lr
             z_new = z + g - sigma * var
-            var_new = var - lr * z_new / ops.sqrt(n_new)
+            var_new = ops.negative(lr * z_new / ops.sqrt(n_new))
             n.assign(n_new)
             z.assign(z_new)
             var.assign(var_new)
@@ -2302,9 +2430,11 @@ class LossScaleOptimizer(Optimizer):
         Args:
             var_list: Sequence of model variables to optimize.
         """
+        from zero_keras.types import OptimizerBuildProtocol
+
         if self.built:
             return
-        if hasattr(self.inner_optimizer, "build"):
+        if isinstance(self.inner_optimizer, OptimizerBuildProtocol):
             self.inner_optimizer.build(var_list)
         self.built = True
 
@@ -2318,10 +2448,12 @@ class LossScaleOptimizer(Optimizer):
             *args: Additional positional arguments.
             **kwargs: Additional keyword arguments.
         """
+        from zero_keras.types import OptimizerProtocol
+
         if not self.built:
             self.build([v for _, v in grads_and_vars])
 
-        if hasattr(self.inner_optimizer, "apply_gradients"):
+        if isinstance(self.inner_optimizer, OptimizerProtocol):
             self.inner_optimizer.apply_gradients(grads_and_vars, *args, **kwargs)
 
 
@@ -3295,6 +3427,7 @@ _OPTIMIZER_REGISTRY: dict[str, type[Optimizer]] = {
     "Optimizer": Optimizer,
     "RMSprop": RMSprop,
     "SGD": SGD,
+    "ScheduleFreeAdamW": ScheduleFreeAdamW,
 }
 
 
@@ -3330,17 +3463,24 @@ def deserialize(
     Returns:
         TensorLike: Reconstructed optimizer instance or original config.
     """
-    _ = custom_objects
     if config is None:
         return None
     if isinstance(config, str):
+        if isinstance(custom_objects, dict) and config in custom_objects:
+            custom_cls = custom_objects[config]
+            return custom_cls() if callable(custom_cls) else custom_cls
         return get(config)
     if isinstance(config, dict):
         class_name = config.get("class_name")
         conf = config.get("config", {})
-        cls = _OPTIMIZER_REGISTRY.get(str(class_name)) if isinstance(class_name, str) else None
-        if cls is not None and isinstance(conf, dict):
-            return cls(**conf)
+        if isinstance(class_name, str) and isinstance(conf, dict):
+            if isinstance(custom_objects, dict) and class_name in custom_objects:
+                custom_cls = custom_objects[class_name]
+                if callable(custom_cls):
+                    return custom_cls(**conf)
+            cls = _OPTIMIZER_REGISTRY.get(class_name)
+            if cls is not None:
+                return cls(**conf)
     return config
 
 
@@ -3356,10 +3496,31 @@ def get(identifier: TensorLike) -> TensorLike:
     if identifier is None:
         return None
     if isinstance(identifier, str):
-        identifier = identifier.lower()
-        if identifier == "adam":
-            return Adam()
-        if identifier == "sgd":
-            return SGD()
+        if (
+            identifier in _OPTIMIZER_REGISTRY
+            and _OPTIMIZER_REGISTRY[identifier] is not LossScaleOptimizer
+        ):
+            return _OPTIMIZER_REGISTRY[identifier]()
+        low = identifier.lower()
+        mapping: dict[str, type[Optimizer]] = {
+            "adam": Adam,
+            "adamw": AdamW,
+            "sgd": SGD,
+            "rmsprop": RMSprop,
+            "adagrad": Adagrad,
+            "adadelta": Adadelta,
+            "adamax": Adamax,
+            "nadam": Nadam,
+            "ftrl": Ftrl,
+            "lion": Lion,
+            "adafactor": Adafactor,
+            "lamb": Lamb,
+            "muon": Muon,
+            "schedule_free_adamw": ScheduleFreeAdamW,
+            "schedulefreeadamw": ScheduleFreeAdamW,
+            "optimizer": Optimizer,
+        }
+        if low in mapping:
+            return mapping[low]()
         return identifier
     return identifier

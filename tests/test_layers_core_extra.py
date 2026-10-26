@@ -8,7 +8,7 @@ from zero_keras import ops
 
 
 def test_dense() -> None:
-    """Verify or execute `test dense`."""
+    """Test ``dense`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Dense
 
     layer = Dense(32, activation="relu", use_bias=True)
@@ -19,7 +19,7 @@ def test_dense() -> None:
 
 
 def test_dropout() -> None:
-    """Verify or execute `test dropout`."""
+    """Test ``dropout`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Dropout
 
     layer = Dropout(0.5, noise_shape=(None, 1, 1), seed=42)
@@ -29,7 +29,7 @@ def test_dropout() -> None:
 
 
 def test_flatten() -> None:
-    """Verify or execute `test flatten`."""
+    """Test ``flatten`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Flatten
 
     layer = Flatten(data_format="channels_first")
@@ -39,7 +39,7 @@ def test_flatten() -> None:
 
 
 def test_reshape() -> None:
-    """Verify or execute `test reshape`."""
+    """Test ``reshape`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Reshape
 
     layer = Reshape((10, 2))
@@ -49,7 +49,7 @@ def test_reshape() -> None:
 
 
 def test_permute() -> None:
-    """Verify or execute `test permute`."""
+    """Test ``permute`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Permute
 
     layer = Permute((2, 1))
@@ -59,7 +59,7 @@ def test_permute() -> None:
 
 
 def test_repeat_vector() -> None:
-    """Verify or execute `test repeat vector`."""
+    """Test ``repeat_vector`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import RepeatVector
 
     layer = RepeatVector(3)
@@ -69,7 +69,7 @@ def test_repeat_vector() -> None:
 
 
 def test_masking() -> None:
-    """Verify or execute `test masking`."""
+    """Test ``masking`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Masking
 
     layer = Masking(mask_value=0.0)
@@ -79,7 +79,7 @@ def test_masking() -> None:
 
 
 def test_lambda() -> None:
-    """Verify or execute `test lambda`."""
+    """Test ``lambda`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Lambda
 
     layer = Lambda(lambda x: x)
@@ -87,7 +87,7 @@ def test_lambda() -> None:
 
 
 def test_identity() -> None:
-    """Verify or execute `test identity`."""
+    """Test ``identity`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Identity
 
     layer = Identity()
@@ -100,7 +100,7 @@ if __name__ == "__main__":
 
 
 def test_input_layer() -> None:
-    """Verify or execute `test input layer`."""
+    """Test ``input_layer`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import InputLayer
 
     layer = InputLayer(input_shape=(10,), batch_size=2)
@@ -112,7 +112,7 @@ def test_input_layer() -> None:
 
 
 def test_wrapper_layer() -> None:
-    """Verify or execute `test wrapper layer`."""
+    """Test ``wrapper_layer`` behavior and edge cases in ``test_layers_core_extra``."""
     from zero_keras.layers.core import Dense, Wrapper
 
     dense = Dense(32)

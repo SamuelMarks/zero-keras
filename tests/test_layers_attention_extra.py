@@ -8,7 +8,7 @@ from zero_keras import ops
 
 
 def test_additive_attention() -> None:
-    """Verify or execute `test additive attention`."""
+    """Test ``additive_attention`` behavior and edge cases in ``test_layers_attention_extra``."""
     from zero_keras.layers.attention import AdditiveAttention
 
     layer = AdditiveAttention(use_scale=True, causal=True, dropout=0.1)
@@ -26,7 +26,7 @@ def test_additive_attention() -> None:
 
 
 def test_attention() -> None:
-    """Verify or execute `test attention`."""
+    """Test ``attention`` behavior and edge cases in ``test_layers_attention_extra``."""
     from zero_keras.layers.attention import Attention
 
     layer = Attention(use_scale=True, score_mode="dot", causal=True, dropout=0.1)
@@ -48,7 +48,7 @@ def test_attention() -> None:
 
 
 def test_group_query_attention() -> None:
-    """Verify or execute `test group query attention`."""
+    """Test ``group_query_attention`` behavior and edge cases in ``test_layers_attention_extra``."""
     from zero_keras.layers.attention import GroupQueryAttention
 
     layer = GroupQueryAttention(
@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
 
 def test_multi_head_attention() -> None:
-    """Verify or execute `test multi head attention`."""
+    """Test ``multi_head_attention`` behavior and edge cases in ``test_layers_attention_extra``."""
     from zero_keras.layers.attention import MultiHeadAttention
 
     layer = MultiHeadAttention(

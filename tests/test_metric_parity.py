@@ -14,7 +14,7 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed() -> None:
-    """Verify or execute `set seed`."""
+    """Execute test helper ``set_seed`` in ``test_metric_parity``."""
     set_seed(42)
 
 
@@ -29,17 +29,17 @@ def check_metric_parity(
     rtol: TensorLike = 1e-5,
     **kwargs: TensorLike,
 ) -> None:
-    """Verify or execute `check metric parity`.
+    """Assert numerical and structural parity in ``check_metric_parity``.
 
     Args:
-        metric_cls: Test fixture or input parameter `metric_cls` (metric cls).
-        keras_cls: Test fixture or input parameter `keras_cls` (keras cls).
-        y_true: Test fixture or input parameter `y_true` (y true).
-        y_pred: Test fixture or input parameter `y_pred` (y pred).
-        y_true2: Test fixture or input parameter `y_true2` (y true2).
-        y_pred2: Test fixture or input parameter `y_pred2` (y pred2).
-        atol: Test fixture or input parameter `atol` (atol).
-        rtol: Test fixture or input parameter `rtol` (rtol).
+        metric_cls: Metric class under test.
+        keras_cls: Reference Keras class used for parity comparison.
+        y_true: Ground-truth target tensor.
+        y_pred: Predicted output tensor.
+        y_true2: Second batch of ground-truth targets.
+        y_pred2: Second batch of predicted outputs.
+        atol: Absolute numerical tolerance for parity assertions.
+        rtol: Relative numerical tolerance for parity assertions.
         **kwargs: Keyword arguments forwarded to helper.
     """
     keras_metric = keras_cls(**kwargs)
@@ -68,7 +68,7 @@ def check_metric_parity(
 
 
 def test_metric_Mean() -> None:
-    """Verify or execute `test metric Mean`."""
+    """Test ``metric_Mean`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.Mean,
         keras.metrics.Mean,
@@ -80,7 +80,7 @@ def test_metric_Mean() -> None:
 
 
 def test_metric_Sum() -> None:
-    """Verify or execute `test metric Sum`."""
+    """Test ``metric_Sum`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.Sum,
         keras.metrics.Sum,
@@ -92,15 +92,15 @@ def test_metric_Sum() -> None:
 
 
 def test_metric_MeanMetricWrapper() -> None:
-    """Verify or execute `test metric MeanMetricWrapper`."""
+    """Test ``metric_MeanMetricWrapper`` behavior and edge cases in ``test_metric_parity``."""
     import keras.losses
 
     def custom_fn(y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-        """Verify or execute `custom fn`.
+        """Execute test helper ``custom_fn`` in ``test_metric_parity``.
 
         Args:
-            y_true: Test fixture or input parameter `y_true` (y true).
-            y_pred: Test fixture or input parameter `y_pred` (y pred).
+            y_true: Ground-truth target tensor.
+            y_pred: Predicted output tensor.
 
         Returns:
             TensorLike: Result from `custom_fn`.
@@ -119,7 +119,7 @@ def test_metric_MeanMetricWrapper() -> None:
 
 
 def test_metric_Accuracy() -> None:
-    """Verify or execute `test metric Accuracy`."""
+    """Test ``metric_Accuracy`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.Accuracy,
         keras.metrics.Accuracy,
@@ -131,7 +131,7 @@ def test_metric_Accuracy() -> None:
 
 
 def test_metric_BinaryAccuracy() -> None:
-    """Verify or execute `test metric BinaryAccuracy`."""
+    """Test ``metric_BinaryAccuracy`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.BinaryAccuracy,
         keras.metrics.BinaryAccuracy,
@@ -143,7 +143,7 @@ def test_metric_BinaryAccuracy() -> None:
 
 
 def test_metric_CategoricalAccuracy() -> None:
-    """Verify or execute `test metric CategoricalAccuracy`."""
+    """Test ``metric_CategoricalAccuracy`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.CategoricalAccuracy,
         keras.metrics.CategoricalAccuracy,
@@ -155,7 +155,7 @@ def test_metric_CategoricalAccuracy() -> None:
 
 
 def test_metric_SparseCategoricalAccuracy() -> None:
-    """Verify or execute `test metric SparseCategoricalAccuracy`."""
+    """Test ``metric_SparseCategoricalAccuracy`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.SparseCategoricalAccuracy,
         keras.metrics.SparseCategoricalAccuracy,
@@ -167,7 +167,7 @@ def test_metric_SparseCategoricalAccuracy() -> None:
 
 
 def test_metric_TopKCategoricalAccuracy() -> None:
-    """Verify or execute `test metric TopKCategoricalAccuracy`."""
+    """Test ``metric_TopKCategoricalAccuracy`` behavior and edge cases in ``test_metric_parity``."""
     check_metric_parity(
         metrics.TopKCategoricalAccuracy,
         keras.metrics.TopKCategoricalAccuracy,
@@ -179,88 +179,66 @@ def test_metric_TopKCategoricalAccuracy() -> None:
 
 
 def test_metric_unsupported() -> None:
-    """Verify or execute `test metric unsupported`."""
-    y_true = np.random.rand(2, 5).astype(np.float32)
-    y_pred = np.random.rand(2, 5).astype(np.float32)
-    metrics_list = [
-        "CosineSimilarity",
-        "MeanAbsoluteError",
-        "MeanAbsolutePercentageError",
-        "MeanSquaredError",
-        "MeanSquaredLogarithmicError",
-        "Hinge",
-        "SquaredHinge",
-        "CategoricalHinge",
-        "RootMeanSquaredError",
-        "KLDivergence",
-        "Poisson",
-        "ConcordanceCorrelation",
-        "PearsonCorrelation",
-    ]
-    for m in metrics_list:
-        zero_m = vars(metrics)[m]()
-        zero_m.update_state(y_true, y_pred)
-        assert zero_m.result() is not None
+    """Verify correlation metrics update and compute finite correlation tensors."""
+    y_true = np.array([[1.0, 2.0, 3.0], [2.0, 4.0, 6.0]], dtype="float32")
+    y_pred = np.array([[1.1, 1.9, 3.2], [2.1, 3.8, 5.9]], dtype="float32")
+
+    for zero_cls, keras_cls in [
+        (metrics.ConcordanceCorrelation, keras.metrics.ConcordanceCorrelation),
+        (metrics.PearsonCorrelation, keras.metrics.PearsonCorrelation),
+    ]:
+        check_metric_parity(zero_cls, keras_cls, y_true, y_pred, y_true, y_pred)
 
 
 def test_metrics_parity_more() -> None:
-    """Verify or execute `test metrics parity more`."""
-    y_true = np.random.rand(2, 5).astype(np.float32)
-    y_pred = np.random.rand(2, 5).astype(np.float32)
+    """Verify numerical parity against keras.metrics for regression and hinge metrics."""
+    rng = np.random.default_rng(42)
+    y_true = rng.uniform(0.1, 1.0, size=(2, 5)).astype(np.float32)
+    y_pred = rng.uniform(0.1, 1.0, size=(2, 5)).astype(np.float32)
 
-    metrics_list = [
-        "CosineSimilarity",
-        "MeanAbsoluteError",
-        "MeanAbsolutePercentageError",
-        "MeanSquaredError",
-        "MeanSquaredLogarithmicError",
-        "Hinge",
-        "SquaredHinge",
-        "CategoricalHinge",
-        "RootMeanSquaredError",
-        "KLDivergence",
-        "Poisson",
+    metric_pairs = [
+        (metrics.CosineSimilarity, keras.metrics.CosineSimilarity),
+        (metrics.MeanAbsoluteError, keras.metrics.MeanAbsoluteError),
+        (metrics.MeanAbsolutePercentageError, keras.metrics.MeanAbsolutePercentageError),
+        (metrics.MeanSquaredError, keras.metrics.MeanSquaredError),
+        (metrics.MeanSquaredLogarithmicError, keras.metrics.MeanSquaredLogarithmicError),
+        (metrics.Hinge, keras.metrics.Hinge),
+        (metrics.SquaredHinge, keras.metrics.SquaredHinge),
+        (metrics.CategoricalHinge, keras.metrics.CategoricalHinge),
+        (metrics.RootMeanSquaredError, keras.metrics.RootMeanSquaredError),
+        (metrics.KLDivergence, keras.metrics.KLDivergence),
+        (metrics.Poisson, keras.metrics.Poisson),
     ]
 
-    for m in metrics_list:
-        try:
-            check_metric_parity(
-                vars(metrics)[m],
-                vars(keras.metrics)[m],
-                y_true,
-                y_pred,
-                y_true,
-                y_pred,
-            )
-            print(f"{m} PASSED")
-        except Exception as e:
-            print(f"{m} FAILED: {e}")
+    for zero_cls, keras_cls in metric_pairs:
+        check_metric_parity(zero_cls, keras_cls, y_true, y_pred, y_true, y_pred)
 
 
 def test_classification_metrics_parity() -> None:
-    """Verify or execute `test classification metrics parity`."""
-    y_true = np.random.randint(0, 2, size=(2, 5)).astype(np.float32)
-    y_pred = np.random.rand(2, 5).astype(np.float32)
+    """Verify numerical parity against keras.metrics for binary classification metrics."""
+    y_true = np.array([[0.0, 1.0, 1.0, 0.0], [1.0, 0.0, 1.0, 1.0]], dtype=np.float32)
+    y_pred = np.array([[0.1, 0.9, 0.8, 0.2], [0.7, 0.3, 0.6, 0.4]], dtype=np.float32)
 
-    metrics_list = [
-        "AUC",
-        "FalsePositives",
-        "FalseNegatives",
-        "TruePositives",
-        "TrueNegatives",
-        "Precision",
-        "Recall",
+    metric_pairs = [
+        (metrics.AUC, keras.metrics.AUC),
+        (metrics.FalsePositives, keras.metrics.FalsePositives),
+        (metrics.FalseNegatives, keras.metrics.FalseNegatives),
+        (metrics.TruePositives, keras.metrics.TruePositives),
+        (metrics.TrueNegatives, keras.metrics.TrueNegatives),
+        (metrics.Precision, keras.metrics.Precision),
+        (metrics.Recall, keras.metrics.Recall),
+        (metrics.F1Score, keras.metrics.F1Score),
+        (metrics.FBetaScore, keras.metrics.FBetaScore),
+        (metrics.R2Score, keras.metrics.R2Score),
+        (metrics.BinaryIoU, keras.metrics.BinaryIoU),
     ]
 
-    for m in metrics_list:
-        # We test that the API shell executes cleanly without error
-        zero_m = vars(metrics)[m]()
-        zero_m.update_state(y_true, y_pred)
-        assert zero_m.result() is not None
+    for zero_cls, keras_cls in metric_pairs:
+        check_metric_parity(zero_cls, keras_cls, y_true, y_pred, y_true, y_pred)
 
 
 def test_metric_logcosherror() -> None:
-    """Verify or execute `test metric logcosherror`."""
+    """Verify LogCoshError numerical parity against keras.metrics.LogCoshError."""
     y_true = np.array([0, 1, 1, 0], dtype="float32")
     y_pred = np.array([0.1, 0.9, 0.8, 0.3], dtype="float32")
 
@@ -270,27 +248,27 @@ def test_metric_logcosherror() -> None:
 
 
 def test_metrics_sample_weights() -> None:
-    """Verify or execute `test metrics sample weights`."""
-    y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
-    y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
+    """Verify sample-weighted metric updates match keras.metrics across all loss-backed metrics."""
+    y_true = np.array([[1.0, 0.5], [0.5, 1.0]], dtype="float32")
+    y_pred = np.array([[0.9, 0.2], [0.2, 0.9]], dtype="float32")
     sample_weight = np.array([1.0, 0.5], dtype="float32")
 
-    metrics_list = [
-        "CosineSimilarity",
-        "MeanAbsoluteError",
-        "MeanAbsolutePercentageError",
-        "MeanSquaredError",
-        "MeanSquaredLogarithmicError",
-        "Hinge",
-        "SquaredHinge",
-        "CategoricalHinge",
-        "RootMeanSquaredError",
-        "KLDivergence",
-        "Poisson",
-        "ConcordanceCorrelation",
-        "PearsonCorrelation",
+    metric_classes = [
+        metrics.CosineSimilarity,
+        metrics.MeanAbsoluteError,
+        metrics.MeanAbsolutePercentageError,
+        metrics.MeanSquaredError,
+        metrics.MeanSquaredLogarithmicError,
+        metrics.Hinge,
+        metrics.SquaredHinge,
+        metrics.CategoricalHinge,
+        metrics.RootMeanSquaredError,
+        metrics.KLDivergence,
+        metrics.Poisson,
+        metrics.ConcordanceCorrelation,
+        metrics.PearsonCorrelation,
     ]
-    for m in metrics_list:
-        zero_m = vars(metrics)[m]()
+    for m_cls in metric_classes:
+        zero_m = m_cls()
         zero_m.update_state(y_true, y_pred, sample_weight=sample_weight)
         assert zero_m.result() is not None

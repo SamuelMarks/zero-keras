@@ -10,7 +10,7 @@ from .conftest import to_flat_floats
 
 
 def test_activations_layer() -> None:
-    """Verify or execute `test activations layer`."""
+    """Test ``activations_layer`` behavior and edge cases in ``test_layers_activations_extra``."""
     from zero_keras.layers.activations import (
         ELU,
         Activation,

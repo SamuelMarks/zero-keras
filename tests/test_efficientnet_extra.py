@@ -9,7 +9,7 @@ from zero_keras.applications.efficientnet_v2 import EfficientNetV2
 
 def test_efficientnet_extra_coverage() -> None:
     # EfficientNet custom args
-    """Verify or execute `test efficientnet extra coverage`."""
+    """Test ``efficientnet_extra_coverage`` behavior and edge cases in ``test_efficientnet_extra``."""
     model = EfficientNet(
         width_coefficient=1.0,
         depth_coefficient=1.0,

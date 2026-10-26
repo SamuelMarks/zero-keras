@@ -7,7 +7,7 @@ from zero_keras.core_layers import Variable
 
 
 def test_optimizers_io() -> None:
-    """Verify or execute `test optimizers io`."""
+    """Test ``optimizers_io`` behavior and edge cases in ``test_optimizers_extra``."""
     opt = optimizers.Adam()
     config = optimizers.serialize(opt)
     assert isinstance(config, dict)
@@ -29,12 +29,12 @@ def test_optimizers_io() -> None:
 
 
 def test_legacy() -> None:
-    """Verify or execute `test legacy`."""
+    """Test ``legacy`` behavior and edge cases in ``test_optimizers_extra``."""
     assert hasattr(optimizers, "legacy")
 
 
 def test_optimizer_methods_extra() -> None:
-    """Verify or execute `test optimizer methods extra`."""
+    """Test ``optimizer_methods_extra`` behavior and edge cases in ``test_optimizers_extra``."""
     from zero_keras.optimizers import Optimizer
 
     opt = Optimizer()
@@ -59,7 +59,7 @@ def test_optimizer_methods_extra() -> None:
 
 
 def test_all_optimizers_coverage() -> None:
-    """Verify or execute `test all optimizers coverage`."""
+    """Test ``all_optimizers_coverage`` behavior and edge cases in ``test_optimizers_extra``."""
     var_list = [Variable("zeros", shape=(2, 2)), Variable("zeros", shape=(2, 2))]
 
     for v in var_list:
@@ -91,7 +91,7 @@ def test_all_optimizers_coverage() -> None:
 
 
 def test_schedules_coverage() -> None:
-    """Verify or execute `test schedules coverage`."""
+    """Test ``schedules_coverage`` behavior and edge cases in ``test_optimizers_extra``."""
     from zero_keras.optimizers import schedules
 
     scheds = [

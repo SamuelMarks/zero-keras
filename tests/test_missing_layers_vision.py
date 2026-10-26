@@ -6,7 +6,7 @@ from zero_keras import layers, ops, random
 
 
 def test_equalization() -> None:
-    """Verify or execute `test equalization`."""
+    """Test ``equalization`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.Equalization()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
@@ -14,7 +14,7 @@ def test_equalization() -> None:
 
 
 def test_augmix() -> None:
-    """Verify or execute `test augmix`."""
+    """Test ``augmix`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.AugMix()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
@@ -22,7 +22,7 @@ def test_augmix() -> None:
 
 
 def test_auto_contrast() -> None:
-    """Verify or execute `test auto contrast`."""
+    """Test ``auto_contrast`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.AutoContrast()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
@@ -61,23 +61,53 @@ def test_center_crop() -> None:
 
 
 def test_cutmix() -> None:
-    """Verify or execute `test cutmix`."""
+    """Verify CutMix on raw images, tuple (images, labels), and dict {"images": ..., "labels": ...}."""
     layer = layers.CutMix()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
+    y = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
+
+    out_tup_train = layer((x, y), training=True)
+    assert isinstance(out_tup_train, tuple) and len(out_tup_train) == 2
+    out_tup_eval = layer((x, y), training=False)
+    assert isinstance(out_tup_eval, tuple) and len(out_tup_eval) == 2
+
+    out_dict_train = layer({"images": x, "labels": y}, training=True)
+    assert isinstance(out_dict_train, dict) and "labels" in out_dict_train
+    out_dict_no_lbl_train = layer({"images": x}, training=True)
+    assert isinstance(out_dict_no_lbl_train, dict) and "images" in out_dict_no_lbl_train
+    out_dict_eval = layer({"images": x, "labels": y}, training=False)
+    assert isinstance(out_dict_eval, dict) and "labels" in out_dict_eval
+    out_dict_no_lbl_eval = layer({"images": x}, training=False)
+    assert isinstance(out_dict_no_lbl_eval, dict) and "images" in out_dict_no_lbl_eval
 
 
 def test_mixup() -> None:
-    """Verify or execute `test mixup`."""
+    """Verify MixUp on raw images, tuple (images, labels), and dict {"images": ..., "labels": ...}."""
     layer = layers.MixUp()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
+    y = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     layer(x, training=True)
     layer(x, training=False)
 
+    out_tup_train = layer((x, y), training=True)
+    assert isinstance(out_tup_train, tuple) and len(out_tup_train) == 2
+    out_tup_eval = layer((x, y), training=False)
+    assert isinstance(out_tup_eval, tuple) and len(out_tup_eval) == 2
+
+    out_dict_train = layer({"images": x, "labels": y}, training=True)
+    assert isinstance(out_dict_train, dict) and "labels" in out_dict_train
+    out_dict_no_lbl_train = layer({"images": x}, training=True)
+    assert isinstance(out_dict_no_lbl_train, dict) and "images" in out_dict_no_lbl_train
+    out_dict_eval = layer({"images": x, "labels": y}, training=False)
+    assert isinstance(out_dict_eval, dict) and "labels" in out_dict_eval
+    out_dict_no_lbl_eval = layer({"images": x}, training=False)
+    assert isinstance(out_dict_no_lbl_eval, dict) and "images" in out_dict_no_lbl_eval
+
 
 def test_random_flip() -> None:
-    """Verify or execute `test random flip`."""
+    """Test ``random_flip`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.RandomFlip()
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
@@ -85,7 +115,7 @@ def test_random_flip() -> None:
 
 
 def test_random_rotation() -> None:
-    """Verify or execute `test random rotation`."""
+    """Test ``random_rotation`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.RandomRotation(0.2)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     layer(x, training=True)
@@ -93,7 +123,7 @@ def test_random_rotation() -> None:
 
 
 def test_resizing() -> None:
-    """Verify or execute `test resizing`."""
+    """Test ``resizing`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.Resizing(10, 10)
     x = random.uniform((2, 20, 20, 3), dtype="float32")
     layer(x, training=True)
@@ -101,7 +131,7 @@ def test_resizing() -> None:
 
 
 def test_category_encoding() -> None:
-    """Verify or execute `test category encoding`."""
+    """Test ``category_encoding`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.CategoryEncoding(num_tokens=4, output_mode="one_hot")
     x = ops.convert_to_tensor([1, 2], dtype="int32")
     _out = layer(x)
@@ -120,7 +150,7 @@ def test_category_encoding() -> None:
 
 
 def test_multi_head_attention() -> None:
-    """Verify or execute `test multi head attention`."""
+    """Test ``multi_head_attention`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.MultiHeadAttention(num_heads=2, key_dim=2)
     q = random.uniform((2, 10, 4), dtype="float32")
     v = random.uniform((2, 5, 4), dtype="float32")
@@ -129,6 +159,6 @@ def test_multi_head_attention() -> None:
 
 
 def test_alpha_dropout() -> None:
-    """Verify or execute `test alpha dropout`."""
+    """Test ``alpha_dropout`` behavior and edge cases in ``test_missing_layers_vision``."""
     layer = layers.AlphaDropout(0.5)
     layer(random.uniform((2, 10), dtype="float32"), training=True)

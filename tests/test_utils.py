@@ -14,7 +14,7 @@ from zero_keras.types import TensorLike
 
 
 def test_to_categorical() -> None:
-    """Verify or execute `test to categorical`."""
+    """Test ``to_categorical`` behavior and edge cases in ``test_utils``."""
     x = ops.convert_to_tensor([0, 1, 2, 1])
     y = utils.to_categorical(x, num_classes=3)
     assert y.shape == (4, 3)
@@ -25,19 +25,19 @@ def test_to_categorical() -> None:
 
 
 def test_normalize() -> None:
-    """Verify or execute `test normalize`."""
+    """Test ``normalize`` behavior and edge cases in ``test_utils``."""
     x = ops.convert_to_tensor([[1.0, 0.0], [0.0, 2.0]])
     y = utils.normalize(x, axis=-1)
     assert y is not None
 
 
 def test_set_random_seed() -> None:
-    """Verify or execute `test set random seed`."""
+    """Test ``set_random_seed`` behavior and edge cases in ``test_utils``."""
     utils.set_random_seed(42)
 
 
 def test_get_file() -> None:
-    """Verify or execute `test get file`."""
+    """Test ``get_file`` behavior and edge cases in ``test_utils``."""
     with tempfile.TemporaryDirectory() as d:
         dummy_content = b"test content"
         dummy_url = "file://" + os.path.join(d, "origin.txt")
@@ -78,13 +78,13 @@ def test_get_file() -> None:
 
 
 def test_get_file_error() -> None:
-    """Verify or execute `test get file error`."""
+    """Test ``get_file_error`` behavior and edge cases in ``test_utils``."""
     with tempfile.TemporaryDirectory() as d, pytest.raises(Exception):
         utils.get_file("test_err.txt", "http://localhost:12345/nonexistent", cache_dir=d)
 
 
 def test_progbar() -> None:
-    """Verify or execute `test progbar`."""
+    """Test ``progbar`` behavior and edge cases in ``test_utils``."""
     pb = utils.Progbar(10)
     pb.update(5, values=[("loss", 0.5)])
     pb.update(10, values=[("loss", 0.4), ("acc", 0.9)])
@@ -94,24 +94,24 @@ def test_progbar() -> None:
 
 @mock.patch("zero_keras.utils.plot_model")
 def test_plot_model(mock_plot_model: TensorLike) -> None:
-    """Verify or execute `test plot model`.
+    """Test ``plot_model`` behavior and edge cases in ``test_utils``.
 
     Args:
-        mock_plot_model: Test fixture or input parameter `mock_plot_model` (mock plot model).
+        mock_plot_model: Mocked ``plot_model`` visualization fixture.
     """
     utils.plot_model(None)
     mock_plot_model.assert_called_once_with(None)
 
 
 def test_dataset_utils() -> TensorLike:
-    """Verify or execute `test dataset utils`."""
+    """Test ``dataset_utils`` behavior and edge cases in ``test_utils``."""
 
 
 def test_set_random_seed_no_numpy(monkeypatch: TensorLike) -> None:
-    """Verify or execute `test set random seed no numpy`.
+    """Test ``set_random_seed_no_numpy`` behavior and edge cases in ``test_utils``.
 
     Args:
-        monkeypatch: Test fixture or input parameter `monkeypatch` (monkeypatch).
+        monkeypatch: Pytest ``MonkeyPatch`` fixture for attribute patching.
     """
     import sys
 
@@ -121,13 +121,13 @@ def test_set_random_seed_no_numpy(monkeypatch: TensorLike) -> None:
 
 
 def test_get_file_default_cache() -> None:
-    """Verify or execute `test get file default cache`."""
+    """Test ``get_file_default_cache`` behavior and edge cases in ``test_utils``."""
     fpath = utils.get_file("test_default.txt", "file:///dev/null")
     assert fpath is not None
 
 
 def test_get_file_tar() -> None:
-    """Verify or execute `test get file tar`."""
+    """Test ``get_file_tar`` behavior and edge cases in ``test_utils``."""
     with tempfile.TemporaryDirectory() as d:
         import tarfile
 
@@ -140,24 +140,24 @@ def test_get_file_tar() -> None:
 
 
 def test_to_categorical_exceptions(monkeypatch: TensorLike) -> None:
-    """Verify or execute `test to categorical exceptions`.
+    """Test ``to_categorical_exceptions`` behavior and edge cases in ``test_utils``.
 
     Args:
-        monkeypatch: Test fixture or input parameter `monkeypatch` (monkeypatch).
+        monkeypatch: Pytest ``MonkeyPatch`` fixture for attribute patching.
     """
 
     class BadMaxObj:
         """Test helper class `BadMaxObj` for utils."""
 
         def max(self) -> TensorLike:
-            """Verify or execute `max` on `BadMaxObj`."""
+            """Compute the maximum element value of ``BadMaxObj``."""
             raise Exception("bad max")
 
     def mock_ops_max(x: TensorLike, *args: TensorLike, **kwargs: TensorLike) -> TensorLike:
-        """Verify or execute `mock ops max`.
+        """Execute test helper ``mock_ops_max`` in ``test_utils``.
 
         Args:
-            x: Test fixture or input parameter `x` (x).
+            x: Input tensor or feature array.
             *args: Positional arguments forwarded to helper.
             **kwargs: Keyword arguments forwarded to helper.
 
@@ -170,7 +170,7 @@ def test_to_categorical_exceptions(monkeypatch: TensorLike) -> None:
             """Test helper class `OpsMaxObj` for utils."""
 
             def __int__(self) -> TensorLike:
-                """Verify or execute `int` on `OpsMaxObj`.
+                """Convert ``OpsMaxObj`` to a Python ``int``.
 
                 Returns:
                     TensorLike: Result from `__int__`.
@@ -186,6 +186,6 @@ def test_to_categorical_exceptions(monkeypatch: TensorLike) -> None:
 
 
 def test_to_categorical_no_num_classes_tensor() -> None:
-    """Verify or execute `test to categorical no num classes tensor`."""
+    """Test ``to_categorical_no_num_classes_tensor`` behavior and edge cases in ``test_utils``."""
     y = utils.to_categorical(ops.convert_to_tensor([0, 1]))
     assert y is not None

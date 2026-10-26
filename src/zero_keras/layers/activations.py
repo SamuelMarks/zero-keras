@@ -176,14 +176,16 @@ class PReLU(Layer):
         """
         from zero_keras import ops as backend_ops
         from zero_keras.activations import _to_tensor, _wrap
+        from zero_keras.types import DataCarrierProtocol, DTypeCarrierProtocol
 
         inputs_t = _to_tensor(inputs)
-        alpha_t = self.alpha.data if hasattr(self.alpha, "data") else None
+        alpha_t = self.alpha.data if isinstance(self.alpha, DataCarrierProtocol) else None
         if alpha_t is None:
             alpha_t = 0.0
         alpha_t = _to_tensor(alpha_t)
         zero_t = backend_ops.asarray(
-            0.0, dtype=(inputs_t.dtype if hasattr(inputs_t, "dtype") else "float32")
+            0.0,
+            dtype=(inputs_t.dtype if isinstance(inputs_t, DTypeCarrierProtocol) else "float32"),
         )
         pos = backend_ops.maximum(inputs_t, zero_t)
         min_t = backend_ops.minimum(inputs_t, zero_t)

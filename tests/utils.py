@@ -13,10 +13,10 @@ def assert_allclose_keras_zero(
     """Assert that the output from Keras and Zero Keras are close.
 
     Args:
-        keras_out: Test fixture or input parameter `keras_out` (keras out).
-        zero_out: Test fixture or input parameter `zero_out` (zero out).
-        rtol: Test fixture or input parameter `rtol` (rtol).
-        atol: Test fixture or input parameter `atol` (atol).
+        keras_out: Reference output produced by ``keras``.
+        zero_out: Output produced by ``zero_keras``.
+        rtol: Relative numerical tolerance for parity assertions.
+        atol: Absolute numerical tolerance for parity assertions.
     """
     keras_np = np.asarray(keras_out)
     zero_np = np.asarray(zero_out)
@@ -28,7 +28,7 @@ def set_seed(seed: TensorLike = 42) -> None:
     """Sets the random seed for reproducible tests across Keras backends and numpy.
 
     Args:
-        seed: Test fixture or input parameter `seed` (seed).
+        seed: Random seed integer or generator.
     """
     np.random.seed(seed)
     keras.utils.set_random_seed(seed)

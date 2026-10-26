@@ -3,12 +3,12 @@
 from __future__ import annotations
 from zero_keras.types import TensorLike
 
+from zero_keras import ops
 from zero_keras.core_layers import Input, KerasTensor, Layer, Model
-from zero_keras.ops import ops
 
 
 def test_keras_tensor() -> None:
-    """Verify or execute `test keras tensor`."""
+    """Test ``keras_tensor`` behavior and edge cases in ``test_keras``."""
     t = Input((2, 3))
     assert isinstance(t, KerasTensor)
     t.numpy()
@@ -54,7 +54,7 @@ def test_keras_tensor() -> None:
         """Test helper class `DummyHasNumpy` for keras."""
 
         def numpy(self) -> TensorLike:
-            """Verify or execute `numpy` on `DummyHasNumpy`.
+            """Convert the ``DummyHasNumpy`` value to a NumPy array.
 
             Returns:
                 TensorLike: Result from `numpy`.
@@ -90,7 +90,7 @@ def test_keras_tensor() -> None:
         """Test helper class `Unboolable` for keras."""
 
         def __bool__(self) -> TensorLike:
-            """Verify or execute `bool` on `Unboolable`."""
+            """Evaluate boolean truthiness of ``Unboolable``."""
             raise ValueError("cannot bool")
 
     t_unbool = KerasTensor((1,), data=Unboolable())
@@ -111,7 +111,7 @@ def test_keras_tensor() -> None:
         """Test helper class `HasHistory` for keras."""
 
         def __init__(self) -> None:
-            """Verify or execute `init` on `HasHistory`."""
+            """Initialize the ``HasHistory`` test helper instance."""
             self._keras_history = None
 
     Node(Layer(), outputs=[HasHistory()])
@@ -127,16 +127,16 @@ def test_keras_tensor() -> None:
 
 
 def test_layer_build() -> None:
-    """Verify or execute `test layer build`."""
+    """Test ``layer_build`` behavior and edge cases in ``test_keras``."""
 
     class MyLayer(Layer):
         """Test helper class `MyLayer` for keras."""
 
         def build(self, input_shape: TensorLike) -> None:
-            """Verify or execute `build` on `MyLayer`.
+            """Create weight variables and mark ``MyLayer`` as built.
 
             Args:
-                input_shape: Test fixture or input parameter `input_shape` (input shape).
+                input_shape: Input tensor shape tuple passed to ``build``.
             """
             self.w = 1.0
             super().build(input_shape)
@@ -148,7 +148,7 @@ def test_layer_build() -> None:
 
 
 def test_model_functional() -> None:
-    """Verify or execute `test model functional`."""
+    """Test ``model_functional`` behavior and edge cases in ``test_keras``."""
     from zero_keras import random
     from zero_keras.layers import Dense
 
@@ -166,7 +166,7 @@ def test_model_functional() -> None:
         """Test helper class `TestIterator` for keras."""
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `TestIterator`."""
+            """Yield successive batches or elements from ``TestIterator``."""
             yield (ops.convert_to_tensor([[1.0, 2.0]]), ops.convert_to_tensor([[1.0]]))
             yield (ops.convert_to_tensor([[2.0, 3.0]]), ops.convert_to_tensor([[2.0]]))
 
@@ -178,18 +178,18 @@ def test_model_functional() -> None:
         name = "dummy_metric"
 
         def reset_state(self) -> TensorLike:
-            """Verify or execute `reset state` on `DummyMetric`."""
+            """Reset the accumulated metric state of ``DummyMetric``."""
 
         def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Verify or execute `update state` on `DummyMetric`.
+            """Accumulate batch statistics into ``DummyMetric``.
 
             Args:
-                y: Test fixture or input parameter `y` (y).
-                y_pred: Test fixture or input parameter `y_pred` (y pred).
+                y: Ground-truth target tensor or second operand.
+                y_pred: Predicted output tensor.
             """
 
         def result(self) -> TensorLike:
-            """Verify or execute `result` on `DummyMetric`.
+            """Compute and return the current metric value of ``DummyMetric``.
 
             Returns:
                 TensorLike: Result from `result`.
@@ -206,21 +206,21 @@ def test_model_functional() -> None:
         __module__ = "torch.utils.data.DataLoader"
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `TestTorchLikeIterator`."""
+            """Yield successive batches or elements from ``TestTorchLikeIterator``."""
 
             class FakeTorchTensor:
                 """Test helper class `FakeTorchTensor` for keras."""
 
                 def __init__(self, val: TensorLike) -> None:
-                    """Verify or execute `init` on `FakeTorchTensor`.
+                    """Initialize the ``FakeTorchTensor`` test helper instance.
 
                     Args:
-                        val: Test fixture or input parameter `val` (val).
+                        val: Input tensor or scalar value.
                     """
                     self.val = val
 
                 def numpy(self) -> TensorLike:
-                    """Verify or execute `numpy` on `FakeTorchTensor`.
+                    """Convert the ``FakeTorchTensor`` value to a NumPy array.
 
                     Returns:
                         TensorLike: Result from `numpy`.
@@ -250,7 +250,7 @@ def test_model_functional() -> None:
         __module__ = "tensorflow.python.data.ops.dataset_ops.DatasetV2"
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `TestTfLikeIterator`."""
+            """Yield successive batches or elements from ``TestTfLikeIterator``."""
             yield (ops.convert_to_tensor([[1.0, 2.0]]), ops.convert_to_tensor([[1.0]]))
 
     m.evaluate(TestTfLikeIterator())
@@ -260,10 +260,10 @@ def test_model_functional() -> None:
         """Test helper class `UnpredictableTensor` for keras."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `UnpredictableTensor`.
+            """Initialize the ``UnpredictableTensor`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
@@ -272,10 +272,10 @@ def test_model_functional() -> None:
         """Test helper class `MyPredictLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `MyPredictLayer`.
+            """Execute the forward computation of ``MyPredictLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -285,17 +285,17 @@ def test_model_functional() -> None:
     m_pred_fail = Model(inputs=Input((2,)), outputs=MyPredictLayer()(Input((2,))))
 
     def my_gen_fail() -> TensorLike:
-        """Verify or execute `my gen fail`."""
+        """Execute test helper ``my_gen_fail`` in ``test_keras``."""
         yield ops.convert_to_tensor([[1.0, 2.0]])
 
     class MyEvalLayer(Layer):
         """Test helper class `MyEvalLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `MyEvalLayer`.
+            """Execute the forward computation of ``MyEvalLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -309,11 +309,11 @@ def test_model_functional() -> None:
         """Test helper class `EvalFailLoss` for keras."""
 
         def __call__(self, y_true: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `EvalFailLoss`.
+            """Execute the forward computation of ``EvalFailLoss``.
 
             Args:
-                y_true: Test fixture or input parameter `y_true` (y true).
-                y_pred: Test fixture or input parameter `y_pred` (y pred).
+                y_true: Ground-truth target tensor.
+                y_pred: Predicted output tensor.
 
             Returns:
                 TensorLike: Result from `__call__`.
@@ -326,18 +326,18 @@ def test_model_functional() -> None:
         name = "dummy_metric"
 
         def reset_state(self) -> TensorLike:
-            """Verify or execute `reset state` on `DummyMetric`."""
+            """Reset the accumulated metric state of ``DummyMetric``."""
 
         def update_state(self, y: TensorLike, y_pred: TensorLike) -> TensorLike:
-            """Verify or execute `update state` on `DummyMetric`.
+            """Accumulate batch statistics into ``DummyMetric``.
 
             Args:
-                y: Test fixture or input parameter `y` (y).
-                y_pred: Test fixture or input parameter `y_pred` (y pred).
+                y: Ground-truth target tensor or second operand.
+                y_pred: Predicted output tensor.
             """
 
         def result(self) -> TensorLike:
-            """Verify or execute `result` on `DummyMetric`.
+            """Compute and return the current metric value of ``DummyMetric``.
 
             Returns:
                 TensorLike: Result from `result`.
@@ -357,15 +357,15 @@ def test_model_functional() -> None:
         """Test helper class `Unsliceable` for keras."""
 
         def __init__(self, val: TensorLike) -> None:
-            """Verify or execute `init` on `Unsliceable`.
+            """Initialize the ``Unsliceable`` test helper instance.
 
             Args:
-                val: Test fixture or input parameter `val` (val).
+                val: Input tensor or scalar value.
             """
             self.val = val
 
         def __len__(self) -> TensorLike:
-            """Verify or execute `len` on `Unsliceable`.
+            """Return the number of items in ``Unsliceable``.
 
             Returns:
                 TensorLike: Result from `__len__`.
@@ -373,10 +373,10 @@ def test_model_functional() -> None:
             return 2
 
         def __getitem__(self, key: TensorLike) -> TensorLike:
-            """Verify or execute `getitem` on `Unsliceable`.
+            """Retrieve indexed elements from ``Unsliceable``.
 
             Args:
-                key: Test fixture or input parameter `key` (key).
+                key: Element index or slice key.
             """
             raise TypeError("Not sliceable")
 
@@ -399,10 +399,10 @@ def test_model_functional() -> None:
         """Test helper class `NoTrainingLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `NoTrainingLayer`.
+            """Execute the forward computation of ``NoTrainingLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -417,7 +417,7 @@ def test_model_functional() -> None:
 
 
 def test_model_uncompiled() -> None:
-    """Verify or execute `test model uncompiled`."""
+    """Test ``model_uncompiled`` behavior and edge cases in ``test_keras``."""
     i = Input((2,))
     layer_obj = Layer()(i)
     m = Model(inputs=i, outputs=layer_obj)
@@ -428,22 +428,22 @@ def test_model_uncompiled() -> None:
 
 
 def test_ops() -> None:
-    """Verify or execute `test ops`."""
+    """Test ``ops`` behavior and edge cases in ``test_keras``."""
     assert isinstance(ops.add(Input((2,)), Input((2,))), KerasTensor)
 
 
 def test_layer_properties() -> None:
-    """Verify or execute `test layer properties`."""
+    """Test ``layer_properties`` behavior and edge cases in ``test_keras``."""
     from zero_keras.core_layers import Layer
 
     class MyLayer(Layer):
         """Test helper class `MyLayer` for keras."""
 
         def build(self, input_shape: TensorLike) -> None:
-            """Verify or execute `build` on `MyLayer`.
+            """Create weight variables and mark ``MyLayer`` as built.
 
             Args:
-                input_shape: Test fixture or input parameter `input_shape` (input shape).
+                input_shape: Input tensor shape tuple passed to ``build``.
             """
             self.w = self.add_weight(shape=(1,), initializer="zeros", trainable=True)
             self.w2 = self.add_weight(shape=(1,), initializer="zeros", trainable=False)
@@ -473,16 +473,16 @@ def test_layer_properties() -> None:
         """Test helper class `DummyWeightNoNumpy` for keras."""
 
         def __init__(self, data: TensorLike) -> None:
-            """Verify or execute `init` on `DummyWeightNoNumpy`.
+            """Initialize the ``DummyWeightNoNumpy`` test helper instance.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
             """
             self.data = data
             self.shape = (1,)
 
         def __float__(self) -> TensorLike:
-            """Verify or execute `float` on `DummyWeightNoNumpy`.
+            """Convert ``DummyWeightNoNumpy`` to a Python ``float``.
 
             Returns:
                 TensorLike: Result from `__float__`.
@@ -490,10 +490,10 @@ def test_layer_properties() -> None:
             return float(self.data[0])
 
         def assign(self, value: TensorLike) -> None:
-            """Verify or execute `assign` on `DummyWeightNoNumpy`.
+            """Update the stored value on ``DummyWeightNoNumpy`` in-place.
 
             Args:
-                value: Test fixture or input parameter `value` (value).
+                value: Input tensor or scalar value to assign.
             """
             self.data = value
 
@@ -516,16 +516,16 @@ def test_layer_properties() -> None:
         """Test helper class `DummyWeightNoNumpyAndIterable` for keras."""
 
         def __init__(self, data: TensorLike) -> None:
-            """Verify or execute `init` on `DummyWeightNoNumpyAndIterable`.
+            """Initialize the ``DummyWeightNoNumpyAndIterable`` test helper instance.
 
             Args:
-                data: Test fixture or input parameter `data` (data).
+                data: Input batch tensor or dataset sample.
             """
             self.data = data
             self.shape = (1, 1)
 
         def __iter__(self) -> TensorLike:
-            """Verify or execute `iter` on `DummyWeightNoNumpyAndIterable`.
+            """Yield successive batches or elements from ``DummyWeightNoNumpyAndIterable``.
 
             Returns:
                 TensorLike: Result from `__iter__`.
@@ -533,7 +533,7 @@ def test_layer_properties() -> None:
             return iter([self.data])
 
         def __float__(self) -> TensorLike:
-            """Verify or execute `float` on `DummyWeightNoNumpyAndIterable`.
+            """Convert ``DummyWeightNoNumpyAndIterable`` to a Python ``float``.
 
             Returns:
                 TensorLike: Result from `__float__`.
@@ -541,10 +541,10 @@ def test_layer_properties() -> None:
             return float(self.data[0])
 
         def assign(self, value: TensorLike) -> None:
-            """Verify or execute `assign` on `DummyWeightNoNumpyAndIterable`.
+            """Update the stored value on ``DummyWeightNoNumpyAndIterable`` in-place.
 
             Args:
-                value: Test fixture or input parameter `value` (value).
+                value: Input tensor or scalar value to assign.
             """
             self.data = value
 
@@ -572,7 +572,7 @@ def test_layer_properties() -> None:
 
 
 def test_sequential_properties() -> None:
-    """Verify or execute `test sequential properties`."""
+    """Test ``sequential_properties`` behavior and edge cases in ``test_keras``."""
     from zero_keras.layers import Dense
     from zero_keras.models import Sequential
 
@@ -610,7 +610,7 @@ def test_sequential_properties() -> None:
 
 
 def test_models_sequential() -> None:
-    """Verify or execute `test models sequential`."""
+    """Test ``models_sequential`` behavior and edge cases in ``test_keras``."""
     from zero_keras import random
     from zero_keras.layers import Dense
     from zero_keras.models import Sequential
@@ -666,10 +666,10 @@ def test_models_sequential() -> None:
         non_trainable_weights = []
 
         def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `DummyLayerWithoutWeights`.
+            """Execute the forward computation of ``DummyLayerWithoutWeights``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
                 **kwargs: Keyword arguments forwarded to helper.
 
             Returns:
@@ -678,10 +678,10 @@ def test_models_sequential() -> None:
             return inputs
 
         def compute_output_shape(self, shape: TensorLike) -> TensorLike:
-            """Verify or execute `compute output shape` on `DummyLayerWithoutWeights`.
+            """Compute the output tensor shape for ``DummyLayerWithoutWeights``.
 
             Args:
-                shape: Test fixture or input parameter `shape` (shape).
+                shape: Target tensor shape tuple.
 
             Returns:
                 TensorLike: Result from `compute_output_shape`.
@@ -697,18 +697,18 @@ def test_models_sequential() -> None:
         non_trainable_weights = []
 
         def build(self, shape: TensorLike) -> None:
-            """Verify or execute `build` on `DummyLayerWithComputeShape`.
+            """Create weight variables and mark ``DummyLayerWithComputeShape`` as built.
 
             Args:
-                shape: Test fixture or input parameter `shape` (shape).
+                shape: Target tensor shape tuple.
             """
             self.built = True
 
         def compute_output_shape(self, shape: TensorLike) -> TensorLike:
-            """Verify or execute `compute output shape` on `DummyLayerWithComputeShape`.
+            """Compute the output tensor shape for ``DummyLayerWithComputeShape``.
 
             Args:
-                shape: Test fixture or input parameter `shape` (shape).
+                shape: Target tensor shape tuple.
 
             Returns:
                 TensorLike: Result from `compute_output_shape`.
@@ -716,10 +716,10 @@ def test_models_sequential() -> None:
             return shape
 
         def __call__(self, inputs: TensorLike, **kwargs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `DummyLayerWithComputeShape`.
+            """Execute the forward computation of ``DummyLayerWithComputeShape``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
                 **kwargs: Keyword arguments forwarded to helper.
 
             Returns:
@@ -741,10 +741,10 @@ def test_models_sequential() -> None:
         built = False
 
         def build(self, shape: TensorLike) -> None:
-            """Verify or execute `build` on `DummyLayerWithUnits`.
+            """Create weight variables and mark ``DummyLayerWithUnits`` as built.
 
             Args:
-                shape: Test fixture or input parameter `shape` (shape).
+                shape: Target tensor shape tuple.
             """
             self.built = True
 
@@ -854,7 +854,7 @@ def test_models_sequential() -> None:
 
 
 def test_model_dict_in_out() -> None:
-    """Verify or execute `test model dict in out`."""
+    """Test ``model_dict_in_out`` behavior and edge cases in ``test_keras``."""
     from zero_keras.core_layers import Input, Model
     from zero_keras.layers import Dense
 
@@ -875,7 +875,7 @@ def test_model_dict_in_out() -> None:
 
 
 def test_model_coverage_edges() -> None:
-    """Verify or execute `test model coverage edges`."""
+    """Test ``model_coverage_edges`` behavior and edge cases in ``test_keras``."""
     from zero_keras.core_layers import Input, Layer, Model
     from zero_keras.layers import Dense
 
@@ -884,10 +884,10 @@ def test_model_coverage_edges() -> None:
         """Test helper class `ListLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `ListLayer`.
+            """Execute the forward computation of ``ListLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -898,10 +898,10 @@ def test_model_coverage_edges() -> None:
         """Test helper class `DictLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `DictLayer`.
+            """Execute the forward computation of ``DictLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.
@@ -921,10 +921,10 @@ def test_model_coverage_edges() -> None:
         """Test helper class `AddLayer` for keras."""
 
         def call(self, inputs: TensorLike) -> TensorLike:
-            """Verify or execute `call` on `AddLayer`.
+            """Execute the forward computation of ``AddLayer``.
 
             Args:
-                inputs: Test fixture or input parameter `inputs` (inputs).
+                inputs: Input tensor or nested structure of tensors.
 
             Returns:
                 TensorLike: Result from `call`.

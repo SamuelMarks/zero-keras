@@ -142,8 +142,27 @@ class AdditiveAttention(Layer):
             scores = ops.multiply(scores, _to_tensor(self.scale))
         scores = ops.sum(scores, axis=-1)
 
+        if use_causal_mask or self.causal:
+            seq_len_q = query.shape[-2]
+            seq_len_k = key.shape[-2]
+            causal_mask = ops.tril(ops.ones((seq_len_q, seq_len_k)))
+            causal_mask = ops.cast(causal_mask, scores.dtype)
+            scores = ops.where(causal_mask > 0.5, scores, _to_tensor(-1e9))
+
+        if isinstance(mask, (list, tuple)) and len(mask) >= 2 and mask[1] is not None:
+            v_mask = ops.cast(_to_tensor(mask[1]), scores.dtype)
+            v_mask = ops.expand_dims(v_mask, axis=1)
+            scores = ops.where(v_mask > 0.5, scores, _to_tensor(-1e9))
+
         scores = _to_tensor(softmax(scores))
+        if training and self.dropout > 0.0:
+            scores = _to_tensor(ops.dropout(scores, self.dropout))
+
         out = ops.matmul(scores, value)
+        if isinstance(mask, (list, tuple)) and len(mask) >= 1 and mask[0] is not None:
+            q_mask = ops.cast(_to_tensor(mask[0]), out.dtype)
+            q_mask = ops.expand_dims(q_mask, axis=-1)
+            out = ops.multiply(out, q_mask)
 
         if return_attention_scores:
             return _wrap(out), _wrap(scores)
@@ -228,6 +247,8 @@ class Attention(Layer):
             **kwargs: Base layer keyword arguments.
         """
         super().__init__(**kwargs)
+        if score_mode not in ("dot", "concat"):
+            raise ValueError(f"Invalid score_mode: {score_mode}. Expected 'dot' or 'concat'.")
         self.head_dim = kwargs.get("head_dim")
         self.use_scale = bool(use_scale)
         self.score_mode = str(score_mode)
@@ -235,9 +256,10 @@ class Attention(Layer):
         self.seed = seed
         self.causal = bool(causal)
         self.scale: TensorLike | None = None
+        self.concat_score_weight: TensorLike | None = None
 
     def build(self, input_shape: ShapeTuple) -> None:
-        """Create the optional ``scale`` weight.
+        """Create the optional ``scale`` and ``concat_score_weight`` weights.
 
         Args:
             input_shape: Shape tuple or list of shape tuples for ``[query, value, ...]``.
@@ -246,6 +268,10 @@ class Attention(Layer):
             return
         if self.use_scale:
             self.scale = self.add_weight(shape=(), initializer="ones", name="scale")
+        if self.score_mode == "concat":
+            self.concat_score_weight = self.add_weight(
+                shape=(), initializer="ones", name="concat_score_weight"
+            )
         self.built = True
 
     def call(
@@ -257,7 +283,7 @@ class Attention(Layer):
         use_causal_mask: bool = False,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Compute Luong-style dot-product attention over ``inputs``.
+        """Compute Luong-style dot-product or concat attention over ``inputs``.
 
         Args:
             inputs: Sequence of ``[query, value]`` or ``[query, value, key]`` tensors.
@@ -274,17 +300,43 @@ class Attention(Layer):
         value = _to_tensor(inputs[1])
         key = _to_tensor(inputs[2]) if len(inputs) > 2 else value
 
-        k_t = ops.permute(key, (0, 2, 1))
-        scores = ops.matmul(query, k_t)
+        from zero_keras.activations import softmax, tanh
 
-        if self.use_scale:
-            scores = ops.multiply(scores, _to_tensor(self.scale))
+        if self.score_mode == "concat":
+            q_exp = ops.expand_dims(query, 2)
+            k_exp = ops.expand_dims(key, 1)
+            energies = _to_tensor(tanh(ops.add(q_exp, k_exp)))
+            if self.use_scale and self.scale is not None:
+                energies = ops.multiply(energies, _to_tensor(self.scale))
+            energies = ops.multiply(energies, _to_tensor(self.concat_score_weight))
+            scores = ops.sum(energies, axis=-1)
+        else:
+            k_t = ops.permute(key, (0, 2, 1))
+            scores = ops.matmul(query, k_t)
+            if self.use_scale:
+                scores = ops.multiply(scores, _to_tensor(self.scale))
 
-        from zero_keras.activations import softmax
+        if use_causal_mask or self.causal:
+            seq_len_q = query.shape[-2]
+            seq_len_k = key.shape[-2]
+            causal_mask = ops.tril(ops.ones((seq_len_q, seq_len_k)))
+            causal_mask = ops.cast(causal_mask, scores.dtype)
+            scores = ops.where(causal_mask > 0.5, scores, _to_tensor(-1e9))
+
+        if isinstance(mask, (list, tuple)) and len(mask) >= 2 and mask[1] is not None:
+            v_mask = ops.cast(_to_tensor(mask[1]), scores.dtype)
+            v_mask = ops.expand_dims(v_mask, axis=1)
+            scores = ops.where(v_mask > 0.5, scores, _to_tensor(-1e9))
 
         scores = _to_tensor(softmax(scores))
+        if training and self.dropout > 0.0:
+            scores = _to_tensor(ops.dropout(scores, self.dropout, seed=self.seed))
 
         out = ops.matmul(scores, value)
+        if isinstance(mask, (list, tuple)) and len(mask) >= 1 and mask[0] is not None:
+            q_mask = ops.cast(_to_tensor(mask[0]), out.dtype)
+            q_mask = ops.expand_dims(q_mask, axis=-1)
+            out = ops.multiply(out, q_mask)
 
         if return_attention_scores:
             return _wrap(out), _wrap(scores)
@@ -461,11 +513,26 @@ class MultiHeadAttention(Layer):
         Args:
             input_shape: Shape tuple of the query tensor or tuple of input shape tuples.
         """
-        # Query shape is first element if multiple inputs, else the input shape
-        if isinstance(input_shape, tuple) and isinstance(input_shape[0], tuple):
-            q_shape = input_shape[0]
+        if (
+            isinstance(input_shape, (tuple, list))
+            and len(input_shape) > 0
+            and isinstance(input_shape[0], (tuple, list))
+        ):
+            q_shape = tuple(input_shape[0])
+            v_shape = (
+                tuple(input_shape[1])
+                if len(input_shape) > 1 and isinstance(input_shape[1], (tuple, list))
+                else q_shape
+            )
+            k_shape = (
+                tuple(input_shape[2])
+                if len(input_shape) > 2 and isinstance(input_shape[2], (tuple, list))
+                else v_shape
+            )
         else:
             q_shape = input_shape
+            v_shape = input_shape
+            k_shape = input_shape
 
         out_dim = (
             q_shape[-1]
@@ -527,12 +594,16 @@ class MultiHeadAttention(Layer):
             name="attention_output",
         )
         self._query_dense.build(q_shape)
-        self._key_dense.build(q_shape)
-        self._value_dense.build(q_shape)
+        self._key_dense.build(k_shape)
+        self._value_dense.build(v_shape)
 
         # Output dense input shape is ...HD
         out_shape_input = tuple(q_shape[:-1]) + (self.num_heads, self.value_dim)
         self._output_dense.build(out_shape_input)
+        self.query_dense = self._query_dense
+        self.key_dense = self._key_dense
+        self.value_dense = self._value_dense
+        self.output_dense = self._output_dense
         self.built = True
 
     def call(
@@ -565,9 +636,9 @@ class MultiHeadAttention(Layer):
         value = _to_tensor(value)
         key = value if key is None else _to_tensor(key)
 
-        query = self._query_dense(query)
-        key = self._key_dense(key)
-        value = self._value_dense(value)
+        query = _to_tensor(self._query_dense(query))
+        key = _to_tensor(self._key_dense(key))
+        value = _to_tensor(self._value_dense(value))
 
         import math
         import string
@@ -575,7 +646,7 @@ class MultiHeadAttention(Layer):
         from zero_keras import ops
 
         letters = string.ascii_lowercase
-        b_dims = len((query.shape if hasattr(query, "shape") else [1] * 4)) - 3
+        b_dims = len(query.shape) - 3
         b_str = letters[:b_dims]
         nxt = letters[b_dims:]
         t_str, h_str, d_str, s_str = nxt[0], nxt[1], nxt[2], nxt[3]
@@ -600,6 +671,8 @@ class MultiHeadAttention(Layer):
         from zero_keras.ops import softmax
 
         attention_scores = softmax(attention_scores, axis=-1)
+        if training and self.dropout > 0.0:
+            attention_scores = ops.dropout(attention_scores, self.dropout, seed=self.seed)
 
         eq_out = f"{b_str}{h_str}{t_str}{s_str},{b_str}{s_str}{h_str}{d_str}->{b_str}{t_str}{h_str}{d_str}"
         attention_output = ops.einsum(eq_out, attention_scores, value)
@@ -776,6 +849,19 @@ class GroupQueryAttention(MultiHeadAttention):
             name="attention_output",
         )
         self._query_dense.build(q_shape)
+        if (
+            isinstance(input_shape, (tuple, list))
+            and len(input_shape) > 1
+            and isinstance(input_shape[1], (tuple, list))
+        ):
+            v_shape = tuple(input_shape[1])
+            k_shape = (
+                tuple(input_shape[2])
+                if len(input_shape) > 2 and isinstance(input_shape[2], (tuple, list))
+                else v_shape
+            )
+            self._key_dense.build(k_shape)
+            self._value_dense.build(v_shape)
 
         out_shape_input = (
             (tuple(q_shape[:-1]) + (self.num_heads, self.value_dim))
@@ -783,6 +869,10 @@ class GroupQueryAttention(MultiHeadAttention):
             else None
         )
         self._output_dense.build(out_shape_input)
+        self.query_dense = self._query_dense
+        self.key_dense = self._key_dense
+        self.value_dense = self._value_dense
+        self.output_dense = self._output_dense
         self.built = True
 
     def call(
@@ -820,6 +910,7 @@ class GroupQueryAttention(MultiHeadAttention):
         value = self._value_dense(value)
 
         from zero_keras import ops
+        from zero_keras.types import ShapeCarrierProtocol
 
         num_repeats = self.num_heads // self.num_key_value_heads
         if num_repeats > 1:
@@ -833,7 +924,8 @@ class GroupQueryAttention(MultiHeadAttention):
         import string
 
         letters = string.ascii_lowercase
-        b_dims = len((query.shape if hasattr(query, "shape") else [1] * 4)) - 3
+        q_dims = query.shape if isinstance(query, ShapeCarrierProtocol) else (1, 1, 1, 1)
+        b_dims = len(q_dims) - 3
         b_str = letters[:b_dims]
         nxt = letters[b_dims:]
         t_str, h_str, d_str, s_str = nxt[0], nxt[1], nxt[2], nxt[3]
@@ -846,7 +938,7 @@ class GroupQueryAttention(MultiHeadAttention):
             attention_scores -= 1e9 * (1.0 - mask)
 
         if use_causal_mask:
-            seq_len = (query.shape if hasattr(query, "shape") else [0] * 3)[-3]
+            seq_len = (query.shape if isinstance(query, ShapeCarrierProtocol) else (0, 0, 0))[-3]
             idx = ops.arange(seq_len)
             mask = idx[:, None] >= idx[None, :]
             mask = ops.cast(mask, "float32")

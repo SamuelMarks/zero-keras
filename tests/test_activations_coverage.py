@@ -5,7 +5,7 @@ from zero_keras.types import TensorLike
 
 
 def test_activation_coverage_extra() -> None:
-    """Verify or execute `test activation coverage extra`."""
+    """Test ``activation_coverage_extra`` behavior and edge cases in ``test_activations_coverage``."""
     from zero_keras.activations import _to_tensor, _wrap, serialize
     from zero_keras.core_layers import KerasTensor
 
@@ -58,7 +58,7 @@ def test_activation_coverage_extra() -> None:
 
 
 def test_activation_coverage_holes() -> None:
-    """Verify or execute `test activation coverage holes`."""
+    """Test ``activation_coverage_holes`` behavior and edge cases in ``test_activations_coverage``."""
     import ml_switcheroo_compiler
 
     from zero_keras.activations import _to_tensor, deserialize, get, linear, serialize
@@ -67,7 +67,7 @@ def test_activation_coverage_holes() -> None:
         """Test helper class `MockTensor` for activations coverage."""
 
         def __init__(self) -> None:
-            """Verify or execute `init` on `MockTensor`."""
+            """Initialize the ``MockTensor`` test helper instance."""
 
     try:
         t = MockTensor()
@@ -79,10 +79,10 @@ def test_activation_coverage_holes() -> None:
     assert get("unknown_activation") == get("linear")
 
     def my_custom_activation(x: TensorLike) -> TensorLike:
-        """Verify or execute `my custom activation`.
+        """Execute test helper ``my_custom_activation`` in ``test_activations_coverage``.
 
         Args:
-            x: Test fixture or input parameter `x` (x).
+            x: Input tensor or feature array.
 
         Returns:
             TensorLike: Result from `my_custom_activation`.
@@ -105,7 +105,7 @@ def test_activation_coverage_holes() -> None:
 
 
 def test_coverage_for_all_callables() -> None:
-    """Verify or execute `test coverage for all callables`."""
+    """Test ``coverage_for_all_callables`` behavior and edge cases in ``test_activations_coverage``."""
     from zero_keras import activations, ops
 
     x = ops.convert_to_tensor([0.5, 0.5])
@@ -145,7 +145,7 @@ def test_coverage_for_all_callables() -> None:
 
 
 def test_get_extra() -> None:
-    """Verify or execute `test get extra`."""
+    """Test ``get_extra`` behavior and edge cases in ``test_activations_coverage``."""
     from zero_keras import activations
 
     # dict
@@ -154,10 +154,10 @@ def test_get_extra() -> None:
 
     # callable
     def my_act(x: TensorLike) -> TensorLike:
-        """Verify or execute `my act`.
+        """Execute test helper ``my_act`` in ``test_activations_coverage``.
 
         Args:
-            x: Test fixture or input parameter `x` (x).
+            x: Input tensor or feature array.
 
         Returns:
             TensorLike: Result from `my_act`.
@@ -171,7 +171,7 @@ def test_get_extra() -> None:
 
 
 def test_relu_params() -> None:
-    """Verify or execute `test relu params`."""
+    """Test ``relu_params`` behavior and edge cases in ``test_activations_coverage``."""
     from zero_keras import activations, ops
 
     x = ops.convert_to_tensor([-2.0, 0.0, 2.0, 5.0])
@@ -191,7 +191,7 @@ def test_relu_params() -> None:
 
 
 def test_activations_missing() -> None:
-    """Verify or execute `test activations missing`."""
+    """Test ``activations_missing`` behavior and edge cases in ``test_activations_coverage``."""
     from zero_keras import activations, ops
     from zero_keras.core_layers import KerasTensor
 

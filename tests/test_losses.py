@@ -9,7 +9,7 @@ from zero_keras.types import TensorLike
 
 
 def test_losses() -> None:
-    """Verify or execute `test losses`."""
+    """Test ``losses`` behavior and edge cases in ``test_losses``."""
     y_true_binary = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     y_pred_binary = ops.convert_to_tensor([[0.9, 0.1], [0.1, 0.9]])
 
@@ -95,7 +95,7 @@ def test_losses() -> None:
 
 
 def test_reductions() -> None:
-    """Verify or execute `test reductions`."""
+    """Test ``reductions`` behavior and edge cases in ``test_losses``."""
     y_true = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     y_pred = ops.convert_to_tensor([[0.9, 0.1], [0.1, 0.9]])
 
@@ -112,14 +112,14 @@ def test_reductions() -> None:
 
 
 def test_base_loss() -> None:
-    """Verify or execute `test base loss`."""
+    """Test ``base_loss`` behavior and edge cases in ``test_losses``."""
     loss = losses.Loss()
     res = loss(ops.convert_to_tensor([1.0]), ops.convert_to_tensor([1.0]))
     assert hasattr(res, "numpy") or isinstance(res, (float, int, Tensor))
 
 
 def test_loss_functions() -> None:
-    """Verify or execute `test loss functions`."""
+    """Test ``loss_functions`` behavior and edge cases in ``test_losses``."""
     y_true_binary = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]])
     y_pred_binary = ops.convert_to_tensor([[0.9, 0.1], [0.1, 0.9]])
 
@@ -131,7 +131,7 @@ def test_loss_functions() -> None:
 
 
 def test_loss_get_deserialize() -> None:
-    """Verify or execute `test loss get deserialize`."""
+    """Test ``loss_get_deserialize`` behavior and edge cases in ``test_losses``."""
     assert isinstance(losses.get("mse"), losses.MeanSquaredError)
     assert losses.get("unknown") == "unknown"
     assert losses.get(None) is None
@@ -144,7 +144,7 @@ def test_loss_get_deserialize() -> None:
 
 
 def test_loss_base_methods() -> None:
-    """Verify or execute `test loss base methods`."""
+    """Test ``loss_base_methods`` behavior and edge cases in ``test_losses``."""
     loss = losses.Loss(name="my_loss")
     assert loss.call("y_true", "y_pred") == "y_pred"
     config = loss.get_config()
@@ -161,18 +161,18 @@ def test_loss_base_methods() -> None:
 
 
 def test_losses_deserialize_fallback() -> None:
-    """Verify or execute `test losses deserialize fallback`."""
+    """Test ``losses_deserialize_fallback`` behavior and edge cases in ``test_losses``."""
     assert losses.deserialize(123) == 123
     assert losses.deserialize({"class_name": "UnknownLoss"}) == {"class_name": "UnknownLoss"}
 
 
 def test_losses_get_fallback() -> None:
-    """Verify or execute `test losses get fallback`."""
+    """Test ``losses_get_fallback`` behavior and edge cases in ``test_losses``."""
     assert losses.get("some_unknown_loss_string") == "some_unknown_loss_string"
 
 
 def test_dice_loss() -> None:
-    """Verify or execute `test dice loss`."""
+    """Test ``dice_loss`` behavior and edge cases in ``test_losses``."""
     y_true = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = ops.convert_to_tensor([[0.9, 0.1], [0.2, 0.8]], dtype="float32")
     loss = losses.dice(y_true, y_pred)
@@ -180,7 +180,7 @@ def test_dice_loss() -> None:
 
 
 def test_tversky_loss() -> None:
-    """Verify or execute `test tversky loss`."""
+    """Test ``tversky_loss`` behavior and edge cases in ``test_losses``."""
     y_true = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = ops.convert_to_tensor([[0.9, 0.1], [0.2, 0.8]], dtype="float32")
     loss = losses.tversky(y_true, y_pred)
@@ -188,10 +188,10 @@ def test_tversky_loss() -> None:
 
 
 def test_ctc_loss(monkeypatch: TensorLike) -> None:
-    """Verify or execute `test ctc loss`.
+    """Test ``ctc_loss`` behavior and edge cases in ``test_losses``.
 
     Args:
-        monkeypatch: Test fixture or input parameter `monkeypatch` (monkeypatch).
+        monkeypatch: Pytest ``MonkeyPatch`` fixture for attribute patching.
     """
 
     def mock_ctc_loss(
@@ -200,13 +200,13 @@ def test_ctc_loss(monkeypatch: TensorLike) -> None:
         input_lengths: TensorLike,
         target_lengths: TensorLike,
     ) -> TensorLike:
-        """Verify or execute `mock ctc loss`.
+        """Execute test helper ``mock_ctc_loss`` in ``test_losses``.
 
         Args:
-            log_probs: Test fixture or input parameter `log_probs` (log probs).
-            targets: Test fixture or input parameter `targets` (targets).
-            input_lengths: Test fixture or input parameter `input_lengths` (input lengths).
-            target_lengths: Test fixture or input parameter `target_lengths` (target lengths).
+            log_probs: Log-probability tensor of shape ``(batch, time, classes)``.
+            targets: Ground-truth target label tensor.
+            input_lengths: 1D tensor of sequence lengths for each input sample.
+            target_lengths: 1D tensor of target label sequence lengths.
 
         Returns:
             TensorLike: Result from `mock_ctc_loss`.

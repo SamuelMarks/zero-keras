@@ -136,8 +136,8 @@ def check_file_typing(py_file: Path, strict_no_getattr: bool = True) -> list[str
             elif node.id == "object":
                 violations.append(f"{py_file}:{node.lineno}: Disallowed usage of 'object'")
         elif isinstance(node, ast.Attribute):
-            if is_src_file and node.attr == "__dict__":
-                violations.append(f"{py_file}:{node.lineno}: Disallowed access to '__dict__'")
+            if is_src_file and node.attr in ("__dict__", "__class__"):
+                violations.append(f"{py_file}:{node.lineno}: Disallowed access to '{node.attr}'")
         elif isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name):
                 if node.func.id == "cast" and imported_typing_cast:
@@ -146,7 +146,14 @@ def check_file_typing(py_file: Path, strict_no_getattr: bool = True) -> list[str
                     violations.append(
                         f"{py_file}:{node.lineno}: Disallowed usage of '{node.func.id}'"
                     )
-                elif is_src_file and node.func.id in ("globals", "locals"):
+                elif is_src_file and node.func.id in (
+                    "globals",
+                    "locals",
+                    "vars",
+                    "exec",
+                    "eval",
+                    "hasattr",
+                ):
                     violations.append(
                         f"{py_file}:{node.lineno}: Disallowed usage of '{node.func.id}()'"
                     )

@@ -14,7 +14,7 @@ from .utils import assert_allclose_keras_zero, set_seed
 
 @pytest.fixture(autouse=True)
 def _set_seed() -> None:
-    """Verify or execute `set seed`."""
+    """Execute test helper ``set_seed`` in ``test_loss_parity``."""
     set_seed(42)
 
 
@@ -27,15 +27,15 @@ def check_loss_parity(
     rtol: TensorLike = 1e-5,
     **kwargs: TensorLike,
 ) -> None:
-    """Verify or execute `check loss parity`.
+    """Assert numerical and structural parity in ``check_loss_parity``.
 
     Args:
-        loss_cls: Test fixture or input parameter `loss_cls` (loss cls).
-        keras_cls: Test fixture or input parameter `keras_cls` (keras cls).
-        y_true: Test fixture or input parameter `y_true` (y true).
-        y_pred: Test fixture or input parameter `y_pred` (y pred).
-        atol: Test fixture or input parameter `atol` (atol).
-        rtol: Test fixture or input parameter `rtol` (rtol).
+        loss_cls: Loss class under test.
+        keras_cls: Reference Keras class used for parity comparison.
+        y_true: Ground-truth target tensor.
+        y_pred: Predicted output tensor.
+        atol: Absolute numerical tolerance for parity assertions.
+        rtol: Relative numerical tolerance for parity assertions.
         **kwargs: Keyword arguments forwarded to helper.
     """
     keras_loss = keras_cls(**kwargs)
@@ -48,7 +48,7 @@ def check_loss_parity(
 
 
 def test_loss_BinaryCrossentropy() -> None:
-    """Verify or execute `test loss BinaryCrossentropy`."""
+    """Test ``loss_BinaryCrossentropy`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(losses.BinaryCrossentropy, keras.losses.BinaryCrossentropy, y_true, y_pred)
@@ -63,7 +63,7 @@ def test_loss_BinaryCrossentropy() -> None:
 
 
 def test_loss_BinaryFocalCrossentropy() -> None:
-    """Verify or execute `test loss BinaryFocalCrossentropy`."""
+    """Test ``loss_BinaryFocalCrossentropy`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(
@@ -84,7 +84,7 @@ def test_loss_BinaryFocalCrossentropy() -> None:
 
 
 def test_loss_CategoricalCrossentropy() -> None:
-    """Verify or execute `test loss CategoricalCrossentropy`."""
+    """Test ``loss_CategoricalCrossentropy`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -104,7 +104,7 @@ def test_loss_CategoricalCrossentropy() -> None:
 
 
 def test_loss_CategoricalFocalCrossentropy() -> None:
-    """Verify or execute `test loss CategoricalFocalCrossentropy`."""
+    """Test ``loss_CategoricalFocalCrossentropy`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -124,7 +124,7 @@ def test_loss_CategoricalFocalCrossentropy() -> None:
 
 
 def test_loss_SparseCategoricalCrossentropy() -> None:
-    """Verify or execute `test loss SparseCategoricalCrossentropy`."""
+    """Test ``loss_SparseCategoricalCrossentropy`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([0, 1])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(
@@ -143,21 +143,21 @@ def test_loss_SparseCategoricalCrossentropy() -> None:
 
 
 def test_loss_MeanSquaredError() -> None:
-    """Verify or execute `test loss MeanSquaredError`."""
+    """Test ``loss_MeanSquaredError`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.MeanSquaredError, keras.losses.MeanSquaredError, y_true, y_pred)
 
 
 def test_loss_MeanAbsoluteError() -> None:
-    """Verify or execute `test loss MeanAbsoluteError`."""
+    """Test ``loss_MeanAbsoluteError`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.MeanAbsoluteError, keras.losses.MeanAbsoluteError, y_true, y_pred)
 
 
 def test_loss_MeanAbsolutePercentageError() -> None:
-    """Verify or execute `test loss MeanAbsolutePercentageError`."""
+    """Test ``loss_MeanAbsolutePercentageError`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -169,7 +169,7 @@ def test_loss_MeanAbsolutePercentageError() -> None:
 
 
 def test_loss_MeanSquaredLogarithmicError() -> None:
-    """Verify or execute `test loss MeanSquaredLogarithmicError`."""
+    """Test ``loss_MeanSquaredLogarithmicError`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(
@@ -181,7 +181,7 @@ def test_loss_MeanSquaredLogarithmicError() -> None:
 
 
 def test_loss_Huber() -> None:
-    """Verify or execute `test loss Huber`."""
+    """Test ``loss_Huber`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Huber, keras.losses.Huber, y_true, y_pred)
@@ -189,35 +189,35 @@ def test_loss_Huber() -> None:
 
 
 def test_loss_LogCosh() -> None:
-    """Verify or execute `test loss LogCosh`."""
+    """Test ``loss_LogCosh`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.LogCosh, keras.losses.LogCosh, y_true, y_pred)
 
 
 def test_loss_Hinge() -> None:
-    """Verify or execute `test loss Hinge`."""
+    """Test ``loss_Hinge`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.Hinge, keras.losses.Hinge, y_true, y_pred)
 
 
 def test_loss_SquaredHinge() -> None:
-    """Verify or execute `test loss SquaredHinge`."""
+    """Test ``loss_SquaredHinge`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, -1.0, 1.0])
     y_pred = np.array([0.8, -0.9, 1.2])
     check_loss_parity(losses.SquaredHinge, keras.losses.SquaredHinge, y_true, y_pred)
 
 
 def test_loss_CategoricalHinge() -> None:
-    """Verify or execute `test loss CategoricalHinge`."""
+    """Test ``loss_CategoricalHinge`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(losses.CategoricalHinge, keras.losses.CategoricalHinge, y_true, y_pred)
 
 
 def test_loss_CosineSimilarity() -> None:
-    """Verify or execute `test loss CosineSimilarity`."""
+    """Test ``loss_CosineSimilarity`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
     check_loss_parity(losses.CosineSimilarity, keras.losses.CosineSimilarity, y_true, y_pred)
@@ -227,21 +227,21 @@ def test_loss_CosineSimilarity() -> None:
 
 
 def test_loss_KLDivergence() -> None:
-    """Verify or execute `test loss KLDivergence`."""
+    """Test ``loss_KLDivergence`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
     y_pred = np.array([[0.8, 0.1, 0.1], [0.1, 0.8, 0.1]])
     check_loss_parity(losses.KLDivergence, keras.losses.KLDivergence, y_true, y_pred)
 
 
 def test_loss_Poisson() -> None:
-    """Verify or execute `test loss Poisson`."""
+    """Test ``loss_Poisson`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
     check_loss_parity(losses.Poisson, keras.losses.Poisson, y_true, y_pred)
 
 
 def test_loss_Loss() -> None:
-    """Verify or execute `test loss Loss`."""
+    """Test ``loss_Loss`` behavior and edge cases in ``test_loss_parity``."""
     # Base class fallback
     y_true = np.array([1.0, 2.0, 3.0])
     y_pred = np.array([1.1, 1.9, 3.2])
@@ -251,7 +251,7 @@ def test_loss_Loss() -> None:
 
 
 def test_loss_unsupported() -> None:
-    """Verify or execute `test loss unsupported`."""
+    """Test ``loss_unsupported`` behavior and edge cases in ``test_loss_parity``."""
     # Test losses with actual numeric output
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]])
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]])
@@ -281,7 +281,7 @@ def test_loss_unsupported() -> None:
 
 
 def test_loss_complex_parity() -> None:
-    """Verify or execute `test loss complex parity`."""
+    """Test ``loss_complex_parity`` behavior and edge cases in ``test_loss_parity``."""
     y_true = np.array([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     y_pred = np.array([[0.9, 0.1], [0.1, 0.9]], dtype="float32")
 

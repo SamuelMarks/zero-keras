@@ -29,8 +29,8 @@ def dummy_jax_module(params: TensorLike, x: TensorLike, **kwargs: TensorLike) ->
     """Increment ``x`` by 1 for JAX wrapper testing.
 
     Args:
-        params: Test fixture or input parameter `params` (params).
-        x: Test fixture or input parameter `x` (x).
+        params: Model parameter dictionary or sequence.
+        x: Input tensor or feature array.
         **kwargs: Keyword arguments forwarded to helper.
 
     Returns:

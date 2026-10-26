@@ -8,7 +8,7 @@ from zero_keras import ops, regularizers
 
 
 def test_l2_regularizer() -> None:
-    """Verify or execute `test l2 regularizer`."""
+    """Test ``l2_regularizer`` behavior and edge cases in ``test_regularizers``."""
     reg = regularizers.L2(l2=0.01)
     base_reg = regularizers.Regularizer()
     x = ops.convert_to_tensor([1.0, 2.0])
@@ -18,7 +18,7 @@ def test_l2_regularizer() -> None:
 
 
 def test_l1_regularizer() -> None:
-    """Verify or execute `test l1 regularizer`."""
+    """Test ``l1_regularizer`` behavior and edge cases in ``test_regularizers``."""
     reg = regularizers.L1(l1=0.01)
     x = ops.convert_to_tensor([1.0, 2.0])
     assert reg(x) is not None
@@ -26,7 +26,7 @@ def test_l1_regularizer() -> None:
 
 
 def test_l1_l2_regularizer() -> None:
-    """Verify or execute `test l1 l2 regularizer`."""
+    """Test ``l1_l2_regularizer`` behavior and edge cases in ``test_regularizers``."""
     reg = regularizers.L1L2(l1=0.01, l2=0.01)
     x = ops.convert_to_tensor([1.0, 2.0])
     assert reg(x) is not None
@@ -40,7 +40,7 @@ def test_l1_l2_regularizer() -> None:
 
 
 def test_orthogonal_regularizer() -> None:
-    """Verify or execute `test orthogonal regularizer`."""
+    """Test ``orthogonal_regularizer`` behavior and edge cases in ``test_regularizers``."""
     reg = regularizers.OrthogonalRegularizer(factor=0.01, mode="rows")
     x = ops.convert_to_tensor([[1.0, 0.0], [0.0, 1.0]], dtype="float32")
     assert reg(x) is not None
@@ -58,7 +58,7 @@ def test_orthogonal_regularizer() -> None:
 
 
 def test_regularizer_get() -> None:
-    """Verify or execute `test regularizer get`."""
+    """Test ``regularizer_get`` behavior and edge cases in ``test_regularizers``."""
     assert regularizers.get(None) is None
     reg = regularizers.L2()
     assert regularizers.get(reg) is reg
@@ -73,7 +73,7 @@ def test_regularizer_get() -> None:
 
 
 def test_serialize_deserialize() -> None:
-    """Verify or execute `test serialize deserialize`."""
+    """Test ``serialize_deserialize`` behavior and edge cases in ``test_regularizers``."""
     reg = regularizers.L2(l2=0.01)
     config = regularizers.serialize(reg)
     assert isinstance(config, dict)

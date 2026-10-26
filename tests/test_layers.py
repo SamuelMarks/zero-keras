@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 from zero_keras.types import TensorLike
-import inspect
-from unittest.mock import MagicMock
 from zero_keras import layers, random
 import pytest
 from zero_keras.layers import (
@@ -45,7 +43,7 @@ from zero_keras.layers import (
     ZeroPadding2D,
     ZeroPadding3D,
 )
-from zero_keras.ops import ops
+from zero_keras import ops
 from ml_switcheroo_compiler import ops as msc_ops
 from zero_keras.layers import (
     RMSNormalization,
@@ -56,18 +54,15 @@ from .conftest import assert_allclose_zero, to_flat_floats
 
 
 def test_layers() -> None:
-    """Verify or execute `test layers`."""
-    layer_names = []
-    for name in layer_names:
-        layer_cls = vars(layers)[name]
-        sig = inspect.signature(layer_cls.__init__)
-        kwargs = {}
-        for param_name, param in sig.parameters.items():
-            if param_name in ("self", "kwargs", "args"):
-                continue
-            if param.default is inspect.Parameter.empty:
-                kwargs[param_name] = MagicMock()
-        layer_cls(**kwargs)
+    """Verify instantiation and forward execution of core Dense, Dropout, Flatten, and Activation layers."""
+    x = ops.ones((2, 4), dtype="float32")
+    dense = layers.Dense(3, activation="relu")
+    out = dense(x)
+    assert out.shape == (2, 3)
+    drop = layers.Dropout(0.2)
+    assert drop(out, training=False).shape == (2, 3)
+    flat = layers.Flatten()
+    assert flat(ops.ones((2, 3, 4), dtype="float32")).shape == (2, 12)
 
 
 def test_missing_layers() -> None:
@@ -480,182 +475,98 @@ def test_spectral_norm_no_weights_branch() -> None:
 
 
 def test_convolution_aliases_missing_branches() -> None:
-    """Verify or execute `test convolution aliases missing branches`."""
-    # test pre-set weights, use_bias=False, activation=None for aliases
-    with (
-        patch("zero_keras.layers.ops") as mock_ops,
-        patch("zero_keras.core_layers.ops") as mock_ops_local,
-        patch("ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated") as mock_cgd,
-        patch("ml_switcheroo_compiler.ops.linalg.conv_general_dilated") as mock_cgd2,
-    ):
-        mock_ops.conv1d.return_value = asarray([[1.0]])
-        mock_ops.conv2d.return_value = asarray([[1.0]])
-        mock_ops.conv3d.return_value = asarray([[1.0]])
-        mock_ops.conv1d_transpose.return_value = asarray([[1.0]])
-        mock_ops.conv2d_transpose.return_value = asarray([[1.0]])
-        mock_ops.conv3d_transpose.return_value = asarray([[1.0]])
-        mock_cgd.return_value = asarray([[1.0]])
-        mock_cgd2.return_value = asarray([[1.0]])
-        mock_cgd2.return_value = asarray([[1.0]])
+    """Verify Convolution alias layers with preset weights, use_bias=False, and activation=None."""
+    for layer_cls in [
+        layers.Convolution1D,
+        layers.Convolution2D,
+        layers.Convolution3D,
+        layers.Convolution1DTranspose,
+        layers.Convolution2DTranspose,
+        layers.Convolution3DTranspose,
+    ]:
+        rank = 1 if "1D" in layer_cls.__name__ else (2 if "2D" in layer_cls.__name__ else 3)
+        input_shape = (2,) + (4,) * rank + (4,)
 
-        for layer_cls in [
-            layers.Convolution1D,
-            layers.Convolution2D,
-            layers.Convolution3D,
-            layers.Convolution1DTranspose,
-            layers.Convolution2DTranspose,
-            layers.Convolution3DTranspose,
-        ]:
-            # First hit pre-set weights and use_bias=True
-            kwargs = {"use_bias": True, "filters": 4, "kernel_size": 2}
-            layer = layer_cls(**kwargs)
-            layer.kernel = ops.ones((1, 1, 1, 16))
-            layer.bias = asarray([1.0])
-            input_shape = (2, 4, 4, 4, 4)
-            if "1D" in layer_cls.__name__:
-                input_shape = (2, 4, 4)
-            elif "2D" in layer_cls.__name__:
-                input_shape = (2, 4, 4, 4)
-            layer.build(input_shape)
+        layer = layer_cls(use_bias=True, filters=4, kernel_size=2)
+        layer.kernel = ops.ones((2,) * rank + (4, 4))
+        layer.bias = ops.ones((4,))
+        layer.build(input_shape)
+        assert layer.built is True
 
-            # Then hit use_bias=False and activation=None
-            kwargs = {
-                "use_bias": False,
-                "activation": None,
-                "filters": 4,
-                "kernel_size": 2,
-            }
-            layer2 = layer_cls(**kwargs)
-            layer2.built = True
-            layer2.kernel = asarray([1.0])
-
-            if "1D" in layer_cls.__name__:
-                try:
-                    layer2(asarray([[[1.0] * 4] * 4] * 2))
-                except Exception:
-                    pass
-            elif "2D" in layer_cls.__name__:
-                try:
-                    layer2(asarray([[[[1.0] * 4] * 4] * 4] * 2))
-                except Exception:
-                    pass
-            elif "3D" in layer_cls.__name__:
-                try:
-                    layer2(asarray([[[[[1.0] * 4] * 4] * 4] * 4] * 2))
-                except Exception:
-                    pass
+        layer2 = layer_cls(use_bias=False, activation=None, filters=4, kernel_size=2)
+        out = layer2(ops.ones(input_shape))
+        assert out.shape[0] == 2 and out.shape[-1] == 4
 
 
 def test_activation_none_dense_conv() -> None:
-    """Verify or execute `test activation none dense conv`."""
-    # specifically trigger `activation is not None` evaluates to False in Dense/Conv/EinsumDense
-    with patch("zero_keras.layers.ops") as mock_ops:
-        mock_ops.matmul.return_value = asarray([[1.0]])
-        mock_ops.add.return_value = asarray([[1.0]])
+    """Verify Dense and EinsumDense with activation=None and preset kernel/bias."""
+    dense = layers.Dense(units=4, activation=None)
+    out_dense = dense(ops.ones((2, 3)))
+    assert out_dense.shape == (2, 4)
 
-        for layer_cls in [layers.Dense]:
-            layer = layer_cls(units=4, activation=None)
-            layer.built = True
-            layer.kernel = asarray([[1.0]])
-            layer.bias = asarray([1.0])
-            layer(asarray([[1.0]]))
+    ed = layers.EinsumDense("ab,bc->ac", output_shape=(4,), activation=None)
+    out_ed = ed(ops.ones((2, 3)))
+    assert out_ed.shape == (2, 4)
 
-    with patch("zero_keras.layers.ops") as mock_ops:
-        mock_ops.einsum.return_value = asarray([[1.0]])
-        mock_ops.add.return_value = asarray([[1.0]])
-        layer = layers.EinsumDense("ab,bc->ac", output_shape=(4,), activation=None)
-        layer.built = True
-        layer.kernel = asarray([[1.0]])
-        layer.bias = asarray([1.0])
-        layer(asarray([[1.0]]))
-
-        # also EinsumDense build with preset kernel and bias
-        layer = layers.EinsumDense("ab,bc->ac", output_shape=(4,), bias_axes="c")
-        layer.kernel = asarray([[1.0]])
-        layer.bias = asarray([1.0])
-        layer.build((2, 4))
+    ed_preset = layers.EinsumDense("ab,bc->ac", output_shape=(4,), bias_axes="c")
+    ed_preset.kernel = ops.ones((3, 4))
+    ed_preset.bias = ops.ones((4,))
+    ed_preset.build((2, 3))
+    assert ed_preset.built is True
 
 
 def test_rnn_cells_missing_branches() -> None:
-    """Verify or execute `test rnn cells missing branches`."""
-    with (
-        patch("zero_keras.layers.ops") as mock_ops,
-        patch("zero_keras.core_layers.ops") as mock_ops_local,
-    ):
-        mock_ops.dot.return_value = asarray([[1.0]])
-        mock_ops.add.return_value = asarray([[1.0]])
-        mock_ops.split.return_value = [asarray([[1.0]])] * 4
-        mock_ops_local.split.return_value = [asarray([[1.0]])] * 4
-        mock_ops.multiply.return_value = asarray([[1.0]])
-        mock_ops.gru_cell.return_value = (asarray([[1.0]]), asarray([[1.0]]))
-        mock_ops.lstm_cell.return_value = (
-            asarray([[1.0]]),
-            [asarray([[1.0]]), asarray([[1.0]])],
+    """Verify SimpleRNNCell, GRUCell, and LSTMCell with preset weights and use_bias=False."""
+    for layer_cls in [layers.SimpleRNNCell, layers.GRUCell, layers.LSTMCell]:
+        mult = 1 if layer_cls is layers.SimpleRNNCell else (3 if layer_cls is layers.GRUCell else 4)
+        layer = layer_cls(units=4, use_bias=True)
+        layer.kernel = ops.ones((3, 4 * mult))
+        layer.recurrent_kernel = ops.ones((4, 4 * mult))
+        layer.bias = ops.ones((4 * mult,))
+        layer.build((2, 3))
+        assert layer.built is True
+
+        layer2 = layer_cls(units=4, use_bias=False, activation=None)
+        states = (
+            [ops.ones((2, 4))]
+            if layer_cls is not layers.LSTMCell
+            else [ops.ones((2, 4)), ops.ones((2, 4))]
         )
-        mock_ops.rnn_cell.return_value = (asarray([[1.0]]), asarray([[1.0]]))
+        out, new_states = layer2(ops.ones((2, 3)), states)
+        assert out.shape == (2, 4)
+        assert new_states is not None
 
-        for layer_cls in [layers.SimpleRNNCell, layers.GRUCell, layers.LSTMCell]:
-            # preset weights + use_bias=True
-            kwargs = {"units": 4, "use_bias": True}
-            layer = layer_cls(**kwargs)
-            layer.kernel = ops.ones((1, 1, 1, 16))
-            layer.recurrent_kernel = ops.ones((1, 1, 1, 16))
-            layer.bias = asarray([1.0])
-            layer.build((2, 4))
-
-            # use_bias=False + activation=None
-            kwargs = {"units": 4, "use_bias": False, "activation": None}
-            layer2 = layer_cls(**kwargs)
-            layer2.built = True
-            layer2.kernel = asarray([1.0])
-            layer2.recurrent_kernel = asarray([1.0])
-            states = (
-                [asarray([[1.0]])]
-                if layer_cls != layers.LSTMCell
-                else [asarray([[1.0]]), asarray([[1.0]])]
-            )
-            try:
-                layer2(asarray([[1.0]]), states)
-            except Exception:
-                pass
+        layer3 = layer_cls(units=4, use_bias=True)
+        out3, _ = layer3.call(ops.ones((2, 3)), states)
+        assert out3.shape == (2, 4)
 
 
 def test_conv_lstm_cell_use_bias_false() -> None:
-    """Verify or execute `test conv lstm cell use bias false`."""
-    with (
-        patch("zero_keras.layers.ops") as mock_ops,
-        patch("zero_keras.core_layers.ops") as mock_ops_local,
-        patch("ml_switcheroo_compiler.ops.linalg.conv.conv_general_dilated") as mock_cgd,
-        patch("ml_switcheroo_compiler.ops.linalg.conv_general_dilated") as mock_cgd2,
-    ):
-        mock_ops.add.return_value = asarray([[1.0]])
-        mock_ops.split.return_value = [asarray([[1.0]])] * 4
-        mock_ops_local.split.return_value = [asarray([[1.0]])] * 4
-        mock_ops.multiply.return_value = asarray([[1.0]])
-        mock_cgd.return_value = ops.ones((1, 1, 1, 16))
-        mock_cgd2.return_value = ops.ones((1, 1, 1, 16))
-
-        layer = layers.ConvLSTMCell(filters=4, kernel_size=2, use_bias=False)
-        layer.built = True
-        layer.kernel = ops.ones((1, 1, 1, 16))
-        layer.recurrent_kernel = ops.ones((1, 1, 1, 16))
-        states = [asarray([[[[1.0]]]]), asarray([[[[1.0]]]])]
-        layer(asarray([[[[1.0]]]]), states)
+    """Verify ConvLSTMCell forward pass when use_bias=False."""
+    layer = layers.ConvLSTMCell(filters=4, kernel_size=2, use_bias=False)
+    x = ops.ones((2, 4, 4, 3))
+    h = ops.zeros((2, 3, 3, 4))
+    c = ops.zeros((2, 3, 3, 4))
+    out, states = layer(x, [h, c])
+    assert out.shape == (2, 3, 3, 4)
+    assert len(states) == 2
 
 
 def test_wrapper_already_built() -> None:
-    """Verify or execute `test wrapper already built`."""
+    """Verify Wrapper.build when the inner layer is already built."""
     inner = layers.Dense(4)
     inner.build((2, 4))
     wrapper = layers.Wrapper(inner)
     wrapper.build((2, 4))
+    assert wrapper.built is True
 
 
 def test_spectral_norm_no_kernel() -> None:
-    """Verify or execute `test spectral norm no kernel`."""
+    """Verify SpectralNormalization.build when the inner layer has no kernel."""
     inner = layers.Activation("relu")
     wrapper = layers.SpectralNormalization(inner)
     wrapper.build((2, 4))
+    assert wrapper.built is True
 
 
 def test_spectral_norm_no_weights_attr() -> None:
@@ -668,49 +579,45 @@ def test_spectral_norm_no_weights_attr() -> None:
 
 
 def test_stacked_rnn_cells_built() -> None:
-    """Verify or execute `test stacked rnn cells built`."""
+    """Verify StackedRNNCells.build when child cells are already built."""
     cell = layers.SimpleRNNCell(4)
     cell.build((2, 4))
     stacked = layers.StackedRNNCells([cell])
     stacked.build((2, 4))
+    assert stacked.built is True
 
 
 def test_missing_layers_part2() -> None:
-    """Verify or execute `test missing layers part2`."""
-    # Image augmentations with training=True
-    for layer_cls in [
-        layers.AugMix,
-        layers.AutoContrast,
-        layers.CutMix,
-        layers.Equalization,
-        layers.RandomColorDegeneration,
-        layers.RandomColorJitter,
-        layers.RandomContrast,
-        layers.RandomElasticTransform,
-        layers.RandomErasing,
-        layers.RandomGaussianBlur,
-        layers.RandomGrayscale,
-        layers.RandomHue,
-        layers.RandomInvert,
-        layers.RandomPerspective,
-        layers.RandomPosterization,
-        layers.RandomSaturation,
-        layers.RandomSharpness,
-        layers.RandomShear,
-        layers.Solarization,
-        layers.RandAugment,
-        layers.RandomBrightness,
-        layers.MixUp,
+    """Verify image augmentations, Conv build idempotency, Bidirectional merge modes, and ZeroPadding."""
+    img = ops.ones((2, 8, 8, 3))
+    for layer_cls, kwargs in [
+        (layers.AugMix, {}),
+        (layers.AutoContrast, {}),
+        (layers.CutMix, {}),
+        (layers.Equalization, {}),
+        (layers.RandomColorDegeneration, {"factor": 0.2}),
+        (layers.RandomColorJitter, {"brightness_factor": 0.1}),
+        (layers.RandomContrast, {"factor": 0.2}),
+        (layers.RandomElasticTransform, {}),
+        (layers.RandomErasing, {}),
+        (layers.RandomGaussianBlur, {"factor": 0.5}),
+        (layers.RandomGrayscale, {}),
+        (layers.RandomHue, {"factor": 0.2}),
+        (layers.RandomInvert, {}),
+        (layers.RandomPerspective, {}),
+        (layers.RandomPosterization, {"factor": 4}),
+        (layers.RandomSaturation, {"factor": 0.2}),
+        (layers.RandomSharpness, {"factor": 0.2}),
+        (layers.RandomShear, {"x_factor": 0.1}),
+        (layers.Solarization, {}),
+        (layers.RandAugment, {}),
+        (layers.RandomBrightness, {"factor": 0.2}),
+        (layers.MixUp, {}),
     ]:
-        try:
-            with patch("ml_switcheroo_compiler.ops.shape.utils._emit_shape_node") as mock_emit:
-                mock_emit.return_value = ops.ones((2, 10, 10, 3))
-                l = layer_cls()
-                l(ops.ones((2, 10, 10, 3)), training=True)
-        except Exception:
-            pass
+        aug_layer = layer_cls(**kwargs)
+        out = aug_layer(img, training=True)
+        assert out.shape == (2, 8, 8, 3)
 
-    # Build early returns for Conv layers
     for layer_cls in [
         layers.Conv1D,
         layers.Conv1DTranspose,
@@ -721,625 +628,215 @@ def test_missing_layers_part2() -> None:
         layers.SeparableConv1D,
         layers.SeparableConv2D,
     ]:
-        try:
-            l = layer_cls(filters=4, kernel_size=3)
-            rank = (
-                (l.rank if hasattr(l, "rank") else 1)
-                if hasattr(l, "rank")
-                else (3 if "3D" in layer_cls.__name__ else (2 if "2D" in layer_cls.__name__ else 1))
-            )
-            shape = [2] + [10] * rank + [3]
-            l.build(shape)
-            l.build(shape)  # Hit early return
-            l(ops.ones(shape))
-        except Exception:
-            pass
+        conv_l = layer_cls(filters=4, kernel_size=3)
+        rank = 3 if "3D" in layer_cls.__name__ else (2 if "2D" in layer_cls.__name__ else 1)
+        shape = (2,) + (6,) * rank + (3,)
+        conv_l.build(shape)
+        conv_l.build(shape)
+        out_c = conv_l(ops.ones(shape))
+        assert out_c.shape[0] == 2 and out_c.shape[-1] == 4
 
-    # Foreign models
-    class MockModule:
-        """Test helper class `MockModule` for layers missing part2."""
+    rnn_l = layers.RNN(layers.SimpleRNNCell(4), stateful=True)
+    rnn_l.build((2, 5, 3))
+    rnn_l.reset_states(states=None)
+    initial_states = rnn_l.states
+    assert initial_states is None
+    rnn_l(ops.ones((2, 5, 3)))
+    assert rnn_l.states is not None
+    rnn_l.reset_states(states=None)
+    assert len(rnn_l.states) == 1
 
-    # RNN state edge cases
-    try:
-        l = layers.RNN(layers.SimpleRNNCell(4))
-        l.build((None, 10, 3))
-        # Provide states = None explicitly to cover if states is None:
-        l.reset_states(states=None)
-    except Exception:
-        pass
+    for mode in ("sum", "ave", "mul", None):
+        b = layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode=mode)
+        b.build((None, 5, 3))
+        b_out = b(ops.ones((2, 5, 3)))
+        assert isinstance(b_out, (list, tuple))
 
-    # Bidirectional sum/ave/mul states
-    try:
-        b = layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode="sum")
-        b.build((None, 10, 3))
-        b(ops.ones((2, 10, 3)))
+    inp_layer = layers.InputLayer(input_shape=(10,))
+    assert inp_layer(ops.ones((2, 10))).shape == (2, 10)
 
-        b2 = layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode="ave")
-        b2.build((None, 10, 3))
-        b2(ops.ones((2, 10, 3)))
+    wrap_l = layers.Wrapper(layers.Dense(4))
+    wrap_l.build((None, 3))
+    wrap_l.build((None, 3))
+    assert wrap_l.built is True
 
-        b3 = layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode="mul")
-        b3.build((None, 10, 3))
-        b3(ops.ones((2, 10, 3)))
+    cl_cell1 = layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1, use_bias=False)
+    cl_cell1.build((None, 6, 3))
+    cl_cell1.build((None, 6, 3))
+    assert cl_cell1.built is True
 
-        b4 = layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode=None)
-        b4.build((None, 10, 3))
-        b4(ops.ones((2, 10, 3)))
-    except Exception:
-        pass
+    cl_cell2 = layers.ConvLSTMCell(4, 3, rank=1, strides=2, dilation_rate=1, use_bias=False)
+    cl_cell2.build((None, 6, 3))
+    cl_cell2.build((None, 6, 3))
+    assert cl_cell2.built is True
 
-    # InputLayer coverage
-    try:
-        layers.InputLayer(input_shape=(10,))
-    except Exception:
-        pass
-
-    # Wrapper build early return
-    try:
-        l = layers.Wrapper(layers.Dense(4))
-        l.build((None, 3))
-        l.build((None, 3))
-    except Exception:
-        pass
-
-    # ConvLSTMCell early return and branches
-    try:
-        l = layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1, use_bias=False)
-        l.build((None, 10, 3))
-        l.build((None, 10, 3))
-
-        l2 = layers.ConvLSTMCell(4, 3, rank=1, strides=2, dilation_rate=1, use_bias=False)
-        l2.build((None, 10, 3))
-        l2.build((None, 10, 3))
-    except Exception:
-        pass
-
-    # Padding layer branches
-    try:
-        layers.ZeroPadding1D((1, 1))(ops.ones((2, 10, 3)))
-        layers.ZeroPadding2D((1, 1))(ops.ones((2, 10, 10, 3)))
-        layers.ZeroPadding3D((1, 1))(ops.ones((2, 10, 10, 10, 3)))
-    except Exception:
-        pass
-
-    try:
-        layers.ZeroPadding1D(1)(ops.ones((2, 10, 3)))
-        layers.ZeroPadding2D(1)(ops.ones((2, 10, 10, 3)))
-        layers.ZeroPadding3D(1)(ops.ones((2, 10, 10, 10, 3)))
-    except Exception:
-        pass
+    assert layers.ZeroPadding1D((1, 1))(ops.ones((2, 6, 3))).shape == (2, 8, 3)
+    assert layers.ZeroPadding2D((1, 1))(ops.ones((2, 6, 6, 3))).shape == (2, 8, 8, 3)
+    assert layers.ZeroPadding3D((1, 1, 1))(ops.ones((2, 4, 4, 4, 3))).shape == (2, 6, 6, 6, 3)
+    assert layers.ZeroPadding1D(1)(ops.ones((2, 6, 3))).shape == (2, 8, 3)
+    assert layers.ZeroPadding2D(1)(ops.ones((2, 6, 6, 3))).shape == (2, 8, 8, 3)
+    assert layers.ZeroPadding3D(1)(ops.ones((2, 4, 4, 4, 3))).shape == (2, 6, 6, 6, 3)
 
 
 def test_remaining() -> None:
-    """Verify or execute `test remaining`."""
-    # Dot
-    try:
-        layers.Dot(axes=1).call([ops.ones((2, 3)), ops.ones((2, 3))])
-    except Exception:
-        pass
+    """Verify Dot, ActivityRegularization, Attention, Cropping, Normalization, and RMSNormalization."""
+    dot_out = layers.Dot(axes=1)([ops.ones((2, 3)), ops.ones((2, 3))])
+    assert dot_out.shape == (2, 1)
 
-    # ActivityRegularization
-    try:
-        layers.ActivityRegularization(l2=0.1).call(ops.ones((2, 3)))
-    except Exception:
-        pass
+    act_reg = layers.ActivityRegularization(l1=0.1, l2=0.1)
+    assert act_reg(ops.ones((2, 3))).shape == (2, 3)
+    assert len(act_reg.losses) == 1
 
-    # Build early returns that need specific kwargs
-    try:
-        layers.AdditiveAttention().build([(None, 3), (None, 3)])
-    except Exception:
-        pass
+    add_attn = layers.AdditiveAttention()
+    add_attn.build([(None, 3, 4), (None, 3, 4)])
+    assert add_attn([ops.ones((2, 3, 4)), ops.ones((2, 3, 4))]).shape == (2, 3, 4)
 
-    try:
-        layers.AdditiveAttention().call([ops.ones((2, 3, 4)), ops.ones((2, 3, 4))])
-    except Exception:
-        pass
+    alpha_do = layers.AlphaDropout(0.1, seed=42)
+    assert alpha_do(ops.ones((2, 3)), training=True).shape == (2, 3)
 
-    try:
-        layers.AlphaDropout(0.1).call(ops.ones((2, 3)), training=True)
-    except Exception:
-        pass
+    attn = layers.Attention()
+    attn.build([(None, 3, 4), (None, 3, 4)])
+    assert attn([ops.ones((2, 3, 4)), ops.ones((2, 3, 4))]).shape == (2, 3, 4)
 
-    try:
-        layers.Attention().build([(None, 3), (None, 3)])
-    except Exception:
-        pass
-
-    try:
-        layers.Attention().call([ops.ones((2, 3, 4)), ops.ones((2, 3, 4))])
-    except Exception:
-        pass
-
-    for cls in [
-        layers.AugMix,
-        layers.AutoContrast,
-        layers.CutMix,
-        layers.Equalization,
-        layers.RandomColorDegeneration,
-        layers.RandomColorJitter,
-        layers.RandomContrast,
-        layers.RandomElasticTransform,
-        layers.RandomErasing,
-        layers.RandomGaussianBlur,
-        layers.RandomGrayscale,
-        layers.RandomHue,
-        layers.RandomInvert,
-        layers.RandomPerspective,
-        layers.RandomPosterization,
-        layers.RandomSaturation,
-        layers.RandomSharpness,
-        layers.RandomShear,
-        layers.Solarization,
-        layers.RandAugment,
-        layers.RandomBrightness,
-        layers.MixUp,
-    ]:
-        try:
-            cls().call(ops.ones((2, 10, 10, 3)), training=True)
-        except Exception:
-            pass
-
-    try:
-        layers.CategoryEncoding(num_tokens=10).call(ops.ones((2,)))
-    except Exception:
-        pass
+    cat_enc = layers.CategoryEncoding(num_tokens=4)
+    assert cat_enc(ops.convert_to_tensor([[0, 1], [2, 3]], dtype="int32")).shape == (2, 4)
 
     for cls in [layers.Conv1D, layers.Conv1DTranspose, layers.SeparableConv1D]:
-        try:
-            cls(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10)))
-        except Exception:
-            pass
+        out_1d = cls(4, 3, data_format="channels_first")(ops.ones((2, 3, 8)))
+        assert out_1d.shape[0] == 2 and out_1d.shape[1] == 4
     for cls in [layers.Conv2D, layers.Conv2DTranspose, layers.SeparableConv2D]:
-        try:
-            cls(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10, 10)))
-        except Exception:
-            pass
+        out_2d = cls(4, 3, data_format="channels_first")(ops.ones((2, 3, 8, 8)))
+        assert out_2d.shape[0] == 2 and out_2d.shape[1] == 4
     for cls in [layers.Conv3D, layers.Conv3DTranspose]:
-        try:
-            cls(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10, 10, 10)))
-        except Exception:
-            pass
+        out_3d = cls(4, 3, data_format="channels_first")(ops.ones((2, 3, 6, 6, 6)))
+        assert out_3d.shape[0] == 2 and out_3d.shape[1] == 4
 
-    try:
-        layers.Cropping1D(1).call(ops.ones((2, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.Cropping2D(1).call(ops.ones((2, 10, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.Cropping3D(1).call(ops.ones((2, 10, 10, 10, 3)))
-    except Exception:
-        pass
+    assert layers.Cropping1D(1)(ops.ones((2, 6, 3))).shape == (2, 4, 3)
+    assert layers.Cropping2D(1)(ops.ones((2, 6, 6, 3))).shape == (2, 4, 4, 3)
+    assert layers.Cropping3D(1)(ops.ones((2, 6, 6, 6, 3))).shape == (2, 4, 4, 4, 3)
 
-    try:
-        layers.EinsumDense("abc,cd->abd", (10, 4), bias_axes=None).build((None, 10, 3))
-    except Exception:
-        pass
+    ed = layers.EinsumDense("abc,cd->abd", (10, 4), bias_axes=None)
+    ed.build((None, 10, 3))
+    assert ed.built is True
 
-    try:
-        layers.Embedding(10, 4).build((None, 10))
-    except Exception:
-        pass
+    emb = layers.Embedding(10, 4)
+    emb.build((None, 5))
+    assert emb.built is True
 
-    try:
-        layers.RNN(layers.SimpleRNNCell(4)).build((None, 10, 3))
-    except Exception:
-        pass
+    norm = layers.Normalization()
+    norm.build((None, 3))
+    assert norm(ops.ones((2, 3))).shape == (2, 3)
 
-    try:
-        layers.SimpleRNNCell(4).build((None, 3))
-    except Exception:
-        pass
+    rms = layers.RMSNormalization()
+    rms.build((None, 3))
+    assert rms(ops.ones((2, 3))).shape == (2, 3)
 
-    try:
-        layers.GRUCell(4, use_bias=False).build((None, 3))
-    except Exception:
-        pass
+    gn1 = layers.GroupNormalization(groups=2, axis=1)
+    gn1.build((None, 4, 6, 6))
+    assert gn1(ops.ones((2, 4, 6, 6))).shape == (2, 4, 6, 6)
 
-    try:
-        layers.GRUCell(4).call(ops.ones((2, 3)), [ops.ones((2, 4))])
-    except Exception:
-        pass
+    gn2 = layers.GroupNormalization(groups=2, axis=-1)
+    assert gn2(ops.ones((2, 6, 6, 4))).shape == (2, 6, 6, 4)
 
-    try:
-        layers.LSTMCell(4, use_bias=False).build((None, 3))
-    except Exception:
-        pass
+    td = layers.TimeDistributed(layers.Dense(4))
+    td.build((None, 5, 3))
+    assert td(ops.ones((2, 5, 3))).shape == (2, 5, 4)
 
-    try:
-        layers.LSTMCell(4).call(ops.ones((2, 3)), [ops.ones((2, 4)), ops.ones((2, 4))])
-    except Exception:
-        pass
-
-    try:
-        layers.Bidirectional(layers.SimpleRNN(4)).build((None, 10, 3))
-    except Exception:
-        pass
-
-    for mode in ["sum", "ave", "mul", None]:
-        try:
-            layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode=mode).call(
-                ops.ones((2, 10, 3))
-            )
-        except Exception:
-            pass
-
-    try:
-        layers.Normalization().build((None, 3))
-    except Exception:
-        pass
-
-    try:
-        layers.RMSNormalization().build((None, 3))
-    except Exception:
-        pass
-
-    try:
-        layers.RMSNormalization().call(ops.ones((2, 3)))
-    except Exception:
-        pass
-
-    try:
-        layers.RandomFlip().__init__()
-    except Exception:
-        pass
-    try:
-        layers.RandomRotation(0.1).__init__()
-    except Exception:
-        pass
-
-    try:
-        layers.GroupNormalization(axis=1).build((None, 4, 10, 10))
-    except Exception:
-        pass
-    try:
-        layers.GroupNormalization(axis=-1).call(ops.ones((2, 10, 10, 4)))
-    except Exception:
-        pass
-
-    try:
-        layers.TimeDistributed(layers.Dense(4)).build((None, 10, 3))
-    except Exception:
-        pass
-
-    try:
-        layers.SpectralNormalization(layers.Dense(4)).build((None, 3))
-    except Exception:
-        pass
-
-    try:
-        layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1).build((None, 10, 3))
-    except Exception:
-        pass
-
-    try:
-        layers.ConvLSTMCell(4, 3, rank=1, strides=2, dilation_rate=1, use_bias=False).build(
-            (None, 10, 3)
-        )
-    except Exception:
-        pass
-
-
-class FakeTensor:
-    """Test helper class `FakeTensor` for layers missing part5."""
-
-    def __init__(self, shape: TensorLike | None = None) -> None:
-        """Verify or execute `init` on `FakeTensor`.
-
-        Args:
-            shape: Test fixture or input parameter `shape` (shape).
-        """
-        self.shape = shape if shape is not None else (2, 10, 10, 3)
-        self.dtype = "float32"
+    sn = layers.SpectralNormalization(layers.Dense(4))
+    sn.build((None, 3))
+    assert sn(ops.ones((2, 3))).shape == (2, 4)
 
 
 def test_missing_augmentations() -> None:
-    """Verify or execute `test missing augmentations`."""
-    config.eager_mode = False
-    try:
-        for cls in [
-            layers.AugMix,
-            layers.AutoContrast,
-            layers.CutMix,
-            layers.Equalization,
-            layers.RandomColorDegeneration,
-            layers.RandomColorJitter,
-            layers.RandomContrast,
-            layers.RandomElasticTransform,
-            layers.RandomErasing,
-            layers.RandomGaussianBlur,
-            layers.RandomGrayscale,
-            layers.RandomHue,
-            layers.RandomInvert,
-            layers.RandomPerspective,
-            layers.RandomPosterization,
-            layers.RandomSaturation,
-            layers.RandomSharpness,
-            layers.RandomShear,
-            layers.Solarization,
-            layers.RandAugment,
-            layers.RandomBrightness,
-            layers.MixUp,
-        ]:
-            with patch("zero_keras.activations._to_tensor", lambda x: FakeTensor()):
-                with patch("ml_switcheroo_compiler.ops.shape.utils._emit_shape_node") as mock_emit:
-                    mock_emit.return_value = "mock_shape_node"
-                    try:
-                        cls().call(ops.ones((2, 10, 10, 3)), training=True)
-                    except Exception:
-                        pass
-    finally:
-        config.eager_mode = True
+    """Verify image augmentation layers in inference mode return inputs with unchanged shape."""
+    img = ops.ones((2, 8, 8, 3))
+    for cls, kwargs in [
+        (layers.AugMix, {}),
+        (layers.AutoContrast, {}),
+        (layers.CutMix, {}),
+        (layers.Equalization, {}),
+        (layers.RandomColorDegeneration, {"factor": 0.2}),
+        (layers.RandomColorJitter, {"brightness_factor": 0.1}),
+        (layers.RandomContrast, {"factor": 0.2}),
+        (layers.RandomElasticTransform, {}),
+        (layers.RandomErasing, {}),
+        (layers.RandomGaussianBlur, {"factor": 0.5}),
+        (layers.RandomGrayscale, {}),
+        (layers.RandomHue, {"factor": 0.2}),
+        (layers.RandomInvert, {}),
+        (layers.RandomPerspective, {}),
+        (layers.RandomPosterization, {"factor": 4}),
+        (layers.RandomSaturation, {"factor": 0.2}),
+        (layers.RandomSharpness, {"factor": 0.2}),
+        (layers.RandomShear, {"x_factor": 0.1}),
+        (layers.Solarization, {}),
+        (layers.RandAugment, {}),
+        (layers.RandomBrightness, {"factor": 0.2}),
+        (layers.MixUp, {}),
+    ]:
+        out = cls(**kwargs)(img, training=False)
+        assert out.shape == (2, 8, 8, 3)
 
 
 def test_others() -> None:
-    """Verify or execute `test others`."""
-    try:
-        layers.Dot(axes=1).call([ops.ones((2, 3)), ops.ones((2, 3))])
-    except Exception:
-        pass
-    try:
-        layers.AdditiveAttention().build([10, 10])
-    except Exception:
-        pass
-    try:
-        layers.Attention().build([10, 10])
-    except Exception:
-        pass
-    try:
-        layers.CategoryEncoding(num_tokens=None).call(ops.ones((2,)))
-    except Exception:
-        pass
-    try:
-        layers.Conv1DTranspose(4, 3).build([2, 10, 3])
-    except Exception:
-        pass
-    try:
-        layers.Conv2DTranspose(4, 3).build([2, 10, 10, 3])
-    except Exception:
-        pass
-    try:
-        layers.Conv3DTranspose(4, 3).build([2, 10, 10, 10, 3])
-    except Exception:
-        pass
+    """Verify CategoryEncoding auto-num_tokens, ConvTranspose list shape build, and RNN reset_states."""
+    cat_auto = layers.CategoryEncoding(num_tokens=None)
+    out_cat = cat_auto(ops.convert_to_tensor([[0, 2], [1, 3]], dtype="int32"))
+    assert out_cat.shape == (2, 4)
 
-    for cls in [
-        layers.Conv1D,
-        layers.Conv2D,
-        layers.Conv3D,
-        layers.Conv1DTranspose,
-        layers.Conv2DTranspose,
-        layers.Conv3DTranspose,
-        layers.SeparableConv1D,
-        layers.SeparableConv2D,
-    ]:
-        try:
-            with patch(
-                "zero_keras.activations._to_tensor",
-                lambda x: FakeTensor(
-                    (2, 3, 10)
-                    if "1D" in cls.__name__
-                    else ((2, 3, 10, 10) if "2D" in cls.__name__ else (2, 3, 10, 10, 10))
-                ),
-            ):
-                l = cls(4, 3, data_format="channels_first")
-                l.built = False
-                l.call(ops.ones(1))
-        except Exception:
-            pass
+    c1t = layers.Conv1DTranspose(4, 3)
+    c1t.build([2, 6, 3])
+    assert c1t.built is True
 
-    try:
-        layers.RNN(layers.SimpleRNNCell(4)).build((None, 10, 3))
-    except Exception:
-        pass
-    try:
-        layers.RNN(layers.SimpleRNNCell(4)).reset_states()
-    except Exception:
-        pass
-    try:
-        layers.RNN(layers.SimpleRNNCell(4)).call(ops.ones((2, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.Bidirectional(layers.SimpleRNN(4)).__init__(layers.SimpleRNN(4))
-    except Exception:
-        pass
-    try:
-        layers.Bidirectional(layers.SimpleRNN(4)).build((None, 10, 3))
-    except Exception:
-        pass
-    try:
-        layers.Bidirectional(layers.SimpleRNN(4)).call(ops.ones((2, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1).build((None, 10, 3))
-    except Exception:
-        pass
+    c2t = layers.Conv2DTranspose(4, 3)
+    c2t.build([2, 6, 6, 3])
+    assert c2t.built is True
 
-    # Cropping int
-    try:
-        layers.Cropping1D(1).call(ops.ones(1))
-    except Exception:
-        pass
-    try:
-        layers.Cropping2D(1).call(ops.ones(1))
-    except Exception:
-        pass
-    try:
-        layers.Cropping3D(1).call(ops.ones(1))
-    except Exception:
-        pass
+    c3t = layers.Conv3DTranspose(4, 3)
+    c3t.build([2, 6, 6, 6, 3])
+    assert c3t.built is True
+
+    rnn_layer = layers.RNN(layers.SimpleRNNCell(4), stateful=True)
+    rnn_layer.build((2, 5, 3))
+    rnn_layer.reset_states()
+    out_rnn = rnn_layer(ops.ones((2, 5, 3)))
+    assert out_rnn.shape == (2, 4)
 
 
 def test_remaining_layers_missing_part6() -> None:
-    """Verify or execute `test remaining`."""
-    with patch("ml_switcheroo_compiler.ops.multiply") as mock_mul:
-        mock_mul.return_value = ops.ones((2, 3))
-        try:
-            layers.Dot(axes=1).call([ops.ones((2, 3)), ops.ones((2, 3))])
-        except Exception:
-            pass
+    """Verify build idempotency on Attention, Embedding, RNN, SimpleRNNCell, Bidirectional, Normalization, RMSNormalization, TimeDistributed, SpectralNormalization, and ConvLSTMCell."""
+    for layer_inst, build_shape in [
+        (layers.AdditiveAttention(), [(None, 3, 4), (None, 3, 4)]),
+        (layers.Attention(), [(None, 3, 4), (None, 3, 4)]),
+        (layers.Embedding(10, 4), (None, 5)),
+        (layers.RNN(layers.SimpleRNNCell(4)), (None, 5, 3)),
+        (layers.SimpleRNNCell(4), (None, 3)),
+        (layers.Bidirectional(layers.SimpleRNN(4)), (None, 5, 3)),
+        (layers.Normalization(), (None, 3)),
+        (layers.RMSNormalization(), (None, 3)),
+        (layers.TimeDistributed(layers.Dense(4)), (None, 5, 3)),
+        (layers.SpectralNormalization(layers.Dense(4)), (None, 3)),
+        (layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1), (None, 6, 3)),
+    ]:
+        layer_inst.built = True
+        layer_inst.build(build_shape)
+        assert layer_inst.built is True
 
-    # Build early returns
-    l = layers.AdditiveAttention()
-    l.built = True
-    l.build([10, 10])
-
-    l = layers.Attention()
-    l.built = True
-    l.build([10, 10])
-
-    # 2612: Conv1D out
-    with patch("zero_keras.ops.transpose") as mock_transpose:
-        mock_transpose.return_value = ops.ones((2, 3, 10))
-        try:
-            layers.Conv1D(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10)))
-        except Exception:
-            pass
-        try:
-            layers.Conv2D(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10, 10)))
-        except Exception:
-            pass
-        try:
-            layers.Conv3D(4, 3, data_format="channels_first").call(ops.ones((2, 3, 10, 10, 10)))
-        except Exception:
-            pass
-
-    try:
-        layers.Cropping1D(1).cropping = ((1, 1),)
-    except Exception:
-        pass
-
-    try:
-        layers.EinsumDense("abc,cd->abd", (10, 4), bias_axes=None).build((None, 10, 3))
-    except Exception:
-        pass
-
-    l = layers.Embedding(10, 4)
-    l.built = True
-    l.build((None, 10))
-
-    l = layers.RNN(layers.SimpleRNNCell(4))
-    l.built = True
-    l.build((None, 10, 3))
-
-    l = layers.SimpleRNNCell(4)
-    l.built = True
-    l.build((None, 3))
-
-    try:
-        layers.RNN(layers.SimpleRNNCell(4)).reset_states(ops.ones((2, 4)))
-    except Exception:
-        pass
-
-    try:
-        from zero_keras.activations import _to_tensor
-
-        layers.RNN(layers.SimpleRNNCell(4)).call(
-            ops.ones((2, 10, 3)), initial_state=[_to_tensor(ops.ones((2, 4)))]
-        )
-    except Exception:
-        pass
-
-    try:
-        layers.GRUCell(4).build((None, 3))
-    except Exception:
-        pass
-    try:
-        layers.LSTMCell(4).build((None, 3))
-    except Exception:
-        pass
-
-    l = layers.Bidirectional(layers.SimpleRNN(4))
-    l.built = True
-    l.build((None, 10, 3))
-
-    try:
-        layers.Bidirectional(layers.SimpleRNN(4, return_state=True), merge_mode=None).call(
-            ops.ones((2, 10, 3))
-        )
-    except Exception:
-        pass
-
-    l = layers.Normalization()
-    l.built = True
-    l.build((None, 3))
-
-    try:
-        layers.Normalization().call(ops.ones((2, 3)))
-    except Exception:
-        pass
-
-    l = layers.RMSNormalization()
-    l.built = True
-    l.build((None, 3))
-
-    try:
-        layers.RMSNormalization().call(ops.ones((2, 3)))
-    except Exception:
-        pass
-
-    try:
-        layers.RandomFlip().__init__()
-    except Exception:
-        pass
-
-    try:
-        layers.RandomRotation(0.1).__init__()
-    except Exception:
-        pass
-
-    try:
-        layers.GroupNormalization(axis=1).build((None, 4, 10, 10))
-    except Exception:
-        pass
-    try:
-        layers.GroupNormalization(axis=-1).call(ops.ones((2, 10, 10, 4)))
-    except Exception:
-        pass
-
-    try:
-        layers.InputLayer(input_shape=(10,)).call(ops.ones((2, 10)))
-    except Exception:
-        pass
-
-    try:
-        layers.ZeroPadding1D(1)(ops.ones((2, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.ZeroPadding2D(1)(ops.ones((2, 10, 10, 3)))
-    except Exception:
-        pass
-    try:
-        layers.ZeroPadding3D(1)(ops.ones((2, 10, 10, 10, 3)))
-    except Exception:
-        pass
-
-    l = layers.TimeDistributed(layers.Dense(4))
-    l.built = True
-    l.build((None, 10, 3))
-
-    l = layers.SpectralNormalization(layers.Dense(4))
-    l.built = True
-    l.build((None, 3))
-
-    l = layers.ConvLSTMCell(4, 3, rank=1, strides=1, dilation_rate=1)
-    l.built = True
-    l.build((None, 10, 3))
+    rnn_s = layers.RNN(layers.SimpleRNNCell(4), stateful=True)
+    rnn_s.build((2, 5, 3))
+    rnn_s.reset_states(ops.ones((2, 4)))
+    out_s = rnn_s(ops.ones((2, 5, 3)), initial_state=[ops.ones((2, 4))])
+    assert out_s.shape == (2, 4)
 
 
 def test_dot_tuple_axes() -> None:
-    """Verify or execute `test dot tuple axes`."""
+    """Test ``dot_tuple_axes`` behavior and edge cases in ``test_layers``."""
     layer = Dot(axes=(1, 1))
     layer([ops.ones((2, 3)), ops.ones((2, 3))])
 
 
 def test_conv_transpose_channels_first() -> None:
-    """Verify or execute `test conv transpose channels first`."""
+    """Test ``conv_transpose_channels_first`` behavior and edge cases in ``test_layers``."""
     l1 = Conv1DTranspose(2, 2, data_format="channels_first")
     l1(ops.ones((1, 2, 4)))
 
@@ -1351,7 +848,7 @@ def test_conv_transpose_channels_first() -> None:
 
 
 def test_cropping_tuples() -> None:
-    """Verify or execute `test cropping tuples`."""
+    """Test ``cropping_tuples`` behavior and edge cases in ``test_layers``."""
     l1 = Cropping1D(cropping=((1, 2),))
     l1(ops.ones((1, 5, 2)))
 
@@ -1363,7 +860,7 @@ def test_cropping_tuples() -> None:
 
 
 def test_einsum_dense_bias() -> None:
-    """Verify or execute `test einsum dense bias`."""
+    """Test ``einsum_dense_bias`` behavior and edge cases in ``test_layers``."""
     layer = EinsumDense("abc,cd->abd", output_shape=(None, 64), bias_axes="d")
     layer.build((None, 32, 128))
 
@@ -1372,10 +869,10 @@ class DummyCell(Layer):
     """Test helper class `DummyCell` for layers missing part7."""
 
     def __init__(self, units: TensorLike, **kwargs: TensorLike) -> None:
-        """Verify or execute `init` on `DummyCell`.
+        """Initialize the ``DummyCell`` test helper instance.
 
         Args:
-            units: Test fixture or input parameter `units` (units).
+            units: Number of output hidden units.
             **kwargs: Keyword arguments forwarded to helper.
         """
         super().__init__(**kwargs)
@@ -1388,12 +885,12 @@ class DummyCell(Layer):
         training: TensorLike | None = None,
         **kwargs: TensorLike,
     ) -> TensorLike:
-        """Verify or execute `call` on `DummyCell`.
+        """Execute the forward computation of ``DummyCell``.
 
         Args:
-            inputs: Test fixture or input parameter `inputs` (inputs).
-            states: Test fixture or input parameter `states` (states).
-            training: Test fixture or input parameter `training` (training).
+            inputs: Input tensor or nested structure of tensors.
+            states: Sequence of recurrent state tensors.
+            training: Boolean flag indicating training versus inference mode.
             **kwargs: Keyword arguments forwarded to helper.
 
         Returns:
@@ -1403,7 +900,7 @@ class DummyCell(Layer):
 
 
 def test_rnn_missing_coverage() -> None:
-    """Verify or execute `test rnn missing coverage`."""
+    """Test ``rnn_missing_coverage`` behavior and edge cases in ``test_layers``."""
     rnn = RNN(DummyCell(10))
     rnn(ops.ones((1, 5, 10)))
     rnn(ops.ones((1, 5, 10)), initial_state=ops.zeros((1, 10)))
@@ -1416,13 +913,13 @@ def test_rnn_missing_coverage() -> None:
 
 
 def test_lstm_return_state() -> None:
-    """Verify or execute `test lstm return state`."""
+    """Test ``lstm_return_state`` behavior and edge cases in ``test_layers``."""
     lstm = LSTM(10, return_state=True)
     lstm(ops.ones((1, 5, 10)))
 
 
 def test_cells_build() -> None:
-    """Verify or execute `test cells build`."""
+    """Test ``cells_build`` behavior and edge cases in ``test_layers``."""
     c1 = SimpleRNNCell(10)
     c1(ops.ones((1, 10)), states=(ops.zeros((1, 10)),))
 
@@ -1456,13 +953,13 @@ def test_bidirectional_missing() -> None:
 
 
 def test_normalization() -> None:
-    """Verify or execute `test normalization`."""
+    """Test ``normalization`` behavior and edge cases in ``test_layers``."""
     norm = Normalization(invert=True)
     norm(ops.ones((1, 10)))
 
 
 def test_group_normalization() -> None:
-    """Verify or execute `test group normalization`."""
+    """Test ``group_normalization`` behavior and edge cases in ``test_layers``."""
     gn1 = GroupNormalization(groups=2, scale=False, center=True)
     gn1(ops.ones((1, 10, 10, 4)))
     gn2 = GroupNormalization(groups=2, scale=False, center=False)
@@ -1470,7 +967,7 @@ def test_group_normalization() -> None:
 
 
 def test_random_layers() -> None:
-    """Verify or execute `test random layers`."""
+    """Test ``random_layers`` behavior and edge cases in ``test_layers``."""
     l1 = RandomFlip("horizontal")
     l1(ops.ones((1, 10, 10, 3)))
     l2 = RandomRotation(0.2)
@@ -1480,7 +977,7 @@ def test_random_layers() -> None:
 
 
 def test_layer_normalization() -> None:
-    """Verify or execute `test layer normalization`."""
+    """Test ``layer_normalization`` behavior and edge cases in ``test_layers``."""
     ln = LayerNormalization(axis=1)
     ln.build((None, 5, 10))
     ln.build((None, 5, 10))
@@ -1488,7 +985,7 @@ def test_layer_normalization() -> None:
 
 
 def test_zeropadding() -> None:
-    """Verify or execute `test zeropadding`."""
+    """Test ``zeropadding`` behavior and edge cases in ``test_layers``."""
     z1 = ZeroPadding1D(data_format="channels_first")
     z1(ops.ones((1, 2, 4)))
 
@@ -1504,7 +1001,7 @@ def test_zeropadding() -> None:
 
 
 def test_convlstm() -> None:
-    """Verify or execute `test convlstm`."""
+    """Test ``convlstm`` behavior and edge cases in ``test_layers``."""
     cl = ConvLSTM1D(2, 2, padding="same")
     cl.build((None, None, None, 3))
 
@@ -1528,7 +1025,7 @@ def test_conv_channels_first() -> None:
 
 
 def test_cropping_elif() -> None:
-    """Verify or execute `test cropping elif`."""
+    """Test ``cropping_elif`` behavior and edge cases in ``test_layers``."""
     l2 = Cropping2D(cropping=(1, 2))
     l2(ops.ones((1, 5, 5, 2)))
 
@@ -1537,7 +1034,7 @@ def test_cropping_elif() -> None:
 
 
 def test_rnn_reset_states_already_built() -> None:
-    """Verify or execute `test rnn reset states already built`."""
+    """Test ``rnn_reset_states_already_built`` behavior and edge cases in ``test_layers``."""
     srnn = SimpleRNN(10, stateful=True)
     srnn(ops.ones((1, 5, 10)))  # build and init states
     srnn.reset_states()
@@ -1545,7 +1042,7 @@ def test_rnn_reset_states_already_built() -> None:
 
 
 def test_simplernncell_unbuilt_call() -> None:
-    """Verify or execute `test simplernncell unbuilt call`."""
+    """Test ``simplernncell_unbuilt_call`` behavior and edge cases in ``test_layers``."""
     c1 = SimpleRNNCell(10)
     # bypass __call__ to hit 'if not self.built:' inside call()
     c1.call(ops.ones((1, 10)), states=(ops.zeros((1, 10)),))
@@ -1558,13 +1055,13 @@ def test_bidirectional_dense_units() -> None:
 
 
 def test_rms_norm_center() -> None:
-    """Verify or execute `test rms norm center`."""
+    """Test ``rms_norm_center`` behavior and edge cases in ``test_layers``."""
     rms = RMSNormalization(center=True, scale=False)
     rms(ops.ones((1, 10)))
 
 
 def test_group_norm_build_twice_and_axis() -> None:
-    """Verify or execute `test group norm build twice and axis`."""
+    """Test ``group_norm_build_twice_and_axis`` behavior and edge cases in ``test_layers``."""
     gn = GroupNormalization(axis=1, groups=2)
     GroupNormalization.build(gn, (None, 2, 10, 2))
     GroupNormalization.build(gn, (None, 2, 10, 2))
@@ -1572,13 +1069,13 @@ def test_group_norm_build_twice_and_axis() -> None:
 
 
 def test_convlstm_padding_same_spatial() -> None:
-    """Verify or execute `test convlstm padding same spatial`."""
+    """Test ``convlstm_padding_same_spatial`` behavior and edge cases in ``test_layers``."""
     cl = ConvLSTM1D(2, 2, padding="same")
     cl.build((None, 5, 10, 3))
 
 
 def test_dense_and_conv_missing_branches() -> None:
-    """Verify or execute `test dense and conv missing branches`."""
+    """Test ``dense_and_conv_missing_branches`` behavior and edge cases in ``test_layers``."""
     with (
         patch("zero_keras.layers.core.ops") as mock_ops,
         patch("zero_keras.layers.convolution.ops") as mock_conv_ops,
@@ -1658,7 +1155,7 @@ def test_dense_and_conv_missing_branches() -> None:
 
 
 def test_pre_set_weights_with_bias() -> None:
-    """Verify or execute `test pre set weights with bias`."""
+    """Test ``pre_set_weights_with_bias`` behavior and edge cases in ``test_layers``."""
     for layer_cls in [
         layers.Dense,
         layers.Conv1D,
@@ -1702,19 +1199,19 @@ def test_pre_set_weights_with_bias() -> None:
 
 
 def test_dense_activation_none() -> None:
-    """Verify or execute `test dense activation none`."""
+    """Test ``dense_activation_none`` behavior and edge cases in ``test_layers``."""
     l = layers.Dense(10, activation=None)
     l(random.uniform((2, 5)))
 
 
 def test_activity_reg_zeros() -> None:
-    """Verify or execute `test activity reg zeros`."""
+    """Test ``activity_reg_zeros`` behavior and edge cases in ``test_layers``."""
     l = layers.ActivityRegularization(l1=0.0, l2=0.0)
     l(random.uniform((2, 5)))
 
 
 def test_conv_activation_none() -> None:
-    """Verify or execute `test conv activation none`."""
+    """Test ``conv_activation_none`` behavior and edge cases in ``test_layers``."""
     # Conv1D
     l = layers.Conv1D(2, 2, activation=None)
     l(random.uniform((2, 5, 3)))
@@ -1741,7 +1238,7 @@ def test_conv_activation_none() -> None:
 
 
 def test_kerastensor_bool_eager_false() -> None:
-    """Verify or execute `test kerastensor bool eager false`."""
+    """Test ``kerastensor_bool_eager_false`` behavior and edge cases in ``test_layers``."""
     t = core_layers.KerasTensor((2,))
     t.data = True
 
@@ -1755,7 +1252,7 @@ def test_kerastensor_bool_eager_false() -> None:
 
 
 def test_preset_weights_convs() -> None:
-    """Verify or execute `test preset weights convs`."""
+    """Test ``preset_weights_convs`` behavior and edge cases in ``test_layers``."""
     # DepthwiseConv1D
     l = layers.DepthwiseConv1D(2)
     l.kernel = 1
@@ -1788,7 +1285,7 @@ def test_preset_weights_convs() -> None:
 
 
 def test_preset_weights_rnn_cells() -> None:
-    """Verify or execute `test preset weights rnn cells`."""
+    """Test ``preset_weights_rnn_cells`` behavior and edge cases in ``test_layers``."""
     # SimpleRNNCell
     c = layers.SimpleRNNCell(4)
     c.kernel = 1
@@ -1819,19 +1316,19 @@ def test_preset_weights_rnn_cells() -> None:
 
 
 def test_simplernn_activation_none() -> None:
-    """Verify or execute `test simplernn activation none`."""
+    """Test ``simplernn_activation_none`` behavior and edge cases in ``test_layers``."""
     l = layers.SimpleRNN(4, activation=None)
     l(random.uniform((2, 3, 2)))
 
 
 def test_convlstm_bias_none() -> None:
-    """Verify or execute `test convlstm bias none`."""
+    """Test ``convlstm_bias_none`` behavior and edge cases in ``test_layers``."""
     l = layers.ConvLSTM1D(2, 3, use_bias=False)
     l(random.uniform((2, 3, 5, 2)))
 
 
 def test_wrapper_already_built_layers_branches_missing2() -> None:
-    """Verify or execute `test wrapper already built`."""
+    """Test ``wrapper_already_built`` behavior and edge cases in ``test_layers``."""
     # TimeDistributed already built wrapper
     l = layers.Dense(4)
     t = layers.TimeDistributed(l)
@@ -1846,16 +1343,16 @@ def test_wrapper_already_built_layers_branches_missing2() -> None:
 
 
 def test_bidirectional_args() -> None:
-    """Verify or execute `test bidirectional args`."""
+    """Test ``bidirectional_args`` behavior and edge cases in ``test_layers``."""
 
     class DummyCell:
         """Test helper class `DummyCell` for layers branches missing2."""
 
         def __init__(self, units: TensorLike) -> None:
-            """Verify or execute `init` on `DummyCell`.
+            """Initialize the ``DummyCell`` test helper instance.
 
             Args:
-                units: Test fixture or input parameter `units` (units).
+                units: Number of output hidden units.
             """
             self.units = units
 
@@ -1863,10 +1360,10 @@ def test_bidirectional_args() -> None:
         """Test helper class `DummyLayer` for layers branches missing2."""
 
         def __init__(self, cell: TensorLike) -> None:
-            """Verify or execute `init` on `DummyLayer`.
+            """Initialize the ``DummyLayer`` test helper instance.
 
             Args:
-                cell: Test fixture or input parameter `cell` (cell).
+                cell: Recurrent cell instance under test.
             """
             super().__init__()
             self.cell = cell
@@ -1880,7 +1377,7 @@ def test_bidirectional_args() -> None:
 
 
 def test_conv_aliases_activation_none() -> None:
-    """Verify or execute `test conv aliases activation none`."""
+    """Test ``conv_aliases_activation_none`` behavior and edge cases in ``test_layers``."""
     for cls, in_shape in [
         (layers.Convolution1D, (2, 5, 3)),
         (layers.Convolution1DTranspose, (2, 5, 3)),
@@ -1894,7 +1391,7 @@ def test_conv_aliases_activation_none() -> None:
 
 
 def test_conv_aliases_preset_weights() -> None:
-    """Verify or execute `test conv aliases preset weights`."""
+    """Test ``conv_aliases_preset_weights`` behavior and edge cases in ``test_layers``."""
     # 1D
     l = layers.Convolution1D(2, 2)
     l.kernel = 1

@@ -6,7 +6,7 @@ from zero_keras import layers, random
 
 
 def test_conv1d_basic() -> None:
-    """Verify or execute `test conv1d basic`."""
+    """Test ``conv1d_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv1D(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 3), dtype="float32")
     out = layer(x)
@@ -19,7 +19,7 @@ def test_conv1d_basic() -> None:
 
 
 def test_conv1d_transpose_basic() -> None:
-    """Verify or execute `test conv1d transpose basic`."""
+    """Test ``conv1d_transpose_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv1DTranspose(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 3), dtype="float32")
     _out = layer(x)
@@ -30,7 +30,7 @@ def test_conv1d_transpose_basic() -> None:
 
 
 def test_conv2d_basic() -> None:
-    """Verify or execute `test conv2d basic`."""
+    """Test ``conv2d_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv2D(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -42,7 +42,7 @@ def test_conv2d_basic() -> None:
 
 
 def test_conv2d_transpose_basic() -> None:
-    """Verify or execute `test conv2d transpose basic`."""
+    """Test ``conv2d_transpose_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv2DTranspose(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     _out = layer(x)
@@ -53,7 +53,7 @@ def test_conv2d_transpose_basic() -> None:
 
 
 def test_conv3d_basic() -> None:
-    """Verify or execute `test conv3d basic`."""
+    """Test ``conv3d_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv3D(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -65,7 +65,7 @@ def test_conv3d_basic() -> None:
 
 
 def test_conv3d_transpose_basic() -> None:
-    """Verify or execute `test conv3d transpose basic`."""
+    """Test ``conv3d_transpose_basic`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Conv3DTranspose(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 10, 10, 3), dtype="float32")
     _out = layer(x)
@@ -76,7 +76,7 @@ def test_conv3d_transpose_basic() -> None:
 
 
 def test_cropping1d() -> None:
-    """Verify or execute `test cropping1d`."""
+    """Test ``cropping1d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Cropping1D(cropping=1)
     x = random.uniform((2, 10, 3), dtype="float32")
     _out = layer(x)
@@ -85,7 +85,7 @@ def test_cropping1d() -> None:
 
 
 def test_cropping2d() -> None:
-    """Verify or execute `test cropping2d`."""
+    """Test ``cropping2d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Cropping2D(cropping=1)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     _out = layer(x)
@@ -94,7 +94,7 @@ def test_cropping2d() -> None:
 
 
 def test_cropping3d() -> None:
-    """Verify or execute `test cropping3d`."""
+    """Test ``cropping3d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.Cropping3D(cropping=1)
     x = random.uniform((2, 10, 10, 10, 3), dtype="float32")
     _out = layer(x)
@@ -103,34 +103,34 @@ def test_cropping3d() -> None:
 
 
 def test_depthwise1d() -> None:
-    """Verify or execute `test depthwise1d`."""
+    """Test ``depthwise1d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.DepthwiseConv1D(kernel_size=3)
     x = random.uniform((2, 10, 3), dtype="float32")
     _out = layer(x)
 
 
 def test_depthwise2d() -> None:
-    """Verify or execute `test depthwise2d`."""
+    """Test ``depthwise2d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.DepthwiseConv2D(kernel_size=3)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     _out = layer(x)
 
 
 def test_einsum_dense() -> None:
-    """Verify or execute `test einsum dense`."""
+    """Test ``einsum_dense`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.EinsumDense(equation="abc,cd->abd", output_shape=(10, 4))
     x = random.uniform((2, 10, 3), dtype="float32")
     _out = layer(x)
 
 
 def test_alpha_dropout() -> None:
-    """Verify or execute `test alpha dropout`."""
+    """Test ``alpha_dropout`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.AlphaDropout(0.5)
     layer(random.uniform((2, 10), dtype="float32"), training=True)
 
 
 def test_separable_conv1d() -> None:
-    """Verify or execute `test separable conv1d`."""
+    """Test ``separable_conv1d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.SeparableConv1D(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 3), dtype="float32")
     out = layer(x)
@@ -138,7 +138,7 @@ def test_separable_conv1d() -> None:
 
 
 def test_separable_conv2d() -> None:
-    """Verify or execute `test separable conv2d`."""
+    """Test ``separable_conv2d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.SeparableConv2D(filters=4, kernel_size=3)
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -146,7 +146,7 @@ def test_separable_conv2d() -> None:
 
 
 def test_upsampling1d() -> None:
-    """Verify or execute `test upsampling1d`."""
+    """Test ``upsampling1d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.UpSampling1D(size=2)
     x = random.uniform((2, 10, 3), dtype="float32")
     out = layer(x)
@@ -154,7 +154,7 @@ def test_upsampling1d() -> None:
 
 
 def test_upsampling2d() -> None:
-    """Verify or execute `test upsampling2d`."""
+    """Test ``upsampling2d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.UpSampling2D(size=(2, 2))
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -162,7 +162,7 @@ def test_upsampling2d() -> None:
 
 
 def test_upsampling3d() -> None:
-    """Verify or execute `test upsampling3d`."""
+    """Test ``upsampling3d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.UpSampling3D(size=(2, 2, 2))
     x = random.uniform((2, 10, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -170,7 +170,7 @@ def test_upsampling3d() -> None:
 
 
 def test_zeropadding1d() -> None:
-    """Verify or execute `test zeropadding1d`."""
+    """Test ``zeropadding1d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.ZeroPadding1D(padding=1)
     x = random.uniform((2, 10, 3), dtype="float32")
     out = layer(x)
@@ -178,7 +178,7 @@ def test_zeropadding1d() -> None:
 
 
 def test_zeropadding2d() -> None:
-    """Verify or execute `test zeropadding2d`."""
+    """Test ``zeropadding2d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.ZeroPadding2D(padding=(1, 1))
     x = random.uniform((2, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -186,7 +186,7 @@ def test_zeropadding2d() -> None:
 
 
 def test_zeropadding3d() -> None:
-    """Verify or execute `test zeropadding3d`."""
+    """Test ``zeropadding3d`` behavior and edge cases in ``test_missing_layers_conv``."""
     layer = layers.ZeroPadding3D(padding=(1, 1, 1))
     x = random.uniform((2, 10, 10, 10, 3), dtype="float32")
     out = layer(x)
@@ -194,7 +194,7 @@ def test_zeropadding3d() -> None:
 
 
 def test_conv_built_and_call_direct() -> None:
-    """Verify or execute `test conv built and call direct`."""
+    """Test ``conv_built_and_call_direct`` behavior and edge cases in ``test_missing_layers_conv``."""
     classes_to_test = [
         layers.Conv1D,
         layers.Conv1DTranspose,
@@ -227,7 +227,7 @@ def test_conv_built_and_call_direct() -> None:
 
 
 def test_padding_tuple_cases() -> None:
-    """Verify or execute `test padding tuple cases`."""
+    """Test ``padding_tuple_cases`` behavior and edge cases in ``test_missing_layers_conv``."""
     layers.ZeroPadding1D(padding=(1,))
     layers.ZeroPadding2D(padding=(1, 2))
     layers.ZeroPadding3D(padding=(1, 2, 3))
@@ -237,7 +237,7 @@ def test_padding_tuple_cases() -> None:
 
 
 def test_channels_first_padding_cropping() -> None:
-    """Verify or execute `test channels first padding cropping`."""
+    """Test ``channels_first_padding_cropping`` behavior and edge cases in ``test_missing_layers_conv``."""
     x1 = random.uniform((2, 3, 10), dtype="float32")
     out = layers.ZeroPadding1D(padding=1, data_format="channels_first")(x1)
     assert out.shape == (2, 3, 12)
@@ -258,7 +258,7 @@ def test_channels_first_padding_cropping() -> None:
 
 
 def test_padding_cropping_tuple_of_tuples() -> None:
-    """Verify or execute `test padding cropping tuple of tuples`."""
+    """Test ``padding_cropping_tuple_of_tuples`` behavior and edge cases in ``test_missing_layers_conv``."""
     layers.ZeroPadding1D(padding=((1, 1),))
     layers.ZeroPadding2D(padding=((1, 1), (2, 2)))
     layers.ZeroPadding3D(padding=((1, 1), (2, 2), (3, 3)))

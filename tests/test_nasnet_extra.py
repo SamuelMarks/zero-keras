@@ -7,7 +7,7 @@ from zero_keras.applications.nasnet import NASNetLarge, NASNetMobile
 
 
 def test_nasnet_extra() -> None:
-    """Verify or execute `test nasnet extra`."""
+    """Test ``nasnet_extra`` behavior and edge cases in ``test_nasnet_extra``."""
     from zero_keras import backend
 
     backend.set_image_data_format("channels_last")

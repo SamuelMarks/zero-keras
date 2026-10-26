@@ -8,7 +8,7 @@ from zero_keras.applications.convnext import ConvNeXt
 
 def test_convnext_extra_coverage() -> None:
     # layer_scale_init_value=None, include_preprocessing=False
-    """Verify or execute `test convnext extra coverage`."""
+    """Test ``convnext_extra_coverage`` behavior and edge cases in ``test_convnext_extra``."""
     model = ConvNeXt(
         depths=[1, 1, 1, 1],
         projection_dims=[16, 32, 64, 128],

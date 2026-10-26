@@ -14,7 +14,7 @@ class MockModel:
     """Test helper class `MockModel` for callbacks."""
 
     def __init__(self) -> None:
-        """Verify or execute `init` on `MockModel`."""
+        """Initialize the ``MockModel`` test helper instance."""
         self.stop_training = False
 
         class W:
@@ -25,15 +25,15 @@ class MockModel:
         self.weights = [W()]
 
     def save(self, filepath: TensorLike) -> TensorLike:
-        """Verify or execute `save` on `MockModel`.
+        """Save the ``MockModel`` state to ``filepath``.
 
         Args:
-            filepath: Test fixture or input parameter `filepath` (filepath).
+            filepath: Target file path for saving or loading.
         """
 
 
 def test_callbacks(tmp_path: TensorLike) -> None:
-    """Verify or execute `test callbacks`.
+    """Test ``callbacks`` behavior and edge cases in ``test_callbacks``.
 
     Args:
         tmp_path: Temporary directory fixture.

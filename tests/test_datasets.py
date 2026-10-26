@@ -10,7 +10,7 @@ from zero_keras import datasets, ops, random
 
 
 def test_boston_housing() -> None:
-    """Verify or execute `test boston housing`."""
+    """Test ``boston_housing`` behavior and edge cases in ``test_datasets``."""
     x_dummy = random.uniform((100, 13))
     y_dummy = random.uniform((100,))
 
@@ -28,7 +28,7 @@ def test_boston_housing() -> None:
 
 
 def test_cifar10() -> None:
-    """Verify or execute `test cifar10`."""
+    """Test ``cifar10`` behavior and edge cases in ``test_datasets``."""
     x_dummy = random.uniform((10000, 3, 32, 32))
     y_dummy = random.uniform((10000,))
 
@@ -50,7 +50,7 @@ def test_cifar10() -> None:
 
 
 def test_cifar100() -> None:
-    """Verify or execute `test cifar100`."""
+    """Test ``cifar100`` behavior and edge cases in ``test_datasets``."""
     x_dummy = random.uniform((10000, 3, 32, 32))
     y_dummy = random.uniform((10000,))
 
@@ -70,7 +70,7 @@ def test_cifar100() -> None:
 
 
 def test_cifar100_coarse() -> None:
-    """Verify or execute `test cifar100 coarse`."""
+    """Test ``cifar100_coarse`` behavior and edge cases in ``test_datasets``."""
     x_dummy = random.uniform((10000, 3, 32, 32))
     y_dummy = random.uniform((10000,))
 
@@ -95,7 +95,7 @@ def test_cifar100_coarse() -> None:
 
 
 def test_mnist() -> None:
-    """Verify or execute `test mnist`."""
+    """Test ``mnist`` behavior and edge cases in ``test_datasets``."""
     x_train_d, y_train_d = ops.zeros((60000, 28, 28)), ops.zeros((60000,))
     x_test_d, y_test_d = ops.zeros((10000, 28, 28)), ops.zeros((10000,))
 
@@ -118,7 +118,7 @@ def test_mnist() -> None:
 
 
 def test_cifar_load_batch() -> None:
-    """Verify or execute `test cifar load batch`."""
+    """Test ``cifar_load_batch`` behavior and edge cases in ``test_datasets``."""
     import os
     import pickle
 
@@ -139,7 +139,7 @@ def test_cifar_load_batch() -> None:
 
 
 def test_cifar100_load_batch() -> None:
-    """Verify or execute `test cifar100 load batch`."""
+    """Test ``cifar100_load_batch`` behavior and edge cases in ``test_datasets``."""
     import os
     import pickle
 
@@ -160,7 +160,7 @@ def test_cifar100_load_batch() -> None:
 
 
 def test_fashion_mnist() -> None:
-    """Verify or execute `test fashion mnist`."""
+    """Test ``fashion_mnist`` behavior and edge cases in ``test_datasets``."""
     x_train_d = b"\x00" * (60000 * 28 * 28 + 16)
     y_train_d = b"\x00" * (60000 + 8)
     x_test_d = b"\x00" * (10000 * 28 * 28 + 16)
@@ -194,7 +194,7 @@ def test_fashion_mnist() -> None:
 
 
 def test_imdb() -> None:
-    """Verify or execute `test imdb`."""
+    """Test ``imdb`` behavior and edge cases in ``test_datasets``."""
     x_train_d = [[1, 2, 3], [4, 5, 6], [1] * 50]
     y_train_d = [0, 1, 1]
     x_test_d = [[1, 2], [3, 4], [2] * 50]
@@ -233,7 +233,7 @@ def test_imdb() -> None:
 
 
 def test_reuters() -> None:
-    """Verify or execute `test reuters`."""
+    """Test ``reuters`` behavior and edge cases in ``test_datasets``."""
     x_d = [[1, 2, 3], [4, 5, 6], [1] * 50, [2] * 3]
     y_d = [0, 1, 1, 0]
 
@@ -267,7 +267,7 @@ def test_reuters() -> None:
 
 
 def test_imdb_edge_cases() -> None:
-    """Verify or execute `test imdb edge cases`."""
+    """Test ``imdb_edge_cases`` behavior and edge cases in ``test_datasets``."""
     x_train_d = [[1, 2, 3]]
     y_train_d = [0]
     x_test_d = [[1, 2]]
@@ -293,7 +293,7 @@ def test_imdb_edge_cases() -> None:
 
 
 def test_reuters_edge_cases() -> None:
-    """Verify or execute `test reuters edge cases`."""
+    """Test ``reuters_edge_cases`` behavior and edge cases in ``test_datasets``."""
     x_d = [[1, 2, 3]]
     y_d = [0]
 
@@ -309,7 +309,7 @@ def test_reuters_edge_cases() -> None:
 
 
 def test_california_housing() -> None:
-    """Verify or execute `test california housing`."""
+    """Test ``california_housing`` behavior and edge cases in ``test_datasets``."""
     x_dummy = random.uniform((100, 8))
     y_dummy = random.uniform((100,))
 
