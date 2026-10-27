@@ -54,7 +54,10 @@ def test_applications() -> None:
         applications.xception.Xception,
     ]
     for fn in funcs:
-        fn(weights=None)
+        model = fn(weights=None)
+        assert model.outputs.shape == (None, 1000)
+        if fn is applications.vgg16.VGG16:
+            assert model.get_layer("fc1").kernel.shape == (25088, 4096)
 
 
 def test_resnet50_extra(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

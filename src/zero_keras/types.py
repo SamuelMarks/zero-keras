@@ -248,6 +248,17 @@ class KerasHistoryProtocol(Protocol):
 
 
 @runtime_checkable
+class ConvConfigProtocol(Protocol):
+    """Structural protocol for compiler ``ConvConfig`` instances."""
+
+    window_strides: Sequence[int] | None
+    padding: str | Sequence[tuple[int, int]]
+    lhs_dilation: Sequence[int] | None
+    rhs_dilation: Sequence[int] | None
+    dimension_numbers: tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...]] | None
+
+
+@runtime_checkable
 class ComputeOutputShapeProtocol(Protocol):
     """Structural protocol for layers/operations exposing ``compute_output_shape``."""
 
@@ -879,6 +890,7 @@ __all__ = [
     "ConfigValue",
     "ConstraintProtocol",
     "ConstraintSpec",
+    "ConvConfigProtocol",
     "CustomObjectsDict",
     "DTypeCarrierProtocol",
     "DTypeLike",

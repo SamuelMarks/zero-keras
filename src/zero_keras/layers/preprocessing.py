@@ -3957,7 +3957,11 @@ class Normalization(Layer):
         """
         if self.built:
             return
-        dim = input_shape[self.axis] if self.axis is not None else 1
+        dim = (
+            input_shape[self.axis]
+            if isinstance(self.axis, int) and input_shape is not None and len(input_shape) > 0
+            else 1
+        )
         shape = (dim,) if dim is not None else (1,)
         self.mean = (
             _to_tensor(self.mean_val)

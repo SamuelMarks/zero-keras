@@ -5,6 +5,7 @@ from __future__ import annotations
 from __future__ import annotations
 
 import builtins
+import math
 
 import ml_switcheroo_compiler.ops as msc_ops
 from ml_switcheroo_compiler.core.tensor import Tensor
@@ -19,11 +20,170 @@ from ml_switcheroo_compiler.ops.shape.slicing import slice as _msc_slicing_slice
 
 from zero_keras.types import (
     ConfigValue,
+    ConvConfigProtocol,
     DTypeLike,
+    ShapeCarrierProtocol,
     ShapeTuple,
     SupportsCall,
     TensorLike,
 )
+
+
+def _compute_spatial_dim(
+    in_dim: int | None,
+    k_dim: int,
+    stride: int,
+    padding: str,
+    dilation: int = 1,
+) -> int | None:
+    """Compute a single output spatial dimension for convolution or pooling.
+
+    Args:
+        in_dim: Input spatial dimension size or ``None``.
+        k_dim: Kernel or pooling window extent.
+        stride: Step stride size.
+        padding: Padding mode string (``"SAME"``, ``"VALID"``, or ``"CAUSAL"``).
+        dilation: Kernel dilation rate.
+
+    Returns:
+        int | None: Output spatial dimension size or ``None`` if dynamic.
+    """
+    if in_dim is None:
+        return None
+    s = max(1, int(stride))
+    pad_upper = padding.upper()
+    if pad_upper in ("SAME", "CAUSAL"):
+        return math.ceil(in_dim / s)
+    eff_k = (int(k_dim) - 1) * max(1, int(dilation)) + 1
+    return max(1, math.floor((in_dim - eff_k) / s) + 1)
+
+
+def _infer_symbolic_shape(
+    name: str,
+    in_shape: tuple[int | None, ...],
+    call_args: tuple[TensorLike, ...],
+    shape_kwargs: dict[str, ConfigValue],
+) -> tuple[int | None, ...] | list[tuple[int | None, ...]] | None:
+    """Infer symbolic output tensor shape for operations not covered by the compiler registry.
+
+    Args:
+        name: Operation name.
+        in_shape: Primary input shape tuple.
+        call_args: Positional arguments passed to the operation.
+        shape_kwargs: Keyword arguments passed to the operation.
+
+    Returns:
+        tuple[int | None, ...] | list[tuple[int | None, ...]] | None: Inferred output shape(s), or ``None`` to fall back.
+    """
+    if name in ("conv1d", "conv2d", "conv3d") and len(call_args) >= 2:
+        kernel = call_args[1]
+        k_shape = kernel.shape if isinstance(kernel, ShapeCarrierProtocol) else None
+        cfg = call_args[2] if len(call_args) >= 3 else shape_kwargs.get("config")
+        if k_shape is not None and len(in_shape) >= 3 and len(k_shape) >= 3:
+            rank = len(in_shape) - 2
+            out_channels = k_shape[-1]
+            strides_seq = (
+                cfg.window_strides
+                if isinstance(cfg, ConvConfigProtocol) and cfg.window_strides is not None
+                else (1,) * rank
+            )
+            pad_str = (
+                str(cfg.padding)
+                if isinstance(cfg, ConvConfigProtocol) and isinstance(cfg.padding, str)
+                else "VALID"
+            )
+            dil_seq = (
+                cfg.rhs_dilation
+                if isinstance(cfg, ConvConfigProtocol) and cfg.rhs_dilation is not None
+                else (1,) * rank
+            )
+            out_spatial = builtins.tuple(
+                _compute_spatial_dim(
+                    in_shape[1 + i],
+                    int(k_shape[i] or 1),
+                    int(strides_seq[i]) if i < len(strides_seq) else 1,
+                    pad_str,
+                    int(dil_seq[i]) if i < len(dil_seq) else 1,
+                )
+                for i in range(rank)
+            )
+            return (in_shape[0], *out_spatial, out_channels)
+
+    if name in ("max_pool", "average_pool"):
+        w_raw = shape_kwargs.get("window_shape")
+        s_raw = shape_kwargs.get("strides")
+        p_raw = str(shape_kwargs.get("padding", "VALID"))
+        if isinstance(w_raw, (list, builtins.tuple)) and len(w_raw) == len(in_shape):
+            s_seq = s_raw if isinstance(s_raw, (list, builtins.tuple)) else w_raw
+            return builtins.tuple(
+                in_shape[i]
+                if int(w_raw[i]) == 1 and int(s_seq[i]) == 1
+                else _compute_spatial_dim(in_shape[i], int(w_raw[i]), int(s_seq[i]), p_raw)
+                for i in range(len(in_shape))
+            )
+
+    if name in ("Concatenate", "concatenate") and len(call_args) >= 1:
+        seq = call_args[0]
+        if isinstance(seq, (list, builtins.tuple)):
+            shapes = [
+                t.shape for t in seq if isinstance(t, ShapeCarrierProtocol) and t.shape is not None
+            ]
+            first_s = shapes[0]
+            ndim = len(first_s)
+            ax_raw = shape_kwargs.get("axis", call_args[1] if len(call_args) > 1 else -1)
+            ax = int(ax_raw) if isinstance(ax_raw, int) else -1
+            norm_ax = ax if ax >= 0 else ndim + ax
+            axis_dims = [s[norm_ax] for s in shapes if len(s) == ndim]
+            total_dim = (
+                None
+                if any(d is None for d in axis_dims)
+                else builtins.sum(int(d) for d in axis_dims if d is not None)
+            )
+            res_list = list(first_s)
+            res_list[norm_ax] = total_dim
+            return builtins.tuple(res_list)
+
+    if name in ("matmul", "dot") and len(call_args) >= 2:
+        rhs = call_args[1]
+        r_shape = rhs.shape if isinstance(rhs, ShapeCarrierProtocol) else None
+        if r_shape is not None and len(in_shape) >= 1 and len(r_shape) >= 2:
+            return (*in_shape[:-1], r_shape[-1])
+
+    if name in ("max", "amax", "min", "amin", "sum", "prod", "any", "all"):
+        ax_val = shape_kwargs.get("axis", call_args[1] if len(call_args) > 1 else None)
+        keep_val = bool(shape_kwargs.get("keepdims", call_args[2] if len(call_args) > 2 else False))
+        ndim = len(in_shape)
+        axes_list = (
+            [int(a) for a in ax_val if isinstance(a, int)]
+            if isinstance(ax_val, (list, builtins.tuple))
+            else ([int(ax_val)] if isinstance(ax_val, int) else [])
+        )
+        norm_axes = {a if a >= 0 else ndim + a for a in axes_list}
+        if keep_val:
+            return builtins.tuple(1 if i in norm_axes else in_shape[i] for i in range(ndim))
+        return builtins.tuple(in_shape[i] for i in range(ndim) if i not in norm_axes)
+
+    if name == "pad" and len(call_args) >= 2:
+        pads = call_args[1]
+        if (
+            isinstance(pads, (list, builtins.tuple))
+            and len(pads) == len(in_shape)
+            and all(isinstance(p, (list, builtins.tuple)) and len(p) == 2 for p in pads)
+        ):
+            return builtins.tuple(
+                None if d is None else d + int(p[0]) + int(p[1]) for d, p in zip(in_shape, pads)
+            )
+
+    if name == "permute" and len(call_args) >= 2:
+        perm = call_args[1]
+        if (
+            isinstance(perm, (list, builtins.tuple))
+            and len(perm) == len(in_shape)
+            and all(isinstance(p, int) and 0 <= p < len(in_shape) for p in perm)
+        ):
+            return builtins.tuple(in_shape[int(p)] for p in perm)
+
+    return None
 
 
 def _dispatch_op(
@@ -102,8 +262,17 @@ def _dispatch_op(
         if isinstance(x, KerasTensor):
             import zero_keras.ops as _zk_ops
 
-            shape_or_shapes = _zk_ops.compute_shape_propagation(
-                name, x.shape, tuple(call_args), shape_kwargs
+            custom_shape = (
+                _infer_symbolic_shape(name, x.shape, builtins.tuple(call_args), shape_kwargs)
+                if x.shape is not None
+                else None
+            )
+            shape_or_shapes = (
+                custom_shape
+                if custom_shape is not None
+                else _zk_ops.compute_shape_propagation(
+                    name, x.shape, builtins.tuple(call_args), shape_kwargs
+                )
             )
             if isinstance(shape_or_shapes, list):
                 return [KerasTensor(s, dtype=x.dtype) for s in shape_or_shapes]

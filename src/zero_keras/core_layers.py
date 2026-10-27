@@ -602,6 +602,9 @@ class Layer:
         self._supports_masking: bool = False
         self._trainable: TensorLike = kwargs.get("trainable", True)
         self._quantization_mode: TensorLike | None = None
+        self._symbolic_built: bool = False
+        self._tracing_build: bool = False
+        self._symbolic_input_shape: TensorLike | None = None
 
     def __setattr__(self, name: str, value: TensorLike) -> None:
         """Set attribute ``name`` to ``value`` and register potential sublayers.
@@ -736,12 +739,38 @@ class Layer:
         Returns:
             TensorLike: Created and registered weight tensor.
         """
+        if self._tracing_build:
+            norm_s = (int(shape),) if isinstance(shape, int) else tuple(shape)
+            weight: TensorLike = KerasTensor(shape=None, dtype=self.dtype or "float32")
+            weight.shape = norm_s
+            self._weights.append(weight)
+            return weight
+
         from zero_keras.initializers import get as get_initializer
 
         init_fn = get_initializer(initializer)
         weight = init_fn(shape=shape)
         self._weights.append(weight)
         return weight
+
+    def _materialize_symbolic_weights(self) -> None:
+        """Materialize eager weight tensors for this layer and its sublayers if symbolically built."""
+        if self._symbolic_built:
+            self.built = False
+            for k, val in list(self._tracked_attrs.items()):
+                if isinstance(val, KerasTensor):
+                    super().__setattr__(k, None)
+                    self._tracked_attrs[k] = None
+            self._weights.clear()
+            self._symbolic_built = False
+            self.build(self._symbolic_input_shape)
+        for v in self._tracked_attrs.values():
+            if isinstance(v, Layer):
+                v._materialize_symbolic_weights()
+            elif isinstance(v, list):
+                for item in v:
+                    if isinstance(item, Layer):
+                        item._materialize_symbolic_weights()
 
     @property
     def weights(self) -> TensorLike:
@@ -792,6 +821,7 @@ class Layer:
         Returns:
             TensorLike: Computed result for `get_weights`.
         """
+        self._materialize_symbolic_weights()
         from ml_switcheroo_compiler.serialization import to_numpy
 
         return [to_numpy(w) for w in self.weights]
@@ -802,6 +832,7 @@ class Layer:
         Args:
             weights: Sequence of NumPy arrays matching the shapes of ``self.weights``.
         """
+        self._materialize_symbolic_weights()
         if len(weights) != len(self.weights):
             raise ValueError(f"Expected {len(self.weights)} weights, got {len(weights)}")
         from ml_switcheroo_compiler.ops import asarray
@@ -838,9 +869,6 @@ class Layer:
         Returns:
             TensorLike: Computed result for `__call__`.
         """
-        if not self.built:
-            self.build((inputs.shape if isinstance(inputs, ShapeCarrierProtocol) else None))
-
         # Simple tracing
         is_tracing = False
 
@@ -863,6 +891,18 @@ class Layer:
                     check_tracing(item)
 
         check_tracing(inputs)
+
+        if not self.built:
+            in_shape = inputs.shape if isinstance(inputs, ShapeCarrierProtocol) else None
+            self._symbolic_input_shape = in_shape
+            self._tracing_build = is_tracing
+            try:
+                self.build(in_shape)
+            finally:
+                self._tracing_build = False
+            self._symbolic_built = is_tracing
+        elif self._symbolic_built and not is_tracing:
+            self._materialize_symbolic_weights()
 
         if not is_tracing:
             self._losses = []

@@ -95,9 +95,17 @@ class KerasTensor:
             self.data: TensorLike = data
         else:
             try:
+                import math
                 import ml_switcheroo_compiler.ops as backend_ops
 
-                self.data = backend_ops.zeros(shape) if shape is not None else None
+                if (
+                    isinstance(shape, (list, tuple))
+                    and all(isinstance(d, int) and d >= 0 for d in shape)
+                    and math.prod(shape) <= 64
+                ):
+                    self.data = backend_ops.zeros(shape)
+                else:
+                    self.data = None
             except Exception:
                 self.data = None
 
